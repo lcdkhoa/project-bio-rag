@@ -40,14 +40,29 @@ class RobustOCRLoader:
     """Load PDFs using OCR (Tesseract) for better Vietnamese support."""
 
     def load_pdf(self, pdf_file: str) -> List[Document]:
+        import os
+        import time
         from pdf2image import convert_from_path
         import pytesseract
+
+        tesseract_cmd = os.environ.get("TESSERACT_CMD", "tesseract")
+        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
 
         docs = []
         try:
             images = convert_from_path(pdf_file)
+            total_pages = len(images)
+            logger.info(f"[{Path(pdf_file).name}] Starting OCR on {total_pages} pages")
+
             for i, img in enumerate(images):
+                start_time = time.time()
                 raw_text = pytesseract.image_to_string(img, lang="vie")
+                elapsed = time.time() - start_time
+
+                logger.info(
+                    f"[{Path(pdf_file).name}] Page {i + 1}/{total_pages} completed in {elapsed:.2f}s"
+                )
+
                 cleaned_text = clean_vietnamese_text(raw_text)
                 if cleaned_text and len(cleaned_text) > 10:
                     doc = Document(

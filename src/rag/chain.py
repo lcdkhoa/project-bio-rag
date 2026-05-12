@@ -13,6 +13,12 @@ class FocusedAnswerParser(StrOutputParser):
     """Parse and clean LLM responses."""
 
     def parse(self, text: str) -> str:
+        logger.debug(f"Parser received type: {type(text)}, value: {repr(text)[:300]}")
+        if isinstance(text, dict):
+            logger.warning(f"Parser received dict, keys: {text.keys()}")
+            text = text.get("answer") or text.get("text") or str(text)
+            logger.warning(f"Parser dict converted to: {repr(text)[:200]}")
+        text = str(text).strip()
         text = text.strip()
         if "<|im_start|>assistant" in text:
             text = text.split("<|im_start|>assistant")[-1]
@@ -48,13 +54,19 @@ Bạn là trợ lý AI môn Sinh học THCS. Bạn PHẢI trả lời hoàn toà
 
     def get_chain(self, retriever):
         def format_docs(docs):
+            logger.debug(f"format_docs received {len(docs)} docs, types: {[type(d) for d in docs]}")
             formatted = []
             seen = set()
             for doc in docs:
-                content = doc.page_content.strip()
+                if isinstance(doc, dict):
+                    content = doc.get("page_content", doc.get("content", "")).strip()
+                    logger.warning(f"format_docs received dict doc, extracted content: {repr(content[:100])}")
+                else:
+                    content = doc.page_content.strip()
                 if content and len(content) > 40 and content not in seen:
                     formatted.append(content)
                     seen.add(content)
+            logger.debug(f"format_docs returning {len(formatted)} formatted docs")
             return "\n\n".join(formatted)
 
         rag_chain = (

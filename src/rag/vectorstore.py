@@ -7,7 +7,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
-from ..config import EMBEDDING_MODEL, CHROMA_COLLECTION_NAME, PERSIST_DIR, RETRIEVER_K
+from ..config import EMBEDDING_MODEL, CHROMA_COLLECTION_NAME, PERSIST_DIR, RETRIEVER_K, HF_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,10 @@ class VectorDB:
     ):
         self.persist_dir = persist_dir
         self.collection_name = collection_name
-        self.embedding = HuggingFaceEmbeddings(model_name=embedding_model)
+        self.embedding = HuggingFaceEmbeddings(
+            model_name=embedding_model,
+            model_kwargs={"token": HF_TOKEN} if HF_TOKEN else {},
+        )
         self.db = self._build_db(documents)
         logger.info(f"VectorDB initialized with {self.db._collection.count()} existing chunks")
 

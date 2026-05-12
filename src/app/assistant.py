@@ -23,28 +23,84 @@ class BiologyAssistantApp:
 
     def answer_question(self, question: str) -> str:
         """Answer a biology question using RAG."""
+        logger.info(f"Processing question: {question[:100]}...")
         try:
-            docs = self.retriever.invoke(question)
+            # Step 1: Test retriever alone
+            logger.info("Step 1: Testing retriever.invoke()...")
+            try:
+                docs = self.retriever.invoke(question)
+                logger.info(f"Step 1 SUCCESS: Retrieved {len(docs)} documents")
+            except Exception as e:
+                logger.error(f"Step 1 FAILED retriever.invoke: {e}", exc_info=True)
+                return f"Lỗi retriever: {str(e)}"
+
+            logger.debug(f"Retrieved docs types: {[type(d) for d in docs]}")
+            for i, doc in enumerate(docs):
+                doc_type = type(doc)
+                if doc_type.__name__ == 'Document':
+                    content_type = type(doc.page_content)
+                    logger.debug(f"Doc {i}: Document, content_type={content_type}, content_preview={repr(doc.page_content[:50])}")
+                    logger.debug(f"  metadata: {doc.metadata}")
+                else:
+                    logger.warning(f"Doc {i}: NOT a Document, type={doc_type}, value={repr(doc)[:100]}")
+
             if not docs:
                 return "Hệ thống chưa tìm thấy tài liệu nào liên quan đến câu hỏi này."
 
             context_texts = []
             citations = set()
             for doc in docs:
-                context_texts.append(doc.page_content)
-                source_file = doc.metadata.get("source", "Sách Giáo Khoa")
-                page_num = doc.metadata.get("page", "Không rõ")
+                if hasattr(doc, 'page_content'):
+                    context_texts.append(doc.page_content)
+                    source_file = doc.metadata.get("source", "Sách Giáo Khoa") if hasattr(doc, 'metadata') else "Unknown"
+                    page_num = doc.metadata.get("page", "Không rõ") if hasattr(doc, 'metadata') else "?"
+                else:
+                    logger.warning(f"Doc {i} has no page_content attribute, skipping")
+                    continue
                 citations.add(f"📖 {source_file} (Trang {page_num})")
 
+            logger.debug(f"Context texts combined, {len(context_texts)} docs, citations: {citations}")
+
             context_str = "\n\n".join(context_texts)
-            answer = self.rag_chain.invoke({"context": context_str, "question": question})
+
+            # Step 2: Test prompt formatting alone
+            logger.info("Step 2: Testing prompt.format()...")
+            try:
+                formatted_prompt = self.rag.prompt.format(context=context_str, question=question)
+                logger.info(f"Step 2 SUCCESS: Prompt formatted, length={len(formatted_prompt)}")
+            except Exception as e:
+                logger.error(f"Step 2 FAILED prompt.format: {e}", exc_info=True)
+                return f"Lỗi prompt: {str(e)}"
+
+            # Step 3: Test LLM alone
+            logger.info("Step 3: Testing llm.invoke()...")
+            try:
+                llm_response = self.llm.invoke(formatted_prompt)
+                logger.info(f"Step 3 SUCCESS: LLM response type={type(llm_response)}, preview={repr(str(llm_response)[:100])}")
+            except Exception as e:
+                logger.error(f"Step 3 FAILED llm.invoke: {e}", exc_info=True)
+                return f"Lỗi LLM: {str(e)}"
+
+            # Step 4: Parse response
+            logger.info("Step 4: Testing answer_parser.parse()...")
+            try:
+                parsed = self.rag.answer_parser.parse(llm_response)
+                logger.info(f"Step 4 SUCCESS: Parsed answer preview={repr(parsed[:100])}")
+            except Exception as e:
+                logger.error(f"Step 4 FAILED answer_parser.parse: {e}", exc_info=True)
+                return f"Lỗi parser: {str(e)}"
+
+            answer = parsed
+            logger.debug(f"Final answer type: {type(answer)}, answer: {repr(answer[:200] if len(str(answer)) > 200 else answer)}")
 
             if "không được đề cập" in answer.lower():
                 return answer
 
             return f"{answer}\n\n📚 Thông tin được tham khảo từ:\n" + "\n".join(citations)
         except Exception as e:
-            logger.error(f"Error answering question: {e}")
+            logger.error(f"Error answering question: {e}", exc_info=True)
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return f"Lỗi hệ thống: {str(e)}"
 
     def build_ui(self):

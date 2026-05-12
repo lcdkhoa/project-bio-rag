@@ -12,7 +12,7 @@ load_dotenv()
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
 DATA_DIR = PROJECT_ROOT / "data"
-PERSIST_DIR = PROJECT_ROOT / "biology_db_rag"
+PERSIST_DIR = PROJECT_ROOT / "database"
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")
