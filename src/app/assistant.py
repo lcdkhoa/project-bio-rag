@@ -46,17 +46,21 @@ class BiologyAssistantApp:
         for doc in image_docs:
             if hasattr(doc, "metadata"):
                 image_path = doc.metadata.get("image_path", "")
-                caption = doc.page_content or doc.metadata.get("caption", "")
+                caption = doc.metadata.get("caption") or ""
+                context_text = doc.metadata.get("context_text") or ""
+                fallback_text = (doc.page_content or "").splitlines()[0] if doc.page_content else ""
+                label_text = context_text or caption or fallback_text
                 page = doc.metadata.get("page_number", "?")
                 pdf = doc.metadata.get("pdf_filename", "Sách Giáo Khoa")
-                logger.debug(f"Image doc metadata: image_path={image_path}, page={page}, pdf={pdf}")
+                score = doc.metadata.get("image_relevance_score", "?")
+                logger.debug(f"Image doc metadata: image_path={image_path}, page={page}, pdf={pdf}, score={score}")
                 logger.debug(f"Image exists check: {os.path.exists(image_path) if image_path else 'No path'}")
             else:
                 logger.warning("Image doc has no metadata")
                 continue
 
             if image_path and os.path.exists(image_path):
-                label = f"{caption[:80]}... (Trang {page}, {pdf})" if caption else f"Trang {page} - {pdf}"
+                label = f"{label_text[:80]}... (Trang {page}, {pdf})" if label_text else f"Trang {page} - {pdf}"
                 gallery_items.append((image_path, label))
             else:
                 logger.warning(f"Image path missing or file not found: {image_path}")

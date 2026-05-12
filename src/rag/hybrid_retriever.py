@@ -57,7 +57,7 @@ class HybridRetriever:
             logger.warning(f"Text retrieval failed: {e}")
 
         try:
-            image_docs = self._image_retriever.invoke(query)
+            image_docs = self._image_retriever.invoke(query, related_text_docs=text_docs)
         except Exception as e:
             logger.warning(f"Image retrieval failed: {e}")
 

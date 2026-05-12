@@ -23,12 +23,13 @@ logger = logging.getLogger(__name__)
 
 CLIP_ZERO_SHOT_PROMPT = (
     "a photograph, a scientific diagram, an illustration of biology, "
-    "a biology diagram, a cell, an organ, a microscope view, an experiment setup"
+    "a biology diagram, a textbook infographic with an illustration, a cell, "
+    "an organ, a microscope view, an experiment setup"
 )
 
 CLIP_NEGATIVE_PROMPT = (
-    "text box, background color, empty page, white space, "
-    "pure color background, decorative border, line drawing without fill"
+    "empty page, white space, pure color background, decorative border, "
+    "plain text without any illustration"
 )
 
 
@@ -166,12 +167,24 @@ class ImageProcessor:
             pos_prob = probs[0][0].item()
             neg_prob = probs[0][1].item()
 
-            keep = pos_prob > neg_prob
-            logger.debug(f"CLIP filter: pos={pos_prob:.3f}, neg={neg_prob:.3f}, keep={keep}")
+            visual_score = self._visual_content_score(image)
+            keep = pos_prob > neg_prob or visual_score > 0.015
+            logger.debug(
+                f"CLIP filter: pos={pos_prob:.3f}, neg={neg_prob:.3f}, visual={visual_score:.3f}, keep={keep}"
+            )
             return keep
         except Exception as e:
             logger.warning(f"CLIP filter failed: {e}, keeping image by default")
             return True
+
+    def _visual_content_score(self, image: Image.Image) -> float:
+        """Estimate how much non-background colored visual content a crop contains."""
+        img_array = np.array(image.convert("RGB"))
+        hsv = cv2.cvtColor(img_array, cv2.COLOR_RGB2HSV)
+        saturation = hsv[:, :, 1]
+        value = hsv[:, :, 2]
+        colored_pixels = (saturation > 45) & (value > 40) & (value < 252)
+        return float(np.mean(colored_pixels))
 
     def _extract_page_image(self, pdf_path: str, page_num: int) -> Optional[Tuple[np.ndarray, Image.Image]]:
         """Render a PDF page as image for extraction."""
@@ -209,6 +222,53 @@ class ImageProcessor:
     def _compute_image_hash(self, image_data: bytes) -> str:
         """Compute MD5 hash for deduplication."""
         return hashlib.md5(image_data).hexdigest()
+
+    def _resolve_image_path(self, output_dir: Path, page_num: int, img_index: int, img_hash: str) -> Path:
+        """Return a deterministic image path and avoid duplicate files on reprocessing."""
+        filepath = output_dir / f"page_{page_num}_img_{img_index}.png"
+        if not filepath.exists():
+            return filepath
+
+        try:
+            existing_hash = self._compute_image_hash(filepath.read_bytes())
+            if existing_hash == img_hash:
+                return filepath
+        except Exception as e:
+            logger.debug(f"Could not hash existing image {filepath}: {e}")
+
+        hash_path = output_dir / f"page_{page_num}_img_{img_index}_{img_hash[:8]}.png"
+        if not hash_path.exists():
+            return hash_path
+
+        try:
+            existing_hash = self._compute_image_hash(hash_path.read_bytes())
+            if existing_hash == img_hash:
+                return hash_path
+        except Exception as e:
+            logger.debug(f"Could not hash existing image {hash_path}: {e}")
+
+        attempt = 1
+        while True:
+            candidate = output_dir / f"page_{page_num}_img_{img_index}_{img_hash[:8]}_{attempt}.png"
+            if not candidate.exists():
+                return candidate
+            attempt += 1
+
+    def _build_image_search_text(
+        self,
+        caption: str,
+        context_text: str,
+        page_num: int,
+        pdf_filename: str,
+    ) -> str:
+        """Build bilingual text used to retrieve this image later."""
+        parts = [
+            context_text,
+            caption,
+            f"Trang {page_num}",
+            pdf_filename,
+        ]
+        return "\n".join(part.strip() for part in parts if part and part.strip())
 
     def extract_images_from_pdf(
         self,
@@ -273,23 +333,14 @@ class ImageProcessor:
 
                 img_hash = self._compute_image_hash(img_data)
 
-                filename = f"page_{page_num}_img_{img_index}.png"
-                filepath = output_dir / filename
-
-                attempt = 0
-                while filepath.exists():
-                    img_hash_short = img_hash[:8]
-                    filename = f"page_{page_num}_img_{img_index}_{img_hash_short}.png"
-                    filepath = output_dir / filename
-                    attempt += 1
-                    if attempt > 10:
-                        break
+                filepath = self._resolve_image_path(output_dir, page_num, img_index, img_hash)
 
                 with open(filepath, "wb") as f:
                     f.write(img_data)
 
                 caption = self._get_blip_caption(crop)
                 context_text = self._get_context_text(pdf_path, page_num, bbox, page_text)
+                search_text = self._build_image_search_text(caption, context_text, page_num, pdf_filename)
 
                 metadata = {
                     "image_path": str(filepath),
@@ -298,11 +349,15 @@ class ImageProcessor:
                     "pdf_hash": pdf_hash,
                     "pdf_filename": pdf_filename,
                     "caption": caption,
+                    "caption_en": caption,
                     "context_text": context_text,
-                    "bbox": list(bbox),
+                    "search_text": search_text,
+                    "bbox": ",".join(str(value) for value in bbox),
+                    "image_width": crop.width,
+                    "image_height": crop.height,
                 }
 
-                doc = Document(page_content=caption or context_text[:200], metadata=metadata)
+                doc = Document(page_content=search_text, metadata=metadata)
                 extracted_docs.append(doc)
 
                 logger.debug(f"Saved: {filepath} (caption: {caption[:50] if caption else 'N/A'})")
