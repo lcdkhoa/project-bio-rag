@@ -80,6 +80,26 @@ class ImageVectorDB:
         if documents:
             self.add_documents(documents)
 
+    def _to_projected_embedding(self, output: Any, projection_name: str) -> torch.Tensor:
+        """Extract a tensor embedding across transformers versions."""
+        if isinstance(output, torch.Tensor):
+            return output
+
+        for attr_name in ("image_embeds", "text_embeds"):
+            embedding = getattr(output, attr_name, None)
+            if isinstance(embedding, torch.Tensor):
+                return embedding
+
+        pooled = getattr(output, "pooler_output", None)
+        if isinstance(pooled, torch.Tensor):
+            projection = getattr(self._clip_model, projection_name, None)
+            return projection(pooled) if projection is not None else pooled
+
+        if isinstance(output, (tuple, list)) and output:
+            return self._to_projected_embedding(output[0], projection_name)
+
+        raise TypeError(f"Unsupported CLIP output type: {type(output)!r}")
+
     def _normalize_embedding(self, embedding: torch.Tensor) -> torch.Tensor:
         """Normalize CLIP embeddings so vector distance maps more closely to cosine similarity."""
         embedding = embedding.squeeze(0)
@@ -94,7 +114,8 @@ class ImageVectorDB:
             image = Image.open(image_path).convert("RGB")
             inputs = self._clip_processor(images=image, return_tensors="pt")
             with torch.no_grad():
-                embedding = self._clip_model.get_image_features(**inputs)
+                output = self._clip_model.get_image_features(**inputs)
+                embedding = self._to_projected_embedding(output, "visual_projection")
             return self._normalize_embedding(embedding)
         except Exception as e:
             logger.warning(f"Failed to encode image {image_path}: {e}")
@@ -104,7 +125,8 @@ class ImageVectorDB:
         """Encode text query to CLIP embedding."""
         inputs = self._clip_processor(text=[text], return_tensors="pt", padding=True)
         with torch.no_grad():
-            embedding = self._clip_model.get_text_features(**inputs)
+            output = self._clip_model.get_text_features(**inputs)
+            embedding = self._to_projected_embedding(output, "text_projection")
         return self._normalize_embedding(embedding)
 
     def _sanitize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
