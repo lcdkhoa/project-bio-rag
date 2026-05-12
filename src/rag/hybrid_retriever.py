@@ -1,0 +1,80 @@
+"""Hybrid retriever combining text (MiniLM) and image (CLIP) search."""
+
+import logging
+from dataclasses import dataclass
+from typing import List, Optional, Tuple
+
+from langchain_core.documents import Document
+
+from ..config import RETRIEVER_K, IMAGE_RETRIEVER_K
+from .vectorstore import VectorDB
+from .image_vectorstore import ImageVectorDB
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SearchResult:
+    """Combined search result from text and image retrieval."""
+
+    text_docs: List[Document]
+    image_docs: List[Document]
+
+    @property
+    def has_images(self) -> bool:
+        return len(self.image_docs) > 0
+
+    @property
+    def all_docs(self) -> List[Document]:
+        return self.text_docs + self.image_docs
+
+
+class HybridRetriever:
+    """Unified retriever that searches both text and image collections."""
+
+    def __init__(
+        self,
+        text_retriever_k: int = RETRIEVER_K,
+        image_retriever_k: int = IMAGE_RETRIEVER_K,
+    ):
+        self.text_db = VectorDB()
+        self.image_db = ImageVectorDB()
+
+        self.text_k = text_retriever_k
+        self.image_k = image_retriever_k
+
+        self._text_retriever = self.text_db.get_retriever({"k": self.text_k})
+        self._image_retriever = self.image_db.get_retriever({"k": self.image_k})
+
+    def search(self, query: str) -> SearchResult:
+        """Perform hybrid search: text + image simultaneously."""
+        text_docs = []
+        image_docs = []
+
+        try:
+            text_docs = self._text_retriever.invoke(query)
+        except Exception as e:
+            logger.warning(f"Text retrieval failed: {e}")
+
+        try:
+            image_docs = self._image_retriever.invoke(query)
+        except Exception as e:
+            logger.warning(f"Image retrieval failed: {e}")
+
+        return SearchResult(text_docs=text_docs, image_docs=image_docs)
+
+    def search_text_only(self, query: str) -> List[Document]:
+        """Search text collection only."""
+        try:
+            return self._text_retriever.invoke(query)
+        except Exception as e:
+            logger.error(f"Text retrieval failed: {e}")
+            return []
+
+    def search_image_only(self, query: str) -> List[Document]:
+        """Search image collection only."""
+        try:
+            return self._image_retriever.invoke(query)
+        except Exception as e:
+            logger.error(f"Image retrieval failed: {e}")
+            return []

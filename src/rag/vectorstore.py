@@ -7,7 +7,7 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
-from ..config import EMBEDDING_MODEL, CHROMA_COLLECTION_NAME, PERSIST_DIR, RETRIEVER_K, HF_TOKEN
+from ..config import EMBEDDING_MODEL, TEXT_COLLECTION_NAME, PERSIST_DIR, RETRIEVER_K, HF_TOKEN
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class VectorDB:
         self,
         documents: Optional[List[Document]] = None,
         embedding_model: str = EMBEDDING_MODEL,
-        collection_name: str = CHROMA_COLLECTION_NAME,
+        collection_name: str = TEXT_COLLECTION_NAME,
         persist_dir: str = str(PERSIST_DIR),
     ):
         self.persist_dir = persist_dir

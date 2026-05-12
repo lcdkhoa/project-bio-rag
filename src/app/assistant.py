@@ -1,113 +1,133 @@
-"""Biology RAG - Gradio web application."""
+"""Biology RAG - Gradio web application with hybrid text + image retrieval."""
 
 import logging
+import os
+from pathlib import Path
+
 import gradio as gr
 
-from src.config import GRADIO_SERVER_NAME, GRADIO_SERVER_PORT
-from src.rag import VectorDB, get_hf_llm, BiologyRAG
+from src.config import GRADIO_SERVER_NAME, GRADIO_SERVER_PORT, IMAGES_DIR
+from src.rag import VectorDB, get_hf_llm, BiologyRAG, HybridRetriever, SearchResult
 
 logger = logging.getLogger(__name__)
 
 
 class BiologyAssistantApp:
-    """Gradio-based web interface for biology RAG."""
+    """Gradio-based web interface for biology RAG with hybrid text + image search."""
 
     def __init__(self):
         logger.info("Initializing Biology Assistant App...")
         self.vdb = VectorDB()
-        self.retriever = self.vdb.get_retriever()
+        self.hybrid_retriever = HybridRetriever()
         self.llm = get_hf_llm()
         self.rag = BiologyRAG(self.llm)
-        self.rag_chain = self.rag.get_chain(self.retriever)
+        self.rag_chain = self.rag.get_chain(self.vdb.get_retriever())
         logger.info("App components initialized")
 
-    def answer_question(self, question: str) -> str:
-        """Answer a biology question using RAG."""
+    def _build_citations(self, docs) -> str:
+        """Build citation string from documents."""
+        citations = set()
+        for doc in docs:
+            if hasattr(doc, "metadata"):
+                source = doc.metadata.get("source", "Sách Giáo Khoa")
+                page = doc.metadata.get("page", "?")
+            else:
+                source, page = "Sách Giáo Khoa", "?"
+            citations.add(f"Trang {page} - {source}")
+        return " | ".join(sorted(citations)) if citations else ""
+
+    def _format_image_gallery(self, image_docs) -> list:
+        """Format image documents for Gradio gallery display."""
+        if not image_docs:
+            logger.debug("No image docs to format")
+            return []
+
+        gallery_items = []
+        for doc in image_docs:
+            if hasattr(doc, "metadata"):
+                image_path = doc.metadata.get("image_path", "")
+                caption = doc.page_content or doc.metadata.get("caption", "")
+                page = doc.metadata.get("page_number", "?")
+                pdf = doc.metadata.get("pdf_filename", "Sách Giáo Khoa")
+                logger.debug(f"Image doc metadata: image_path={image_path}, page={page}, pdf={pdf}")
+                logger.debug(f"Image exists check: {os.path.exists(image_path) if image_path else 'No path'}")
+            else:
+                logger.warning("Image doc has no metadata")
+                continue
+
+            if image_path and os.path.exists(image_path):
+                label = f"{caption[:80]}... (Trang {page}, {pdf})" if caption else f"Trang {page} - {pdf}"
+                gallery_items.append((image_path, label))
+            else:
+                logger.warning(f"Image path missing or file not found: {image_path}")
+
+        logger.info(f"Formatted {len(gallery_items)} images for gallery (from {len(image_docs)} retrieved)")
+        return gallery_items
+
+    def answer_question(self, question: str) -> tuple:
+        """
+        Answer a biology question using hybrid RAG (text + images).
+
+        Returns:
+            Tuple of (answer_text, image_gallery)
+        """
         logger.info(f"Processing question: {question[:100]}...")
         try:
-            # Step 1: Test retriever alone
-            logger.info("Step 1: Testing retriever.invoke()...")
-            try:
-                docs = self.retriever.invoke(question)
-                logger.info(f"Step 1 SUCCESS: Retrieved {len(docs)} documents")
-            except Exception as e:
-                logger.error(f"Step 1 FAILED retriever.invoke: {e}", exc_info=True)
-                return f"Lỗi retriever: {str(e)}"
+            result: SearchResult = self.hybrid_retriever.search(question)
 
-            logger.debug(f"Retrieved docs types: {[type(d) for d in docs]}")
-            for i, doc in enumerate(docs):
-                doc_type = type(doc)
-                if doc_type.__name__ == 'Document':
-                    content_type = type(doc.page_content)
-                    logger.debug(f"Doc {i}: Document, content_type={content_type}, content_preview={repr(doc.page_content[:50])}")
-                    logger.debug(f"  metadata: {doc.metadata}")
-                else:
-                    logger.warning(f"Doc {i}: NOT a Document, type={doc_type}, value={repr(doc)[:100]}")
+            text_docs = result.text_docs
+            image_docs = result.image_docs
 
-            if not docs:
-                return "Hệ thống chưa tìm thấy tài liệu nào liên quan đến câu hỏi này."
+            logger.info(f"Retrieved {len(text_docs)} text docs, {len(image_docs)} image docs")
 
-            context_texts = []
-            citations = set()
-            for doc in docs:
-                if hasattr(doc, 'page_content'):
-                    context_texts.append(doc.page_content)
-                    source_file = doc.metadata.get("source", "Sách Giáo Khoa") if hasattr(doc, 'metadata') else "Unknown"
-                    page_num = doc.metadata.get("page", "Không rõ") if hasattr(doc, 'metadata') else "?"
-                else:
-                    logger.warning(f"Doc {i} has no page_content attribute, skipping")
-                    continue
-                citations.add(f"📖 {source_file} (Trang {page_num})")
+            if not text_docs and not image_docs:
+                return (
+                    "Hệ thống chưa tìm thấy tài liệu nào liên quan đến câu hỏi này.",
+                    None,
+                )
 
-            logger.debug(f"Context texts combined, {len(context_texts)} docs, citations: {citations}")
+            if text_docs:
+                context_texts = []
+                for doc in text_docs:
+                    if hasattr(doc, "page_content"):
+                        context_texts.append(doc.page_content)
 
-            context_str = "\n\n".join(context_texts)
+                context_str = "\n\n".join(context_texts)
+                citations = self._build_citations(text_docs)
 
-            # Step 2: Test prompt formatting alone
-            logger.info("Step 2: Testing prompt.format()...")
-            try:
-                formatted_prompt = self.rag.prompt.format(context=context_str, question=question)
-                logger.info(f"Step 2 SUCCESS: Prompt formatted, length={len(formatted_prompt)}")
-            except Exception as e:
-                logger.error(f"Step 2 FAILED prompt.format: {e}", exc_info=True)
-                return f"Lỗi prompt: {str(e)}"
+                try:
+                    formatted_prompt = self.rag.prompt.format(context=context_str, question=question)
+                    llm_response = self.llm.invoke(formatted_prompt)
+                    parsed = self.rag.answer_parser.parse(llm_response)
+                    answer = parsed
+                except Exception as e:
+                    logger.error(f"RAG chain failed: {e}")
+                    answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
 
-            # Step 3: Test LLM alone
-            logger.info("Step 3: Testing llm.invoke()...")
-            try:
-                llm_response = self.llm.invoke(formatted_prompt)
-                logger.info(f"Step 3 SUCCESS: LLM response type={type(llm_response)}, preview={repr(str(llm_response)[:100])}")
-            except Exception as e:
-                logger.error(f"Step 3 FAILED llm.invoke: {e}", exc_info=True)
-                return f"Lỗi LLM: {str(e)}"
+                if "không được đề cập" not in answer.lower():
+                    answer = f"{answer}\n\n📚 Thông tin được tham khảo từ: {citations}"
+            else:
+                answer = "Không tìm thấy thông tin dạng văn bản liên quan. Vui lòng thử câu hỏi khác."
 
-            # Step 4: Parse response
-            logger.info("Step 4: Testing answer_parser.parse()...")
-            try:
-                parsed = self.rag.answer_parser.parse(llm_response)
-                logger.info(f"Step 4 SUCCESS: Parsed answer preview={repr(parsed[:100])}")
-            except Exception as e:
-                logger.error(f"Step 4 FAILED answer_parser.parse: {e}", exc_info=True)
-                return f"Lỗi parser: {str(e)}"
+            gallery = self._format_image_gallery(image_docs)
+            logger.info(f"Returning answer and {len(gallery)} gallery images")
+            return answer, gallery
 
-            answer = parsed
-            logger.debug(f"Final answer type: {type(answer)}, answer: {repr(answer[:200] if len(str(answer)) > 200 else answer)}")
-
-            if "không được đề cập" in answer.lower():
-                return answer
-
-            return f"{answer}\n\n📚 Thông tin được tham khảo từ:\n" + "\n".join(citations)
         except Exception as e:
             logger.error(f"Error answering question: {e}", exc_info=True)
             import traceback
+
             logger.error(f"Traceback: {traceback.format_exc()}")
-            return f"Lỗi hệ thống: {str(e)}"
+            return f"Lỗi hệ thống: {str(e)}", None
 
     def build_ui(self):
-        """Build Gradio interface."""
+        """Build Gradio interface with text + image output."""
         with gr.Blocks(title="Trợ lý ảo Sinh Học THCS", theme=gr.themes.Soft()) as demo:
             gr.Markdown("# 🧬 Trợ Lý Ảo Hỗ Trợ Học Tập Môn Sinh Học")
-            gr.Markdown("*Hệ thống AI RAG xây dựng dựa trên Sách Giáo Khoa Sinh học THCS.*")
+            gr.Markdown(
+                "*Hệ thống AI RAG xây dựng dựa trên Sách Giáo Khoa Sinh học THCS. "
+                "Hỗ trợ tìm kiếm hình ảnh minh họa.*"
+            )
 
             with gr.Row():
                 with gr.Column(scale=1):
@@ -117,6 +137,7 @@ class BiologyAssistantApp:
                         lines=4,
                     )
                     submit_btn = gr.Button("Gửi câu hỏi", variant="primary")
+                    clear_btn = gr.Button("Xóa", variant="secondary")
 
                 with gr.Column(scale=2):
                     answer_output = gr.Textbox(
@@ -124,11 +145,30 @@ class BiologyAssistantApp:
                         lines=8,
                         interactive=False,
                     )
+                    image_gallery = gr.Gallery(
+                        label="Hình ảnh liên quan",
+                        columns=3,
+                        height="auto",
+                        object_fit="contain",
+                    )
 
             submit_btn.click(
                 fn=self.answer_question,
                 inputs=question_input,
-                outputs=answer_output,
+                outputs=[answer_output, image_gallery],
+            )
+
+            clear_btn.click(
+                fn=lambda: ("", None),
+                outputs=[answer_output, image_gallery],
+            )
+
+            gr.Markdown(
+                "---"
+            )
+            gr.Markdown(
+                "**Mẹo:** Hỏi về hình ảnh bằng cách nói 'tìm hình...' hoặc 'cho xem ảnh...' "
+                "để hiển thị hình minh họa từ sách giáo khoa."
             )
 
         return demo

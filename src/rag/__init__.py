@@ -3,5 +3,14 @@
 from src.rag.vectorstore import VectorDB
 from src.rag.llm import get_hf_llm
 from src.rag.chain import BiologyRAG
+from src.rag.image_vectorstore import ImageVectorDB
+from src.rag.hybrid_retriever import HybridRetriever, SearchResult
 
-__all__ = ["VectorDB", "get_hf_llm", "BiologyRAG"]
+__all__ = [
+    "VectorDB",
+    "get_hf_llm",
+    "BiologyRAG",
+    "ImageVectorDB",
+    "HybridRetriever",
+    "SearchResult",
+]
