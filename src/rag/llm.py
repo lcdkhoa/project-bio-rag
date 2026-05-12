@@ -1,0 +1,45 @@
+"""LLM initialization using HuggingFace models."""
+
+import logging
+import torch
+from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
+from langchain_huggingface import HuggingFacePipeline
+
+from ..config import LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_NEW_TOKENS, LLM_TOP_P, HF_TOKEN
+
+logger = logging.getLogger(__name__)
+
+
+def get_hf_llm(
+    model_name: str = LLM_MODEL,
+    temperature: float = LLM_TEMPERATURE,
+    max_new_tokens: int = LLM_MAX_NEW_TOKENS,
+    top_p: float = LLM_TOP_P,
+    **kwargs
+):
+    """Initialize HuggingFace LLM with Qwen model."""
+    logger.info(f"Loading LLM: {model_name}")
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        torch_dtype=torch.float16,
+        device_map="auto",
+        low_cpu_mem_usage=True,
+        token=HF_TOKEN if HF_TOKEN else None,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN if HF_TOKEN else None)
+
+    model_pipeline = pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        temperature=temperature,
+        max_new_tokens=max_new_tokens,
+        pad_token_id=tokenizer.eos_token_id,
+        do_sample=True,
+        top_p=top_p,
+    )
+
+    llm = HuggingFacePipeline(pipeline=model_pipeline, model_kwargs=kwargs)
+    logger.info("LLM initialized successfully")
+    return llm

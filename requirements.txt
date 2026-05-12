@@ -1,0 +1,32 @@
+# Biology RAG Dependencies
+
+# Core ML/AI
+torch>=2.0.0
+transformers>=4.40.0
+accelerate>=0.30.0
+huggingface-hub>=0.23.0
+sentence-transformers>=2.7.0
+
+# LangChain
+langchain>=0.2.0
+langchain-core>=0.2.0
+langchain-community>=0.1.0
+langchain-text-splitters>=0.2.0
+langchain-chroma>=0.2.0
+langchain-huggingface
+
+# Vector Database
+chromadb>=0.5.0
+
+# PDF & OCR
+pypdf>=4.2.0
+pdf2image
+pytesseract
+
+# UI
+gradio>=4.0.0
+
+# Utilities
+python-dotenv
+tqdm
+rapidocr-onnxruntime
