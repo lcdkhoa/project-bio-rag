@@ -121,13 +121,37 @@ class ImageVectorDB:
 
         pooled = getattr(output, "pooler_output", None)
         if isinstance(pooled, torch.Tensor):
-            projection = getattr(self._clip_model, projection_name, None)
-            return projection(pooled) if projection is not None else pooled
+            return self._apply_projection_if_needed(pooled, projection_name)
 
         if isinstance(output, (tuple, list)) and output:
             return self._to_projected_embedding(output[0], projection_name)
 
         raise TypeError(f"Unsupported CLIP output type: {type(output)!r}")
+
+    def _apply_projection_if_needed(self, embedding: torch.Tensor, projection_name: str) -> torch.Tensor:
+        """Project raw CLIP hidden states only when their shape matches the projection layer."""
+        projection = getattr(self._clip_model, projection_name, None)
+        if projection is None:
+            return embedding
+
+        embedding_dim = embedding.shape[-1]
+        in_features = getattr(projection, "in_features", None)
+        out_features = getattr(projection, "out_features", None)
+
+        if in_features is not None and embedding_dim == in_features:
+            return projection(embedding)
+
+        if out_features is not None and embedding_dim == out_features:
+            return embedding
+
+        logger.debug(
+            "Skipping %s for CLIP embedding with dim=%s (expected input=%s, output=%s)",
+            projection_name,
+            embedding_dim,
+            in_features,
+            out_features,
+        )
+        return embedding
 
     def _normalize_embedding(self, embedding: torch.Tensor) -> torch.Tensor:
         """Normalize CLIP embeddings so vector distance maps more closely to cosine similarity."""
