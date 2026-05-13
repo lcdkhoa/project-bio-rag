@@ -35,6 +35,11 @@ DEFAULT_CASES = [
         max_returned=3,
     ),
     ImageRetrievalCase(
+        query="cho tôi hình trang 74",
+        expected_page=74,
+        max_returned=3,
+    ),
+    ImageRetrievalCase(
         query="ánh sáng ảnh hưởng thế nào đến cây xanh",
         max_returned=1,
     ),

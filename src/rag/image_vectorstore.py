@@ -212,6 +212,7 @@ class ImageVectorDB:
             metadata.get("caption", ""),
             metadata.get("caption_en", ""),
             metadata.get("context_text", ""),
+            metadata.get("crop_text", ""),
             metadata.get("ocr_text", ""),
             metadata.get("pdf_filename", ""),
             f"trang {metadata.get('page_number', '')}",
@@ -432,6 +433,21 @@ class ImageVectorDB:
             adjustment -= 0.08
         elif image_type in {"activity_box", "textbook_info_box"}:
             adjustment -= 0.04
+        elif image_type == "text_crop":
+            adjustment -= 0.35
+
+        crop_text = self._normalize_text(str(metadata.get("crop_text") or ""))
+        crop_tokens = [token for token in crop_text.split() if len(token) > 1]
+        if len(crop_tokens) >= 2 and len(crop_tokens) <= 12:
+            adjustment -= 0.18
+
+        try:
+            clip_positive = float(metadata.get("clip_positive_score") or 0)
+            clip_negative = float(metadata.get("clip_negative_score") or 0)
+            if clip_negative > clip_positive and clip_negative >= 0.58:
+                adjustment -= 0.12
+        except (TypeError, ValueError):
+            pass
 
         return adjustment
 
@@ -440,6 +456,17 @@ class ImageVectorDB:
         try:
             return int(page)
         except (TypeError, ValueError):
+            return None
+
+    def _extract_requested_page(self, query: str) -> Optional[int]:
+        normalized_query = self._normalize_text(query)
+        match = re.search(r"\btrang\s+(\d{1,4})\b", normalized_query)
+        if not match:
+            return None
+
+        try:
+            return int(match.group(1))
+        except ValueError:
             return None
 
     def _distance_to_similarity(self, distance: Optional[float]) -> float:
@@ -488,7 +515,7 @@ class ImageVectorDB:
             docs.append(Document(page_content=documents[i] or "", metadata=metadata))
         return docs
 
-    def _get_page_candidates(self, page_boosts: Dict[int, float]) -> List[Document]:
+    def _get_page_candidates(self, page_boosts: Dict[int, float], source: str = "page_context") -> List[Document]:
         if not page_boosts:
             return []
 
@@ -512,7 +539,7 @@ class ImageVectorDB:
                 metadata["image_metadata_score"] = 0.0
                 metadata["image_visual_distance"] = None
                 metadata["image_visual_score"] = 0.0
-                metadata["image_retrieval_source"] = "page_context"
+                metadata["image_retrieval_source"] = source
                 docs.append(Document(page_content=(results.get("documents") or [""])[i] or "", metadata=metadata))
         return docs
 
@@ -587,9 +614,19 @@ class ImageVectorDB:
 
         scored_docs.sort(key=lambda doc: doc.metadata.get("image_relevance_score", 0.0), reverse=True)
         top_score = scored_docs[0].metadata.get("image_relevance_score", 0.0) if scored_docs else 0.0
+        has_page_request = any(
+            "requested_page" in str((doc.metadata or {}).get("image_retrieval_source") or "")
+            for doc in scored_docs
+        )
         score_window = 0.14 if has_image_intent else 0.08
-        effective_min_score = min_score if has_image_intent else max(min_score, 0.48)
-        per_page_limit = 2 if has_image_intent else 1
+        if has_page_request:
+            score_window = 0.32
+            effective_min_score = 0.18
+        else:
+            effective_min_score = min_score if has_image_intent else max(min_score, 0.48)
+        per_page_limit = 3 if has_image_intent else 1
+        if has_page_request:
+            per_page_limit = max(k, 3)
 
         filtered = []
         page_counts: Dict[int, int] = {}
@@ -604,9 +641,9 @@ class ImageVectorDB:
                 continue
             if top_score and relevance_score < top_score - score_window:
                 continue
-            if "page_context" in source and direct_evidence_score < 0.25:
+            if "requested_page" not in source and "page_context" in source and direct_evidence_score < 0.25:
                 continue
-            if not has_image_intent and direct_evidence_score < 0.3 and lexical_score < 0.35:
+            if not has_page_request and not has_image_intent and direct_evidence_score < 0.3 and lexical_score < 0.35:
                 continue
 
             page = self._page_key(doc)
@@ -640,6 +677,12 @@ class ImageVectorDB:
     ) -> List[Document]:
         """Find relevant images using Vietnamese metadata first, with visual CLIP as rerank support."""
         try:
+            requested_page = self._extract_requested_page(query)
+            if requested_page and self._has_image_intent(query):
+                page_boosts = {requested_page: 0.42}
+                page_candidates = self._get_page_candidates(page_boosts, source="requested_page")
+                return self._rerank(query, page_candidates, page_boosts, k, 0.0)
+
             metadata_query_embedding = self._metadata_embedding.embed_query(query)
             metadata_results = self._metadata_chroma._collection.query(
                 query_embeddings=[metadata_query_embedding],

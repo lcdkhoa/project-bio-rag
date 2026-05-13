@@ -151,7 +151,7 @@ class ImageProcessor:
 
         return refined
 
-    def _clip_filter(self, image: Image.Image) -> bool:
+    def _clip_filter(self, image: Image.Image) -> Tuple[bool, float, float]:
         """Zero-shot CLIP classification to keep only photograph/diagram/illustration."""
         try:
             inputs = self.clip_processor(
@@ -170,14 +170,14 @@ class ImageProcessor:
             neg_prob = probs[0][1].item()
 
             visual_score = self._visual_content_score(image)
-            keep = pos_prob > neg_prob or visual_score > 0.015
+            keep = pos_prob > neg_prob or (visual_score > 0.04 and neg_prob < 0.72)
             logger.debug(
                 f"CLIP filter: pos={pos_prob:.3f}, neg={neg_prob:.3f}, visual={visual_score:.3f}, keep={keep}"
             )
-            return keep
+            return keep, pos_prob, neg_prob
         except Exception as e:
             logger.warning(f"CLIP filter failed: {e}, keeping image by default")
-            return True
+            return True, 0.0, 0.0
 
     def _visual_content_score(self, image: Image.Image) -> float:
         """Estimate how much non-background colored visual content a crop contains."""
@@ -220,6 +220,16 @@ class ImageProcessor:
             return context.strip()[:500]
         except Exception:
             return page_text[:500] if page_text else ""
+
+    def _ocr_crop_text(self, image: Image.Image) -> str:
+        """OCR only the crop itself so text-heavy regions can be identified."""
+        try:
+            import pytesseract
+
+            text = pytesseract.image_to_string(image, lang="vie")
+            return self._clean_text(text, max_chars=300)
+        except Exception:
+            return ""
 
     def _normalize_text(self, text: str) -> str:
         text = unicodedata.normalize("NFD", text.lower())
@@ -275,8 +285,12 @@ class ImageProcessor:
                 return self._clean_text(match.group(1), max_chars=220)
         return ""
 
-    def _infer_image_type(self, figure_label: str, context_text: str) -> str:
+    def _infer_image_type(self, figure_label: str, context_text: str, crop_text: str = "") -> str:
         normalized = self._normalize_text(f"{figure_label} {context_text}")
+        crop_normalized = self._normalize_text(crop_text)
+        crop_tokens = [token for token in crop_normalized.split() if len(token) > 1]
+        if len(crop_tokens) >= 2 and len(crop_tokens) <= 12 and not figure_label:
+            return "text_crop"
         if "em co biet" in normalized:
             return "textbook_info_box"
         if "tim hieu them" in normalized or "quan sat" in normalized or "thuc hanh" in normalized:
@@ -286,6 +300,25 @@ class ImageProcessor:
         if "hinh" in normalized:
             return "figure"
         return "image_region"
+
+    def _is_text_dominant_crop(
+        self,
+        crop: Image.Image,
+        crop_text: str,
+        clip_positive_score: float,
+        clip_negative_score: float,
+    ) -> bool:
+        """Reject standalone headings/labels that contour detection mistakes for figures."""
+        normalized = self._normalize_text(crop_text)
+        tokens = [token for token in normalized.split() if len(token) > 1]
+        if len(tokens) < 2:
+            return False
+
+        visual_score = self._visual_content_score(crop)
+        aspect_ratio = crop.width / crop.height if crop.height else 0
+        short_text = len(tokens) <= 12 and len(normalized) <= 90
+        weak_visual = visual_score < 0.12 or clip_negative_score >= clip_positive_score
+        return short_text and weak_visual and aspect_ratio < 8
 
     def _extract_keywords(self, *texts: str, limit: int = 18) -> str:
         """Extract lightweight Vietnamese keyword metadata without calling another model."""
@@ -415,8 +448,15 @@ class ImageProcessor:
                 if crop.width < 50 or crop.height < 50:
                     continue
 
-                if not self._clip_filter(crop):
+                keep_crop, clip_positive_score, clip_negative_score = self._clip_filter(crop)
+                if not keep_crop:
                     logger.debug(f"Page {page_num} img {img_index}: filtered out by CLIP")
+                    img_index += 1
+                    continue
+
+                crop_text = self._ocr_crop_text(crop)
+                if self._is_text_dominant_crop(crop, crop_text, clip_positive_score, clip_negative_score):
+                    logger.debug(f"Page {page_num} img {img_index}: filtered out as text-dominant crop")
                     img_index += 1
                     continue
 
@@ -434,10 +474,11 @@ class ImageProcessor:
 
                 context_text = self._get_context_text(pdf_path, page_num, bbox, page_text)
                 context_text = self._clean_text(context_text, max_chars=1200)
-                figure_label = self._extract_figure_label(context_text, page_text)
-                figure_caption = self._extract_figure_caption(context_text, page_text)
-                image_type = self._infer_image_type(figure_label, context_text)
-                keywords_vi = self._extract_keywords(section_title, figure_label, context_text, nearby_text)
+                local_text = "\n".join(part for part in (context_text, crop_text) if part)
+                figure_label = self._extract_figure_label(local_text, "")
+                figure_caption = self._extract_figure_caption(local_text, "")
+                image_type = self._infer_image_type(figure_label, context_text, crop_text)
+                keywords_vi = self._extract_keywords(section_title, figure_label, figure_caption, context_text, crop_text)
                 caption_text = figure_caption or context_text[:240]
 
                 metadata = {
@@ -455,11 +496,14 @@ class ImageProcessor:
                     "caption": caption_text,
                     "caption_vi": caption_text,
                     "context_text": context_text,
+                    "crop_text": crop_text,
                     "nearby_text": nearby_text,
                     "bbox": ",".join(str(value) for value in bbox),
                     "image_width": crop.width,
                     "image_height": crop.height,
                     "visual_content_score": round(self._visual_content_score(crop), 4),
+                    "clip_positive_score": round(clip_positive_score, 4),
+                    "clip_negative_score": round(clip_negative_score, 4),
                 }
                 search_text = self._build_image_search_text(metadata)
                 metadata["search_text"] = search_text
