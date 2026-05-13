@@ -9,11 +9,15 @@ from typing import Any, Dict, List, Optional
 
 import torch
 from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
 from transformers import CLIPModel, CLIPProcessor
 
 from ..config import (
     CLIP_MODEL,
+    EMBEDDING_MODEL,
     IMAGE_COLLECTION_NAME,
+    IMAGE_METADATA_COLLECTION_NAME,
+    IMAGE_METADATA_FETCH_K,
     PERSIST_DIR,
     HF_TOKEN,
     IMAGE_RETRIEVER_K,
@@ -51,8 +55,13 @@ class ImageVectorDB:
     ):
         self.persist_dir = persist_dir
         self.collection_name = collection_name
+        self.metadata_collection_name = IMAGE_METADATA_COLLECTION_NAME
         self._clip_model: Optional[CLIPModel] = None
         self._clip_processor: Optional[CLIPProcessor] = None
+        self._metadata_embedding = HuggingFaceEmbeddings(
+            model_name=EMBEDDING_MODEL,
+            model_kwargs={"token": HF_TOKEN} if HF_TOKEN else {},
+        )
 
         self._init_clip()
         self._init_chroma(documents)
@@ -74,6 +83,11 @@ class ImageVectorDB:
         self._chroma = Chroma(
             collection_name=self.collection_name,
             embedding_function=_DummyEmbeddingFunction(),
+            persist_directory=self.persist_dir,
+        )
+        self._metadata_chroma = Chroma(
+            collection_name=self.metadata_collection_name,
+            embedding_function=_DummyMetadataEmbeddingFunction(self._metadata_embedding),
             persist_directory=self.persist_dir,
         )
 
@@ -150,9 +164,15 @@ class ImageVectorDB:
         metadata = doc.metadata or {}
         parts = [
             doc.page_content,
+            metadata.get("figure_label", ""),
+            metadata.get("section_title", ""),
+            metadata.get("image_type", ""),
+            metadata.get("keywords_vi", ""),
+            metadata.get("caption_vi", ""),
             metadata.get("caption", ""),
             metadata.get("caption_en", ""),
             metadata.get("context_text", ""),
+            metadata.get("nearby_text", ""),
             metadata.get("ocr_text", ""),
             metadata.get("pdf_filename", ""),
             f"trang {metadata.get('page_number', '')}",
@@ -173,10 +193,14 @@ class ImageVectorDB:
         if not documents:
             return
 
-        ids = []
-        embeddings = []
-        metadatas = []
-        page_contents = []
+        metadata_ids = []
+        metadata_embeddings = []
+        metadata_metadatas = []
+        metadata_page_contents = []
+        visual_ids = []
+        visual_embeddings = []
+        visual_metadatas = []
+        visual_page_contents = []
 
         for doc in documents:
             image_path = doc.metadata.get("image_path")
@@ -184,26 +208,41 @@ class ImageVectorDB:
                 logger.warning(f"Image not found: {image_path}, skipping")
                 continue
 
-            embedding = self._encode_image(image_path)
-            if embedding is None:
-                continue
-
             doc_id = f"{Path(image_path).stem}_{Path(image_path).parent.name}"
-            ids.append(doc_id)
-            embeddings.append(embedding.cpu().numpy().tolist())
             search_text = self._build_search_text(doc)
             metadata = self._sanitize_metadata({**doc.metadata, "search_text": search_text})
-            metadatas.append(metadata)
-            page_contents.append(search_text)
 
-        if ids:
-            self._chroma._collection.upsert(
-                ids=ids,
-                embeddings=embeddings,
-                metadatas=metadatas,
-                documents=page_contents,
+            metadata_ids.append(doc_id)
+            metadata_metadatas.append(metadata)
+            metadata_page_contents.append(search_text)
+
+            visual_embedding = self._encode_image(image_path)
+            if visual_embedding is None:
+                continue
+
+            visual_ids.append(doc_id)
+            visual_embeddings.append(visual_embedding.cpu().numpy().tolist())
+            visual_metadatas.append(metadata)
+            visual_page_contents.append(search_text)
+
+        if metadata_ids:
+            metadata_embeddings = self._metadata_embedding.embed_documents(metadata_page_contents)
+            self._metadata_chroma._collection.upsert(
+                ids=metadata_ids,
+                embeddings=metadata_embeddings,
+                metadatas=metadata_metadatas,
+                documents=metadata_page_contents,
             )
-            logger.info(f"Added {len(ids)} images to ImageVectorDB")
+            logger.info(f"Added {len(metadata_ids)} image metadata docs to ImageVectorDB")
+
+        if visual_ids:
+            self._chroma._collection.upsert(
+                ids=visual_ids,
+                embeddings=visual_embeddings,
+                metadatas=visual_metadatas,
+                documents=visual_page_contents,
+            )
+            logger.info(f"Added {len(visual_ids)} visual image docs to ImageVectorDB")
 
     def _normalize_text(self, text: str) -> str:
         text = unicodedata.normalize("NFD", text.lower())
@@ -263,9 +302,14 @@ class ImageVectorDB:
             for value in (
                 doc.page_content,
                 metadata.get("search_text"),
+                metadata.get("figure_label"),
+                metadata.get("section_title"),
+                metadata.get("keywords_vi"),
+                metadata.get("caption_vi"),
                 metadata.get("caption"),
                 metadata.get("caption_en"),
                 metadata.get("context_text"),
+                metadata.get("nearby_text"),
             )
         )
         doc_tokens = set(self._tokenize(search_text))
@@ -301,7 +345,13 @@ class ImageVectorDB:
             page_boosts[page_number + 1] = max(page_boosts.get(page_number + 1, 0.0), boost * 0.45)
         return page_boosts
 
-    def _docs_from_query_results(self, results: dict) -> List[Document]:
+    def _docs_from_query_results(
+        self,
+        results: dict,
+        score_field: str,
+        distance_field: str,
+        source: str,
+    ) -> List[Document]:
         docs = []
         ids = results.get("ids", [[]])[0] if results else []
         documents = results.get("documents", [[]])[0] if results else []
@@ -312,8 +362,9 @@ class ImageVectorDB:
             metadata = dict(metadatas[i] or {})
             distance = distances[i] if i < len(distances) else None
             metadata["image_doc_id"] = doc_id
-            metadata["image_distance"] = distance
-            metadata["image_semantic_score"] = self._distance_to_similarity(distance)
+            metadata[distance_field] = distance
+            metadata[score_field] = self._distance_to_similarity(distance)
+            metadata["image_retrieval_source"] = source
             docs.append(Document(page_content=documents[i] or "", metadata=metadata))
         return docs
 
@@ -326,7 +377,7 @@ class ImageVectorDB:
             if page_number <= 0:
                 continue
             try:
-                results = self._chroma._collection.get(
+                results = self._metadata_chroma._collection.get(
                     where={"page_number": page_number},
                     include=["documents", "metadatas"],
                 )
@@ -337,8 +388,11 @@ class ImageVectorDB:
             for i, doc_id in enumerate(results.get("ids", [])):
                 metadata = dict((results.get("metadatas") or [])[i] or {})
                 metadata["image_doc_id"] = doc_id
-                metadata["image_distance"] = None
-                metadata["image_semantic_score"] = 0.0
+                metadata["image_metadata_distance"] = None
+                metadata["image_metadata_score"] = 0.0
+                metadata["image_visual_distance"] = None
+                metadata["image_visual_score"] = 0.0
+                metadata["image_retrieval_source"] = "page_context"
                 docs.append(Document(page_content=(results.get("documents") or [""])[i] or "", metadata=metadata))
         return docs
 
@@ -363,14 +417,37 @@ class ImageVectorDB:
             dedupe_key = metadata.get("image_doc_id") or metadata.get("image_path") or doc.page_content
             if dedupe_key not in unique:
                 unique[dedupe_key] = doc
+                continue
+
+            existing = unique[dedupe_key]
+            merged_metadata = {**(existing.metadata or {})}
+            for key, value in metadata.items():
+                if key in {"image_metadata_score", "image_visual_score", "image_page_boost", "image_relevance_score"}:
+                    merged_metadata[key] = max(float(merged_metadata.get(key) or 0.0), float(value or 0.0))
+                elif key not in merged_metadata or merged_metadata[key] in (None, "", 0):
+                    merged_metadata[key] = value
+
+            sources = {
+                source
+                for source in (
+                    str(merged_metadata.get("image_retrieval_source") or ""),
+                    str(metadata.get("image_retrieval_source") or ""),
+                )
+                if source
+            }
+            if sources:
+                merged_metadata["image_retrieval_source"] = ",".join(sorted(sources))
+            page_content = existing.page_content if len(existing.page_content) >= len(doc.page_content) else doc.page_content
+            unique[dedupe_key] = Document(page_content=page_content, metadata=merged_metadata)
 
         scored_docs = []
         for doc in unique.values():
             metadata = dict(doc.metadata or {})
-            semantic_score = float(metadata.get("image_semantic_score") or 0.0)
+            metadata_score = float(metadata.get("image_metadata_score") or 0.0)
+            visual_score = float(metadata.get("image_visual_score") or 0.0)
             lexical_score = self._lexical_score(query, doc)
             page_score = self._page_boost(doc, page_boosts)
-            final_score = (semantic_score * 0.65) + (lexical_score * 0.25) + page_score
+            final_score = (metadata_score * 0.5) + (lexical_score * 0.25) + (visual_score * 0.15) + page_score
 
             metadata["image_lexical_score"] = round(lexical_score, 4)
             metadata["image_page_boost"] = round(page_score, 4)
@@ -397,19 +474,39 @@ class ImageVectorDB:
         fetch_k: int = IMAGE_RETRIEVER_FETCH_K,
         min_score: float = IMAGE_RELEVANCE_THRESHOLD,
     ) -> List[Document]:
-        """Find relevant images using CLIP, metadata lexical matching, and page context."""
+        """Find relevant images using Vietnamese metadata first, with visual CLIP as rerank support."""
         try:
+            metadata_query_embedding = self._metadata_embedding.embed_query(query)
+            metadata_results = self._metadata_chroma._collection.query(
+                query_embeddings=[metadata_query_embedding],
+                n_results=max(k, IMAGE_METADATA_FETCH_K),
+                include=["documents", "metadatas", "distances"],
+            )
+
             clip_query = self._expand_query_for_clip(query)
             query_embedding = self._encode_text(clip_query).cpu().numpy().tolist()
 
-            results = self._chroma._collection.query(
+            visual_results = self._chroma._collection.query(
                 query_embeddings=[query_embedding],
                 n_results=max(k, fetch_k),
                 include=["documents", "metadatas", "distances"],
             )
 
             page_boosts = self._extract_related_pages(related_text_docs)
-            candidates = self._docs_from_query_results(results)
+            candidates = self._docs_from_query_results(
+                metadata_results,
+                score_field="image_metadata_score",
+                distance_field="image_metadata_distance",
+                source="metadata",
+            )
+            candidates.extend(
+                self._docs_from_query_results(
+                    visual_results,
+                    score_field="image_visual_score",
+                    distance_field="image_visual_distance",
+                    source="visual",
+                )
+            )
             candidates.extend(self._get_page_candidates(page_boosts))
             return self._rerank(query, candidates, page_boosts, k, min_score)
         except Exception as e:
@@ -432,6 +529,19 @@ class _DummyEmbeddingFunction:
 
     def embed_query(self, text):
         return [0.0] * 512
+
+
+class _DummyMetadataEmbeddingFunction:
+    """Adapter used when querying the raw Chroma collection with precomputed embeddings."""
+
+    def __init__(self, embedding_model: HuggingFaceEmbeddings):
+        self.embedding_model = embedding_model
+
+    def embed_documents(self, texts):
+        return self.embedding_model.embed_documents(texts)
+
+    def embed_query(self, text):
+        return self.embedding_model.embed_query(text)
 
 
 class ImageRetriever:

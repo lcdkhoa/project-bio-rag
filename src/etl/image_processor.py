@@ -4,6 +4,8 @@ import hashlib
 import io
 import logging
 import os
+import re
+import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -13,10 +15,10 @@ import torch
 from PIL import Image
 from langchain_core.documents import Document
 from pdf2image import convert_from_path
-from transformers import CLIPModel, CLIPProcessor, BlipForConditionalGeneration, BlipProcessor
+from transformers import CLIPModel, CLIPProcessor
 from tqdm import tqdm
 
-from ..config import CLIP_MODEL, BLIP_MODEL, IMAGES_DIR, HF_TOKEN
+from ..config import CLIP_MODEL, IMAGES_DIR, HF_TOKEN
 from .processing_status import ProcessingStatus, compute_file_hash
 
 logger = logging.getLogger(__name__)
@@ -32,16 +34,44 @@ CLIP_NEGATIVE_PROMPT = (
     "plain text without any illustration"
 )
 
+VIETNAMESE_STOPWORDS = {
+    "anh",
+    "bang",
+    "cac",
+    "cho",
+    "co",
+    "cua",
+    "duoc",
+    "hay",
+    "hinh",
+    "khi",
+    "la",
+    "lam",
+    "mot",
+    "nay",
+    "nhung",
+    "o",
+    "quan",
+    "sat",
+    "sgk",
+    "the",
+    "thi",
+    "trang",
+    "trong",
+    "tu",
+    "va",
+    "ve",
+    "voi",
+}
+
 
 class ImageProcessor:
-    """Extract, filter, and caption images from scanned PDFs using CLIP and BLIP."""
+    """Extract, filter, and enrich images from scanned PDFs using Vietnamese page context."""
 
     def __init__(self, status_tracker: Optional[ProcessingStatus] = None):
         self.status_tracker = status_tracker or ProcessingStatus()
         self._clip_model: Optional[CLIPModel] = None
         self._clip_processor: Optional[CLIPProcessor] = None
-        self._blip_model: Optional[BlipForConditionalGeneration] = None
-        self._blip_processor: Optional[BlipProcessor] = None
 
     @property
     def clip_model(self) -> CLIPModel:
@@ -57,34 +87,6 @@ class ImageProcessor:
         if self._clip_processor is None:
             _ = self.clip_model
         return self._clip_processor
-
-    @property
-    def blip_model(self) -> BlipForConditionalGeneration:
-        if self._blip_model is None:
-            logger.info(f"Loading BLIP model: {BLIP_MODEL}")
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            self._blip_processor = BlipProcessor.from_pretrained(BLIP_MODEL, token=HF_TOKEN)
-            self._blip_model = BlipForConditionalGeneration.from_pretrained(BLIP_MODEL, token=HF_TOKEN).to(device)
-            logger.info("BLIP model loaded")
-        return self._blip_model
-
-    @property
-    def blip_processor(self) -> BlipProcessor:
-        if self._blip_processor is None:
-            _ = self.blip_model
-        return self._blip_processor
-
-    def _get_blip_caption(self, image: Image.Image) -> str:
-        """Generate a short caption for an image using BLIP."""
-        try:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            inputs = self.blip_processor(image, return_tensors="pt").to(device)
-            output = self.blip_model.generate(**inputs, max_new_tokens=50, num_beams=5)
-            caption = self.blip_processor.decode(output[0], skip_special_tokens=True)
-            return caption.strip()
-        except Exception as e:
-            logger.warning(f"BLIP captioning failed: {e}")
-            return ""
 
     def _detect_contour_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
         """Use contour detection to find potential image regions in a page render."""
@@ -219,6 +221,84 @@ class ImageProcessor:
         except Exception:
             return page_text[:500] if page_text else ""
 
+    def _normalize_text(self, text: str) -> str:
+        text = unicodedata.normalize("NFD", text.lower())
+        text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+        return re.sub(r"[^a-z0-9\s]+", " ", text)
+
+    def _clean_text(self, text: str, max_chars: int = 1200) -> str:
+        text = re.sub(r"\s+", " ", text or "").strip()
+        return text[:max_chars]
+
+    def _extract_section_title(self, page_text: str) -> str:
+        """Find a compact lesson or section title from page OCR/PDF text."""
+        lines = [line.strip() for line in (page_text or "").splitlines() if line.strip()]
+        title_candidates = []
+        for line in lines[:30]:
+            normalized = self._normalize_text(line)
+            if len(line) > 90 or len(line) < 4:
+                continue
+            if re.match(r"^(\d+[\.\)]|[ivx]+\.)\s+", normalized) or line.isupper():
+                title_candidates.append(line)
+            elif any(keyword in normalized for keyword in ("bai ", "chu de", "cac lop", "su da dang")):
+                title_candidates.append(line)
+
+        return title_candidates[-1] if title_candidates else ""
+
+    def _extract_figure_label(self, context_text: str, page_text: str) -> str:
+        """Extract labels that are meaningful in Vietnamese textbooks."""
+        text = f"{context_text}\n{page_text}"
+        patterns = [
+            r"Em\s+c[oó]\s+bi[eế]t",
+            r"T[iì]m\s+hi[eể]u\s+th[eê]m",
+            r"Quan\s+s[aá]t",
+            r"B[aả]ng\s+\d+(?:\.\d+)?",
+            r"H[iì]nh\s+\d+(?:\.\d+)?",
+            r"Th[uư]c\s+h[aà]nh",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                return match.group(0)
+        return ""
+
+    def _infer_image_type(self, figure_label: str, context_text: str) -> str:
+        normalized = self._normalize_text(f"{figure_label} {context_text}")
+        if "em co biet" in normalized:
+            return "textbook_info_box"
+        if "tim hieu them" in normalized or "quan sat" in normalized or "thuc hanh" in normalized:
+            return "activity_box"
+        if "bang" in normalized:
+            return "table"
+        if "hinh" in normalized:
+            return "figure"
+        return "image_region"
+
+    def _extract_keywords(self, *texts: str, limit: int = 18) -> str:
+        """Extract lightweight Vietnamese keyword metadata without calling another model."""
+        normalized = self._normalize_text(" ".join(texts))
+        tokens = [token for token in normalized.split() if len(token) > 1 and token not in VIETNAMESE_STOPWORDS]
+
+        scores: Dict[str, int] = {}
+        for token in tokens:
+            scores[token] = scores.get(token, 0) + 1
+
+        for left, right in zip(tokens, tokens[1:]):
+            phrase = f"{left} {right}"
+            scores[phrase] = scores.get(phrase, 0) + 2
+
+        ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))
+        return ", ".join(keyword for keyword, _ in ranked[:limit])
+
+    def _save_page_snapshot(self, output_dir: Path, page_num: int, page_image: Image.Image) -> str:
+        """Save a deterministic page snapshot for fallback/debug metadata."""
+        snapshot_dir = output_dir / "pages"
+        os.makedirs(snapshot_dir, exist_ok=True)
+        snapshot_path = snapshot_dir / f"page_{page_num}_snapshot.png"
+        if not snapshot_path.exists():
+            page_image.save(snapshot_path, format="PNG")
+        return str(snapshot_path)
+
     def _compute_image_hash(self, image_data: bytes) -> str:
         """Compute MD5 hash for deduplication."""
         return hashlib.md5(image_data).hexdigest()
@@ -254,19 +334,17 @@ class ImageProcessor:
                 return candidate
             attempt += 1
 
-    def _build_image_search_text(
-        self,
-        caption: str,
-        context_text: str,
-        page_num: int,
-        pdf_filename: str,
-    ) -> str:
-        """Build bilingual text used to retrieve this image later."""
+    def _build_image_search_text(self, metadata: Dict[str, str]) -> str:
+        """Build Vietnamese-first text used to retrieve this image later."""
         parts = [
-            context_text,
-            caption,
-            f"Trang {page_num}",
-            pdf_filename,
+            metadata.get("figure_label", ""),
+            metadata.get("section_title", ""),
+            metadata.get("image_type", ""),
+            metadata.get("keywords_vi", ""),
+            metadata.get("context_text", ""),
+            metadata.get("nearby_text", ""),
+            f"Trang {metadata.get('page_number', '')}",
+            metadata.get("pdf_filename", ""),
         ]
         return "\n".join(part.strip() for part in parts if part and part.strip())
 
@@ -284,7 +362,7 @@ class ImageProcessor:
         Phase 1: Contour detection for region discovery
         Phase 2: Refinement (color variance + aspect ratio)
         Phase 3: CLIP zero-shot filtering
-        Phase 4: BLIP captioning + context extraction + storage
+        Phase 4: Vietnamese OCR/context metadata + storage
         """
         extracted_docs = []
         output_dir = IMAGES_DIR / Path(pdf_filename).stem
@@ -307,6 +385,9 @@ class ImageProcessor:
 
             img_array, pil_img = page_result
             page_text = ocr_text_per_page.get(page_num, "")
+            nearby_text = self._clean_text(page_text, max_chars=1600)
+            section_title = self._extract_section_title(page_text)
+            page_snapshot_path = self._save_page_snapshot(output_dir, page_num, pil_img)
 
             regions = self._detect_contour_regions(img_array)
             refined = self._refine_regions(regions, img_array)
@@ -338,29 +419,39 @@ class ImageProcessor:
                 with open(filepath, "wb") as f:
                     f.write(img_data)
 
-                caption = self._get_blip_caption(crop)
                 context_text = self._get_context_text(pdf_path, page_num, bbox, page_text)
-                search_text = self._build_image_search_text(caption, context_text, page_num, pdf_filename)
+                context_text = self._clean_text(context_text, max_chars=1200)
+                figure_label = self._extract_figure_label(context_text, page_text)
+                image_type = self._infer_image_type(figure_label, context_text)
+                keywords_vi = self._extract_keywords(section_title, figure_label, context_text, nearby_text)
 
                 metadata = {
                     "image_path": str(filepath),
+                    "page_snapshot_path": page_snapshot_path,
                     "image_hash": img_hash,
                     "page_number": page_num,
                     "pdf_hash": pdf_hash,
                     "pdf_filename": pdf_filename,
-                    "caption": caption,
-                    "caption_en": caption,
+                    "section_title": section_title,
+                    "figure_label": figure_label,
+                    "image_type": image_type,
+                    "keywords_vi": keywords_vi,
+                    "caption": context_text[:240],
+                    "caption_vi": context_text[:240],
                     "context_text": context_text,
-                    "search_text": search_text,
+                    "nearby_text": nearby_text,
                     "bbox": ",".join(str(value) for value in bbox),
                     "image_width": crop.width,
                     "image_height": crop.height,
+                    "visual_content_score": round(self._visual_content_score(crop), 4),
                 }
+                search_text = self._build_image_search_text(metadata)
+                metadata["search_text"] = search_text
 
                 doc = Document(page_content=search_text, metadata=metadata)
                 extracted_docs.append(doc)
 
-                logger.debug(f"Saved: {filepath} (caption: {caption[:50] if caption else 'N/A'})")
+                logger.debug(f"Saved: {filepath} (label={figure_label or image_type}, keywords={keywords_vi[:80]})")
                 img_index += 1
 
             self.status_tracker.mark_image_extracted(pdf_hash, page_num, pdf_filename)

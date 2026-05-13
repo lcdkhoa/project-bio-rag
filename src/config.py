@@ -26,10 +26,10 @@ USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
-BLIP_MODEL = "Salesforce/blip-image-captioning-base"
 
 TEXT_COLLECTION_NAME = "biology_text"
 IMAGE_COLLECTION_NAME = "biology_images"
+IMAGE_METADATA_COLLECTION_NAME = "biology_image_metadata"
 STATUS_COLLECTION_NAME = "processing_status"
 
 CHUNK_SIZE = 400
@@ -42,6 +42,7 @@ LLM_TOP_P = 0.75
 RETRIEVER_K = 3
 IMAGE_RETRIEVER_K = 3
 IMAGE_RETRIEVER_FETCH_K = int(os.getenv("IMAGE_RETRIEVER_FETCH_K", "24"))
+IMAGE_METADATA_FETCH_K = int(os.getenv("IMAGE_METADATA_FETCH_K", "32"))
 IMAGE_RELEVANCE_THRESHOLD = float(os.getenv("IMAGE_RELEVANCE_THRESHOLD", "0.28"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
