@@ -32,12 +32,12 @@ DEFAULT_CASES = [
         query="cho xem hình cá xiêm đổi màu",
         expected_page=127,
         expected_keywords=["cá xiêm", "đổi màu"],
-        max_returned=3,
+        max_returned=5,
     ),
     ImageRetrievalCase(
         query="cho tôi hình trang 74",
         expected_page=74,
-        max_returned=3,
+        max_returned=5,
     ),
     ImageRetrievalCase(
         query="ánh sáng ảnh hưởng thế nào đến cây xanh",
@@ -66,6 +66,9 @@ def evaluate(cases: Optional[List[ImageRetrievalCase]] = None) -> List[dict]:
                 str(metadata.get(field, "") or "")
                 for field in (
                     "search_text",
+                    "visual_caption_vi",
+                    "visual_keywords_vi",
+                    "visual_objects_vi",
                     "caption_vi",
                     "context_text",
                     "nearby_text",
@@ -83,6 +86,8 @@ def evaluate(cases: Optional[List[ImageRetrievalCase]] = None) -> List[dict]:
                     "lexical_score": metadata.get("image_lexical_score"),
                     "source": metadata.get("image_retrieval_source"),
                     "image_path": metadata.get("image_path"),
+                    "visual_caption_vi": metadata.get("visual_caption_vi"),
+                    "visual_keywords_vi": metadata.get("visual_keywords_vi"),
                     "keyword_hit": _contains_expected_keyword(haystack, case.expected_keywords),
                 }
             )

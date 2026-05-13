@@ -26,6 +26,15 @@ USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
+IMAGE_CAPTION_ENABLED = os.getenv("IMAGE_CAPTION_ENABLED", "true").lower() == "true"
+IMAGE_CAPTION_MODEL = os.getenv(
+    "IMAGE_CAPTION_MODEL",
+    "pqthinh232/HCMUS-Qwen2-VL-2B-Instruct-Vietnamese-Image-Captioning-for-blind-E2",
+)
+IMAGE_CAPTION_MAX_NEW_TOKENS = int(os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
+IMAGE_CAPTION_CACHE_PATH = Path(
+    os.getenv("IMAGE_CAPTION_CACHE_PATH", str(PERSIST_DIR / "image_caption_cache.json"))
+)
 
 TEXT_COLLECTION_NAME = "biology_text"
 IMAGE_COLLECTION_NAME = "biology_images"
@@ -40,9 +49,9 @@ LLM_MAX_NEW_TOKENS = 500
 LLM_TOP_P = 0.75
 
 RETRIEVER_K = 3
-IMAGE_RETRIEVER_K = 3
-IMAGE_RETRIEVER_FETCH_K = int(os.getenv("IMAGE_RETRIEVER_FETCH_K", "24"))
-IMAGE_METADATA_FETCH_K = int(os.getenv("IMAGE_METADATA_FETCH_K", "32"))
+IMAGE_RETRIEVER_K = int(os.getenv("IMAGE_RETRIEVER_K", "5"))
+IMAGE_RETRIEVER_FETCH_K = int(os.getenv("IMAGE_RETRIEVER_FETCH_K", "48"))
+IMAGE_METADATA_FETCH_K = int(os.getenv("IMAGE_METADATA_FETCH_K", "64"))
 IMAGE_RELEVANCE_THRESHOLD = float(os.getenv("IMAGE_RELEVANCE_THRESHOLD", "0.42"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

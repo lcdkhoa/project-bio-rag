@@ -19,6 +19,7 @@ from transformers import CLIPModel, CLIPProcessor
 from tqdm import tqdm
 
 from ..config import CLIP_MODEL, IMAGES_DIR, HF_TOKEN
+from .image_captioner import ImageCaptioner
 from .processing_status import ProcessingStatus, compute_file_hash
 
 logger = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ class ImageProcessor:
         self.status_tracker = status_tracker or ProcessingStatus()
         self._clip_model: Optional[CLIPModel] = None
         self._clip_processor: Optional[CLIPProcessor] = None
+        self.captioner = ImageCaptioner()
 
     @property
     def clip_model(self) -> CLIPModel:
@@ -255,6 +257,17 @@ class ImageProcessor:
 
         return title_candidates[-1] if title_candidates else ""
 
+    def _extract_lesson_title(self, page_text: str) -> str:
+        """Find a coarse lesson title for page-level metadata."""
+        lines = [line.strip() for line in (page_text or "").splitlines() if line.strip()]
+        for index, line in enumerate(lines[:35]):
+            normalized = self._normalize_text(line)
+            if re.search(r"\bbai\s+\d+", normalized):
+                next_line = lines[index + 1] if index + 1 < len(lines) else ""
+                combined = f"{line} {next_line}".strip()
+                return self._clean_text(combined, max_chars=140)
+        return ""
+
     def _extract_figure_label(self, context_text: str, page_text: str) -> str:
         """Extract labels that are meaningful in Vietnamese textbooks."""
         text = f"{context_text}\n{page_text}"
@@ -432,6 +445,7 @@ class ImageProcessor:
             img_array, pil_img = page_result
             page_text = ocr_text_per_page.get(page_num, "")
             nearby_text = self._clean_text(page_text, max_chars=1600)
+            lesson_title = self._extract_lesson_title(page_text)
             section_title = self._extract_section_title(page_text)
             page_snapshot_path = self._save_page_snapshot(output_dir, page_num, pil_img)
 
@@ -466,6 +480,7 @@ class ImageProcessor:
                 img_data = img_bytes.read()
 
                 img_hash = self._compute_image_hash(img_data)
+                visual_metadata = self.captioner.caption(crop, img_hash)
 
                 filepath = self._resolve_image_path(output_dir, page_num, img_index, img_hash)
 
@@ -478,8 +493,21 @@ class ImageProcessor:
                 figure_label = self._extract_figure_label(local_text, "")
                 figure_caption = self._extract_figure_caption(local_text, "")
                 image_type = self._infer_image_type(figure_label, context_text, crop_text)
-                keywords_vi = self._extract_keywords(section_title, figure_label, figure_caption, context_text, crop_text)
-                caption_text = figure_caption or context_text[:240]
+                visual_caption = visual_metadata.get("visual_caption_vi", "")
+                visual_keywords = visual_metadata.get("visual_keywords_vi", "")
+                visual_objects = visual_metadata.get("visual_objects_vi", "")
+                keywords_vi = self._extract_keywords(
+                    lesson_title,
+                    section_title,
+                    figure_label,
+                    figure_caption,
+                    visual_caption,
+                    visual_keywords,
+                    visual_objects,
+                    context_text,
+                    crop_text,
+                )
+                caption_text = visual_caption or figure_caption or context_text[:240]
 
                 metadata = {
                     "image_path": str(filepath),
@@ -488,9 +516,11 @@ class ImageProcessor:
                     "page_number": page_num,
                     "pdf_hash": pdf_hash,
                     "pdf_filename": pdf_filename,
+                    "lesson_title": lesson_title,
                     "section_title": section_title,
                     "figure_label": figure_label,
                     "figure_caption": figure_caption,
+                    **visual_metadata,
                     "image_type": image_type,
                     "keywords_vi": keywords_vi,
                     "caption": caption_text,
