@@ -1,114 +1,63 @@
-# Biology RAG
+# Biology RAG (Text + Image)
 
-Hệ thống RAG (Retrieval-Augmented Generation) cho môn Sinh học THCS, xây dựng trên Sách Giáo Khoa.
+Dự án RAG cho SGK KHTN/Sinh học, gồm 2 pipeline chính:
+- ETL text: OCR tiếng Việt -> chunk -> index vào Chroma.
+- ETL image: detect/crop ảnh theo từng page -> enrich metadata -> index image + metadata.
 
-## Cài đặt
+Hệ thống hỗ trợ thêm human-review cho ảnh để tăng chất lượng retrieval (đặc biệt với tiếng Việt).
+
+## 1) Cài đặt
 
 ```bash
 pip install -r requirements.txt
-```
-
-Sao chép file môi trường:
-
-```bash
 cp .env.example .env
 ```
 
-Chỉnh sửa `.env` và điền `HF_TOKEN` của bạn.
+Thiết lập tối thiểu trong `.env`:
+- `HF_TOKEN=<your_token>`
+- `USE_GPU=true` (nếu có GPU)
 
-## Chạy hệ thống
+Nếu chạy trên Google Colab, cài thêm system libs trước khi ETL:
 
-### ETL - Trích xuất dữ liệu từ PDF vào ChromaDB
+```python
+!apt-get update
+!apt-get install -y poppler-utils
+!apt-get install -y tesseract-ocr tesseract-ocr-vie
+```
+
+## 2) Lệnh chính
+
+| Lệnh | Mục đích |
+|---|---|
+| `python main.py --text-only` | ETL text (OCR + chunk + index text) |
+| `python main.py --image-only` | ETL image (extract/crop + metadata + index image) |
+| `python main.py --etl` | ETL full text + image |
+| `python main.py --export-image-review <path.json>` | Export danh sách ảnh để reviewer chỉnh caption/xóa ảnh sai |
+| `python main.py --apply-image-review <path.json> --review-user <name>` | Apply review vào DB và đồng bộ image index |
+| `python main.py --app` | Chạy Gradio app |
+
+## 3) Flow khuyến nghị khi làm mới DB
+
+1. Xóa DB cũ và tạo lại thư mục `database`.
+2. Chạy `python main.py --text-only`.
+3. Chạy `python main.py --image-only`.
+4. Export review: `python main.py --export-image-review database/review_images.json`.
+5. Reviewer chỉnh `caption_vi_manual`, `keywords_vi_manual`, `review_status`, `is_active`.
+6. Apply review: `python main.py --apply-image-review database/review_images.json --review-user <name>`.
+7. Chạy app: `python main.py --app`.
+
+## 4) Tài liệu bàn giao kỹ thuật
+
+- Technical handover (Markdown): `document/technical_handover_rag.md`
+- Technical handover (HTML): `document/technical_handover_rag.html`
+- Vận hành nhanh (Markdown): `document/huong_dan_van_hanh_rag.md`
+- Vận hành nhanh (HTML): `document/huong_dan_van_hanh_rag.html`
+
+## 5) Reset tiện ích
 
 ```bash
-python main.py --etl
+python reset_status.py --all
+python reset_status.py --image-index
+python reset_status.py --images-full
+python reset_status.py "D:/personal_repo/project_rag/data/SGK KHTN 6 CD.pdf"
 ```
-
-### ETL chỉ ảnh (khuyến nghị khi review caption thủ công)
-
-```bash
-python main.py --image-only
-```
-
-### Export file review ảnh để người dùng chỉnh caption/xóa ảnh
-
-```bash
-python main.py --export-image-review database/review_images.json
-```
-
-Theo từng PDF:
-
-```bash
-python main.py --export-image-review database/review_images_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf"
-```
-
-### Apply file review và cập nhật lại image vector DB
-
-```bash
-python main.py --apply-image-review database/review_images.json --review-user charlie
-```
-
-### Chạy ứng dụng Gradio
-
-```bash
-python main.py --app
-```
-
-## Cấu trúc thư mục
-
-```
-project_rag/
-├── main.py                 # Entry point
-├── requirements.txt        # Dependencies
-├── .env                    # Environment variables
-├── .env.example           # Sample env file
-├── data/                   # PDF textbooks
-│   ├── SGK KHTN 6 CD.pdf
-│   └── ...
-├── biology_db_rag/         # ChromaDB persistence
-│   └── chroma.sqlite3
-└── src/
-    ├── config.py           # Shared configuration
-    ├── etl/
-    │   ├── __init__.py
-    │   ├── cleaner.py      # Vietnamese text cleaning
-    │   ├── loaders.py      # PDF loaders (PyPDF & OCR)
-    │   └── text_splitter.py
-    ├── rag/
-    │   ├── __init__.py
-    │   ├── vectorstore.py  # ChromaDB wrapper
-    │   ├── llm.py          # HuggingFace LLM setup
-    │   └── chain.py        # RAG chain assembly
-    └── app/
-        ├── __init__.py
-        └── assistant.py    # Gradio web UI
-```
-
-## Tài liệu hóa các cải tiến
-
-### Kiến trúc mới
-
-1. **Module hóa (Decoupling)**: Tách logic thành các package riêng biệt:
-   - `src/etl/` - Xử lý PDF, OCR, text cleaning, splitting
-   - `src/rag/` - VectorDB, LLM, RAG chain
-   - `src/app/` - Gradio UI
-
-2. **Quản lý cấu hình tập trung**: Toàn bộ đường dẫn và tham số trong `src/config.py` và `.env`
-
-3. **Entry point duy nhất**: `main.py` với argparse cho `--etl` và `--app`
-
-4. **Logging**: Thay `print()` bằng `logging` module chuẩn
-
-5. **DRY principle**: Tránh lặp lại code xử lý text, OCR, prompt giữa 2 file gốc
-
-### Loại bỏ code đặc thù Colab
-
-- Xóa `!pip install`, `!apt-get`
-- Xóa `google.colab import drive`
-- Xóa đường dẫn Google Drive cứng
-
-### Khả năng mở rộng
-
-- Checkpoint tracking cho ETL resume
-- Có thể chạy `--etl` và `--app` độc lập
-- Dễ dàng thêm loader mới hoặc LLM khác

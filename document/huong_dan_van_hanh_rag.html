@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Huong Dan Van Hanh Project RAG</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      max-width: 980px;
+      margin: 24px auto;
+      padding: 0 16px 40px;
+      line-height: 1.6;
+      color: #1f2937;
+      background: #f8fafc;
+    }
+    h1, h2, h3 { color: #0f172a; }
+    h1 { margin-bottom: 8px; }
+    h2 { margin-top: 28px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+    code {
+      background: #e5e7eb;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.95em;
+      color: #111827;
+    }
+    pre {
+      background: #f3f4f6 !important;
+      color: #111827 !important;
+      border: 1px solid #d1d5db;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    pre code {
+      background: transparent !important;
+      color: inherit !important;
+      padding: 0;
+    }
+    ul { margin-top: 6px; }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #e2e8f0; }
+    .note {
+      background: #ecfeff;
+      border-left: 4px solid #06b6d4;
+      padding: 10px 12px;
+      margin: 12px 0;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Huong Dan Van Hanh Project RAG</h1>
+  <p>Tai lieu nay mo ta cac buoc chay, muc dich tung lenh CLI, va quy trinh review anh thu cong.</p>
+
+  <h2>1) Muc tieu he thong</h2>
+  <ul>
+    <li><b>Text index</b>: phuc vu tra loi noi dung van ban SGK.</li>
+    <li><b>Image index</b>: phuc vu tim anh minh hoa lien quan cau hoi.</li>
+    <li><b>Human review</b>: cho phep sua caption va loai bo anh sai truoc khi retrieval.</li>
+  </ul>
+
+  <h2>2) Chuan bi moi truong</h2>
+  <h3>2.1 Cai dependencies</h3>
+  <pre><code>pip install -r requirements.txt</code></pre>
+
+  <h3>2.1b Neu chay tren Google Colab</h3>
+  <p>Can cai them thu vien he thong cho <code>pdf2image</code> va OCR tieng Viet:</p>
+  <pre><code>!apt-get update
+!apt-get install -y poppler-utils
+!apt-get install -y tesseract-ocr tesseract-ocr-vie</code></pre>
+
+  <h3>2.2 Tao file .env</h3>
+  <pre><code>cp .env.example .env</code></pre>
+
+  <h3>2.3 Bien quan trong</h3>
+  <ul>
+    <li><code>HF_TOKEN</code>: bat buoc de tai model Hugging Face.</li>
+    <li><code>USE_GPU</code>: bat/tat GPU.</li>
+    <li><code>IMAGE_CAPTION_ENABLED</code>: bat/tat caption model cho anh.</li>
+    <li><code>IMAGE_EXTRACTION_VERSION</code>: version thuat toan extract image.</li>
+    <li><code>IMAGE_REVIEW_MANIFEST_PATH</code>: noi luu manifest review anh.</li>
+  </ul>
+
+  <h2>3) Danh sach lenh va muc dich</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Lenh</th>
+        <th>Muc dich</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>python main.py --text-only</code></td>
+        <td>ETL chi text (OCR + chunk + index text).</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --image-only</code></td>
+        <td>ETL chi image (extract + metadata + index image).</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --etl</code></td>
+        <td>ETL full text + image trong 1 lan chay.</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --export-image-review &lt;output.json&gt;</code></td>
+        <td>Export danh sach anh de review caption/xoa anh khong lien quan.</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --apply-image-review &lt;review.json&gt; --review-user &lt;name&gt;</code></td>
+        <td>Apply ket qua review vao vector DB.</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --export-image-review &lt;output.json&gt; --review-pdf "&lt;file.pdf&gt;"</code></td>
+        <td>Export review theo 1 PDF cu the.</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --export-image-review &lt;output.json&gt; --review-include-completed</code></td>
+        <td>Export ca item da review (khong chi pending).</td>
+      </tr>
+      <tr>
+        <td><code>python main.py --app</code></td>
+        <td>Mo giao dien Gradio de hoi dap.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4) Quy trinh khuyen nghi</h2>
+
+  <h3>Kich ban A: Khoi tao moi hoan toan</h3>
+  <ol>
+    <li>Xoa DB cu:</li>
+  </ol>
+  <pre><code>Remove-Item -Recurse -Force "D:\personal_repo\project_rag\database"
+New-Item -ItemType Directory -Path "D:\personal_repo\project_rag\database" | Out-Null</code></pre>
+  <ol start="2">
+    <li>Chay ETL text:</li>
+  </ol>
+  <pre><code>python main.py --text-only</code></pre>
+  <ol start="3">
+    <li>Chay ETL image:</li>
+  </ol>
+  <pre><code>python main.py --image-only</code></pre>
+  <ol start="4">
+    <li>Export file review:</li>
+  </ol>
+  <pre><code>python main.py --export-image-review database/review_images.json</code></pre>
+  <ol start="5">
+    <li>Sua thu cong cac truong: <code>caption_vi_manual</code>, <code>keywords_vi_manual</code>, <code>review_status</code>, <code>is_active</code>.</li>
+    <li>Apply review:</li>
+  </ol>
+  <pre><code>python main.py --apply-image-review database/review_images.json --review-user charlie</code></pre>
+  <ol start="7">
+    <li>Mo app:</li>
+  </ol>
+  <pre><code>python main.py --app</code></pre>
+
+  <h3>Kich ban B: Build nhanh 1 lenh</h3>
+  <pre><code>python main.py --etl</code></pre>
+
+  <h3>Kich ban C: Chi review 1 tai lieu</h3>
+  <pre><code>python main.py --export-image-review database/review_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf"
+python main.py --apply-image-review database/review_sgk6.json --review-user charlie</code></pre>
+
+  <h2>5) Reset va xu ly su co</h2>
+  <pre><code>python reset_status.py --all
+python reset_status.py --image-index
+python reset_status.py --images-full
+python reset_status.py "D:/personal_repo/project_rag/data/SGK KHTN 6 CD.pdf"</code></pre>
+
+  <h2>6) Kiem tra sau khi chay</h2>
+  <ul>
+    <li>Co file <code>database/chroma.sqlite3</code>.</li>
+    <li>Co anh trong <code>database/images/...</code>.</li>
+    <li>Co file <code>database/image_review_manifest.jsonl</code>.</li>
+  </ul>
+  <pre><code>python main.py --help</code></pre>
+
+  <div class="note">
+    Goi y: Neu uu tien toc do ETL image, co the dat <code>IMAGE_CAPTION_ENABLED=false</code> va su dung quy trinh review thu cong.
+  </div>
+</body>
+</html>

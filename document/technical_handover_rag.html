@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Technical Handover - Biology RAG</title>
+  <style>
+    :root {
+      color-scheme: light !important;
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #334155;
+      --line: #dbe3ef;
+      --code-bg: #eef2f7;
+      --accent: #0ea5e9;
+      --accent-soft: #e0f2fe;
+    }
+    html, body {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+    }
+    body {
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      margin: 0;
+      line-height: 1.65;
+    }
+    * {
+      color: inherit;
+    }
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 28px 16px 48px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #0b1324 0%, #0f2a4f 100%);
+      color: #f8fafc !important;
+      padding: 24px;
+      border-radius: 14px;
+      margin-bottom: 18px;
+    }
+    .hero * { color: #f8fafc !important; }
+    h1 { margin: 0 0 8px; font-size: 30px; }
+    h2 {
+      margin: 26px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+      font-size: 22px;
+    }
+    h3 { margin: 18px 0 8px; font-size: 18px; }
+    p, li { color: var(--muted) !important; }
+    .card {
+      background: var(--card) !important;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    code {
+      background: var(--code-bg) !important;
+      color: #111827 !important;
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: .95em;
+    }
+    pre {
+      background: #0b1730 !important;
+      color: #e5e7eb !important;
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid #1f355f;
+      overflow-x: auto;
+    }
+    pre code {
+      background: transparent !important;
+      color: inherit !important;
+      padding: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff !important;
+      border: 1px solid var(--line);
+      margin: 10px 0;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+      color: #1e293b !important;
+    }
+    th { background: #f1f5f9 !important; }
+    .note {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #0c4a6e !important;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 25px; }
+      h2 { font-size: 20px; }
+      .hero { padding: 18px; }
+      .card { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Technical Handover - Biology RAG</h1>
+      <p>Tài liệu bàn giao kỹ thuật để người mới có thể hiểu kiến trúc, chạy ETL/retrieval và thuyết trình dự án.</p>
+    </section>
+
+    <section class="card">
+      <h2>1) Kiến trúc tổng thể</h2>
+      <p>Hệ thống gồm 4 lớp: ETL text, ETL image + human review, retrieval hybrid, và Gradio app.</p>
+      <pre><code>PDF -> OCR text -> chunk -> text vector DB
+PDF -> detect/crop image -> metadata -> image vector DB
+image manifest -> human review -> apply -> upsert/delete image docs
+query -> hybrid retriever -> LLM answer + image gallery</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>2) Modules chính theo codebase</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Vai trò</th><th>Block chính</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>main.py</code></td><td>CLI orchestration</td><td><code>--text-only</code>, <code>--image-only</code>, <code>--etl</code>, export/apply review, app</td></tr>
+          <tr><td><code>src/etl/loaders.py</code></td><td>OCR ingestion</td><td><code>RobustOCRLoader.load_pdf()</code></td></tr>
+          <tr><td><code>src/etl/processing_status.py</code></td><td>Resume per-page</td><td><code>needs_image_processing_versioned()</code></td></tr>
+          <tr><td><code>src/etl/image_processor.py</code></td><td>Image extraction pipeline</td><td>detect -> refine -> CLIP filter -> metadata -> save</td></tr>
+          <tr><td><code>src/etl/image_captioner.py</code></td><td>Visual caption</td><td>lazy load + cache + JSON parsing</td></tr>
+          <tr><td><code>src/etl/image_review.py</code></td><td>Human-in-the-loop</td><td>export JSON / apply review / sync DB</td></tr>
+          <tr><td><code>src/rag/vectorstore.py</code></td><td>Text retrieval</td><td>Chroma <code>biology_text</code></td></tr>
+          <tr><td><code>src/rag/image_vectorstore.py</code></td><td>Image retrieval</td><td>metadata + visual collections, merge/rerank</td></tr>
+          <tr><td><code>src/rag/hybrid_retriever.py</code></td><td>Unified search</td><td>text retrieval trước, image retrieval sau</td></tr>
+          <tr><td><code>src/rag/chain.py</code></td><td>QA chain</td><td>prompt tiếng Việt + answer parser</td></tr>
+          <tr><td><code>src/app/assistant.py</code></td><td>Web UI</td><td>answer text + image gallery</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>3) Code flow ETL image (block-by-block)</h2>
+      <ol>
+        <li>Render page: <code>_extract_page_image()</code>.</li>
+        <li>Region proposal: <code>_detect_contour_regions()</code> (4 chiến lược detector).</li>
+        <li>Refine & dedupe: <code>_refine_regions()</code>, <code>_deduplicate_regions()</code>, <code>_suppress_container_regions()</code>.</li>
+        <li>Giới hạn số crop/page: <code>_limit_regions_for_extraction(max_regions=24)</code>.</li>
+        <li>CLIP filter: <code>_clip_filter()</code>.</li>
+        <li>Loại crop thiên về text: <code>_ocr_crop_text()</code> + <code>_is_text_dominant_crop()</code>.</li>
+        <li>Enrich metadata: figure label/caption, context OCR, keywords, optional visual caption.</li>
+        <li>Build <code>search_text</code>, save ảnh, ghi manifest, và mark status theo version.</li>
+      </ol>
+    </section>
+
+    <section class="card">
+      <h2>4) Metadata schema ảnh</h2>
+      <table>
+        <thead><tr><th>Nhóm</th><th>Trường tiêu biểu</th></tr></thead>
+        <tbody>
+          <tr><td>Identity</td><td><code>image_id</code>, <code>image_hash</code>, <code>pdf_filename</code>, <code>page_number</code>, <code>bbox</code></td></tr>
+          <tr><td>Context</td><td><code>figure_label</code>, <code>figure_caption</code>, <code>context_text</code>, <code>crop_text</code></td></tr>
+          <tr><td>Caption auto</td><td><code>visual_caption_vi</code>, <code>visual_keywords_vi</code>, <code>caption_source</code></td></tr>
+          <tr><td>Review</td><td><code>caption_vi_manual</code>, <code>keywords_vi_manual</code>, <code>review_status</code>, <code>is_active</code></td></tr>
+          <tr><td>Final retrieval</td><td><code>final_caption_vi</code>, <code>final_keywords_vi</code>, <code>search_text</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>5) Quy trình chạy sau khi làm mới DB</h2>
+      <pre><code>pip install -r requirements.txt
+cp .env.example .env
+
+# Colab only
+!apt-get update
+!apt-get install -y poppler-utils
+!apt-get install -y tesseract-ocr tesseract-ocr-vie
+
+python main.py --text-only
+python main.py --image-only
+python main.py --export-image-review database/review_images.json
+python main.py --apply-image-review database/review_images.json --review-user charlie
+python main.py --app</code></pre>
+      <div class="note">
+        Nếu caption model chậm/sai cho tiếng Việt, ưu tiên flow human review làm “nguồn chân lý” cho image retrieval.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>6) Gợi ý thuyết trình dự án</h2>
+      <ol>
+        <li>Bài toán: OCR tiếng Việt + retrieval text/image trên SGK.</li>
+        <li>Kiến trúc: ETL text, ETL image, human review, hybrid retrieval.</li>
+        <li>Điểm mạnh kỹ thuật: versioned resume + image rerank đa tín hiệu.</li>
+        <li>Demo: export review -> chỉnh caption -> apply -> so sánh kết quả gallery.</li>
+        <li>Roadmap: cải tiến caption model tiếng Việt, review UI nội bộ, bộ eval retrieval.</li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>
