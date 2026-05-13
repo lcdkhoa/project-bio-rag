@@ -40,13 +40,6 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Project specific
-biology_db_rag/
-*.sqlite3
-*.pickle
-*.bin
-processed_files.txt
-
 # Logs
 *.log
 logs/
