@@ -43,6 +43,21 @@ VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
     "re": "root",
 }
 
+IMAGE_QUERY_HINTS = {
+    "cho xem anh",
+    "cho xem hinh",
+    "hinh anh",
+    "minh hoa",
+    "quan sat",
+    "so do",
+    "tim anh",
+    "tim hinh",
+    "tranh",
+}
+
+IMAGE_QUERY_ACTIONS = {"cho", "tim", "xem"}
+IMAGE_QUERY_NOUNS = {"anh", "hinh", "tranh"}
+
 
 class ImageVectorDB:
     """ChromaDB-backed image store with CLIP embeddings for semantic image search."""
@@ -165,6 +180,7 @@ class ImageVectorDB:
         parts = [
             doc.page_content,
             metadata.get("figure_label", ""),
+            metadata.get("figure_caption", ""),
             metadata.get("section_title", ""),
             metadata.get("image_type", ""),
             metadata.get("keywords_vi", ""),
@@ -172,7 +188,6 @@ class ImageVectorDB:
             metadata.get("caption", ""),
             metadata.get("caption_en", ""),
             metadata.get("context_text", ""),
-            metadata.get("nearby_text", ""),
             metadata.get("ocr_text", ""),
             metadata.get("pdf_filename", ""),
             f"trang {metadata.get('page_number', '')}",
@@ -291,36 +306,117 @@ class ImageVectorDB:
 
         return f"{query}. {' '.join(dict.fromkeys(hints))}"
 
-    def _lexical_score(self, query: str, doc: Document) -> float:
+    def _has_image_intent(self, query: str) -> bool:
+        normalized_query = self._normalize_text(query)
+        if any(term in normalized_query for term in IMAGE_QUERY_HINTS):
+            return True
+
+        tokens = normalized_query.split()
+        for index, token in enumerate(tokens):
+            if token not in IMAGE_QUERY_NOUNS:
+                continue
+            next_token = tokens[index + 1] if index + 1 < len(tokens) else ""
+            if token == "anh" and next_token == "sang":
+                continue
+            previous_tokens = set(tokens[max(0, index - 3) : index])
+            if index == 0 or previous_tokens & IMAGE_QUERY_ACTIONS:
+                return True
+        return False
+
+    def _field_overlap_score(self, query: str, *texts: str) -> float:
         query_tokens = set(self._tokenize(query))
         if not query_tokens:
             return 0.0
 
-        metadata = doc.metadata or {}
-        search_text = " ".join(
-            str(value or "")
-            for value in (
-                doc.page_content,
-                metadata.get("search_text"),
-                metadata.get("figure_label"),
-                metadata.get("section_title"),
-                metadata.get("keywords_vi"),
-                metadata.get("caption_vi"),
-                metadata.get("caption"),
-                metadata.get("caption_en"),
-                metadata.get("context_text"),
-                metadata.get("nearby_text"),
-            )
-        )
-        doc_tokens = set(self._tokenize(search_text))
+        doc_tokens = set(self._tokenize(" ".join(str(text or "") for text in texts)))
         if not doc_tokens:
             return 0.0
 
-        overlap = len(query_tokens & doc_tokens) / len(query_tokens)
+        return len(query_tokens & doc_tokens) / len(query_tokens)
+
+    def _direct_evidence_score(self, query: str, doc: Document) -> float:
+        metadata = doc.metadata or {}
+        return self._field_overlap_score(
+            query,
+            metadata.get("figure_label"),
+            metadata.get("figure_caption"),
+            metadata.get("section_title"),
+            metadata.get("keywords_vi"),
+            metadata.get("caption_vi"),
+            metadata.get("caption"),
+            metadata.get("caption_en"),
+            metadata.get("context_text"),
+        )
+
+    def _lexical_score(self, query: str, doc: Document) -> float:
+        metadata = doc.metadata or {}
+        direct_score = self._direct_evidence_score(query, doc)
+        weak_context_score = self._field_overlap_score(
+            query,
+            doc.page_content[:700] if doc.page_content else "",
+            str(metadata.get("search_text") or "")[:700],
+            str(metadata.get("nearby_text") or "")[:350],
+        )
+
         normalized_query = self._normalize_text(query).strip()
-        normalized_doc = self._normalize_text(search_text)
-        exact_bonus = 0.2 if normalized_query and normalized_query in normalized_doc else 0.0
-        return min(1.0, overlap + exact_bonus)
+        direct_text = self._normalize_text(
+            " ".join(
+                str(metadata.get(field) or "")
+                for field in (
+                    "figure_label",
+                    "figure_caption",
+                    "section_title",
+                    "keywords_vi",
+                    "caption_vi",
+                    "caption",
+                    "context_text",
+                )
+            )
+        )
+        exact_bonus = 0.15 if normalized_query and normalized_query in direct_text else 0.0
+        return min(1.0, (direct_score * 0.8) + (weak_context_score * 0.2) + exact_bonus)
+
+    def _image_quality_adjustment(self, doc: Document) -> float:
+        metadata = doc.metadata or {}
+        adjustment = 0.0
+
+        try:
+            width = float(metadata.get("image_width") or 0)
+            height = float(metadata.get("image_height") or 0)
+            if width > 0 and height > 0:
+                aspect_ratio = width / height
+                if width < 80 or height < 80:
+                    adjustment -= 0.2
+                if aspect_ratio > 5.5 or aspect_ratio < 0.18:
+                    adjustment -= 0.18
+        except (TypeError, ValueError):
+            pass
+
+        try:
+            visual_content_score = float(metadata.get("visual_content_score") or 0)
+            if 0 < visual_content_score < 0.015:
+                adjustment -= 0.12
+            elif visual_content_score >= 0.08:
+                adjustment += 0.04
+        except (TypeError, ValueError):
+            pass
+
+        image_type = str(metadata.get("image_type") or "")
+        if image_type == "figure":
+            adjustment += 0.04
+        elif image_type == "table":
+            adjustment -= 0.08
+        elif image_type in {"activity_box", "textbook_info_box"}:
+            adjustment -= 0.04
+
+        return adjustment
+
+    def _page_key(self, doc: Document) -> Optional[int]:
+        page = (doc.metadata or {}).get("page_number")
+        try:
+            return int(page)
+        except (TypeError, ValueError):
+            return None
 
     def _distance_to_similarity(self, distance: Optional[float]) -> float:
         if distance is None or not math.isfinite(distance):
@@ -441,30 +537,74 @@ class ImageVectorDB:
             unique[dedupe_key] = Document(page_content=page_content, metadata=merged_metadata)
 
         scored_docs = []
+        has_image_intent = self._has_image_intent(query)
         for doc in unique.values():
             metadata = dict(doc.metadata or {})
             metadata_score = float(metadata.get("image_metadata_score") or 0.0)
             visual_score = float(metadata.get("image_visual_score") or 0.0)
             lexical_score = self._lexical_score(query, doc)
+            direct_evidence_score = self._direct_evidence_score(query, doc)
             page_score = self._page_boost(doc, page_boosts)
-            final_score = (metadata_score * 0.5) + (lexical_score * 0.25) + (visual_score * 0.15) + page_score
+            quality_adjustment = self._image_quality_adjustment(doc)
+            final_score = (
+                (metadata_score * 0.35)
+                + (lexical_score * 0.35)
+                + (visual_score * 0.12)
+                + page_score
+                + quality_adjustment
+            )
 
             metadata["image_lexical_score"] = round(lexical_score, 4)
+            metadata["image_direct_evidence_score"] = round(direct_evidence_score, 4)
+            metadata["image_quality_adjustment"] = round(quality_adjustment, 4)
             metadata["image_page_boost"] = round(page_score, 4)
             metadata["image_relevance_score"] = round(final_score, 4)
             scored_docs.append(Document(page_content=doc.page_content, metadata=metadata))
 
         scored_docs.sort(key=lambda doc: doc.metadata.get("image_relevance_score", 0.0), reverse=True)
-        filtered = [doc for doc in scored_docs if doc.metadata.get("image_relevance_score", 0.0) >= min_score]
+        top_score = scored_docs[0].metadata.get("image_relevance_score", 0.0) if scored_docs else 0.0
+        score_window = 0.14 if has_image_intent else 0.08
+        effective_min_score = min_score if has_image_intent else max(min_score, 0.48)
+        per_page_limit = 2 if has_image_intent else 1
+
+        filtered = []
+        page_counts: Dict[int, int] = {}
+        for doc in scored_docs:
+            metadata = doc.metadata or {}
+            relevance_score = float(metadata.get("image_relevance_score") or 0.0)
+            direct_evidence_score = float(metadata.get("image_direct_evidence_score") or 0.0)
+            lexical_score = float(metadata.get("image_lexical_score") or 0.0)
+            source = str(metadata.get("image_retrieval_source") or "")
+
+            if relevance_score < effective_min_score:
+                continue
+            if top_score and relevance_score < top_score - score_window:
+                continue
+            if "page_context" in source and direct_evidence_score < 0.25:
+                continue
+            if not has_image_intent and direct_evidence_score < 0.3 and lexical_score < 0.35:
+                continue
+
+            page = self._page_key(doc)
+            if page is not None:
+                if page_counts.get(page, 0) >= per_page_limit:
+                    continue
+                page_counts[page] = page_counts.get(page, 0) + 1
+
+            filtered.append(doc)
+            if len(filtered) >= k:
+                break
 
         logger.info(
-            "Image retrieval candidates=%s, kept=%s, threshold=%.2f, top_scores=%s",
+            "Image retrieval candidates=%s, kept=%s, threshold=%.2f, effective_threshold=%.2f, image_intent=%s, top_scores=%s",
             len(scored_docs),
-            len(filtered[:k]),
+            len(filtered),
             min_score,
+            effective_min_score,
+            has_image_intent,
             [doc.metadata.get("image_relevance_score") for doc in scored_docs[: min(5, len(scored_docs))]],
         )
-        return filtered[:k]
+        return filtered
 
     def similarity_search(
         self,

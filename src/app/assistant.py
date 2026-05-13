@@ -47,9 +47,11 @@ class BiologyAssistantApp:
             if hasattr(doc, "metadata"):
                 image_path = doc.metadata.get("image_path", "")
                 caption = doc.metadata.get("caption") or ""
+                figure_caption = doc.metadata.get("figure_caption") or ""
+                figure_label = doc.metadata.get("figure_label") or ""
                 context_text = doc.metadata.get("context_text") or ""
                 fallback_text = (doc.page_content or "").splitlines()[0] if doc.page_content else ""
-                label_text = context_text or caption or fallback_text
+                label_text = figure_caption or figure_label or caption or context_text or fallback_text
                 page = doc.metadata.get("page_number", "?")
                 pdf = doc.metadata.get("pdf_filename", "Sách Giáo Khoa")
                 score = doc.metadata.get("image_relevance_score", "?")

@@ -262,6 +262,19 @@ class ImageProcessor:
                 return match.group(0)
         return ""
 
+    def _extract_figure_caption(self, context_text: str, page_text: str) -> str:
+        """Extract a compact figure/table caption instead of using the whole page context."""
+        text = f"{context_text}\n{page_text}"
+        patterns = [
+            r"(H[iì]nh\s+\d+(?:\.\d+)?[\.:]?\s*[^\n]{0,180})",
+            r"(B[aả]ng\s+\d+(?:\.\d+)?[\.:]?\s*[^\n]{0,180})",
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, text, flags=re.IGNORECASE)
+            if match:
+                return self._clean_text(match.group(1), max_chars=220)
+        return ""
+
     def _infer_image_type(self, figure_label: str, context_text: str) -> str:
         normalized = self._normalize_text(f"{figure_label} {context_text}")
         if "em co biet" in normalized:
@@ -338,11 +351,11 @@ class ImageProcessor:
         """Build Vietnamese-first text used to retrieve this image later."""
         parts = [
             metadata.get("figure_label", ""),
+            metadata.get("figure_caption", ""),
             metadata.get("section_title", ""),
             metadata.get("image_type", ""),
             metadata.get("keywords_vi", ""),
             metadata.get("context_text", ""),
-            metadata.get("nearby_text", ""),
             f"Trang {metadata.get('page_number', '')}",
             metadata.get("pdf_filename", ""),
         ]
@@ -422,8 +435,10 @@ class ImageProcessor:
                 context_text = self._get_context_text(pdf_path, page_num, bbox, page_text)
                 context_text = self._clean_text(context_text, max_chars=1200)
                 figure_label = self._extract_figure_label(context_text, page_text)
+                figure_caption = self._extract_figure_caption(context_text, page_text)
                 image_type = self._infer_image_type(figure_label, context_text)
                 keywords_vi = self._extract_keywords(section_title, figure_label, context_text, nearby_text)
+                caption_text = figure_caption or context_text[:240]
 
                 metadata = {
                     "image_path": str(filepath),
@@ -434,10 +449,11 @@ class ImageProcessor:
                     "pdf_filename": pdf_filename,
                     "section_title": section_title,
                     "figure_label": figure_label,
+                    "figure_caption": figure_caption,
                     "image_type": image_type,
                     "keywords_vi": keywords_vi,
-                    "caption": context_text[:240],
-                    "caption_vi": context_text[:240],
+                    "caption": caption_text,
+                    "caption_vi": caption_text,
                     "context_text": context_text,
                     "nearby_text": nearby_text,
                     "bbox": ",".join(str(value) for value in bbox),

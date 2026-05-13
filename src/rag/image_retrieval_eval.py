@@ -18,6 +18,7 @@ class ImageRetrievalCase:
     query: str
     expected_page: Optional[int] = None
     expected_keywords: Optional[List[str]] = None
+    max_returned: Optional[int] = None
 
 
 DEFAULT_CASES = [
@@ -25,11 +26,17 @@ DEFAULT_CASES = [
         query="con cá có màu gì",
         expected_page=127,
         expected_keywords=["cá", "cá xiêm", "đổi màu", "màu"],
+        max_returned=1,
     ),
     ImageRetrievalCase(
         query="cho xem hình cá xiêm đổi màu",
         expected_page=127,
         expected_keywords=["cá xiêm", "đổi màu"],
+        max_returned=3,
+    ),
+    ImageRetrievalCase(
+        query="ánh sáng ảnh hưởng thế nào đến cây xanh",
+        max_returned=1,
     ),
 ]
 
@@ -83,6 +90,8 @@ def evaluate(cases: Optional[List[ImageRetrievalCase]] = None) -> List[dict]:
                 "expected_page": case.expected_page,
                 "page_hit": page_hit,
                 "keyword_hit": keyword_hit,
+                "max_returned": case.max_returned,
+                "max_returned_ok": len(image_rows) <= case.max_returned if case.max_returned is not None else True,
                 "returned": len(image_rows),
                 "images": image_rows,
             }
