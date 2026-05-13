@@ -72,17 +72,21 @@ def run_etl_text_only():
                 logger.warning(f"No text extracted from {filename}")
                 continue
 
-            ocr_text_per_page = {doc.metadata.get("page", i + 1): doc.page_content for i, doc in enumerate(docs)}
+            ocr_text_per_page = {doc.metadata.get(
+                "page", i + 1): doc.page_content for i, doc in enumerate(docs)}
 
-            pages_to_index = status_tracker.get_pages_needing_text(pdf_hash, len(docs))
+            pages_to_index = status_tracker.get_pages_needing_text(
+                pdf_hash, len(docs))
             if not pages_to_index:
-                logger.info(f"[{filename}] All pages already indexed, skipping")
+                logger.info(
+                    f"[{filename}] All pages already indexed, skipping")
                 mark_file_as_processed(filename)
                 continue
 
             logger.info(f"[{filename}] Pages to index: {pages_to_index}")
 
-            docs_to_add = [doc for doc in docs if doc.metadata.get("page") in pages_to_index]
+            docs_to_add = [doc for doc in docs if doc.metadata.get(
+                "page") in pages_to_index]
 
             if docs_to_add:
                 split_docs = text_splitter.split(docs_to_add)
@@ -90,7 +94,8 @@ def run_etl_text_only():
                 text_db.add_documents(split_docs)
 
                 for page_num in pages_to_index:
-                    status_tracker.mark_text_indexed(pdf_hash, page_num, filename)
+                    status_tracker.mark_text_indexed(
+                        pdf_hash, page_num, filename)
 
             mark_file_as_processed(filename)
             logger.info(f"Completed: {filename}")
@@ -144,14 +149,18 @@ def run_etl_image_only():
                 logger.warning(f"No text extracted from {filename}")
                 continue
 
-            ocr_text_per_page = {doc.metadata.get("page", i + 1): doc.page_content for i, doc in enumerate(docs)}
+            ocr_text_per_page = {doc.metadata.get(
+                "page", i + 1): doc.page_content for i, doc in enumerate(docs)}
 
-            pages_to_process = status_tracker.get_pages_needing_images(pdf_hash, len(docs))
+            pages_to_process = status_tracker.get_pages_needing_images(
+                pdf_hash, len(docs))
             if not pages_to_process:
-                logger.info(f"[{filename}] All pages already processed for images, skipping")
+                logger.info(
+                    f"[{filename}] All pages already processed for images, skipping")
                 continue
 
-            logger.info(f"[{filename}] Pages to extract images: {pages_to_process}")
+            logger.info(
+                f"[{filename}] Pages to extract images: {pages_to_process}")
 
             image_docs = image_processor.extract_images_from_pdf(
                 pdf_path=pdf_file,
@@ -162,7 +171,8 @@ def run_etl_image_only():
 
             if image_docs:
                 image_vdb.add_documents(image_docs)
-                logger.info(f"[{filename}] Added {len(image_docs)} images to ImageVectorDB")
+                logger.info(
+                    f"[{filename}] Added {len(image_docs)} images to ImageVectorDB")
 
         except Exception as e:
             logger.error(f"Error processing {filename}: {e}")
@@ -216,21 +226,28 @@ def run_etl():
                 logger.warning(f"No text extracted from {filename}")
                 continue
 
-            ocr_text_per_page = {doc.metadata.get("page", i + 1): doc.page_content for i, doc in enumerate(docs)}
+            ocr_text_per_page = {doc.metadata.get(
+                "page", i + 1): doc.page_content for i, doc in enumerate(docs)}
 
-            pages_needing_text = status_tracker.get_pages_needing_text(pdf_hash, len(docs))
+            pages_needing_text = status_tracker.get_pages_needing_text(
+                pdf_hash, len(docs))
             if pages_needing_text:
-                logger.info(f"[{filename}] Indexing {len(pages_needing_text)} pages for text")
-                docs_to_add = [doc for doc in docs if doc.metadata.get("page") in pages_needing_text]
+                logger.info(
+                    f"[{filename}] Indexing {len(pages_needing_text)} pages for text")
+                docs_to_add = [doc for doc in docs if doc.metadata.get(
+                    "page") in pages_needing_text]
                 if docs_to_add:
                     split_docs = text_splitter.split(docs_to_add)
                     text_vdb.db.add_documents(split_docs)
                     for page_num in pages_needing_text:
-                        status_tracker.mark_text_indexed(pdf_hash, page_num, filename)
+                        status_tracker.mark_text_indexed(
+                            pdf_hash, page_num, filename)
 
-            pages_needing_images = status_tracker.get_pages_needing_images(pdf_hash, len(docs))
+            pages_needing_images = status_tracker.get_pages_needing_images(
+                pdf_hash, len(docs))
             if pages_needing_images:
-                logger.info(f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
+                logger.info(
+                    f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
                 image_docs = image_processor.extract_images_from_pdf(
                     pdf_path=pdf_file,
                     pdf_hash=pdf_hash,
@@ -258,14 +275,15 @@ def run_app():
     from src.app import BiologyAssistantApp
 
     app = BiologyAssistantApp()
-    app.launch(share=False)
+    app.launch(share=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Biology RAG System")
 
     etl_group = parser.add_argument_group("ETL Options")
-    etl_group.add_argument("--etl", action="store_true", help="Run full ETL pipeline (text + images)")
+    etl_group.add_argument("--etl", action="store_true",
+                           help="Run full ETL pipeline (text + images)")
     etl_group.add_argument(
         "--text-only",
         action="store_true",
@@ -277,7 +295,8 @@ def main():
         help="Run ETL for images only. Skips pages already processed.",
     )
 
-    parser.add_argument("--app", action="store_true", help="Launch Gradio web app")
+    parser.add_argument("--app", action="store_true",
+                        help="Launch Gradio web app")
 
     args = parser.parse_args()
 
