@@ -26,6 +26,7 @@ USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
+IMAGE_EXTRACTION_VERSION = os.getenv("IMAGE_EXTRACTION_VERSION", "v2")
 IMAGE_CAPTION_ENABLED = os.getenv("IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
     "IMAGE_CAPTION_MODEL",
@@ -34,6 +35,9 @@ IMAGE_CAPTION_MODEL = os.getenv(
 IMAGE_CAPTION_MAX_NEW_TOKENS = int(os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
 IMAGE_CAPTION_CACHE_PATH = Path(
     os.getenv("IMAGE_CAPTION_CACHE_PATH", str(PERSIST_DIR / "image_caption_cache.json"))
+)
+IMAGE_REVIEW_MANIFEST_PATH = Path(
+    os.getenv("IMAGE_REVIEW_MANIFEST_PATH", str(PERSIST_DIR / "image_review_manifest.jsonl"))
 )
 
 TEXT_COLLECTION_NAME = "biology_text"

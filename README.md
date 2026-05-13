@@ -24,6 +24,30 @@ Chỉnh sửa `.env` và điền `HF_TOKEN` của bạn.
 python main.py --etl
 ```
 
+### ETL chỉ ảnh (khuyến nghị khi review caption thủ công)
+
+```bash
+python main.py --image-only
+```
+
+### Export file review ảnh để người dùng chỉnh caption/xóa ảnh
+
+```bash
+python main.py --export-image-review database/review_images.json
+```
+
+Theo từng PDF:
+
+```bash
+python main.py --export-image-review database/review_images_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf"
+```
+
+### Apply file review và cập nhật lại image vector DB
+
+```bash
+python main.py --apply-image-review database/review_images.json --review-user charlie
+```
+
 ### Chạy ứng dụng Gradio
 
 ```bash

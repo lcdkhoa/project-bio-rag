@@ -201,10 +201,18 @@ class ImageVectorDB:
     def _build_search_text(self, doc: Document) -> str:
         """Combine visual caption and local OCR text for bilingual image retrieval."""
         metadata = doc.metadata or {}
+        manual_caption = metadata.get("caption_vi_manual", "")
+        manual_keywords = metadata.get("keywords_vi_manual", "")
+        final_caption = metadata.get("final_caption_vi", "")
+        final_keywords = metadata.get("final_keywords_vi", "")
         parts = [
             doc.page_content,
             metadata.get("figure_label", ""),
             metadata.get("figure_caption", ""),
+            manual_caption,
+            manual_keywords,
+            final_caption,
+            final_keywords,
             metadata.get("visual_caption_vi", ""),
             metadata.get("visual_keywords_vi", ""),
             metadata.get("visual_objects_vi", ""),
@@ -233,6 +241,12 @@ class ImageVectorDB:
 
         return "\n".join(cleaned_parts)
 
+    def _doc_id_from_metadata(self, metadata: Dict[str, Any], image_path: str) -> str:
+        image_id = str(metadata.get("image_id") or "").strip()
+        if image_id:
+            return image_id
+        return f"{Path(image_path).stem}_{Path(image_path).parent.name}"
+
     def add_documents(self, documents: List[Document]):
         """Add image documents to the vector store."""
         if not documents:
@@ -253,7 +267,7 @@ class ImageVectorDB:
                 logger.warning(f"Image not found: {image_path}, skipping")
                 continue
 
-            doc_id = f"{Path(image_path).stem}_{Path(image_path).parent.name}"
+            doc_id = self._doc_id_from_metadata(doc.metadata or {}, image_path)
             search_text = self._build_search_text(doc)
             metadata = self._sanitize_metadata({**doc.metadata, "search_text": search_text})
 
@@ -288,6 +302,24 @@ class ImageVectorDB:
                 documents=visual_page_contents,
             )
             logger.info(f"Added {len(visual_ids)} visual image docs to ImageVectorDB")
+
+    def delete_documents(self, image_ids: List[str]) -> int:
+        """Delete image records from both metadata and visual collections by image_id/doc_id."""
+        ids = [str(image_id).strip() for image_id in image_ids if str(image_id).strip()]
+        if not ids:
+            return 0
+
+        try:
+            self._metadata_chroma._collection.delete(ids=ids)
+        except Exception as e:
+            logger.warning(f"Failed deleting image metadata docs: {e}")
+
+        try:
+            self._chroma._collection.delete(ids=ids)
+        except Exception as e:
+            logger.warning(f"Failed deleting visual image docs: {e}")
+
+        return len(ids)
 
     def _normalize_text(self, text: str) -> str:
         text = unicodedata.normalize("NFD", text.lower())
@@ -606,6 +638,10 @@ class ImageVectorDB:
         has_image_intent = self._has_image_intent(query)
         for doc in unique.values():
             metadata = dict(doc.metadata or {})
+            if metadata.get("is_active") is False:
+                continue
+            if str(metadata.get("review_status") or "").lower() in {"rejected", "deleted"}:
+                continue
             metadata_score = float(metadata.get("image_metadata_score") or 0.0)
             visual_score = float(metadata.get("image_visual_score") or 0.0)
             lexical_score = self._lexical_score(query, doc)

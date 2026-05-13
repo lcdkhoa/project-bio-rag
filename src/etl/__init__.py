@@ -5,6 +5,7 @@ from src.etl.text_splitter import TextSplitter
 from src.etl.cleaner import clean_vietnamese_text
 from src.etl.processing_status import ProcessingStatus, compute_file_hash, compute_string_hash
 from src.etl.image_processor import ImageProcessor
+from src.etl.image_review import ImageReviewManager
 
 __all__ = [
     "SimpleLoader",
@@ -15,4 +16,5 @@ __all__ = [
     "compute_file_hash",
     "compute_string_hash",
     "ImageProcessor",
+    "ImageReviewManager",
 ]

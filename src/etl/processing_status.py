@@ -72,8 +72,24 @@ class ProcessingStatus:
 
     def needs_image_processing(self, pdf_hash: str, page_number: int) -> bool:
         """Check if a page needs image extraction."""
+        return self.needs_image_processing_versioned(pdf_hash, page_number, required_version=None)
+
+    def needs_image_processing_versioned(
+        self,
+        pdf_hash: str,
+        page_number: int,
+        required_version: Optional[str] = None,
+    ) -> bool:
+        """Check if a page needs image extraction for the current extraction version."""
         status = self.get_status(pdf_hash, page_number)
-        return status is None or not status.get("image_extracted", False)
+        if status is None or not status.get("image_extracted", False):
+            return True
+
+        if not required_version:
+            return False
+
+        current_version = str(status.get("image_extraction_version") or "").strip()
+        return current_version != required_version
 
     def update_status(
         self,
@@ -81,6 +97,7 @@ class ProcessingStatus:
         page_number: int,
         text_indexed: Optional[bool] = None,
         image_extracted: Optional[bool] = None,
+        image_extraction_version: Optional[str] = None,
         pdf_filename: Optional[str] = None,
     ):
         """Update processing status for a PDF page."""
@@ -93,6 +110,9 @@ class ProcessingStatus:
             "pdf_filename": pdf_filename or existing.get("pdf_filename"),
             "text_indexed": text_indexed if text_indexed is not None else existing.get("text_indexed", False),
             "image_extracted": image_extracted if image_extracted is not None else existing.get("image_extracted", False),
+            "image_extraction_version": image_extraction_version
+            if image_extraction_version is not None
+            else existing.get("image_extraction_version", ""),
             "last_updated": datetime.now().isoformat(),
         }
 
@@ -108,9 +128,21 @@ class ProcessingStatus:
         self.update_status(pdf_hash, page_number, text_indexed=True, pdf_filename=pdf_filename)
         logger.debug(f"[{pdf_filename}] Page {page_number}: text indexed")
 
-    def mark_image_extracted(self, pdf_hash: str, page_number: int, pdf_filename: str):
+    def mark_image_extracted(
+        self,
+        pdf_hash: str,
+        page_number: int,
+        pdf_filename: str,
+        image_extraction_version: Optional[str] = None,
+    ):
         """Mark images as extracted for a specific page."""
-        self.update_status(pdf_hash, page_number, image_extracted=True, pdf_filename=pdf_filename)
+        self.update_status(
+            pdf_hash,
+            page_number,
+            image_extracted=True,
+            image_extraction_version=image_extraction_version,
+            pdf_filename=pdf_filename,
+        )
         logger.debug(f"[{pdf_filename}] Page {page_number}: images extracted")
 
     def get_pages_needing_text(self, pdf_hash: str, total_pages: int) -> List[int]:

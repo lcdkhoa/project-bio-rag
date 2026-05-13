@@ -152,8 +152,15 @@ def run_etl_image_only():
             ocr_text_per_page = {doc.metadata.get(
                 "page", i + 1): doc.page_content for i, doc in enumerate(docs)}
 
-            pages_to_process = status_tracker.get_pages_needing_images(
-                pdf_hash, len(docs))
+            pages_to_process = [
+                page_num
+                for page_num in range(1, len(docs) + 1)
+                if status_tracker.needs_image_processing_versioned(
+                    pdf_hash,
+                    page_num,
+                    required_version=image_processor.image_extraction_version,
+                )
+            ]
             if not pages_to_process:
                 logger.info(
                     f"[{filename}] All pages already processed for images, skipping")
@@ -243,8 +250,15 @@ def run_etl():
                         status_tracker.mark_text_indexed(
                             pdf_hash, page_num, filename)
 
-            pages_needing_images = status_tracker.get_pages_needing_images(
-                pdf_hash, len(docs))
+            pages_needing_images = [
+                page_num
+                for page_num in range(1, len(docs) + 1)
+                if status_tracker.needs_image_processing_versioned(
+                    pdf_hash,
+                    page_num,
+                    required_version=image_processor.image_extraction_version,
+                )
+            ]
             if pages_needing_images:
                 logger.info(
                     f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
@@ -278,6 +292,28 @@ def run_app():
     app.launch(share=True)
 
 
+def run_export_image_review(output_path: str, pdf_filename: str = "", include_completed: bool = False):
+    """Export extracted image metadata for human review/editing."""
+    from src.etl import ImageReviewManager
+
+    manager = ImageReviewManager()
+    count = manager.export_for_review(
+        output_path=output_path,
+        pdf_filename=pdf_filename.strip() or None,
+        only_pending=not include_completed,
+    )
+    logger.info(f"Exported {count} image review rows to {output_path}")
+
+
+def run_apply_image_review(review_path: str, reviewed_by: str = "human"):
+    """Apply human-edited image metadata and sync image vector DB."""
+    from src.etl import ImageReviewManager
+
+    manager = ImageReviewManager()
+    result = manager.apply_review_updates(review_path=review_path, reviewed_by=reviewed_by)
+    logger.info(f"Applied image review updates: {result}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Biology RAG System")
 
@@ -294,13 +330,49 @@ def main():
         action="store_true",
         help="Run ETL for images only. Skips pages already processed.",
     )
+    etl_group.add_argument(
+        "--export-image-review",
+        type=str,
+        default="",
+        help="Export image metadata review file (JSON) to this path.",
+    )
+    etl_group.add_argument(
+        "--apply-image-review",
+        type=str,
+        default="",
+        help="Apply reviewed image metadata from a JSON file.",
+    )
+    etl_group.add_argument(
+        "--review-pdf",
+        type=str,
+        default="",
+        help="Optional PDF filename filter for --export-image-review.",
+    )
+    etl_group.add_argument(
+        "--review-user",
+        type=str,
+        default="human",
+        help="Reviewer name used by --apply-image-review.",
+    )
+    etl_group.add_argument(
+        "--review-include-completed",
+        action="store_true",
+        help="Include approved/rejected rows when exporting review file.",
+    )
 
     parser.add_argument("--app", action="store_true",
                         help="Launch Gradio web app")
 
     args = parser.parse_args()
 
-    if not args.etl and not args.text_only and not args.image_only and not args.app:
+    if (
+        not args.etl
+        and not args.text_only
+        and not args.image_only
+        and not args.app
+        and not args.export_image_review
+        and not args.apply_image_review
+    ):
         parser.print_help()
         sys.exit(1)
 
@@ -310,6 +382,16 @@ def main():
         run_etl_image_only()
     elif args.etl:
         run_etl()
+
+    if args.export_image_review:
+        run_export_image_review(
+            output_path=args.export_image_review,
+            pdf_filename=args.review_pdf,
+            include_completed=args.review_include_completed,
+        )
+
+    if args.apply_image_review:
+        run_apply_image_review(review_path=args.apply_image_review, reviewed_by=args.review_user)
 
     if args.app:
         run_app()
