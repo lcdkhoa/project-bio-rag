@@ -11,6 +11,7 @@ load_dotenv()
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
+
 def _path_from_env(env_name: str, default: Path, base_dir: Path = PROJECT_ROOT) -> Path:
     raw_value = os.getenv(env_name, "").strip()
     if not raw_value:
@@ -22,8 +23,19 @@ def _path_from_env(env_name: str, default: Path, base_dir: Path = PROJECT_ROOT) 
     return path.resolve()
 
 
-def _optional_path_from_env(env_name: str, default: Path, base_dir: Path = PROJECT_ROOT) -> Path:
-    return _path_from_env(env_name, default, base_dir=base_dir)
+def _database_child_path_from_env(env_name: str, default: Path) -> Path:
+    raw_value = os.getenv(env_name, "").strip()
+    if not raw_value:
+        return default
+
+    path = Path(raw_value).expanduser()
+    if path.is_absolute():
+        return path.resolve()
+
+    parts = path.parts
+    if parts and parts[0].lower() == "database":
+        path = Path(*parts[1:]) if len(parts) > 1 else Path()
+    return (PERSIST_DIR / path).resolve()
 
 
 DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "data")
@@ -52,11 +64,11 @@ IMAGE_CAPTION_MODEL = os.getenv(
 )
 IMAGE_CAPTION_MAX_NEW_TOKENS = int(
     os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
-IMAGE_CAPTION_CACHE_PATH = _optional_path_from_env(
+IMAGE_CAPTION_CACHE_PATH = _database_child_path_from_env(
     "IMAGE_CAPTION_CACHE_PATH",
     PERSIST_DIR / "image_caption_cache.json",
 )
-IMAGE_REVIEW_MANIFEST_PATH = _optional_path_from_env(
+IMAGE_REVIEW_MANIFEST_PATH = _database_child_path_from_env(
     "IMAGE_REVIEW_MANIFEST_PATH",
     PERSIST_DIR / "image_review_manifest.jsonl",
 )
