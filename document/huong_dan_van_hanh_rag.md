@@ -40,6 +40,31 @@ Cần cài thêm thư viện hệ thống cho `pdf2image` và OCR tiếng Việt
 !apt-get install -y tesseract-ocr tesseract-ocr-vie
 ```
 
+Để tránh mất DB/checkpoint khi runtime Colab bị ngắt, mount Google Drive và trỏ `RAG_DATABASE_DIR` vào Drive trước khi chạy ETL:
+
+```python
+from google.colab import drive
+drive.mount("/content/drive")
+
+import os
+os.environ["RAG_DATABASE_DIR"] = "/content/drive/MyDrive/project_bio_rag/database"
+```
+
+Khi đó các file sau sẽ nằm trong Drive thay vì runtime `/content`:
+- `chroma.sqlite3` và các collection Chroma.
+- `processed_files.txt`.
+- `images/...`.
+- `image_review_manifest.jsonl`.
+- `image_caption_cache.json`.
+
+Nếu PDF đầu vào cũng đặt trên Drive, trỏ thêm:
+
+```python
+os.environ["RAG_DATA_DIR"] = "/content/drive/MyDrive/project_bio_rag/data"
+```
+
+Không xóa `%rm -rf database` trong runtime nếu mục tiêu là resume; lệnh này chỉ xóa thư mục local và không reset DB đang nằm trên Drive.
+
 ### 2.2 Tạo file `.env`
 
 ```bash
@@ -52,9 +77,11 @@ cp .env.example .env
 - `USE_GPU=true|false`: bật/tắt GPU.
 - `TESSERACT_CMD`: đường dẫn `tesseract.exe` trên Windows, ví dụ `C:/Program Files/Tesseract-OCR/tesseract.exe`.
 - `POPPLER_PATH`: đường dẫn thư mục `bin` của Poppler trên Windows, ví dụ `C:/poppler/Library/bin`.
+- `RAG_DATABASE_DIR`: nơi lưu thư mục database. Để rỗng thì dùng `./database`; trên Colab nên trỏ vào Google Drive.
+- `RAG_DATA_DIR`: nơi đọc PDF đầu vào. Để rỗng thì dùng `./data`.
 - `IMAGE_CAPTION_ENABLED=true|false`: bật/tắt caption model cho ảnh.
 - `IMAGE_EXTRACTION_VERSION=v2`: version thuật toán extract ảnh, đổi version sẽ buộc reprocess image page.
-- `IMAGE_REVIEW_MANIFEST_PATH=database/image_review_manifest.jsonl`: nơi lưu manifest review ảnh.
+- `IMAGE_REVIEW_MANIFEST_PATH`: nơi lưu manifest review ảnh. Để rỗng thì mặc định nằm trong `RAG_DATABASE_DIR`.
 
 Nếu chưa biết máy cài Poppler/Tesseract ở đâu, repo có sẵn:
 

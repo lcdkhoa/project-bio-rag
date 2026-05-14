@@ -11,8 +11,23 @@ load_dotenv()
 
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 
-DATA_DIR = PROJECT_ROOT / "data"
-PERSIST_DIR = PROJECT_ROOT / "database"
+def _path_from_env(env_name: str, default: Path, base_dir: Path = PROJECT_ROOT) -> Path:
+    raw_value = os.getenv(env_name, "").strip()
+    if not raw_value:
+        return default
+
+    path = Path(raw_value).expanduser()
+    if not path.is_absolute():
+        path = base_dir / path
+    return path.resolve()
+
+
+def _optional_path_from_env(env_name: str, default: Path, base_dir: Path = PROJECT_ROOT) -> Path:
+    return _path_from_env(env_name, default, base_dir=base_dir)
+
+
+DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "data")
+PERSIST_DIR = _path_from_env("RAG_DATABASE_DIR", PROJECT_ROOT / "database")
 IMAGES_DIR = PERSIST_DIR / "images"
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
 
@@ -37,13 +52,13 @@ IMAGE_CAPTION_MODEL = os.getenv(
 )
 IMAGE_CAPTION_MAX_NEW_TOKENS = int(
     os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
-IMAGE_CAPTION_CACHE_PATH = Path(
-    os.getenv("IMAGE_CAPTION_CACHE_PATH", str(
-        PERSIST_DIR / "image_caption_cache.json"))
+IMAGE_CAPTION_CACHE_PATH = _optional_path_from_env(
+    "IMAGE_CAPTION_CACHE_PATH",
+    PERSIST_DIR / "image_caption_cache.json",
 )
-IMAGE_REVIEW_MANIFEST_PATH = Path(
-    os.getenv("IMAGE_REVIEW_MANIFEST_PATH", str(
-        PERSIST_DIR / "image_review_manifest.jsonl"))
+IMAGE_REVIEW_MANIFEST_PATH = _optional_path_from_env(
+    "IMAGE_REVIEW_MANIFEST_PATH",
+    PERSIST_DIR / "image_review_manifest.jsonl",
 )
 
 TEXT_COLLECTION_NAME = "biology_text"

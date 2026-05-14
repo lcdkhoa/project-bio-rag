@@ -41,6 +41,36 @@ Nếu chạy trên Google Colab, cài thêm system libs trước khi ETL:
 !apt-get install -y tesseract-ocr tesseract-ocr-vie
 ```
 
+### Lưu `database` trên Google Drive khi chạy Colab
+
+Mặc định project ghi Chroma DB, checkpoint ETL, ảnh crop, manifest review và caption cache vào `./database`.
+Trên Colab, thư mục này nằm trong runtime tạm và có thể mất khi runtime bị ngắt. Để lưu thẳng vào Google Drive, mount Drive rồi đặt `RAG_DATABASE_DIR` trước khi chạy ETL:
+
+```python
+from google.colab import drive
+drive.mount("/content/drive")
+
+import os
+os.environ["RAG_DATABASE_DIR"] = "/content/drive/MyDrive/project_bio_rag/database"
+```
+
+Sau đó chạy lại lệnh ETL như bình thường:
+
+```bash
+python main.py --etl
+# hoặc
+python main.py --text-only
+python main.py --image-only
+```
+
+Nếu PDF cũng nằm trên Drive, có thể đặt thêm:
+
+```python
+os.environ["RAG_DATA_DIR"] = "/content/drive/MyDrive/project_bio_rag/data"
+```
+
+Lưu ý: không chạy `%rm -rf database` trong notebook nếu đang muốn giữ checkpoint. Khi `RAG_DATABASE_DIR` trỏ vào Drive, muốn xóa DB thì chỉ xóa đúng thư mục Drive đó khi thật sự cần rebuild từ đầu.
+
 ## 2) Lệnh chính
 
 | Lệnh | Mục đích |

@@ -90,13 +90,38 @@ CLI flags mới quan trọng:
 
 ### 3.2 Config trung tâm (`src/config.py`)
 
-- `DATA_DIR`, `PERSIST_DIR`, `IMAGES_DIR`: đường dẫn dữ liệu.
+- `DATA_DIR`, `PERSIST_DIR`, `IMAGES_DIR`: đường dẫn dữ liệu. Có thể override bằng `RAG_DATA_DIR` và `RAG_DATABASE_DIR`.
 - `TESSERACT_CMD`, `POPPLER_PATH`: đường dẫn dependency OCR/render PDF trên Windows.
   - Nếu chưa biết path cài đặt, xem `document/windows_tools_setup.md`.
   - Repo có sẵn `windows_tools/poppler.zip` và `windows_tools/tesseract-ocr.zip`.
 - `IMAGE_EXTRACTION_VERSION`: version extract để điều khiển reprocess.
 - `IMAGE_CAPTION_*`: cấu hình caption model.
 - `IMAGE_RETRIEVER_*`, `IMAGE_RELEVANCE_THRESHOLD`: tham số retrieve ảnh.
+
+### 3.2b Database trên Google Drive khi chạy Colab
+
+Trên Colab, `./database` nằm trong runtime tạm. Để ETL có thể resume sau khi runtime bị ngắt, mount Drive và set biến môi trường trước khi import/chạy app:
+
+```python
+from google.colab import drive
+drive.mount("/content/drive")
+
+import os
+os.environ["RAG_DATABASE_DIR"] = "/content/drive/MyDrive/project_bio_rag/database"
+```
+
+Khi `RAG_DATABASE_DIR` được set, các thành phần sau đi theo Drive path:
+- Chroma DB text/image/status.
+- `processed_files.txt`.
+- `images/`.
+- `image_review_manifest.jsonl`.
+- `image_caption_cache.json`.
+
+Nếu PDF cũng nằm trên Drive:
+
+```python
+os.environ["RAG_DATA_DIR"] = "/content/drive/MyDrive/project_bio_rag/data"
+```
 
 ### 3.3 OCR & text ETL (`src/etl/loaders.py`, `text_splitter.py`)
 
