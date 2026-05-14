@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
   <title>Huong Dan Van Hanh Project RAG</title>
   <style>
+    :root { color-scheme: light !important; }
     body {
       font-family: "Segoe UI", Tahoma, Arial, sans-serif;
       max-width: 980px;
@@ -38,7 +40,6 @@
       color: inherit !important;
       padding: 0;
     }
-    ul { margin-top: 6px; }
     table {
       border-collapse: collapse;
       width: 100%;
@@ -63,13 +64,13 @@
 </head>
 <body>
   <h1>Huong Dan Van Hanh Project RAG</h1>
-  <p>Tai lieu nay mo ta cac buoc chay, muc dich tung lenh CLI, va quy trinh review anh thu cong.</p>
+  <p>Tai lieu nay mo ta cac buoc chay, cac lenh CLI, va quy trinh review/upsert metadata anh.</p>
 
   <h2>1) Muc tieu he thong</h2>
   <ul>
     <li><b>Text index</b>: phuc vu tra loi noi dung van ban SGK.</li>
     <li><b>Image index</b>: phuc vu tim anh minh hoa lien quan cau hoi.</li>
-    <li><b>Human review</b>: cho phep sua caption va loai bo anh sai truoc khi retrieval.</li>
+    <li><b>Human review + CRUD metadata</b>: sua caption, loai bo anh sai, bo sung item moi.</li>
   </ul>
 
   <h2>2) Chuan bi moi truong</h2>
@@ -77,120 +78,99 @@
   <pre><code>pip install -r requirements.txt</code></pre>
 
   <h3>2.1b Neu chay tren Google Colab</h3>
-  <p>Can cai them thu vien he thong cho <code>pdf2image</code> va OCR tieng Viet:</p>
   <pre><code>!apt-get update
 !apt-get install -y poppler-utils
 !apt-get install -y tesseract-ocr tesseract-ocr-vie</code></pre>
 
   <h3>2.2 Tao file .env</h3>
   <pre><code>cp .env.example .env</code></pre>
-
-  <h3>2.3 Bien quan trong</h3>
+  <p>Neu chay tren Windows, khai bao dependency OCR/render PDF trong <code>.env</code>:</p>
+  <pre><code>TESSERACT_CMD=C:/Program Files/Tesseract-OCR/tesseract.exe
+POPPLER_PATH=C:/poppler/Library/bin</code></pre>
+  <p>Neu chua biet may cai Poppler/Tesseract o dau, repo co san <code>windows_tools/poppler.zip</code> va <code>windows_tools/tesseract-ocr.zip</code>. Giai nen va cau hinh theo <code>document/windows_tools_setup.md</code>.</p>
   <ul>
-    <li><code>HF_TOKEN</code>: bat buoc de tai model Hugging Face.</li>
-    <li><code>USE_GPU</code>: bat/tat GPU.</li>
-    <li><code>IMAGE_CAPTION_ENABLED</code>: bat/tat caption model cho anh.</li>
-    <li><code>IMAGE_EXTRACTION_VERSION</code>: version thuat toan extract image.</li>
-    <li><code>IMAGE_REVIEW_MANIFEST_PATH</code>: noi luu manifest review anh.</li>
+    <li>Poppler Windows releases: <a href="https://github.com/oschwartz10612/poppler-windows/releases/">https://github.com/oschwartz10612/poppler-windows/releases/</a></li>
+    <li>Huong dan Poppler cho pdf2image: <a href="https://pdf2image.readthedocs.io/en/latest/installation.html">https://pdf2image.readthedocs.io/en/latest/installation.html</a></li>
+    <li>Tesseract Windows UB Mannheim: <a href="https://github.com/UB-Mannheim/tesseract/wiki">https://github.com/UB-Mannheim/tesseract/wiki</a></li>
+    <li>Tai lieu Tesseract Windows UB Mannheim: <a href="https://ub-mannheim.github.io/Tesseract_Dokumentation/Tesseract_Doku_Windows.html">https://ub-mannheim.github.io/Tesseract_Dokumentation/Tesseract_Doku_Windows.html</a></li>
   </ul>
 
   <h2>3) Danh sach lenh va muc dich</h2>
   <table>
     <thead>
-      <tr>
-        <th>Lenh</th>
-        <th>Muc dich</th>
-      </tr>
+      <tr><th>Lenh</th><th>Muc dich</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><code>python main.py --text-only</code></td>
-        <td>ETL chi text (OCR + chunk + index text).</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --image-only</code></td>
-        <td>ETL chi image (extract + metadata + index image).</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --etl</code></td>
-        <td>ETL full text + image trong 1 lan chay.</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --export-image-review &lt;output.json&gt;</code></td>
-        <td>Export danh sach anh de review caption/xoa anh khong lien quan.</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --apply-image-review &lt;review.json&gt; --review-user &lt;name&gt;</code></td>
-        <td>Apply ket qua review vao vector DB.</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --export-image-review &lt;output.json&gt; --review-pdf "&lt;file.pdf&gt;"</code></td>
-        <td>Export review theo 1 PDF cu the.</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --export-image-review &lt;output.json&gt; --review-include-completed</code></td>
-        <td>Export ca item da review (khong chi pending).</td>
-      </tr>
-      <tr>
-        <td><code>python main.py --app</code></td>
-        <td>Mo giao dien Gradio de hoi dap.</td>
-      </tr>
+      <tr><td><code>python main.py --text-only</code></td><td>ETL chi text.</td></tr>
+      <tr><td><code>python main.py --image-only</code></td><td>ETL chi image.</td></tr>
+      <tr><td><code>python main.py --etl</code></td><td>ETL full text + image.</td></tr>
+      <tr><td><code>python main.py --export-image-review &lt;output.json&gt;</code></td><td>Export JSON review.</td></tr>
+      <tr><td><code>python main.py --export-image-review &lt;output.json&gt; --review-pdf "&lt;file.pdf&gt;"</code></td><td>Export review theo 1 PDF.</td></tr>
+      <tr><td><code>python main.py --export-image-review &lt;output.json&gt; --review-include-completed</code></td><td>Export ca item da review.</td></tr>
+      <tr><td><code>python main.py --export-image-db &lt;output.json&gt;</code></td><td>Export snapshot metadata DB (manifest).</td></tr>
+      <tr><td><code>python main.py --export-image-db &lt;output.json&gt; --review-pdf "&lt;file.pdf&gt;"</code></td><td>Export snapshot DB theo PDF.</td></tr>
+      <tr><td><code>python main.py --upsert-image-review-item &lt;item.json&gt; --review-user &lt;name&gt;</code></td><td>Upsert 1 item theo image_id.</td></tr>
+      <tr><td><code>python main.py --apply-image-review &lt;review.json&gt; --review-user &lt;name&gt;</code></td><td>Apply batch review vao vector DB.</td></tr>
+      <tr><td><code>python main.py --apply-image-review &lt;review.json&gt; --review-pdf "&lt;file.pdf&gt;" --review-user &lt;name&gt;</code></td><td>Apply batch chi cho 1 PDF.</td></tr>
+      <tr><td><code>python main.py --replace-image-db &lt;snapshot.json&gt; --review-user &lt;name&gt;</code></td><td>Replace manifest va rebuild image index theo snapshot.</td></tr>
+      <tr><td><code>python main.py --app</code></td><td>Mo Gradio app.</td></tr>
     </tbody>
   </table>
 
-  <h2>4) Quy trinh khuyen nghi</h2>
-
-  <h3>Kich ban A: Khoi tao moi hoan toan</h3>
+  <h2>4) Quy tac review/upsert (quan trong)</h2>
   <ol>
-    <li>Xoa DB cu:</li>
+    <li><code>--apply-image-review</code> la upsert theo item co trong file JSON, khong phai sync full.</li>
+    <li>Xoa item khoi JSON array khong dong nghia xoa khoi DB.</li>
+    <li>Muon loai khoi retrieval: dat <code>review_status=rejected|deleted</code>, hoac <code>is_active=false</code>, hoac <code>delete=true</code>.</li>
+    <li><code>--upsert-image-review-item</code> se create neu <code>image_id</code> chua ton tai, update neu da ton tai.</li>
+    <li><code>--replace-image-db</code> la sync full theo snapshot: item khong con trong JSON se bi xoa khoi manifest va image index.</li>
   </ol>
-  <pre><code>Remove-Item -Recurse -Force "D:\personal_repo\project_rag\database"
-New-Item -ItemType Directory -Path "D:\personal_repo\project_rag\database" | Out-Null</code></pre>
-  <ol start="2">
-    <li>Chay ETL text:</li>
-  </ol>
-  <pre><code>python main.py --text-only</code></pre>
-  <ol start="3">
-    <li>Chay ETL image:</li>
-  </ol>
-  <pre><code>python main.py --image-only</code></pre>
-  <ol start="4">
-    <li>Export file review:</li>
-  </ol>
-  <pre><code>python main.py --export-image-review database/review_images.json</code></pre>
-  <ol start="5">
-    <li>Sua thu cong cac truong: <code>caption_vi_manual</code>, <code>keywords_vi_manual</code>, <code>review_status</code>, <code>is_active</code>.</li>
-    <li>Apply review:</li>
-  </ol>
-  <pre><code>python main.py --apply-image-review database/review_images.json --review-user charlie</code></pre>
-  <ol start="7">
-    <li>Mo app:</li>
-  </ol>
-  <pre><code>python main.py --app</code></pre>
 
-  <h3>Kich ban B: Build nhanh 1 lenh</h3>
-  <pre><code>python main.py --etl</code></pre>
+  <h2>5) Quy trinh khuyen nghi</h2>
+  <h3>Kich ban A: Khoi tao moi</h3>
+  <pre><code>python main.py --text-only
+python main.py --image-only
+python main.py --export-image-review database/review_images.json
+python main.py --apply-image-review database/review_images.json --review-user charlie
+python main.py --app</code></pre>
 
-  <h3>Kich ban C: Chi review 1 tai lieu</h3>
+  <h3>Kich ban B: Chi review 1 PDF</h3>
   <pre><code>python main.py --export-image-review database/review_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf"
-python main.py --apply-image-review database/review_sgk6.json --review-user charlie</code></pre>
+python main.py --apply-image-review database/review_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf" --review-user charlie</code></pre>
 
-  <h2>5) Reset va xu ly su co</h2>
-  <pre><code>python reset_status.py --all
-python reset_status.py --image-index
-python reset_status.py --images-full
-python reset_status.py "D:/personal_repo/project_rag/data/SGK KHTN 6 CD.pdf"</code></pre>
+  <h3>Kich ban C: Upsert 1 item</h3>
+  <pre><code>python main.py --upsert-image-review-item database/one_item.json --review-user charlie</code></pre>
+
+  <h3>Kich ban D: Replace toan bo image DB theo snapshot</h3>
+  <pre><code>python main.py --export-image-db database/all_image_db.json
+python main.py --replace-image-db database/all_image_db.json --review-user charlie</code></pre>
+  <pre><code>[
+  {
+    "image_id": "manual_0001",
+    "pdf_filename": "SGK KHTN 6 CD.pdf",
+    "page_number": 88,
+    "image_path": "D:/personal_repo/project_rag/database/images/SGK KHTN 6 CD/page_88_img_manual_1.png",
+    "caption_vi_manual": "Hai con hai ma tren tang bang",
+    "keywords_vi_manual": "hai ma, vung cuc, bang tuyet",
+    "review_status": "edited",
+    "is_active": true
+  },
+  {
+    "image_id": "bad_image_0001",
+    "review_status": "rejected",
+    "is_active": false
+  }
+]</code></pre>
 
   <h2>6) Kiem tra sau khi chay</h2>
   <ul>
     <li>Co file <code>database/chroma.sqlite3</code>.</li>
-    <li>Co anh trong <code>database/images/...</code>.</li>
     <li>Co file <code>database/image_review_manifest.jsonl</code>.</li>
+    <li>Co anh trong <code>database/images/...</code>.</li>
   </ul>
-  <pre><code>python main.py --help</code></pre>
 
   <div class="note">
-    Goi y: Neu uu tien toc do ETL image, co the dat <code>IMAGE_CAPTION_ENABLED=false</code> va su dung quy trinh review thu cong.
+    Goi y: Neu uu tien toc do ETL image, dat <code>IMAGE_CAPTION_ENABLED=false</code> va dung flow review thu cong.
   </div>
 </body>
 </html>

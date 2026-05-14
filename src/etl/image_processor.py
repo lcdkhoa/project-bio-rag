@@ -26,6 +26,8 @@ from ..config import (
     IMAGE_EXTRACTION_VERSION,
     IMAGE_REVIEW_MANIFEST_PATH,
     IMAGES_DIR,
+    POPPLER_PATH,
+    TESSERACT_CMD,
 )
 from .image_captioner import ImageCaptioner
 from .processing_status import ProcessingStatus, compute_file_hash
@@ -394,7 +396,13 @@ class ImageProcessor:
     def _extract_page_image(self, pdf_path: str, page_num: int) -> Optional[Tuple[np.ndarray, Image.Image]]:
         """Render a PDF page as image for extraction."""
         try:
-            images = convert_from_path(pdf_path, first_page=page_num + 1, last_page=page_num + 1, dpi=150)
+            images = convert_from_path(
+                pdf_path,
+                first_page=page_num + 1,
+                last_page=page_num + 1,
+                dpi=150,
+                poppler_path=POPPLER_PATH,
+            )
             if images:
                 img_array = np.array(images[0])
                 return img_array, images[0]
@@ -407,7 +415,14 @@ class ImageProcessor:
         try:
             import pytesseract
 
-            images = convert_from_path(pdf_path, first_page=page_num + 1, last_page=page_num + 1, dpi=150)
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+            images = convert_from_path(
+                pdf_path,
+                first_page=page_num + 1,
+                last_page=page_num + 1,
+                dpi=150,
+                poppler_path=POPPLER_PATH,
+            )
             if not images:
                 return page_text[:500] if page_text else ""
 
@@ -429,6 +444,7 @@ class ImageProcessor:
         try:
             import pytesseract
 
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
             text = pytesseract.image_to_string(image, lang="vie")
             return self._clean_text(text, max_chars=300)
         except Exception:

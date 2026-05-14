@@ -38,6 +38,7 @@ VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
     "sot ret": "malaria",
     "thuc vat": "plant",
     "dong vat": "animal",
+    "trau": "water buffalo buffalo cattle",
     "hoa": "flower",
     "hat": "seed",
     "re": "root",
@@ -333,6 +334,8 @@ class ImageVectorDB:
             "and",
             "are",
             "as",
+            "anh",
+            "cho",
             "cua",
             "co",
             "con",
@@ -343,8 +346,11 @@ class ImageVectorDB:
             "mot",
             "nhung",
             "the",
+            "tim",
+            "toi",
             "trong",
             "ve",
+            "xem",
             "what",
             "which",
             "with",
@@ -408,6 +414,10 @@ class ImageVectorDB:
             metadata.get("visual_scene_vi"),
             metadata.get("lesson_title"),
             metadata.get("section_title"),
+            metadata.get("caption_vi_manual"),
+            metadata.get("keywords_vi_manual"),
+            metadata.get("final_caption_vi"),
+            metadata.get("final_keywords_vi"),
             metadata.get("keywords_vi"),
             metadata.get("caption_vi"),
             metadata.get("caption"),
@@ -438,6 +448,10 @@ class ImageVectorDB:
                     "visual_scene_vi",
                     "lesson_title",
                     "section_title",
+                    "caption_vi_manual",
+                    "keywords_vi_manual",
+                    "final_caption_vi",
+                    "final_keywords_vi",
                     "keywords_vi",
                     "caption_vi",
                     "caption",
@@ -692,7 +706,12 @@ class ImageVectorDB:
                 continue
             if top_score and relevance_score < top_score - score_window:
                 continue
-            if "requested_page" not in source and "page_context" in source and direct_evidence_score < 0.25:
+            if (
+                "requested_page" not in source
+                and "page_context" in source
+                and direct_evidence_score < 0.25
+                and (not has_image_intent or lexical_score < 0.2)
+            ):
                 continue
             if not has_page_request and not has_image_intent and direct_evidence_score < 0.3 and lexical_score < 0.35:
                 continue

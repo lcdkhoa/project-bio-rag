@@ -1,6 +1,7 @@
 """Main entry point for Biology RAG system."""
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -305,13 +306,51 @@ def run_export_image_review(output_path: str, pdf_filename: str = "", include_co
     logger.info(f"Exported {count} image review rows to {output_path}")
 
 
-def run_apply_image_review(review_path: str, reviewed_by: str = "human"):
+def run_export_image_db(output_path: str, pdf_filename: str = ""):
+    """Export full image metadata DB snapshot from manifest records."""
+    from src.etl import ImageReviewManager
+
+    manager = ImageReviewManager()
+    count = manager.export_db_snapshot(
+        output_path=output_path,
+        pdf_filename=pdf_filename.strip() or None,
+    )
+    logger.info(f"Exported {count} image DB rows to {output_path}")
+
+
+def run_upsert_image_review_item(item_path: str, reviewed_by: str = "human"):
+    """Upsert a single image metadata JSON object into review DB + vector DB."""
+    from src.etl import ImageReviewManager
+
+    payload = json.loads(Path(item_path).read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("--upsert-image-review-item expects a JSON object file")
+
+    manager = ImageReviewManager()
+    result = manager.upsert_review_item(item=payload, reviewed_by=reviewed_by)
+    logger.info(f"Upserted image review item: {result}")
+
+
+def run_apply_image_review(review_path: str, reviewed_by: str = "human", pdf_filename: str = ""):
     """Apply human-edited image metadata and sync image vector DB."""
     from src.etl import ImageReviewManager
 
     manager = ImageReviewManager()
-    result = manager.apply_review_updates(review_path=review_path, reviewed_by=reviewed_by)
+    result = manager.apply_review_updates(
+        review_path=review_path,
+        reviewed_by=reviewed_by,
+        pdf_filename=pdf_filename.strip() or None,
+    )
     logger.info(f"Applied image review updates: {result}")
+
+
+def run_replace_image_db(snapshot_path: str, reviewed_by: str = "human"):
+    """Replace image metadata manifest and image vector DB from a snapshot JSON array."""
+    from src.etl import ImageReviewManager
+
+    manager = ImageReviewManager()
+    result = manager.replace_image_db(snapshot_path=snapshot_path, reviewed_by=reviewed_by)
+    logger.info(f"Replaced image DB from snapshot: {result}")
 
 
 def main():
@@ -337,22 +376,40 @@ def main():
         help="Export image metadata review file (JSON) to this path.",
     )
     etl_group.add_argument(
+        "--export-image-db",
+        type=str,
+        default="",
+        help="Export full image metadata DB snapshot (JSON) to this path.",
+    )
+    etl_group.add_argument(
         "--apply-image-review",
         type=str,
         default="",
         help="Apply reviewed image metadata from a JSON file.",
     )
     etl_group.add_argument(
+        "--replace-image-db",
+        type=str,
+        default="",
+        help="Replace image metadata DB from a JSON snapshot and rebuild image index.",
+    )
+    etl_group.add_argument(
+        "--upsert-image-review-item",
+        type=str,
+        default="",
+        help="Upsert one image review item from a JSON object file.",
+    )
+    etl_group.add_argument(
         "--review-pdf",
         type=str,
         default="",
-        help="Optional PDF filename filter for --export-image-review.",
+        help="Optional PDF filename filter for --export-image-review, --export-image-db, and --apply-image-review.",
     )
     etl_group.add_argument(
         "--review-user",
         type=str,
         default="human",
-        help="Reviewer name used by --apply-image-review.",
+        help="Reviewer name used by review/apply/upsert/replace commands.",
     )
     etl_group.add_argument(
         "--review-include-completed",
@@ -371,7 +428,10 @@ def main():
         and not args.image_only
         and not args.app
         and not args.export_image_review
+        and not args.export_image_db
         and not args.apply_image_review
+        and not args.replace_image_db
+        and not args.upsert_image_review_item
     ):
         parser.print_help()
         sys.exit(1)
@@ -390,8 +450,24 @@ def main():
             include_completed=args.review_include_completed,
         )
 
+    if args.export_image_db:
+        run_export_image_db(
+            output_path=args.export_image_db,
+            pdf_filename=args.review_pdf,
+        )
+
     if args.apply_image_review:
-        run_apply_image_review(review_path=args.apply_image_review, reviewed_by=args.review_user)
+        run_apply_image_review(
+            review_path=args.apply_image_review,
+            reviewed_by=args.review_user,
+            pdf_filename=args.review_pdf,
+        )
+
+    if args.replace_image_db:
+        run_replace_image_db(snapshot_path=args.replace_image_db, reviewed_by=args.review_user)
+
+    if args.upsert_image_review_item:
+        run_upsert_image_review_item(item_path=args.upsert_image_review_item, reviewed_by=args.review_user)
 
     if args.app:
         run_app()

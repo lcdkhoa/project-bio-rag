@@ -22,22 +22,28 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GRADIO_SERVER_NAME = os.getenv("GRADIO_SERVER_NAME", "0.0.0.0")
 GRADIO_SERVER_PORT = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
 USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
+TESSERACT_CMD = os.getenv("TESSERACT_CMD", "tesseract").strip() or "tesseract"
+POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
 IMAGE_EXTRACTION_VERSION = os.getenv("IMAGE_EXTRACTION_VERSION", "v2")
-IMAGE_CAPTION_ENABLED = os.getenv("IMAGE_CAPTION_ENABLED", "true").lower() == "true"
+IMAGE_CAPTION_ENABLED = os.getenv(
+    "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
     "IMAGE_CAPTION_MODEL",
     "pqthinh232/HCMUS-Qwen2-VL-2B-Instruct-Vietnamese-Image-Captioning-for-blind-E2",
 )
-IMAGE_CAPTION_MAX_NEW_TOKENS = int(os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
+IMAGE_CAPTION_MAX_NEW_TOKENS = int(
+    os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
 IMAGE_CAPTION_CACHE_PATH = Path(
-    os.getenv("IMAGE_CAPTION_CACHE_PATH", str(PERSIST_DIR / "image_caption_cache.json"))
+    os.getenv("IMAGE_CAPTION_CACHE_PATH", str(
+        PERSIST_DIR / "image_caption_cache.json"))
 )
 IMAGE_REVIEW_MANIFEST_PATH = Path(
-    os.getenv("IMAGE_REVIEW_MANIFEST_PATH", str(PERSIST_DIR / "image_review_manifest.jsonl"))
+    os.getenv("IMAGE_REVIEW_MANIFEST_PATH", str(
+        PERSIST_DIR / "image_review_manifest.jsonl"))
 )
 
 TEXT_COLLECTION_NAME = "biology_text"
@@ -56,6 +62,7 @@ RETRIEVER_K = 3
 IMAGE_RETRIEVER_K = int(os.getenv("IMAGE_RETRIEVER_K", "5"))
 IMAGE_RETRIEVER_FETCH_K = int(os.getenv("IMAGE_RETRIEVER_FETCH_K", "48"))
 IMAGE_METADATA_FETCH_K = int(os.getenv("IMAGE_METADATA_FETCH_K", "64"))
-IMAGE_RELEVANCE_THRESHOLD = float(os.getenv("IMAGE_RELEVANCE_THRESHOLD", "0.42"))
+IMAGE_RELEVANCE_THRESHOLD = float(
+    os.getenv("IMAGE_RELEVANCE_THRESHOLD", "0.36"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")

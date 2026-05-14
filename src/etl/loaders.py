@@ -8,6 +8,7 @@ from typing import List
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 
+from ..config import POPPLER_PATH, TESSERACT_CMD
 from .cleaner import clean_vietnamese_text
 
 logger = logging.getLogger(__name__)
@@ -40,17 +41,15 @@ class RobustOCRLoader:
     """Load PDFs using OCR (Tesseract) for better Vietnamese support."""
 
     def load_pdf(self, pdf_file: str) -> List[Document]:
-        import os
         import time
         from pdf2image import convert_from_path
         import pytesseract
 
-        tesseract_cmd = os.environ.get("TESSERACT_CMD", "tesseract")
-        pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
         docs = []
         try:
-            images = convert_from_path(pdf_file)
+            images = convert_from_path(pdf_file, poppler_path=POPPLER_PATH)
             total_pages = len(images)
             logger.info(f"[{Path(pdf_file).name}] Starting OCR on {total_pages} pages")
 
