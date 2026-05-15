@@ -288,6 +288,25 @@ class ImageReviewManager:
         logger.info(f"Exported {len(rows)} DB rows to {output_file}")
         return len(rows)
 
+    def get_db_snapshot(self, pdf_filename: Optional[str] = None) -> list[dict]:
+        """Get full image metadata records currently stored in manifest DB as a list."""
+        records = self._read_manifest_records()
+        rows = []
+        for row in records.values():
+            if pdf_filename and str(row.get("pdf_filename") or "") != pdf_filename:
+                continue
+            rows.append(dict(row))
+
+        rows.sort(
+            key=lambda row: (
+                str(row.get("pdf_filename") or ""),
+                int(row.get("page_number") or 0),
+                str(row.get("image_path") or ""),
+            )
+        )
+
+        return rows
+
     def replace_image_db(self, snapshot_path: str, reviewed_by: str = "human") -> dict:
         """Replace manifest records and image vector index from a JSON array snapshot."""
         snapshot_file = Path(snapshot_path)
@@ -333,6 +352,48 @@ class ImageReviewManager:
             "skipped": skipped_count,
         }
         logger.info(f"Replaced image DB from snapshot: {summary}")
+        return summary
+
+    def replace_image_db_from_payload(self, payload: list, reviewed_by: str = "human") -> dict:
+        """Replace manifest records and image vector index from a JSON array payload."""
+        if not isinstance(payload, list):
+            raise ValueError("Image DB replacement payload must be a JSON array")
+
+        previous_records = self._read_manifest_records()
+        previous_ids = set(previous_records.keys())
+        records: Dict[str, dict] = {}
+        skipped_count = 0
+        now = datetime.now().isoformat()
+
+        for item in payload:
+            if not isinstance(item, dict):
+                skipped_count += 1
+                continue
+
+            image_id = str(item.get("image_id") or "").strip()
+            if not image_id:
+                skipped_count += 1
+                continue
+            if image_id in records:
+                raise ValueError(f"Duplicate image_id in replacement payload: {image_id}")
+
+            record = self._normalize_replacement_record(item, reviewed_by=reviewed_by, now=now)
+            record["image_id"] = image_id
+            records[image_id] = record
+
+        self._write_manifest_records(records)
+        upserted = self._sync_replaced_records(previous_ids, records)
+
+        removed_ids = previous_ids - set(records.keys())
+        inactive_count = sum(1 for record in records.values() if not self._is_indexable_record(record))
+        summary = {
+            "replaced": len(records),
+            "removed": len(removed_ids),
+            "inactive": inactive_count,
+            "upserted": upserted,
+            "skipped": skipped_count,
+        }
+        logger.info(f"Replaced image DB from payload: {summary}")
         return summary
 
     def upsert_review_item(self, item: dict, reviewed_by: str = "human") -> dict:

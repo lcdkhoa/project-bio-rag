@@ -336,6 +336,13 @@ def run_app():
     app.launch(share=True)
 
 
+def run_flask_api(port=5000):
+    """Launch Flask API server."""
+    logger.info(f"Starting Flask API server on port {port}...")
+    from src.app.api import run_api
+    run_api(port=port)
+
+
 def run_export_image_review(output_path: str, pdf_filename: str = "", include_completed: bool = False):
     """Export extracted image metadata for human review/editing."""
     from src.etl import ImageReviewManager
@@ -462,6 +469,10 @@ def main():
 
     parser.add_argument("--app", action="store_true",
                         help="Launch Gradio web app")
+    parser.add_argument("--api", action="store_true",
+                        help="Launch Flask API server")
+    parser.add_argument("--port", type=int, default=5000,
+                        help="Port for Flask API server (default: 5000)")
 
     args = parser.parse_args()
 
@@ -470,6 +481,7 @@ def main():
         and not args.text_only
         and not args.image_only
         and not args.app
+        and not args.api
         and not args.export_image_review
         and not args.export_image_db
         and not args.apply_image_review
@@ -514,6 +526,9 @@ def main():
 
     if args.app:
         run_app()
+        
+    if args.api:
+        run_flask_api(port=args.port)
 
 
 if __name__ == "__main__":

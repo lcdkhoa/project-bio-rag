@@ -35,3 +35,7 @@ gradio>=4.0.0
 python-dotenv
 tqdm
 rapidocr-onnxruntime
+
+# Web Server
+Flask>=3.0.0
+Flask-CORS>=4.0.0
