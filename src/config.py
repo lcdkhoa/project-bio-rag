@@ -42,6 +42,7 @@ DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "data")
 PERSIST_DIR = _path_from_env("RAG_DATABASE_DIR", PROJECT_ROOT / "database")
 IMAGES_DIR = PERSIST_DIR / "images"
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
+PROCESSED_IMAGES_LOG = PERSIST_DIR / "processed_images.txt"
 
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

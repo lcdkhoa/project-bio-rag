@@ -91,8 +91,10 @@ class ImageProcessor:
     def clip_model(self) -> CLIPModel:
         if self._clip_model is None:
             logger.info(f"Loading CLIP model: {CLIP_MODEL}")
-            self._clip_model = CLIPModel.from_pretrained(CLIP_MODEL, token=HF_TOKEN)
-            self._clip_processor = CLIPProcessor.from_pretrained(CLIP_MODEL, token=HF_TOKEN)
+            self._clip_model = CLIPModel.from_pretrained(
+                CLIP_MODEL, token=HF_TOKEN)
+            self._clip_processor = CLIPProcessor.from_pretrained(
+                CLIP_MODEL, token=HF_TOKEN)
             logger.info("CLIP model loaded")
         return self._clip_model
 
@@ -109,7 +111,8 @@ class ImageProcessor:
 
         # Strategy 1: contour on inverse threshold.
         thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)[1]
-        contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         for contour in contours:
             x, y, w, h = cv2.boundingRect(contour)
             if cv2.contourArea(contour) < 850:
@@ -125,7 +128,8 @@ class ImageProcessor:
             31,
             8,
         )
-        num_labels, _, stats, _ = cv2.connectedComponentsWithStats(comp_bin, connectivity=8)
+        num_labels, _, stats, _ = cv2.connectedComponentsWithStats(
+            comp_bin, connectivity=8)
         for label in range(1, num_labels):
             x, y, w, h, area = stats[label]
             if area < 1400 or w < 48 or h < 48:
@@ -136,7 +140,8 @@ class ImageProcessor:
         edges = cv2.Canny(gray, 60, 150)
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         edge_mask = cv2.dilate(edges, kernel, iterations=1)
-        edge_contours, _ = cv2.findContours(edge_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        edge_contours, _ = cv2.findContours(
+            edge_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in edge_contours:
             x, y, w, h = cv2.boundingRect(contour)
             if w < 70 or h < 70:
@@ -145,11 +150,15 @@ class ImageProcessor:
 
         # Strategy 4: high-saturation blocks (helps separate colorful textbook photos).
         hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        sat_mask = cv2.inRange(hsv, np.array([0, 32, 35]), np.array([180, 255, 252]))
+        sat_mask = cv2.inRange(hsv, np.array(
+            [0, 32, 35]), np.array([180, 255, 252]))
         sat_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        sat_mask = cv2.morphologyEx(sat_mask, cv2.MORPH_CLOSE, sat_kernel, iterations=2)
-        sat_mask = cv2.morphologyEx(sat_mask, cv2.MORPH_OPEN, sat_kernel, iterations=1)
-        sat_contours, _ = cv2.findContours(sat_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        sat_mask = cv2.morphologyEx(
+            sat_mask, cv2.MORPH_CLOSE, sat_kernel, iterations=2)
+        sat_mask = cv2.morphologyEx(
+            sat_mask, cv2.MORPH_OPEN, sat_kernel, iterations=1)
+        sat_contours, _ = cv2.findContours(
+            sat_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for contour in sat_contours:
             x, y, w, h = cv2.boundingRect(contour)
             if w < 90 or h < 90:
@@ -218,7 +227,8 @@ class ImageProcessor:
                 if self._contains(kept, bbox) or self._contains(bbox, kept):
                     area_left = self._bbox_area(kept)
                     area_right = self._bbox_area(bbox)
-                    ratio = (max(area_left, area_right) / max(1, min(area_left, area_right)))
+                    ratio = (max(area_left, area_right) /
+                             max(1, min(area_left, area_right)))
                     if ratio <= 1.8:
                         if area_right > area_left:
                             deduped[index] = bbox
@@ -256,7 +266,8 @@ class ImageProcessor:
                 if self._bbox_area(other) >= area * 0.12:
                     contained_children += 1
 
-            is_wide_container = (width / max(1, page_width)) > 0.88 and (height / max(1, page_height)) < 0.26
+            is_wide_container = (
+                width / max(1, page_width)) > 0.88 and (height / max(1, page_height)) < 0.26
             has_multiple_children = contained_children >= 2
             if is_wide_container and (contained_children >= 1 or overlap_children >= 2):
                 continue
@@ -276,7 +287,8 @@ class ImageProcessor:
             return [(int(x0), int(y0), int(x1), int(y1)) for x0, y0, x1, y1 in regions]
 
         ranked = sorted(
-            [(int(x0), int(y0), int(x1), int(y1)) for x0, y0, x1, y1 in regions],
+            [(int(x0), int(y0), int(x1), int(y1))
+             for x0, y0, x1, y1 in regions],
             key=lambda bbox: self._bbox_area(bbox),
             reverse=True,
         )
@@ -375,13 +387,15 @@ class ImageProcessor:
             neg_prob = probs[0][1].item()
 
             visual_score = self._visual_content_score(image)
-            keep = pos_prob > neg_prob or (visual_score > 0.04 and neg_prob < 0.72)
+            keep = pos_prob > neg_prob or (
+                visual_score > 0.04 and neg_prob < 0.72)
             logger.debug(
                 f"CLIP filter: pos={pos_prob:.3f}, neg={neg_prob:.3f}, visual={visual_score:.3f}, keep={keep}"
             )
             return keep, pos_prob, neg_prob
         except Exception as e:
-            logger.warning(f"CLIP filter failed: {e}, keeping image by default")
+            logger.warning(
+                f"CLIP filter failed: {e}, keeping image by default")
             return True, 0.0, 0.0
 
     def _visual_content_score(self, image: Image.Image) -> float:
@@ -452,7 +466,8 @@ class ImageProcessor:
 
     def _normalize_text(self, text: str) -> str:
         text = unicodedata.normalize("NFD", text.lower())
-        text = "".join(char for char in text if unicodedata.category(char) != "Mn")
+        text = "".join(
+            char for char in text if unicodedata.category(char) != "Mn")
         return re.sub(r"[^a-z0-9\s]+", " ", text)
 
     def _clean_text(self, text: str, max_chars: int = 1200) -> str:
@@ -461,7 +476,8 @@ class ImageProcessor:
 
     def _extract_section_title(self, page_text: str) -> str:
         """Find a compact lesson or section title from page OCR/PDF text."""
-        lines = [line.strip() for line in (page_text or "").splitlines() if line.strip()]
+        lines = [line.strip()
+                 for line in (page_text or "").splitlines() if line.strip()]
         title_candidates = []
         for line in lines[:30]:
             normalized = self._normalize_text(line)
@@ -476,7 +492,8 @@ class ImageProcessor:
 
     def _extract_lesson_title(self, page_text: str) -> str:
         """Find a coarse lesson title for page-level metadata."""
-        lines = [line.strip() for line in (page_text or "").splitlines() if line.strip()]
+        lines = [line.strip()
+                 for line in (page_text or "").splitlines() if line.strip()]
         for index, line in enumerate(lines[:35]):
             normalized = self._normalize_text(line)
             if re.search(r"\bbai\s+\d+", normalized):
@@ -518,7 +535,8 @@ class ImageProcessor:
     def _infer_image_type(self, figure_label: str, context_text: str, crop_text: str = "") -> str:
         normalized = self._normalize_text(f"{figure_label} {context_text}")
         crop_normalized = self._normalize_text(crop_text)
-        crop_tokens = [token for token in crop_normalized.split() if len(token) > 1]
+        crop_tokens = [token for token in crop_normalized.split()
+                       if len(token) > 1]
         if len(crop_tokens) >= 2 and len(crop_tokens) <= 12 and not figure_label:
             return "text_crop"
         if "em co biet" in normalized:
@@ -548,13 +566,15 @@ class ImageProcessor:
         aspect_ratio = crop.width / crop.height if crop.height else 0
         crop_area = crop.width * crop.height
         short_text = len(tokens) <= 10 and len(normalized) <= 80
-        weak_visual = visual_score < 0.055 and clip_negative_score >= (clip_positive_score + 0.06)
+        weak_visual = visual_score < 0.055 and clip_negative_score >= (
+            clip_positive_score + 0.06)
         return short_text and weak_visual and aspect_ratio < 9 and crop_area < 120000
 
     def _extract_keywords(self, *texts: str, limit: int = 18) -> str:
         """Extract lightweight Vietnamese keyword metadata without calling another model."""
         normalized = self._normalize_text(" ".join(texts))
-        tokens = [token for token in normalized.split() if len(token) > 1 and token not in VIETNAMESE_STOPWORDS]
+        tokens = [token for token in normalized.split() if len(
+            token) > 1 and token not in VIETNAMESE_STOPWORDS]
 
         scores: Dict[str, int] = {}
         for token in tokens:
@@ -593,7 +613,8 @@ class ImageProcessor:
         except Exception as e:
             logger.debug(f"Could not hash existing image {filepath}: {e}")
 
-        hash_path = output_dir / f"page_{page_num}_img_{img_index}_{img_hash[:8]}.png"
+        hash_path = output_dir / \
+            f"page_{page_num}_img_{img_index}_{img_hash[:8]}.png"
         if not hash_path.exists():
             return hash_path
 
@@ -606,7 +627,8 @@ class ImageProcessor:
 
         attempt = 1
         while True:
-            candidate = output_dir / f"page_{page_num}_img_{img_index}_{img_hash[:8]}_{attempt}.png"
+            candidate = output_dir / \
+                f"page_{page_num}_img_{img_index}_{img_hash[:8]}_{attempt}.png"
             if not candidate.exists():
                 return candidate
             attempt += 1
@@ -633,8 +655,10 @@ class ImageProcessor:
 
     def _build_image_search_text(self, metadata: Dict[str, object]) -> str:
         """Build Vietnamese-first text used to retrieve this image later."""
-        caption_text = metadata.get("caption_vi_manual", "") or metadata.get("caption_vi", "") or metadata.get("caption", "")
-        keywords_text = metadata.get("keywords_vi_manual", "") or metadata.get("keywords_vi", "")
+        caption_text = metadata.get("caption_vi_manual", "") or metadata.get(
+            "caption_vi", "") or metadata.get("caption", "")
+        keywords_text = metadata.get(
+            "keywords_vi_manual", "") or metadata.get("keywords_vi", "")
         parts = [
             metadata.get("figure_label", ""),
             metadata.get("figure_caption", ""),
@@ -692,13 +716,23 @@ class ImageProcessor:
             nearby_text = self._clean_text(page_text, max_chars=1600)
             lesson_title = self._extract_lesson_title(page_text)
             section_title = self._extract_section_title(page_text)
-            page_snapshot_path = self._save_page_snapshot(output_dir, page_num, pil_img)
+            page_snapshot_path = self._save_page_snapshot(
+                output_dir, page_num, pil_img)
 
+            # Phase 1: Contour detection for region discovery.
+            logger.info(
+                f"[Phase 1][page={page_num}] Discovering candidate image regions by contours")
             regions = self._detect_contour_regions(img_array)
-            refined = self._refine_regions(regions, img_array)
-            refined = self._limit_regions_for_extraction(refined, max_regions=24)
 
-            logger.debug(f"Page {page_num}: detected {len(regions)} regions, {len(refined)} after refinement")
+            # Phase 2: Refinement with color variance, aspect ratio, dedupe, and region caps.
+            logger.info(
+                f"[Phase 2][page={page_num}] Refining {len(regions)} contour regions")
+            refined = self._refine_regions(regions, img_array)
+            refined = self._limit_regions_for_extraction(
+                refined, max_regions=24)
+
+            logger.debug(
+                f"Page {page_num}: detected {len(regions)} regions, {len(refined)} after refinement")
 
             img_index = 0
             page_seen_hashes = set()
@@ -709,15 +743,24 @@ class ImageProcessor:
                 if crop.width < 50 or crop.height < 50:
                     continue
 
-                keep_crop, clip_positive_score, clip_negative_score = self._clip_filter(crop)
+                # Phase 3: CLIP zero-shot filtering for visual textbook content.
+                logger.info(
+                    f"[Phase 3][page={page_num}][candidate={img_index}] Running CLIP visual filter")
+                keep_crop, clip_positive_score, clip_negative_score = self._clip_filter(
+                    crop)
                 if not keep_crop:
-                    logger.debug(f"Page {page_num} img {img_index}: filtered out by CLIP")
+                    logger.debug(
+                        f"Page {page_num} img {img_index}: filtered out by CLIP")
                     img_index += 1
                     continue
 
+                # Phase 4: Vietnamese OCR/context metadata and storage.
+                logger.info(
+                    f"[Phase 4][page={page_num}][candidate={img_index}] Building OCR/context metadata")
                 crop_text = self._ocr_crop_text(crop)
                 if self._is_text_dominant_crop(crop, crop_text, clip_positive_score, clip_negative_score):
-                    logger.debug(f"Page {page_num} img {img_index}: filtered out as text-dominant crop")
+                    logger.debug(
+                        f"Page {page_num} img {img_index}: filtered out as text-dominant crop")
                     img_index += 1
                     continue
 
@@ -728,25 +771,31 @@ class ImageProcessor:
 
                 img_hash = self._compute_image_hash(img_data)
                 if img_hash in page_seen_hashes:
-                    logger.debug(f"Page {page_num} img {img_index}: duplicate hash, skipping")
+                    logger.debug(
+                        f"Page {page_num} img {img_index}: duplicate hash, skipping")
                     img_index += 1
                     continue
                 page_seen_hashes.add(img_hash)
 
-                image_id = self._build_image_id(pdf_hash, page_num, bbox, img_hash)
+                image_id = self._build_image_id(
+                    pdf_hash, page_num, bbox, img_hash)
                 visual_metadata = self.captioner.caption(crop, img_hash)
 
-                filepath = self._resolve_image_path(output_dir, page_num, img_index, img_hash)
+                filepath = self._resolve_image_path(
+                    output_dir, page_num, img_index, img_hash)
 
                 with open(filepath, "wb") as f:
                     f.write(img_data)
 
-                context_text = self._get_context_text(pdf_path, page_num, bbox, page_text)
+                context_text = self._get_context_text(
+                    pdf_path, page_num, bbox, page_text)
                 context_text = self._clean_text(context_text, max_chars=1200)
-                local_text = "\n".join(part for part in (context_text, crop_text) if part)
+                local_text = "\n".join(part for part in (
+                    context_text, crop_text) if part)
                 figure_label = self._extract_figure_label(local_text, "")
                 figure_caption = self._extract_figure_caption(local_text, "")
-                image_type = self._infer_image_type(figure_label, context_text, crop_text)
+                image_type = self._infer_image_type(
+                    figure_label, context_text, crop_text)
                 visual_caption = visual_metadata.get("visual_caption_vi", "")
                 visual_keywords = visual_metadata.get("visual_keywords_vi", "")
                 visual_objects = visual_metadata.get("visual_objects_vi", "")
@@ -807,7 +856,8 @@ class ImageProcessor:
                 extracted_docs.append(doc)
                 self._append_review_manifest(metadata)
 
-                logger.debug(f"Saved: {filepath} (label={figure_label or image_type}, keywords={keywords_vi[:80]})")
+                logger.debug(
+                    f"Saved: {filepath} (label={figure_label or image_type}, keywords={keywords_vi[:80]})")
                 img_index += 1
 
             self.status_tracker.mark_image_extracted(
@@ -817,5 +867,6 @@ class ImageProcessor:
                 image_extraction_version=self.image_extraction_version,
             )
 
-        logger.info(f"[{pdf_filename}] Extracted {len(extracted_docs)} images from {total_pages} pages")
+        logger.info(
+            f"[{pdf_filename}] Extracted {len(extracted_docs)} images from {total_pages} pages")
         return extracted_docs

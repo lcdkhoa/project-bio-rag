@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from src.config import LOG_LEVEL, DATA_DIR, PERSIST_DIR, IMAGES_DIR, PROCESSED_FILES_LOG
+from src.config import LOG_LEVEL, DATA_DIR, PERSIST_DIR, IMAGES_DIR, PROCESSED_FILES_LOG, PROCESSED_IMAGES_LOG
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
@@ -27,6 +27,20 @@ def get_processed_files():
 def mark_file_as_processed(filename: str):
     """Mark a file as processed in checkpoint log."""
     with open(PROCESSED_FILES_LOG, "a", encoding="utf-8") as f:
+        f.write(f"{filename}\n")
+
+
+def get_processed_images():
+    """Read list of processed files for images from checkpoint log."""
+    if not os.path.exists(PROCESSED_IMAGES_LOG):
+        return set()
+    with open(PROCESSED_IMAGES_LOG, "r", encoding="utf-8") as f:
+        return set(line.strip() for line in f if line.strip())
+
+
+def mark_image_as_processed(filename: str):
+    """Mark a file as processed for images in checkpoint log."""
+    with open(PROCESSED_IMAGES_LOG, "a", encoding="utf-8") as f:
         f.write(f"{filename}\n")
 
 
@@ -63,6 +77,10 @@ def run_etl_text_only():
 
     for pdf_file in tqdm(pdf_files, desc="Processing PDFs for text"):
         filename = os.path.basename(pdf_file)
+        if filename in processed_files:
+            logger.info(f"[{filename}] Already processed for text, skipping")
+            continue
+
         logger.info(f"Processing: {filename}")
 
         try:
@@ -138,8 +156,15 @@ def run_etl_image_only():
 
     logger.info(f"Total PDFs in directory: {len(pdf_files)}")
 
+    processed_images = get_processed_images()
+    logger.info(f"Previously processed files for images: {len(processed_images)}")
+
     for pdf_file in tqdm(pdf_files, desc="Processing PDFs for images"):
         filename = os.path.basename(pdf_file)
+        if filename in processed_images:
+            logger.info(f"[{filename}] Already processed for images, skipping")
+            continue
+
         logger.info(f"Processing: {filename}")
 
         try:
@@ -182,6 +207,9 @@ def run_etl_image_only():
                 logger.info(
                     f"[{filename}] Added {len(image_docs)} images to ImageVectorDB")
 
+            mark_image_as_processed(filename)
+            logger.info(f"Completed images for: {filename}")
+
         except Exception as e:
             logger.error(f"Error processing {filename}: {e}")
             import traceback
@@ -222,8 +250,18 @@ def run_etl():
 
     logger.info(f"Total PDFs in directory: {len(pdf_files)}")
 
+    processed_files = get_processed_files()
+    processed_images = get_processed_images()
+
     for pdf_file in tqdm(pdf_files, desc="Processing PDFs"):
         filename = os.path.basename(pdf_file)
+        text_done = filename in processed_files
+        image_done = filename in processed_images
+
+        if text_done and image_done:
+            logger.info(f"[{filename}] Already processed for both text and images, skipping")
+            continue
+
         logger.info(f"Processing: {filename}")
 
         try:
@@ -237,42 +275,47 @@ def run_etl():
             ocr_text_per_page = {doc.metadata.get(
                 "page", i + 1): doc.page_content for i, doc in enumerate(docs)}
 
-            pages_needing_text = status_tracker.get_pages_needing_text(
-                pdf_hash, len(docs))
-            if pages_needing_text:
-                logger.info(
-                    f"[{filename}] Indexing {len(pages_needing_text)} pages for text")
-                docs_to_add = [doc for doc in docs if doc.metadata.get(
-                    "page") in pages_needing_text]
-                if docs_to_add:
-                    split_docs = text_splitter.split(docs_to_add)
-                    text_vdb.db.add_documents(split_docs)
-                    for page_num in pages_needing_text:
-                        status_tracker.mark_text_indexed(
-                            pdf_hash, page_num, filename)
+            if not text_done:
+                pages_needing_text = status_tracker.get_pages_needing_text(
+                    pdf_hash, len(docs))
+                if pages_needing_text:
+                    logger.info(
+                        f"[{filename}] Indexing {len(pages_needing_text)} pages for text")
+                    docs_to_add = [doc for doc in docs if doc.metadata.get(
+                        "page") in pages_needing_text]
+                    if docs_to_add:
+                        split_docs = text_splitter.split(docs_to_add)
+                        text_vdb.db.add_documents(split_docs)
+                        for page_num in pages_needing_text:
+                            status_tracker.mark_text_indexed(
+                                pdf_hash, page_num, filename)
 
-            pages_needing_images = [
-                page_num
-                for page_num in range(1, len(docs) + 1)
-                if status_tracker.needs_image_processing_versioned(
-                    pdf_hash,
-                    page_num,
-                    required_version=image_processor.image_extraction_version,
-                )
-            ]
-            if pages_needing_images:
-                logger.info(
-                    f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
-                image_docs = image_processor.extract_images_from_pdf(
-                    pdf_path=pdf_file,
-                    pdf_hash=pdf_hash,
-                    pdf_filename=filename,
-                    ocr_text_per_page=ocr_text_per_page,
-                )
-                if image_docs:
-                    image_vdb.add_documents(image_docs)
+            if not image_done:
+                pages_needing_images = [
+                    page_num
+                    for page_num in range(1, len(docs) + 1)
+                    if status_tracker.needs_image_processing_versioned(
+                        pdf_hash,
+                        page_num,
+                        required_version=image_processor.image_extraction_version,
+                    )
+                ]
+                if pages_needing_images:
+                    logger.info(
+                        f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
+                    image_docs = image_processor.extract_images_from_pdf(
+                        pdf_path=pdf_file,
+                        pdf_hash=pdf_hash,
+                        pdf_filename=filename,
+                        ocr_text_per_page=ocr_text_per_page,
+                    )
+                    if image_docs:
+                        image_vdb.add_documents(image_docs)
 
-            mark_file_as_processed(filename)
+            if not text_done:
+                mark_file_as_processed(filename)
+            if not image_done:
+                mark_image_as_processed(filename)
             logger.info(f"Completed: {filename}")
 
         except Exception as e:
