@@ -46,7 +46,7 @@ class ImageReviewManager:
 
         records: Dict[str, dict] = {}
         try:
-            for line in self.manifest_path.read_text(encoding="utf-8").splitlines():
+            for line in self.manifest_path.read_text(encoding="utf-8", errors="replace").splitlines():
                 line = line.strip()
                 if not line:
                     continue
@@ -313,7 +313,7 @@ class ImageReviewManager:
         if not snapshot_file.exists():
             raise FileNotFoundError(f"Image DB snapshot file not found: {snapshot_file}")
 
-        payload = json.loads(snapshot_file.read_text(encoding="utf-8"))
+        payload = json.loads(snapshot_file.read_text(encoding="utf-8", errors="replace"))
         if not isinstance(payload, list):
             raise ValueError("Image DB replacement file must be a JSON array")
 
@@ -446,7 +446,7 @@ class ImageReviewManager:
         if not review_file.exists():
             raise FileNotFoundError(f"Review file not found: {review_file}")
 
-        payload = json.loads(review_file.read_text(encoding="utf-8"))
+        payload = json.loads(review_file.read_text(encoding="utf-8", errors="replace"))
         if not isinstance(payload, list):
             raise ValueError("Review file must be a JSON array")
 
