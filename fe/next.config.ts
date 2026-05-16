@@ -2,9 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Allow Colab proxy hosts for HMR
-  experimental: {
-    allowedDevOrigins: ["*.colab.dev", "localhost:3000"],
-  },
+  allowedDevOrigins: [
+    "*.colab.dev",
+    "*.googleusercontent.com",
+    "localhost:3000",
+  ],
   async rewrites() {
     const apiHost = process.env.NEXT_PUBLIC_API_HOST || "http://localhost:5000";
     return [
