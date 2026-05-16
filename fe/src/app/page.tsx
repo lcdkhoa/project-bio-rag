@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Login from "@/components/Login";
-import ChatInterface from "@/components/ChatInterface";
-import ImageModal, { ImageData } from "@/components/ImageModal";
+import Login from "../components/Login";
+import ChatInterface from "../components/ChatInterface";
+import ImageModal, { ImageData } from "../components/ImageModal";
 
 export default function Home() {
   const [userName, setUserName] = useState<string | null>(null);

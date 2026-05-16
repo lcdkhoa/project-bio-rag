@@ -7,9 +7,11 @@ import Image from "next/image";
 
 const formatImagePath = (originalPath: string) => {
   if (!originalPath) return "";
-  const parts = originalPath.split('/database/images/');
+  // Split by either /database/images/ or \database\images\ (case insensitive and handles both separators)
+  const parts = originalPath.split(/[\\/]database[\\/]images[\\/]/i);
   if (parts.length > 1) {
-    return `/images/${parts[1]}`;
+    // Ensure the resulting path uses forward slashes for the web URL
+    return `/images/${parts[1].replace(/\\/g, '/')}`;
   }
   return originalPath;
 };

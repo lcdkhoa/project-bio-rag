@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Send, User, Bot, Loader2, ImageIcon, LogOut } from "lucide-react";
 import Image from "next/image";
-import { sendChatMessage } from "@/lib/api";
+import { sendChatMessage } from "../lib/api";
 import type { ImageData } from "./ImageModal";
 
 const formatImagePath = (originalPath: string) => {
