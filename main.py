@@ -495,8 +495,8 @@ def main():
                         help="Launch Gradio web app")
     parser.add_argument("--api", action="store_true",
                         help="Launch Flask API server")
-    parser.add_argument("--port", type=int, default=5000,
-                        help="Port for Flask API server (default: 5000)")
+    parser.add_argument("--port", type=int, default=7860,
+                        help="Port for Flask API server (default: 7860)")
 
     args = parser.parse_args()
 
