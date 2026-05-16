@@ -3,11 +3,11 @@
 import logging
 import os
 import threading
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 
-from src.config import DATA_DIR
+from src.config import DATA_DIR, IMAGES_DIR
 from src.app.dependencies import AppServices
 from src.etl.image_review import ImageReviewManager
 
@@ -178,6 +178,11 @@ def update_images():
     except Exception as e:
         logger.error(f"Error replacing image db: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    """Serve static images from the database."""
+    return send_from_directory(str(IMAGES_DIR), filename)
 
 def run_api(host='0.0.0.0', port=5000):
     logger.info("Initializing AppServices before starting Flask...")

@@ -87,9 +87,48 @@ Lưu ý: không chạy `%rm -rf database` trong notebook nếu đang muốn gi�
 | `python main.py --apply-image-review <path.json> --review-user <name>` | Apply batch review vào DB + sync image index |
 | `python main.py --apply-image-review <path.json> --review-pdf "<file.pdf>" --review-user <name>` | Apply batch chỉ cho 1 PDF |
 | `python main.py --replace-image-db <path.json> --review-user <name>` | Replace toàn bộ manifest + rebuild image index theo snapshot JSON |
+| `python main.py --api` | Chạy Flask API server (mặc định cổng 5000) |
+| `python main.py --api --port <port>` | Chạy Flask API server trên cổng tùy chỉnh |
 | `python main.py --app` | Chạy Gradio app |
 
-## 3) Quy tắc apply/upsert/replace (quan trọng)
+## 3) Chạy Frontend (Next.js)
+
+Thư mục `fe` chứa mã nguồn frontend Next.js.
+
+### Cài đặt
+```bash
+cd fe
+npm install
+```
+
+### Chạy cục bộ
+```bash
+npm run dev
+```
+
+### Chạy trên Google Colab (cùng với Backend)
+
+1. **Chạy Backend (API)**:
+   ```bash
+   python main.py --api --port 5000 &
+   ```
+
+2. **Chạy Frontend**:
+   ```bash
+   cd fe
+   npm run colab
+   ```
+
+3. **Mở giao diện**:
+   Sử dụng công cụ của Colab để mở cổng 3000:
+   ```python
+   from google.colab import output
+   output.serve_kernel_port_as_window(3000)
+   ```
+
+**Lưu ý:** Nếu bạn dùng tunnel (ngrok/localtunnel) cho Backend, hãy đặt biến môi trường `NEXT_PUBLIC_API_HOST` trỏ về URL của tunnel đó trước khi chạy Frontend.
+
+## 4) Quy tắc apply/upsert/replace (quan trọng)
 
 1. `--apply-image-review` là upsert theo item trong file JSON, không phải sync full theo file.
 2. Xóa item khỏi array JSON không đồng nghĩa xóa item khỏi DB.
