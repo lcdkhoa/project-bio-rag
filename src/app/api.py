@@ -1,13 +1,16 @@
 """Flask API Server for Biology RAG"""
 
+import json
 import logging
 import os
 import threading
-from flask import Flask, request, jsonify, send_from_directory
+import torch
+from flask import Flask, request, jsonify, send_from_directory, Response, stream_with_context
 from flask_cors import CORS
+from transformers import TextIteratorStreamer
 from werkzeug.utils import secure_filename
 
-from src.config import DATA_DIR, IMAGES_DIR
+from src.config import DATA_DIR, IMAGES_DIR, LLM_MAX_NEW_TOKENS, LLM_TEMPERATURE, LLM_TOP_P
 from src.app.dependencies import AppServices
 from src.etl.image_review import ImageReviewManager
 
@@ -18,6 +21,201 @@ CORS(app)
 
 # In-memory status tracker for ETL polling
 etl_status = {}
+
+
+def sse_event(event, payload):
+    return f"event: {event}\ndata: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
+
+
+def build_gallery_items(image_docs):
+    gallery_items = []
+    for doc in image_docs:
+        if hasattr(doc, "metadata"):
+            image_path = doc.metadata.get("image_path", "")
+            page = doc.metadata.get("page_number", "?")
+            pdf = doc.metadata.get("pdf_filename", "Sách Giáo Khoa")
+
+            caption = doc.metadata.get("caption") or ""
+            figure_caption = doc.metadata.get("figure_caption") or ""
+            figure_label = doc.metadata.get("figure_label") or ""
+            context_text = doc.metadata.get("context_text") or ""
+            fallback_text = (doc.page_content or "").splitlines()[0] if doc.page_content else ""
+            label_text = figure_caption or figure_label or caption or context_text or fallback_text
+
+            label = f"{label_text[:80]}... (Trang {page}, {pdf})" if label_text else f"Trang {page} - {pdf}"
+
+            gallery_items.append({
+                "image_path": image_path,
+                "label": label,
+                "metadata": doc.metadata
+            })
+    return gallery_items
+
+
+def prepare_chat_payload(question):
+    services = AppServices.get_instance()
+    result = services.hybrid_retriever.search(question)
+    text_docs = result.text_docs
+    image_docs = result.image_docs
+    image_only_query = result.image_only_query
+    gallery_items = build_gallery_items(image_docs)
+
+    if not text_docs and not image_docs:
+        if image_only_query:
+            return {
+                "mode": "static",
+                "answer": "Không tìm thấy hình ảnh liên quan trong cơ sở dữ liệu ảnh.",
+                "images": gallery_items,
+                "services": services,
+            }
+        return {
+            "mode": "static",
+            "answer": "Hệ thống chưa tìm thấy tài liệu nào liên quan đến câu hỏi này.",
+            "images": gallery_items,
+            "services": services,
+        }
+
+    if image_only_query:
+        return {
+            "mode": "static",
+            "answer": f"Mình tìm thấy {len(image_docs)} hình ảnh liên quan trong cơ sở dữ liệu ảnh.",
+            "images": gallery_items,
+            "services": services,
+        }
+
+    if not text_docs:
+        return {
+            "mode": "static",
+            "answer": "Không tìm thấy thông tin dạng văn bản liên quan. Vui lòng thử câu hỏi khác.",
+            "images": gallery_items,
+            "services": services,
+        }
+
+    context_texts = [doc.page_content for doc in text_docs if hasattr(doc, "page_content")]
+    context_str = "\n\n".join(context_texts)
+
+    citations = set()
+    for doc in text_docs:
+        source = doc.metadata.get("source", "Sách Giáo Khoa") if hasattr(doc, "metadata") else "Sách Giáo Khoa"
+        page = doc.metadata.get("page", "?") if hasattr(doc, "metadata") else "?"
+        citations.add(f"Trang {page} - {source}")
+    citations_str = " | ".join(sorted(citations))
+
+    return {
+        "mode": "llm",
+        "formatted_prompt": services.rag.prompt.format(context=context_str, question=question),
+        "citations_str": citations_str,
+        "images": gallery_items,
+        "services": services,
+    }
+
+
+def append_citations(answer, citations_str):
+    if "không được đề cập" not in answer.lower() and citations_str:
+        return f"{answer}\n\n📚 Thông tin được tham khảo từ: {citations_str}"
+    return answer
+
+
+def stream_static_answer(answer):
+    for word in answer.split(" "):
+        yield f"{word} "
+
+
+def stream_llm_text(services, formatted_prompt):
+    model_pipeline = getattr(services.llm, "pipeline", None)
+    if model_pipeline is None:
+        yield str(services.llm.invoke(formatted_prompt))
+        return
+
+    tokenizer = model_pipeline.tokenizer
+    model = model_pipeline.model
+    streamer = TextIteratorStreamer(
+        tokenizer,
+        skip_prompt=True,
+        skip_special_tokens=True,
+    )
+    inputs = tokenizer(formatted_prompt, return_tensors="pt")
+    device = getattr(model, "device", None)
+    if device is not None:
+        inputs = {key: value.to(device) for key, value in inputs.items()}
+
+    eos_token_id = tokenizer.eos_token_id
+    pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else eos_token_id
+    generation_kwargs = {
+        **inputs,
+        "streamer": streamer,
+        "max_new_tokens": LLM_MAX_NEW_TOKENS,
+        "do_sample": True,
+        "temperature": LLM_TEMPERATURE,
+        "top_p": LLM_TOP_P,
+        "pad_token_id": pad_token_id,
+        "eos_token_id": eos_token_id,
+    }
+    generation_error = {}
+
+    def generate():
+        try:
+            with torch.inference_mode():
+                model.generate(**generation_kwargs)
+        except Exception as exc:
+            generation_error["error"] = exc
+            if hasattr(streamer, "on_finalized_text"):
+                streamer.on_finalized_text("", stream_end=True)
+
+    thread = threading.Thread(target=generate)
+    thread.start()
+    for text in streamer:
+        if text:
+            yield text
+    thread.join()
+
+    if generation_error:
+        raise generation_error["error"]
+
+
+def create_chat_stream_response(question):
+    def generate_events():
+        try:
+            yield sse_event("status", {"type": "status", "stage": "retrieving"})
+            payload = prepare_chat_payload(question)
+
+            if payload["mode"] == "static":
+                answer = payload["answer"]
+                yield sse_event("status", {"type": "status", "stage": "answering"})
+                for chunk in stream_static_answer(answer):
+                    yield sse_event("answer_delta", {"type": "answer_delta", "delta": chunk})
+                yield sse_event("done", {
+                    "type": "done",
+                    "answer": answer,
+                    "images": payload["images"],
+                })
+                return
+
+            yield sse_event("status", {"type": "status", "stage": "answering"})
+            chunks = []
+            for chunk in stream_llm_text(payload["services"], payload["formatted_prompt"]):
+                chunks.append(chunk)
+                yield sse_event("answer_delta", {"type": "answer_delta", "delta": chunk})
+
+            parsed_answer = payload["services"].rag.answer_parser.parse("".join(chunks))
+            answer = append_citations(parsed_answer, payload["citations_str"])
+            yield sse_event("done", {
+                "type": "done",
+                "answer": answer,
+                "images": payload["images"],
+            })
+        except Exception as e:
+            logger.error(f"Error streaming answer: {e}", exc_info=True)
+            yield sse_event("error", {"type": "error", "error": str(e)})
+
+    return Response(
+        stream_with_context(generate_events()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 def run_etl_background(filename):
     from main import run_etl  # Import locally to avoid circular dependency
@@ -81,74 +279,41 @@ def chat():
         return jsonify({"error": "Question is required"}), 400
     
     question = data['question']
-    services = AppServices.get_instance()
+    if data.get("stream") is True:
+        return create_chat_stream_response(question)
     
     try:
-        result = services.hybrid_retriever.search(question)
-        text_docs = result.text_docs
-        image_docs = result.image_docs
-        
-        if not text_docs and not image_docs:
-            return jsonify({
-                "answer": "Hệ thống chưa tìm thấy tài liệu nào liên quan đến câu hỏi này.",
-                "images": []
-            })
-            
-        if text_docs:
-            context_texts = [doc.page_content for doc in text_docs if hasattr(doc, "page_content")]
-            context_str = "\n\n".join(context_texts)
-            
-            citations = set()
-            for doc in text_docs:
-                source = doc.metadata.get("source", "Sách Giáo Khoa") if hasattr(doc, "metadata") else "Sách Giáo Khoa"
-                page = doc.metadata.get("page", "?") if hasattr(doc, "metadata") else "?"
-                citations.add(f"Trang {page} - {source}")
-            citations_str = " | ".join(sorted(citations))
-            
+        payload = prepare_chat_payload(question)
+        if payload["mode"] == "static":
+            answer = payload["answer"]
+        else:
             try:
-                formatted_prompt = services.rag.prompt.format(context=context_str, question=question)
-                llm_response = services.llm.invoke(formatted_prompt)
-                parsed_answer = services.rag.answer_parser.parse(llm_response)
-                answer = parsed_answer
+                llm_response = payload["services"].llm.invoke(payload["formatted_prompt"])
+                answer = payload["services"].rag.answer_parser.parse(llm_response)
             except Exception as e:
                 logger.error(f"RAG chain failed: {e}")
                 answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
                 
-            if "không được đề cập" not in answer.lower() and citations_str:
-                answer = f"{answer}\n\n📚 Thông tin được tham khảo từ: {citations_str}"
-        else:
-            answer = "Không tìm thấy thông tin dạng văn bản liên quan. Vui lòng thử câu hỏi khác."
-            
-        gallery_items = []
-        for doc in image_docs:
-            if hasattr(doc, "metadata"):
-                image_path = doc.metadata.get("image_path", "")
-                page = doc.metadata.get("page_number", "?")
-                pdf = doc.metadata.get("pdf_filename", "Sách Giáo Khoa")
-                
-                caption = doc.metadata.get("caption") or ""
-                figure_caption = doc.metadata.get("figure_caption") or ""
-                figure_label = doc.metadata.get("figure_label") or ""
-                context_text = doc.metadata.get("context_text") or ""
-                fallback_text = (doc.page_content or "").splitlines()[0] if doc.page_content else ""
-                label_text = figure_caption or figure_label or caption or context_text or fallback_text
-                
-                label = f"{label_text[:80]}... (Trang {page}, {pdf})" if label_text else f"Trang {page} - {pdf}"
-                
-                gallery_items.append({
-                    "image_path": image_path,
-                    "label": label,
-                    "metadata": doc.metadata
-                })
+            answer = append_citations(answer, payload["citations_str"])
                 
         return jsonify({
             "answer": answer,
-            "images": gallery_items
+            "images": payload["images"]
         })
         
     except Exception as e:
         logger.error(f"Error answering question: {e}", exc_info=True)
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/chat/stream', methods=['POST'])
+def chat_stream():
+    """Stream chat answer chunks through Server-Sent Events."""
+    data = request.get_json()
+    if not data or 'question' not in data:
+        return jsonify({"error": "Question is required"}), 400
+
+    return create_chat_stream_response(data['question'])
 
 @app.route('/api/images', methods=['GET'])
 def get_images():

@@ -3,7 +3,6 @@
 import logging
 import math
 import re
-import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,6 +23,7 @@ from ..config import (
     IMAGE_RETRIEVER_FETCH_K,
     IMAGE_RELEVANCE_THRESHOLD,
 )
+from .query_intent import has_image_intent, normalize_query_text
 
 logger = logging.getLogger(__name__)
 
@@ -43,22 +43,6 @@ VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
     "hat": "seed",
     "re": "root",
 }
-
-IMAGE_QUERY_HINTS = {
-    "cho xem anh",
-    "cho xem hinh",
-    "hinh anh",
-    "minh hoa",
-    "quan sat",
-    "so do",
-    "tim anh",
-    "tim hinh",
-    "tranh",
-}
-
-IMAGE_QUERY_ACTIONS = {"cho", "tim", "xem"}
-IMAGE_QUERY_NOUNS = {"anh", "hinh", "tranh"}
-
 
 class ImageVectorDB:
     """ChromaDB-backed image store with CLIP embeddings for semantic image search."""
@@ -323,9 +307,7 @@ class ImageVectorDB:
         return len(ids)
 
     def _normalize_text(self, text: str) -> str:
-        text = unicodedata.normalize("NFD", text.lower())
-        text = "".join(char for char in text if unicodedata.category(char) != "Mn")
-        return re.sub(r"[^a-z0-9\s]+", " ", text)
+        return normalize_query_text(text)
 
     def _tokenize(self, text: str) -> List[str]:
         stopwords = {
@@ -375,21 +357,7 @@ class ImageVectorDB:
         return f"{query}. {' '.join(dict.fromkeys(hints))}"
 
     def _has_image_intent(self, query: str) -> bool:
-        normalized_query = self._normalize_text(query)
-        if any(term in normalized_query for term in IMAGE_QUERY_HINTS):
-            return True
-
-        tokens = normalized_query.split()
-        for index, token in enumerate(tokens):
-            if token not in IMAGE_QUERY_NOUNS:
-                continue
-            next_token = tokens[index + 1] if index + 1 < len(tokens) else ""
-            if token == "anh" and next_token == "sang":
-                continue
-            previous_tokens = set(tokens[max(0, index - 3) : index])
-            if index == 0 or previous_tokens & IMAGE_QUERY_ACTIONS:
-                return True
-        return False
+        return has_image_intent(query)
 
     def _field_overlap_score(self, query: str, *texts: str) -> float:
         query_tokens = set(self._tokenize(query))

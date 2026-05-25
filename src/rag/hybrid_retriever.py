@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from ..config import RETRIEVER_K, IMAGE_RETRIEVER_K
 from .vectorstore import VectorDB
 from .image_vectorstore import ImageVectorDB
+from .query_intent import is_image_only_query
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class SearchResult:
 
     text_docs: List[Document]
     image_docs: List[Document]
+    image_only_query: bool = False
 
     @property
     def has_images(self) -> bool:
@@ -50,6 +52,15 @@ class HybridRetriever:
         """Perform hybrid search: text + image simultaneously."""
         text_docs = []
         image_docs = []
+        image_only_query = is_image_only_query(query)
+
+        if image_only_query:
+            image_docs = self.search_image_only(query)
+            return SearchResult(
+                text_docs=[],
+                image_docs=image_docs,
+                image_only_query=True,
+            )
 
         try:
             text_docs = self._text_retriever.invoke(query)
@@ -61,7 +72,11 @@ class HybridRetriever:
         except Exception as e:
             logger.warning(f"Image retrieval failed: {e}")
 
-        return SearchResult(text_docs=text_docs, image_docs=image_docs)
+        return SearchResult(
+            text_docs=text_docs,
+            image_docs=image_docs,
+            image_only_query=image_only_query,
+        )
 
     def search_text_only(self, query: str) -> List[Document]:
         """Search text collection only."""

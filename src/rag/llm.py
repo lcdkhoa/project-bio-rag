@@ -28,6 +28,8 @@ def get_hf_llm(
         token=HF_TOKEN if HF_TOKEN else None,
     )
     tokenizer = AutoTokenizer.from_pretrained(model_name, token=HF_TOKEN if HF_TOKEN else None)
+    if getattr(model, "generation_config", None) is not None:
+        model.generation_config.max_length = None
 
     model_pipeline = pipeline(
         "text-generation",
@@ -35,6 +37,7 @@ def get_hf_llm(
         tokenizer=tokenizer,
         temperature=temperature,
         max_new_tokens=max_new_tokens,
+        max_length=None,
         pad_token_id=tokenizer.eos_token_id,
         do_sample=True,
         top_p=top_p,

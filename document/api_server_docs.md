@@ -87,14 +87,67 @@ Server hiện tại hỗ trợ các API dưới đây:
   ```
 > **Lưu ý với API `/api/chat`**: Đường dẫn trả về của ảnh (`image_path`) là đường dẫn vật lý (absolute path) trên ổ cứng máy chủ. Nếu Frontend của bạn là ứng dụng Local/Electron, nó có thể trực tiếp lấy ảnh bằng đường dẫn này. Nếu Frontend tách biệt (vd: website), bạn cần tự cấu hình route để serve static files hoặc yêu cầu backend cung cấp 1 API trả về data ảnh/stream.
 
-### 2.4. Lấy dữ liệu Image Review (Snapshot)
+### 2.4. RAG Chat dạng stream
+- **Endpoint**: `POST /api/chat/stream`
+- **Cách khác**: gọi `POST /api/chat` với body có thêm `"stream": true`.
+- **Mô tả**: Trả câu trả lời dạng `text/event-stream` để frontend render từng phần như ChatGPT. Backend gửi các event:
+  - `status`: trạng thái như `retrieving` hoặc `answering`.
+  - `answer_delta`: một đoạn text mới của câu trả lời.
+  - `done`: câu trả lời đã clean cuối cùng và danh sách ảnh liên quan.
+  - `error`: lỗi nếu quá trình stream thất bại.
+
+Ví dụ request:
+```json
+{
+    "question": "Thành phần của một tế bào động vật bao gồm những gì?"
+}
+```
+
+Ví dụ frontend dùng `fetch`:
+```js
+const response = await fetch("http://localhost:5000/api/chat/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ question }),
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder("utf-8");
+let buffer = "";
+
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+
+  buffer += decoder.decode(value, { stream: true });
+  const events = buffer.split("\n\n");
+  buffer = events.pop() || "";
+
+  for (const rawEvent of events) {
+    const eventName = rawEvent.match(/^event: (.+)$/m)?.[1];
+    const dataLine = rawEvent.match(/^data: (.+)$/m)?.[1];
+    if (!eventName || !dataLine) continue;
+
+    const payload = JSON.parse(dataLine);
+    if (eventName === "answer_delta") {
+      appendToAnswer(payload.delta);
+    }
+    if (eventName === "done") {
+      replaceAnswer(payload.answer);
+      renderImages(payload.images);
+    }
+  }
+}
+```
+
+### 2.5. Lấy dữ liệu Image Review (Snapshot)
 - **Endpoint**: `GET /api/images`
 - **Mô tả**: Truy xuất toàn bộ dữ liệu metadata của ảnh có trong Database (file `image_review_manifest.jsonl`). Thích hợp để render dữ liệu ra giao diện Bảng (Table) trên FE cho tác vụ Review/Edit Ảnh.
 - **Query Params (Tùy chọn)**:
   - `pdf_filename`: Lọc kết quả metadata chỉ thuộc về một cuốn sách cụ thể.
 - **Response (200 OK)**: Trả về một mảng JSON array chứa đầy đủ metadata cho từng ảnh.
 
-### 2.5. Thay thế & Cập nhật dữ liệu Image Review
+### 2.6. Thay thế & Cập nhật dữ liệu Image Review
 - **Endpoint**: `PUT /api/images` hoặc `POST /api/images`
 - **Mô tả**: Nhận một mảng dữ liệu ảnh đã qua chỉnh sửa từ Frontend (ví dụ: đã sửa caption, xoá ảnh sai sót, sửa keyword,...). Sau đó cập nhật cấu hình nội bộ và đồng bộ tự động lên Vector Database của Hình ảnh.
 - **Query Params (Tùy chọn)**:
