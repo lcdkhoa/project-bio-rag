@@ -327,13 +327,11 @@ def run_etl():
     logger.info("ETL (FULL) pipeline completed!")
 
 
-def run_app():
-    """Launch Gradio web application."""
-    logger.info("Starting Gradio app...")
-    from src.app import BiologyAssistantApp
-
-    app = BiologyAssistantApp()
-    app.launch(share=True)
+def run_flask_api(port=5000):
+    """Launch Flask API server."""
+    logger.info(f"Starting Flask API server on port {port}...")
+    from src.app.api import run_api
+    run_api(port=port)
 
 
 def run_export_image_review(output_path: str, pdf_filename: str = "", include_completed: bool = False):
@@ -396,6 +394,24 @@ def run_replace_image_db(snapshot_path: str, reviewed_by: str = "human"):
     logger.info(f"Replaced image DB from snapshot: {result}")
 
 
+def run_import_images_dir(directory: str):
+    """Import a local directory of images, bypassing PDF extraction."""
+    from src.etl.local_image_importer import LocalImageImporter
+    from src.rag.image_vectorstore import ImageVectorDB
+
+    logger.info(f"Starting local image import from {directory}...")
+    importer = LocalImageImporter()
+    image_docs = importer.import_directory(directory)
+    
+    if image_docs:
+        logger.info(f"Adding {len(image_docs)} images to ImageVectorDB...")
+        image_vdb = ImageVectorDB()
+        image_vdb.add_documents(image_docs)
+        logger.info("Import completed successfully.")
+    else:
+        logger.warning("No images imported.")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Biology RAG System")
 
@@ -443,6 +459,12 @@ def main():
         help="Upsert one image review item from a JSON object file.",
     )
     etl_group.add_argument(
+        "--import-images-dir",
+        type=str,
+        default="",
+        help="Import images directly from a local directory, bypassing PDF extraction.",
+    )
+    etl_group.add_argument(
         "--review-pdf",
         type=str,
         default="",
@@ -460,8 +482,10 @@ def main():
         help="Include approved/rejected rows when exporting review file.",
     )
 
-    parser.add_argument("--app", action="store_true",
-                        help="Launch Gradio web app")
+    parser.add_argument("--api", action="store_true",
+                        help="Launch Flask API server")
+    parser.add_argument("--port", type=int, default=5000,
+                        help="Port for Flask API server (default: 5000)")
 
     args = parser.parse_args()
 
@@ -469,15 +493,19 @@ def main():
         not args.etl
         and not args.text_only
         and not args.image_only
-        and not args.app
+        and not args.api
         and not args.export_image_review
         and not args.export_image_db
         and not args.apply_image_review
         and not args.replace_image_db
         and not args.upsert_image_review_item
+        and not args.import_images_dir
     ):
         parser.print_help()
         sys.exit(1)
+
+    if args.import_images_dir:
+        run_import_images_dir(args.import_images_dir)
 
     if args.text_only:
         run_etl_text_only()
@@ -512,8 +540,8 @@ def main():
     if args.upsert_image_review_item:
         run_upsert_image_review_item(item_path=args.upsert_image_review_item, reviewed_by=args.review_user)
 
-    if args.app:
-        run_app()
+    if args.api:
+        run_flask_api(port=args.port)
 
 
 if __name__ == "__main__":

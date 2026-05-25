@@ -28,10 +28,11 @@ opencv-python>=4.9.0
 # Image Processing
 Pillow>=10.0.0
 
-# UI
-gradio>=4.0.0
-
 # Utilities
 python-dotenv
 tqdm
 rapidocr-onnxruntime
+
+# Web Server
+Flask>=3.0.0
+Flask-CORS>=4.0.0

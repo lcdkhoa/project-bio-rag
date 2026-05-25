@@ -62,7 +62,7 @@ query -> hybrid retriever -> LLM answer + image gallery</code></pre>
       <table>
         <thead><tr><th>File</th><th>Vai trò</th><th>Điểm chính</th></tr></thead>
         <tbody>
-          <tr><td><code>main.py</code></td><td>CLI orchestration</td><td>ETL text/image, export/apply/upsert metadata, app</td></tr>
+          <tr><td><code>main.py</code></td><td>CLI orchestration</td><td>ETL text/image, export/apply/upsert metadata, Flask API</td></tr>
           <tr><td><code>src/etl/image_review.py</code></td><td>CRUD metadata</td><td><code>export_db_snapshot</code>, <code>upsert_review_item</code>, <code>apply_review_updates</code></td></tr>
           <tr><td><code>src/etl/image_processor.py</code></td><td>Image extraction</td><td>detect -> refine -> filter -> metadata</td></tr>
           <tr><td><code>src/rag/image_vectorstore.py</code></td><td>Image retrieval</td><td>metadata + visual query, rerank, review-state filter</td></tr>
@@ -117,7 +117,7 @@ python main.py --replace-image-db database/all_image_db.json --review-user charl
         <li>Chạy ETL mẫu <code>--text-only</code> + <code>--image-only</code>.</li>
         <li>Export review, chỉnh thử 1 item, apply lại.</li>
         <li>Test <code>--upsert-image-review-item</code> cho 1 item mới.</li>
-        <li>Mở app và kiểm tra gallery retrieve.</li>
+        <li>Mở Flask API hoặc frontend và kiểm tra gallery retrieve.</li>
       </ol>
     </section>
   </div>

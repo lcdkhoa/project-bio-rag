@@ -38,7 +38,7 @@ def _database_child_path_from_env(env_name: str, default: Path) -> Path:
     return (PERSIST_DIR / path).resolve()
 
 
-DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "data")
+DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "datasources")
 PERSIST_DIR = _path_from_env("RAG_DATABASE_DIR", PROJECT_ROOT / "database")
 IMAGES_DIR = PERSIST_DIR / "images"
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
@@ -47,8 +47,6 @@ PROCESSED_IMAGES_LOG = PERSIST_DIR / "processed_images.txt"
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
-GRADIO_SERVER_NAME = os.getenv("GRADIO_SERVER_NAME", "0.0.0.0")
-GRADIO_SERVER_PORT = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
 USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "tesseract").strip() or "tesseract"
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None

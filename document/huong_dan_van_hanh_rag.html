@@ -113,7 +113,7 @@ POPPLER_PATH=C:/poppler/Library/bin</code></pre>
       <tr><td><code>python main.py --apply-image-review &lt;review.json&gt; --review-user &lt;name&gt;</code></td><td>Apply batch review vao vector DB.</td></tr>
       <tr><td><code>python main.py --apply-image-review &lt;review.json&gt; --review-pdf "&lt;file.pdf&gt;" --review-user &lt;name&gt;</code></td><td>Apply batch chi cho 1 PDF.</td></tr>
       <tr><td><code>python main.py --replace-image-db &lt;snapshot.json&gt; --review-user &lt;name&gt;</code></td><td>Replace manifest va rebuild image index theo snapshot.</td></tr>
-      <tr><td><code>python main.py --app</code></td><td>Mo Gradio app.</td></tr>
+      <tr><td><code>python main.py --api --port 5000</code></td><td>Mo Flask API server.</td></tr>
     </tbody>
   </table>
 
@@ -132,7 +132,7 @@ POPPLER_PATH=C:/poppler/Library/bin</code></pre>
 python main.py --image-only
 python main.py --export-image-review database/review_images.json
 python main.py --apply-image-review database/review_images.json --review-user charlie
-python main.py --app</code></pre>
+python main.py --api --port 5000</code></pre>
 
   <h3>Kich ban B: Chi review 1 PDF</h3>
   <pre><code>python main.py --export-image-review database/review_sgk6.json --review-pdf "SGK KHTN 6 CD.pdf"
