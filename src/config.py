@@ -54,8 +54,11 @@ POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
+OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
+OWL_VIT_CONFIDENCE_THRESHOLD = float(
+    os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
 IMAGE_EXTRACTION_VERSION = os.getenv(
-    "IMAGE_EXTRACTION_VERSION", "v3_context_caption")
+    "IMAGE_EXTRACTION_VERSION", "v4_owlvit_context_caption")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(

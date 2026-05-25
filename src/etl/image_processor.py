@@ -1,4 +1,4 @@
-"""Image ETL pipeline for scanned PDFs with CLIP-based filtering."""
+"""Image ETL pipeline for scanned PDFs with OWL-ViT region detection."""
 
 import hashlib
 import io
@@ -17,33 +17,44 @@ import torch
 from PIL import Image
 from langchain_core.documents import Document
 from pdf2image import convert_from_path
-from transformers import CLIPModel, CLIPProcessor
+from transformers import OwlViTForObjectDetection, OwlViTProcessor
 from tqdm import tqdm
 
 from ..config import (
-    CLIP_MODEL,
     HF_TOKEN,
     IMAGE_EXTRACTION_VERSION,
     IMAGE_REVIEW_MANIFEST_PATH,
     IMAGES_DIR,
+    OWL_VIT_CONFIDENCE_THRESHOLD,
+    OWL_VIT_MODEL,
     POPPLER_PATH,
     TESSERACT_CMD,
+    USE_GPU,
 )
 from .image_captioner import ImageCaptioner
 from .processing_status import ProcessingStatus, compute_file_hash
 
 logger = logging.getLogger(__name__)
 
-CLIP_ZERO_SHOT_PROMPT = (
-    "a photograph, a scientific diagram, an illustration of biology, "
-    "a biology diagram, a textbook infographic with an illustration, a cell, "
-    "an organ, a microscope view, an experiment setup"
-)
-
-CLIP_NEGATIVE_PROMPT = (
-    "empty page, white space, pure color background, decorative border, "
-    "plain text without any illustration"
-)
+OWL_VIT_TEXT_QUERIES = [
+    "a scientific formula",
+    "a biology diagram",
+    "a textbook illustration",
+    "a data table",
+    "a chart or graph",
+    "a science experiment setup",
+    "a microscope image",
+    "a photo in a textbook",
+    "a framed textbook picture",
+    "a material sample photo",
+    "an object photo",
+    "a framed object photo",
+    "a product-style object photo",
+    "an isolated object on white background",
+    "a bowl of liquid",
+    "a sample of raw material",
+    "a coil of wire",
+]
 
 VIETNAMESE_STOPWORDS = {
     "anh",
@@ -81,91 +92,172 @@ class ImageProcessor:
 
     def __init__(self, status_tracker: Optional[ProcessingStatus] = None):
         self.status_tracker = status_tracker or ProcessingStatus()
-        self._clip_model: Optional[CLIPModel] = None
-        self._clip_processor: Optional[CLIPProcessor] = None
+        self._owlvit_model: Optional[OwlViTForObjectDetection] = None
+        self._owlvit_processor: Optional[OwlViTProcessor] = None
+        self._owlvit_device = "cuda" if USE_GPU and torch.cuda.is_available() else "cpu"
         self.captioner = ImageCaptioner()
         self.image_extraction_version = IMAGE_EXTRACTION_VERSION
         self.review_manifest_path = IMAGE_REVIEW_MANIFEST_PATH
 
     @property
-    def clip_model(self) -> CLIPModel:
-        if self._clip_model is None:
-            logger.info(f"Loading CLIP model: {CLIP_MODEL}")
-            self._clip_model = CLIPModel.from_pretrained(
-                CLIP_MODEL, token=HF_TOKEN)
-            self._clip_processor = CLIPProcessor.from_pretrained(
-                CLIP_MODEL, token=HF_TOKEN)
-            logger.info("CLIP model loaded")
-        return self._clip_model
+    def owlvit_model(self) -> OwlViTForObjectDetection:
+        if self._owlvit_model is None:
+            logger.info(f"Loading OWL-ViT detector: {OWL_VIT_MODEL}")
+            self._owlvit_model = OwlViTForObjectDetection.from_pretrained(
+                OWL_VIT_MODEL,
+                token=HF_TOKEN if HF_TOKEN else None,
+            )
+            self._owlvit_processor = OwlViTProcessor.from_pretrained(
+                OWL_VIT_MODEL,
+                token=HF_TOKEN if HF_TOKEN else None,
+            )
+            self._owlvit_model.to(self._owlvit_device)
+            self._owlvit_model.eval()
+            logger.info(f"OWL-ViT detector loaded on {self._owlvit_device}")
+        return self._owlvit_model
 
     @property
-    def clip_processor(self) -> CLIPProcessor:
-        if self._clip_processor is None:
-            _ = self.clip_model
-        return self._clip_processor
+    def owlvit_processor(self) -> OwlViTProcessor:
+        if self._owlvit_processor is None:
+            _ = self.owlvit_model
+        return self._owlvit_processor
 
     def _detect_contour_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
-        """Recall-first region proposal using multiple detectors."""
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        regions: List[Tuple[int, int, int, int]] = []
+        """Open-vocabulary region proposal. Kept for compatibility with older callers."""
+        pil_image = Image.fromarray(image).convert("RGB")
+        return self._detect_regions_with_owlvit(pil_image, OWL_VIT_TEXT_QUERIES)
 
-        # Strategy 1: contour on inverse threshold.
-        thresh = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)[1]
-        contours, _ = cv2.findContours(
-            thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            if cv2.contourArea(contour) < 850:
-                continue
-            regions.append((x, y, x + w, y + h))
+    def _detect_regions_with_owlvit(
+        self,
+        image: Image.Image,
+        text_queries: List[str],
+        threshold: float = OWL_VIT_CONFIDENCE_THRESHOLD,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Detect textbook visual regions with OWL-ViT zero-shot object detection."""
+        try:
+            rgb_image = image.convert("RGB")
+            inputs = self.owlvit_processor(
+                text=[text_queries],
+                images=rgb_image,
+                return_tensors="pt",
+            )
+            inputs = {
+                key: value.to(self._owlvit_device) if hasattr(value, "to") else value
+                for key, value in inputs.items()
+            }
 
-        # Strategy 2: connected components for separated media blocks.
-        comp_bin = cv2.adaptiveThreshold(
-            gray,
-            255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY_INV,
-            31,
-            8,
-        )
-        num_labels, _, stats, _ = cv2.connectedComponentsWithStats(
-            comp_bin, connectivity=8)
-        for label in range(1, num_labels):
-            x, y, w, h, area = stats[label]
-            if area < 1400 or w < 48 or h < 48:
-                continue
-            regions.append((x, y, x + w, y + h))
+            with torch.no_grad():
+                outputs = self.owlvit_model(**inputs)
 
-        # Strategy 3: edge-preserving rectangular hints.
-        edges = cv2.Canny(gray, 60, 150)
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
-        edge_mask = cv2.dilate(edges, kernel, iterations=1)
-        edge_contours, _ = cv2.findContours(
-            edge_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in edge_contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            if w < 70 or h < 70:
-                continue
-            regions.append((x, y, x + w, y + h))
+            target_sizes = torch.tensor(
+                [rgb_image.size[::-1]],
+                dtype=torch.float,
+                device=self._owlvit_device,
+            )
+            post_process_object_detection = getattr(
+                self.owlvit_processor, "post_process_object_detection", None)
+            if post_process_object_detection:
+                results = post_process_object_detection(
+                    outputs=outputs,
+                    target_sizes=target_sizes,
+                    threshold=threshold,
+                )[0]
+            else:
+                results = self.owlvit_processor.post_process_grounded_object_detection(
+                    outputs=outputs,
+                    threshold=threshold,
+                    target_sizes=target_sizes,
+                    text_labels=[text_queries],
+                )[0]
 
-        # Strategy 4: high-saturation blocks (helps separate colorful textbook photos).
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        sat_mask = cv2.inRange(hsv, np.array(
-            [0, 32, 35]), np.array([180, 255, 252]))
-        sat_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-        sat_mask = cv2.morphologyEx(
-            sat_mask, cv2.MORPH_CLOSE, sat_kernel, iterations=2)
-        sat_mask = cv2.morphologyEx(
-            sat_mask, cv2.MORPH_OPEN, sat_kernel, iterations=1)
-        sat_contours, _ = cv2.findContours(
-            sat_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in sat_contours:
-            x, y, w, h = cv2.boundingRect(contour)
-            if w < 90 or h < 90:
-                continue
-            regions.append((x, y, x + w, y + h))
+            page_width, page_height = rgb_image.size
+            page_area = page_width * page_height
+            regions: List[Tuple[int, int, int, int]] = []
+            labels = results.get("labels", results.get("text_labels", []))
+            for score, label, box in zip(
+                results.get("scores", []),
+                labels,
+                results.get("boxes", []),
+            ):
+                x0, y0, x1, y1 = [int(round(value)) for value in box.tolist()]
+                bbox = (
+                    max(0, min(page_width, x0)),
+                    max(0, min(page_height, y0)),
+                    max(0, min(page_width, x1)),
+                    max(0, min(page_height, y1)),
+                )
+                if bbox[2] <= bbox[0] or bbox[3] <= bbox[1]:
+                    continue
+                if self._bbox_area(bbox) > page_area * 0.82:
+                    continue
+                regions.append(bbox)
+                label_value = label.item() if hasattr(label, "item") else label
+                if isinstance(label_value, int) and label_value < len(text_queries):
+                    query = text_queries[label_value]
+                else:
+                    query = str(label_value)
+                logger.debug(
+                    f"OWL-ViT detection: query={query!r}, score={float(score):.3f}, bbox={bbox}"
+                )
 
-        return self._deduplicate_regions(regions, image.shape[1], image.shape[0])
+            return regions
+        except Exception as e:
+            logger.warning(f"OWL-ViT detection failed: {e}")
+            return []
+
+    def _detect_framed_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
+        """Find textbook picture panels from cyan/green frame strokes that OWL-ViT can miss."""
+        try:
+            page_height, page_width = image.shape[0], image.shape[1]
+            page_area = page_width * page_height
+            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+
+            # Vietnamese textbooks often use thin cyan/green rounded rectangles around sub-figures.
+            frame_mask = cv2.inRange(
+                hsv,
+                np.array([70, 35, 65]),
+                np.array([105, 255, 255]),
+            )
+            close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (13, 13))
+            frame_mask = cv2.dilate(frame_mask, close_kernel, iterations=1)
+            frame_mask = cv2.morphologyEx(
+                frame_mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+
+            contours, _ = cv2.findContours(
+                frame_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            regions: List[Tuple[int, int, int, int]] = []
+            for contour in contours:
+                x, y, width, height = cv2.boundingRect(contour)
+                area = width * height
+                if width < 110 or height < 70:
+                    continue
+                if area < 9000 or area > page_area * 0.35:
+                    continue
+
+                aspect_ratio = width / height if height else 0
+                if aspect_ratio < 0.45 or aspect_ratio > 4.2:
+                    continue
+
+                is_wide_header = width > page_width * 0.62 and height < page_height * 0.14
+                if is_wide_header and y < page_height * 0.22:
+                    continue
+
+                border_band = frame_mask[y:y + height, x:x + width]
+                if border_band.size == 0 or float(np.mean(border_band > 0)) < 0.015:
+                    continue
+
+                regions.append(self._expand_bbox(
+                    (x, y, x + width, y + height),
+                    page_width,
+                    page_height,
+                    ratio=0.008,
+                ))
+
+            return regions
+        except Exception as e:
+            logger.warning(f"Frame-based region detection failed: {e}")
+            return []
 
     def _bbox_area(self, bbox: Tuple[int, int, int, int]) -> int:
         x0, y0, x1, y1 = bbox
@@ -189,20 +281,74 @@ class ImageProcessor:
         )
 
     def _iou(self, left: Tuple[int, int, int, int], right: Tuple[int, int, int, int]) -> float:
-        lx0, ly0, lx1, ly1 = left
-        rx0, ry0, rx1, ry1 = right
-        ix0, iy0 = max(lx0, rx0), max(ly0, ry0)
-        ix1, iy1 = min(lx1, rx1), min(ly1, ry1)
-        inter = max(0, ix1 - ix0) * max(0, iy1 - iy0)
+        inter = self._intersection_area(left, right)
         if inter == 0:
             return 0.0
         union = self._bbox_area(left) + self._bbox_area(right) - inter
         return inter / union if union > 0 else 0.0
 
+    def _intersection_area(self, left: Tuple[int, int, int, int], right: Tuple[int, int, int, int]) -> int:
+        lx0, ly0, lx1, ly1 = left
+        rx0, ry0, rx1, ry1 = right
+        ix0, iy0 = max(lx0, rx0), max(ly0, ry0)
+        ix1, iy1 = min(lx1, rx1), min(ly1, ry1)
+        return max(0, ix1 - ix0) * max(0, iy1 - iy0)
+
     def _contains(self, outer: Tuple[int, int, int, int], inner: Tuple[int, int, int, int]) -> bool:
         ox0, oy0, ox1, oy1 = outer
         ix0, iy0, ix1, iy1 = inner
         return ox0 <= ix0 and oy0 <= iy0 and ox1 >= ix1 and oy1 >= iy1
+
+    def _is_hierarchical_overlap(
+        self,
+        left: Tuple[int, int, int, int],
+        right: Tuple[int, int, int, int],
+        min_area_ratio: float = 2.0,
+    ) -> bool:
+        """Return True when boxes are likely parent/child figures, not duplicates."""
+        left_area = self._bbox_area(left)
+        right_area = self._bbox_area(right)
+        smaller_area = max(1, min(left_area, right_area))
+        larger_area = max(left_area, right_area)
+        if larger_area / smaller_area < min_area_ratio:
+            return False
+
+        overlap_of_smaller = self._intersection_area(left, right) / smaller_area
+        return overlap_of_smaller >= 0.86
+
+    def _contained_region_count(
+        self,
+        bbox: Tuple[int, int, int, int],
+        regions: List[Tuple[int, int, int, int]],
+        min_child_area_ratio: float = 0.035,
+    ) -> int:
+        area = self._bbox_area(bbox)
+        count = 0
+        for other in regions:
+            if other == bbox:
+                continue
+            if not self._is_hierarchical_overlap(bbox, other):
+                continue
+            if self._bbox_area(other) < area and self._bbox_area(other) >= area * min_child_area_ratio:
+                count += 1
+        return count
+
+    def _classify_region_hierarchy(
+        self,
+        bbox: Tuple[int, int, int, int],
+        regions: List[Tuple[int, int, int, int]],
+    ) -> str:
+        if self._contained_region_count(bbox, regions) >= 2:
+            return "composite_figure"
+
+        bbox_area = self._bbox_area(bbox)
+        for other in regions:
+            if other == bbox or self._bbox_area(other) <= bbox_area:
+                continue
+            if self._is_hierarchical_overlap(other, bbox):
+                return "sub_figure"
+
+        return ""
 
     def _deduplicate_regions(
         self,
@@ -210,33 +356,120 @@ class ImageProcessor:
         page_width: int,
         page_height: int,
     ) -> List[Tuple[int, int, int, int]]:
-        deduped: List[Tuple[int, int, int, int]] = []
-        for raw_bbox in regions:
-            bbox = self._expand_bbox(raw_bbox, page_width, page_height)
-            if self._bbox_area(bbox) < 2000:
+        candidates = [
+            self._expand_bbox(raw_bbox, page_width, page_height)
+            for raw_bbox in regions
+        ]
+        candidates = [
+            bbox for bbox in candidates
+            if self._bbox_area(bbox) >= 1200
+        ]
+        candidates.sort(key=lambda bbox: self._bbox_area(bbox), reverse=True)
+
+        kept: List[Tuple[int, int, int, int]] = []
+        for bbox in candidates:
+            bbox_area = self._bbox_area(bbox)
+            should_drop = False
+            for kept_bbox in kept:
+                kept_area = self._bbox_area(kept_bbox)
+                smaller_area = max(1, min(bbox_area, kept_area))
+                contained_ratio = self._intersection_area(
+                    bbox, kept_bbox) / smaller_area
+                if self._iou(bbox, kept_bbox) > 0.45 or contained_ratio > 0.80:
+                    should_drop = True
+                    break
+
+            if not should_drop:
+                kept.append(bbox)
+
+        return kept
+
+    def _region_gap(
+        self,
+        left: Tuple[int, int, int, int],
+        right: Tuple[int, int, int, int],
+    ) -> Tuple[int, int]:
+        x_gap = max(0, max(left[0], right[0]) - min(left[2], right[2]))
+        y_gap = max(0, max(left[1], right[1]) - min(left[3], right[3]))
+        return x_gap, y_gap
+
+    def _group_composite_figures(
+        self,
+        regions: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+        margin_ratio: float = 0.22,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Add synthetic parent boxes for nearby sub-figures while keeping children."""
+        if len(regions) < 2:
+            return regions
+
+        margin_x = max(24, int(page_width * margin_ratio))
+        margin_y = max(24, int(page_width * margin_ratio))
+        visited = set()
+        components: List[List[Tuple[int, int, int, int]]] = []
+
+        for start_index, start_bbox in enumerate(regions):
+            if start_index in visited:
                 continue
 
-            replaced = False
-            for index, kept in enumerate(deduped):
-                overlap = self._iou(bbox, kept)
-                if overlap >= 0.72:
-                    if self._bbox_area(bbox) > self._bbox_area(kept):
-                        deduped[index] = bbox
-                    replaced = True
+            visited.add(start_index)
+            component_indexes = [start_index]
+            stack = [start_index]
+            while stack:
+                current_index = stack.pop()
+                current_bbox = regions[current_index]
+                for candidate_index, candidate_bbox in enumerate(regions):
+                    if candidate_index in visited:
+                        continue
+                    x_gap, y_gap = self._region_gap(
+                        current_bbox, candidate_bbox)
+                    if x_gap <= margin_x and y_gap <= margin_y:
+                        visited.add(candidate_index)
+                        component_indexes.append(candidate_index)
+                        stack.append(candidate_index)
+
+            if len(component_indexes) >= 2:
+                components.append([regions[index] for index in component_indexes])
+
+        composite_regions: List[Tuple[int, int, int, int]] = []
+        page_area = page_width * page_height
+        for component in components:
+            union_bbox = (
+                min(bbox[0] for bbox in component),
+                min(bbox[1] for bbox in component),
+                max(bbox[2] for bbox in component),
+                max(bbox[3] for bbox in component),
+            )
+            union_bbox = self._expand_bbox(
+                union_bbox, page_width, page_height, ratio=0.025)
+            union_area = self._bbox_area(union_bbox)
+            if union_area > page_area * 0.75:
+                continue
+
+            largest_child_area = max(self._bbox_area(bbox)
+                                     for bbox in component)
+            if union_area < largest_child_area * 1.20:
+                continue
+
+            duplicate_parent = False
+            for existing in regions + composite_regions:
+                existing_area = self._bbox_area(existing)
+                overlap_of_union = self._intersection_area(
+                    union_bbox, existing) / max(1, union_area)
+                if (
+                    self._iou(union_bbox, existing) > 0.90
+                    or (existing_area >= union_area * 0.90 and overlap_of_union > 0.95)
+                ):
+                    duplicate_parent = True
                     break
-                if self._contains(kept, bbox) or self._contains(bbox, kept):
-                    area_left = self._bbox_area(kept)
-                    area_right = self._bbox_area(bbox)
-                    ratio = (max(area_left, area_right) /
-                             max(1, min(area_left, area_right)))
-                    if ratio <= 1.8:
-                        if area_right > area_left:
-                            deduped[index] = bbox
-                        replaced = True
-                        break
-            if not replaced:
-                deduped.append(bbox)
-        return deduped
+
+            if not duplicate_parent:
+                composite_regions.append(union_bbox)
+
+        grouped = composite_regions + regions
+        grouped.sort(key=lambda bbox: self._bbox_area(bbox), reverse=True)
+        return grouped
 
     def _suppress_container_regions(
         self,
@@ -252,26 +485,20 @@ class ImageProcessor:
             area = self._bbox_area(bbox)
             width = bbox[2] - bbox[0]
             height = bbox[3] - bbox[1]
-            contained_children = 0
             overlap_children = 0
 
             for other in regions:
                 if other == bbox:
                     continue
-                if not self._contains(bbox, other):
-                    overlap_ratio = self._iou(bbox, other)
-                    if overlap_ratio >= 0.18 and self._bbox_area(other) < area * 0.7:
-                        overlap_children += 1
-                    continue
-                if self._bbox_area(other) >= area * 0.12:
-                    contained_children += 1
+                overlap_ratio = self._iou(bbox, other)
+                if overlap_ratio >= 0.18 and self._bbox_area(other) < area * 0.7:
+                    overlap_children += 1
 
             is_wide_container = (
                 width / max(1, page_width)) > 0.88 and (height / max(1, page_height)) < 0.26
-            has_multiple_children = contained_children >= 2
-            if is_wide_container and (contained_children >= 1 or overlap_children >= 2):
-                continue
-            if (has_multiple_children or overlap_children >= 3) and area > (page_width * page_height * 0.08):
+            is_page_chrome = is_wide_container and (
+                bbox[1] < page_height * 0.18 or bbox[3] > page_height * 0.92)
+            if is_page_chrome and overlap_children >= 2:
                 continue
 
             kept.append(bbox)
@@ -294,7 +521,11 @@ class ImageProcessor:
         )
         selected: List[Tuple[int, int, int, int]] = []
         for bbox in ranked:
-            if any(self._iou(bbox, kept) > 0.58 for kept in selected):
+            if any(
+                self._iou(bbox, kept) > 0.58
+                and not self._is_hierarchical_overlap(bbox, kept)
+                for kept in selected
+            ):
                 continue
             selected.append(bbox)
             if len(selected) >= max_regions:
@@ -349,13 +580,9 @@ class ImageProcessor:
                 continue
 
             # Reject very tiny icons and over-large whole-page text blocks.
-            if area < 2200:
+            if area < 1200:
                 continue
             if area > page_area * 0.75:
-                continue
-
-            # Keep low-variance regions if they are reasonably large (useful for grayscale figures).
-            if area < page_area * 0.05 and not self._check_color_variance(image, bbox):
                 continue
 
             edge_margin = int(min(page_width, page_height) * 0.012)
@@ -367,36 +594,6 @@ class ImageProcessor:
         refined.sort(key=lambda item: self._bbox_area(item), reverse=True)
         deduped = self._deduplicate_regions(refined, page_width, page_height)
         return self._suppress_container_regions(deduped, page_width, page_height)
-
-    def _clip_filter(self, image: Image.Image) -> Tuple[bool, float, float]:
-        """Zero-shot CLIP classification to keep only photograph/diagram/illustration."""
-        try:
-            inputs = self.clip_processor(
-                text=[CLIP_ZERO_SHOT_PROMPT, CLIP_NEGATIVE_PROMPT],
-                images=image,
-                return_tensors="pt",
-                padding=True,
-            )
-
-            with torch.no_grad():
-                outputs = self.clip_model(**inputs)
-                logits_per_image = outputs.logits_per_image
-                probs = logits_per_image.softmax(dim=1)
-
-            pos_prob = probs[0][0].item()
-            neg_prob = probs[0][1].item()
-
-            visual_score = self._visual_content_score(image)
-            keep = pos_prob > neg_prob or (
-                visual_score > 0.04 and neg_prob < 0.72)
-            logger.debug(
-                f"CLIP filter: pos={pos_prob:.3f}, neg={neg_prob:.3f}, visual={visual_score:.3f}, keep={keep}"
-            )
-            return keep, pos_prob, neg_prob
-        except Exception as e:
-            logger.warning(
-                f"CLIP filter failed: {e}, keeping image by default")
-            return True, 0.0, 0.0
 
     def _visual_content_score(self, image: Image.Image) -> float:
         """Estimate how much non-background colored visual content a crop contains."""
@@ -532,7 +729,16 @@ class ImageProcessor:
                 return self._clean_text(match.group(1), max_chars=220)
         return ""
 
-    def _infer_image_type(self, figure_label: str, context_text: str, crop_text: str = "") -> str:
+    def _infer_image_type(
+        self,
+        figure_label: str,
+        context_text: str,
+        crop_text: str = "",
+        hierarchy_type: str = "",
+    ) -> str:
+        if hierarchy_type:
+            return hierarchy_type
+
         normalized = self._normalize_text(f"{figure_label} {context_text}")
         crop_normalized = self._normalize_text(crop_text)
         crop_tokens = [token for token in crop_normalized.split()
@@ -553,22 +759,39 @@ class ImageProcessor:
         self,
         crop: Image.Image,
         crop_text: str,
-        clip_positive_score: float,
-        clip_negative_score: float,
     ) -> bool:
-        """Reject standalone headings/labels that contour detection mistakes for figures."""
+        """Reject standalone headings/labels that detector can mistake for figures."""
         normalized = self._normalize_text(crop_text)
         tokens = [token for token in normalized.split() if len(token) > 1]
-        if len(tokens) < 2:
+        if len(tokens) <= 15:
+            return False
+
+        aspect_ratio = crop.width / crop.height if crop.height else 0
+        crop_area = crop.width * crop.height
+        image_keyword_pattern = (
+            r"[\d=+\-*/^√≤≥<>]|"
+            r"\b([a-d]\)|bang|hinh|anh|cong thuc|bieu do|so do|"
+            r"thi nghiem|quan sat|mo hinh|vat mau|mau vat|"
+            r"coc|nhiet ke|day|tuong|nhom|nen|the ran|the long)\b"
+        )
+        if re.search(image_keyword_pattern, normalized):
             return False
 
         visual_score = self._visual_content_score(crop)
-        aspect_ratio = crop.width / crop.height if crop.height else 0
-        crop_area = crop.width * crop.height
-        short_text = len(tokens) <= 10 and len(normalized) <= 80
-        weak_visual = visual_score < 0.055 and clip_negative_score >= (
-            clip_positive_score + 0.06)
-        return short_text and weak_visual and aspect_ratio < 9 and crop_area < 120000
+        foreground_score = self._foreground_content_score(crop)
+        has_visual_contrast = visual_score >= 0.035 or foreground_score >= 0.10
+        if crop_area > 15000:
+            return not has_visual_contrast and aspect_ratio < 9
+
+        weak_visual = visual_score < 0.025 and foreground_score < 0.065
+        return weak_visual and aspect_ratio < 9
+
+    def _foreground_content_score(self, image: Image.Image) -> float:
+        """Estimate non-white/non-background content so low-saturation objects survive."""
+        img_array = np.array(image.convert("RGB"))
+        gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+        foreground = gray < 238
+        return float(np.mean(foreground))
 
     def _extract_keywords(self, *texts: str, limit: int = 18) -> str:
         """Extract lightweight Vietnamese keyword metadata without calling another model."""
@@ -683,10 +906,9 @@ class ImageProcessor:
         """
         Full image ETL pipeline for a single PDF.
 
-        Phase 1: Contour detection for region discovery
-        Phase 2: Refinement (color variance + aspect ratio)
-        Phase 3: CLIP zero-shot filtering
-        Phase 4: Vietnamese OCR/context metadata + storage
+        Phase 1: OWL-ViT open-vocabulary object detection for region discovery
+        Phase 2: Region refinement, dedupe, and caps
+        Phase 3: Vietnamese OCR/context metadata + storage
         """
         extracted_docs = []
         output_dir = IMAGES_DIR / Path(pdf_filename).stem
@@ -719,15 +941,20 @@ class ImageProcessor:
             page_snapshot_path = self._save_page_snapshot(
                 output_dir, page_num, pil_img)
 
-            # Phase 1: Contour detection for region discovery.
+            # Phase 1: OWL-ViT open-vocabulary detection for region discovery.
             logger.info(
-                f"[Phase 1][page={page_num}] Discovering candidate image regions by contours")
-            regions = self._detect_contour_regions(img_array)
+                f"[Phase 1][page={page_num}] Detecting candidate image regions with OWL-ViT")
+            owlvit_regions = self._detect_regions_with_owlvit(
+                pil_img, OWL_VIT_TEXT_QUERIES)
+            framed_regions = self._detect_framed_regions(img_array)
+            regions = owlvit_regions + framed_regions
 
-            # Phase 2: Refinement with color variance, aspect ratio, dedupe, and region caps.
+            # Phase 2: Refinement with aspect ratio, dedupe, and region caps.
             logger.info(
-                f"[Phase 2][page={page_num}] Refining {len(regions)} contour regions")
+                f"[Phase 2][page={page_num}] Refining {len(owlvit_regions)} OWL-ViT and {len(framed_regions)} framed regions")
             refined = self._refine_regions(regions, img_array)
+            refined = self._group_composite_figures(
+                refined, pil_img.width, pil_img.height)
             refined = self._limit_regions_for_extraction(
                 refined, max_regions=24)
 
@@ -743,22 +970,11 @@ class ImageProcessor:
                 if crop.width < 50 or crop.height < 50:
                     continue
 
-                # Phase 3: CLIP zero-shot filtering for visual textbook content.
+                # Phase 3: Vietnamese OCR/context metadata and storage.
                 logger.info(
-                    f"[Phase 3][page={page_num}][candidate={img_index}] Running CLIP visual filter")
-                keep_crop, clip_positive_score, clip_negative_score = self._clip_filter(
-                    crop)
-                if not keep_crop:
-                    logger.debug(
-                        f"Page {page_num} img {img_index}: filtered out by CLIP")
-                    img_index += 1
-                    continue
-
-                # Phase 4: Vietnamese OCR/context metadata and storage.
-                logger.info(
-                    f"[Phase 4][page={page_num}][candidate={img_index}] Building OCR/context metadata")
+                    f"[Phase 3][page={page_num}][candidate={img_index}] Building OCR/context metadata")
                 crop_text = self._ocr_crop_text(crop)
-                if self._is_text_dominant_crop(crop, crop_text, clip_positive_score, clip_negative_score):
+                if self._is_text_dominant_crop(crop, crop_text):
                     logger.debug(
                         f"Page {page_num} img {img_index}: filtered out as text-dominant crop")
                     img_index += 1
@@ -793,8 +1009,9 @@ class ImageProcessor:
                     context_text, crop_text) if part)
                 figure_label = self._extract_figure_label(local_text, "")
                 figure_caption = self._extract_figure_caption(local_text, "")
+                hierarchy_type = self._classify_region_hierarchy(bbox, refined)
                 image_type = self._infer_image_type(
-                    figure_label, context_text, crop_text)
+                    figure_label, context_text, crop_text, hierarchy_type)
                 caption_context = {
                     "pdf_filename": pdf_filename,
                     "page_number": page_num,
@@ -803,6 +1020,7 @@ class ImageProcessor:
                     "figure_label": figure_label,
                     "figure_caption": figure_caption,
                     "image_type": image_type,
+                    "region_hierarchy": hierarchy_type or "standalone",
                     "context_text": context_text,
                     "crop_text": crop_text,
                     "nearby_text": nearby_text,
@@ -839,6 +1057,7 @@ class ImageProcessor:
                     "figure_caption": figure_caption,
                     **visual_metadata,
                     "image_type": image_type,
+                    "region_hierarchy": hierarchy_type or "standalone",
                     "keywords_vi": keywords_vi,
                     "caption": caption_text,
                     "caption_vi": caption_text,
@@ -859,8 +1078,10 @@ class ImageProcessor:
                     "image_width": crop.width,
                     "image_height": crop.height,
                     "visual_content_score": round(self._visual_content_score(crop), 4),
-                    "clip_positive_score": round(clip_positive_score, 4),
-                    "clip_negative_score": round(clip_negative_score, 4),
+                    "clip_positive_score": 0.0,
+                    "clip_negative_score": 0.0,
+                    "detector_model": OWL_VIT_MODEL,
+                    "detector_threshold": OWL_VIT_CONFIDENCE_THRESHOLD,
                 }
                 search_text = self._build_image_search_text(metadata)
                 metadata["search_text"] = search_text

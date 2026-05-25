@@ -80,7 +80,7 @@ cp .env.example .env
 - `RAG_DATABASE_DIR`: nơi lưu thư mục database. Để rỗng thì dùng `./database`; trên Colab nên trỏ vào Google Drive.
 - `RAG_DATA_DIR`: nơi đọc PDF đầu vào. Để rỗng thì dùng `./data`.
 - `IMAGE_CAPTION_ENABLED=true|false`: bật/tắt caption model cho ảnh.
-- `IMAGE_EXTRACTION_VERSION=v3_context_caption`: version thuật toán extract/caption ảnh, đổi version sẽ buộc reprocess image page.
+- `IMAGE_EXTRACTION_VERSION=v4_owlvit_context_caption`: version thuật toán extract/caption ảnh, đổi version sẽ buộc reprocess image page.
 - `IMAGE_REVIEW_MANIFEST_PATH`: nơi lưu manifest review ảnh. Để rỗng thì mặc định nằm trong `RAG_DATABASE_DIR`.
 
 Nếu chưa biết máy cài Poppler/Tesseract ở đâu, repo có sẵn:
