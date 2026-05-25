@@ -1,6 +1,6 @@
 # Hướng Dẫn Cài Đặt và Sử Dụng Flask API Server
 
-Tài liệu này cung cấp hướng dẫn cách khởi chạy và giao tiếp với hệ thống Biology RAG qua nền tảng API RESTful (Flask). Server này cho phép giao tiếp dễ dàng với các frontend độc lập (như React, Vue) thay vì sử dụng giao diện Gradio tích hợp sẵn.
+Tài liệu này cung cấp hướng dẫn cách khởi chạy và giao tiếp với hệ thống Biology RAG qua nền tảng API RESTful (Flask). Server này cho phép giao tiếp dễ dàng với các frontend độc lập như React hoặc Vue.
 
 ---
 
@@ -14,7 +14,7 @@ pip install -r requirements.txt
 ```
 
 ### Khởi động Server
-Sử dụng tham số `--api` để chạy web server thay vì Gradio. Bạn có thể tuỳ chọn cổng (port) bằng tham số `--port` (mặc định là 5000).
+Sử dụng tham số `--api` để chạy Flask web server. Bạn có thể tuỳ chọn cổng (port) bằng tham số `--port` (mặc định là 5000).
 
 ```bash
 python main.py --api --port 5000

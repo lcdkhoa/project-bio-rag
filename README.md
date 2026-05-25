@@ -89,7 +89,6 @@ Lưu ý: không chạy `%rm -rf database` trong notebook nếu đang muốn gi�
 | `python main.py --replace-image-db <path.json> --review-user <name>` | Replace toàn bộ manifest + rebuild image index theo snapshot JSON |
 | `python main.py --api` | Chạy Flask API server (mặc định cổng 5000) |
 | `python main.py --api --port <port>` | Chạy Flask API server trên cổng tùy chỉnh |
-| `python main.py --app` | Chạy Gradio app |
 
 ## 3) Chạy Frontend (Next.js)
 
@@ -147,7 +146,7 @@ npm run dev
 4. Export review: `python main.py --export-image-review database/review_images.json`.
 5. Reviewer chỉnh metadata thủ công.
 6. Apply review: `python main.py --apply-image-review database/review_images.json --review-user <name>`.
-7. Chạy app: `python main.py --app`.
+7. Chạy API: `python main.py --api --port 5000`.
 
 ## 5) Ví dụ upsert 1 item
 

@@ -145,8 +145,8 @@ Link tải nếu thiếu zip:
 - Rebuild image vector index theo snapshot mới.
 - Item không còn trong snapshot sẽ bị xóa khỏi manifest và image index.
 
-## `python main.py --app`
-- Mở Gradio app để hỏi đáp và xem ảnh.
+## `python main.py --api --port 5000`
+- Mở Flask API server để frontend gọi chat, ETL và image review.
 
 ---
 
@@ -201,10 +201,10 @@ python main.py --export-image-review database/review_images.json
 python main.py --apply-image-review database/review_images.json --review-user charlie
 ```
 
-7. Chạy app:
+7. Chạy API:
 
 ```bash
-python main.py --app
+python main.py --api --port 5000
 ```
 
 ## Kịch bản B: Build nhanh 1 lệnh

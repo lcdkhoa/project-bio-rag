@@ -327,15 +327,6 @@ def run_etl():
     logger.info("ETL (FULL) pipeline completed!")
 
 
-def run_app():
-    """Launch Gradio web application."""
-    logger.info("Starting Gradio app...")
-    from src.app import BiologyAssistantApp
-
-    app = BiologyAssistantApp()
-    app.launch(share=True)
-
-
 def run_flask_api(port=5000):
     """Launch Flask API server."""
     logger.info(f"Starting Flask API server on port {port}...")
@@ -491,12 +482,10 @@ def main():
         help="Include approved/rejected rows when exporting review file.",
     )
 
-    parser.add_argument("--app", action="store_true",
-                        help="Launch Gradio web app")
     parser.add_argument("--api", action="store_true",
                         help="Launch Flask API server")
-    parser.add_argument("--port", type=int, default=7860,
-                        help="Port for Flask API server (default: 7860)")
+    parser.add_argument("--port", type=int, default=5000,
+                        help="Port for Flask API server (default: 5000)")
 
     args = parser.parse_args()
 
@@ -504,7 +493,6 @@ def main():
         not args.etl
         and not args.text_only
         and not args.image_only
-        and not args.app
         and not args.api
         and not args.export_image_review
         and not args.export_image_db
@@ -552,9 +540,6 @@ def main():
     if args.upsert_image_review_item:
         run_upsert_image_review_item(item_path=args.upsert_image_review_item, reviewed_by=args.review_user)
 
-    if args.app:
-        run_app()
-        
     if args.api:
         run_flask_api(port=args.port)
 

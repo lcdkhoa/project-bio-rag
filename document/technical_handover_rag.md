@@ -12,7 +12,7 @@ Hệ thống gồm 4 phần:
 1. Ingestion + ETL text (`src/etl/loaders.py`, `text_splitter.py`, `main.py`).
 2. ETL image + metadata + review (`src/etl/image_processor.py`, `image_captioner.py`, `image_review.py`).
 3. Storage + retrieval (`src/rag/vectorstore.py`, `image_vectorstore.py`, `hybrid_retriever.py`).
-4. QA app (`src/rag/chain.py`, `src/app/assistant.py`).
+4. Flask API (`src/rag/chain.py`, `src/app/api.py`, `src/app/dependencies.py`).
 
 Luồng end-to-end:
 
@@ -36,7 +36,7 @@ flowchart TD
     D --> M[HybridRetriever]
     H --> M
     M --> N[BiologyRAG + LLM]
-    N --> O[Gradio UI: answer + gallery]
+    N --> O[Flask API: answer + image gallery]
 ```
 
 ## 2) Cấu trúc codebase
@@ -61,7 +61,8 @@ src/
     chain.py
     llm.py
   app/
-    assistant.py
+    api.py
+    dependencies.py
 document/
   huong_dan_van_hanh_rag.md
   huong_dan_van_hanh_rag.html
@@ -191,10 +192,10 @@ Rule cập nhật dữ liệu:
 - text retrieval trước, image retrieval sau.
 - image retrieval dùng `related_text_docs` để tăng độ chính xác theo page context.
 
-### 3.11 QA chain (`src/rag/chain.py`) và app (`src/app/assistant.py`)
+### 3.11 QA chain (`src/rag/chain.py`) và Flask API (`src/app/api.py`)
 
 - Prompt ép tiếng Việt và chỉ dùng context SGK.
-- Gradio trả về answer + image gallery.
+- Flask API trả về answer + image gallery qua `/api/chat`.
 
 ## 4) Metadata schema cho ảnh
 
@@ -284,14 +285,14 @@ Payload snapshot tối thiểu/rút gọn:
 6. `python main.py --export-image-review database/review_images.json`
 7. chỉnh review
 8. `python main.py --apply-image-review ...`
-9. `python main.py --app`
+9. `python main.py --api --port 5000`
 
 ## 8) Checklist bàn giao
 
 1. Chạy `python main.py --help` kiểm tra CLI.
 2. Test `--export-image-db` và `--upsert-image-review-item` trên 1 item mẫu.
 3. Test `--apply-image-review --review-pdf` để tránh update nhầm toàn bộ dữ liệu.
-4. Validate kết quả trên app (text + gallery).
+4. Validate kết quả qua Flask API hoặc frontend (text + gallery).
 
 ## 9) Kịch bản thuyết trình (10-15 phút)
 
