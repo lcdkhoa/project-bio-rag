@@ -779,7 +779,6 @@ class ImageProcessor:
 
                 image_id = self._build_image_id(
                     pdf_hash, page_num, bbox, img_hash)
-                visual_metadata = self.captioner.caption(crop, img_hash)
 
                 filepath = self._resolve_image_path(
                     output_dir, page_num, img_index, img_hash)
@@ -796,6 +795,20 @@ class ImageProcessor:
                 figure_caption = self._extract_figure_caption(local_text, "")
                 image_type = self._infer_image_type(
                     figure_label, context_text, crop_text)
+                caption_context = {
+                    "pdf_filename": pdf_filename,
+                    "page_number": page_num,
+                    "lesson_title": lesson_title,
+                    "section_title": section_title,
+                    "figure_label": figure_label,
+                    "figure_caption": figure_caption,
+                    "image_type": image_type,
+                    "context_text": context_text,
+                    "crop_text": crop_text,
+                    "nearby_text": nearby_text,
+                }
+                visual_metadata = self.captioner.caption(
+                    crop, img_hash, context=caption_context)
                 visual_caption = visual_metadata.get("visual_caption_vi", "")
                 visual_keywords = visual_metadata.get("visual_keywords_vi", "")
                 visual_objects = visual_metadata.get("visual_objects_vi", "")

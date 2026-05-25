@@ -73,7 +73,13 @@ class LocalImageImporter:
 
             image_id = self._build_image_id(pdf_hash, page_number, filename, img_hash)
             
-            visual_metadata = self.captioner.caption(crop, img_hash)
+            caption_context = {
+                "pdf_filename": pdf_filename,
+                "page_number": page_number,
+                "image_type": "image_region",
+            }
+            visual_metadata = self.captioner.caption(
+                crop, img_hash, context=caption_context)
             visual_caption = visual_metadata.get("visual_caption_vi", "")
             
             metadata = {

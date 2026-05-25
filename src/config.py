@@ -54,12 +54,13 @@ POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 CLIP_MODEL = "openai/clip-vit-base-patch16"
-IMAGE_EXTRACTION_VERSION = os.getenv("IMAGE_EXTRACTION_VERSION", "v2")
+IMAGE_EXTRACTION_VERSION = os.getenv(
+    "IMAGE_EXTRACTION_VERSION", "v3_context_caption")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
     "IMAGE_CAPTION_MODEL",
-    "pqthinh232/HCMUS-Qwen2-VL-2B-Instruct-Vietnamese-Image-Captioning-for-blind-E2",
+    "5CD-AI/Vintern-1B-v2",
 )
 IMAGE_CAPTION_MAX_NEW_TOKENS = int(
     os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))

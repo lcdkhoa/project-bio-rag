@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -23,12 +24,18 @@ from ..config import (
 logger = logging.getLogger(__name__)
 
 
-CAPTION_PROMPT = (
-    "Mô tả ngắn gọn bằng tiếng Việt hình ảnh này cho hệ thống tìm kiếm sách giáo khoa sinh học. "
-    "Tập trung vào vật thể chính, loài sinh vật, bộ phận cơ thể, môi trường, màu sắc hoặc hoạt động nếu nhìn thấy. "
-    "Không đoán quá xa ngoài hình. Trả về đúng JSON với các khóa: "
-    'caption, keywords, objects, scene. Ví dụ: {"caption":"hình một con trâu trên bãi cỏ",'
-    '"keywords":["trâu","động vật","bãi cỏ"],"objects":["trâu"],"scene":"đồng cỏ"}.'
+CAPTION_CONTEXT_VERSION = "context_v1"
+
+BASE_CAPTION_PROMPT = (
+    "Bạn là bộ tạo metadata ảnh cho hệ thống tìm kiếm sách giáo khoa sinh học. "
+    "Hãy mô tả ảnh bằng tiếng Việt, ưu tiên giúp truy vấn tìm được đúng ảnh. "
+    "Dựa vào ảnh để nhận diện vật thể chính, loài sinh vật, bộ phận cơ thể, môi trường, màu sắc hoặc hoạt động. "
+    "Dùng thêm ngữ cảnh OCR/metadata nếu nó làm rõ chủ đề, môi trường hoặc nhãn hình. "
+    "Ví dụ: nếu ảnh có cá/rạn san hô và ngữ cảnh ghi 'Đại dương', hãy đưa 'đại dương' vào caption/keywords/scene. "
+    "Không bịa tên loài hoặc chi tiết không thấy rõ. "
+    "Trả về đúng JSON với các khóa: caption, keywords, objects, scene. "
+    'Ví dụ: {"caption":"các loài cá bơi trong đại dương gần rạn san hô",'
+    '"keywords":["cá","đại dương","rạn san hô"],"objects":["cá","san hô"],"scene":"đại dương"}.'
 )
 
 
@@ -94,23 +101,38 @@ class ImageCaptioner:
                 "trust_remote_code": True,
             }
             if self._device == "cuda":
-                model_kwargs.update({"torch_dtype": torch.float16, "device_map": "auto"})
+                model_kwargs.update(
+                    {"torch_dtype": torch.float16, "device_map": "auto"})
 
-            self._model = CaptionModel.from_pretrained(self.model_name, **model_kwargs)
+            self._model = CaptionModel.from_pretrained(
+                self.model_name, **model_kwargs)
             if self._device != "cuda":
                 self._model.to(self._device)
             self._model.eval()
             logger.info("Image caption model loaded")
             return True
         except Exception as e:
-            logger.warning(f"Image caption model unavailable, continuing without visual captions: {e}")
+            logger.warning(
+                f"Image caption model unavailable, continuing without visual captions: {e}")
             self.enabled = False
             return False
 
-    def _cache_key(self, image_hash: str) -> str:
-        return f"{self.model_name}:{image_hash}"
+    def _cache_key(self, image_hash: str, context: Optional[Dict[str, Any]] = None) -> str:
+        context_payload = self._normalize_context(context)
+        if not context_payload:
+            return f"{self.model_name}:{image_hash}"
 
-    def caption(self, image: Image.Image, image_hash: str) -> Dict[str, Any]:
+        fingerprint = hashlib.sha1(
+            json.dumps(context_payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest()[:16]
+        return f"{self.model_name}:{CAPTION_CONTEXT_VERSION}:{image_hash}:{fingerprint}"
+
+    def caption(
+        self,
+        image: Image.Image,
+        image_hash: str,
+        context: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Return cached or generated visual metadata for one image crop."""
         empty = {
             "visual_caption_vi": "",
@@ -118,11 +140,13 @@ class ImageCaptioner:
             "visual_objects_vi": "",
             "visual_scene_vi": "",
             "caption_source": "none",
+            "caption_context_used": "",
         }
         if not self.enabled:
             return empty
 
-        cache_key = self._cache_key(image_hash)
+        context_payload = self._normalize_context(context)
+        cache_key = self._cache_key(image_hash, context_payload)
         if cache_key in self._cache:
             return dict(self._cache[cache_key])
 
@@ -130,8 +154,9 @@ class ImageCaptioner:
             return empty
 
         try:
-            raw_text = self._generate_caption(image)
+            raw_text = self._generate_caption(image, context_payload)
             parsed = self._parse_caption(raw_text)
+            parsed["caption_context_used"] = "yes" if context_payload else "no"
             self._cache[cache_key] = parsed
             self._save_cache()
             return dict(parsed)
@@ -139,14 +164,15 @@ class ImageCaptioner:
             logger.warning(f"Image captioning failed: {e}")
             return empty
 
-    def _generate_caption(self, image: Image.Image) -> str:
+    def _generate_caption(self, image: Image.Image, context: Optional[Dict[str, Any]] = None) -> str:
+        caption_prompt = self._build_prompt(context)
         if hasattr(self._processor, "apply_chat_template"):
             messages = [
                 {
                     "role": "user",
                     "content": [
                         {"type": "image", "image": image.convert("RGB")},
-                        {"type": "text", "text": CAPTION_PROMPT},
+                        {"type": "text", "text": caption_prompt},
                     ],
                 }
             ]
@@ -156,7 +182,7 @@ class ImageCaptioner:
                 add_generation_prompt=True,
             )
         else:
-            prompt = CAPTION_PROMPT
+            prompt = caption_prompt
 
         inputs = self._processor(
             text=[prompt],
@@ -165,7 +191,8 @@ class ImageCaptioner:
             padding=True,
         )
         inputs = {
-            key: value.to(self._model.device) if hasattr(value, "to") else value
+            key: value.to(self._model.device) if hasattr(
+                value, "to") else value
             for key, value in inputs.items()
         }
 
@@ -181,9 +208,58 @@ class ImageCaptioner:
             generated_ids = generated_ids[:, input_len:]
         return self._processor.batch_decode(generated_ids, skip_special_tokens=True)[0].strip()
 
+    def _build_prompt(self, context: Optional[Dict[str, Any]] = None) -> str:
+        context_payload = self._normalize_context(context)
+        if not context_payload:
+            return BASE_CAPTION_PROMPT
+
+        lines = ["Ngữ cảnh trang/crop:"]
+        labels = {
+            "pdf_filename": "Tài liệu",
+            "page_number": "Trang",
+            "lesson_title": "Bài/chủ đề",
+            "section_title": "Mục",
+            "figure_label": "Nhãn hình",
+            "figure_caption": "Chú thích hình",
+            "image_type": "Loại ảnh",
+            "context_text": "OCR quanh ảnh",
+            "crop_text": "OCR trong crop",
+            "nearby_text": "OCR toàn trang",
+        }
+        for key, label in labels.items():
+            value = context_payload.get(key, "")
+            if value:
+                lines.append(f"- {label}: {value}")
+
+        return BASE_CAPTION_PROMPT + "\n\n" + "\n".join(lines)
+
+    def _normalize_context(self, context: Optional[Dict[str, Any]]) -> Dict[str, str]:
+        if not context:
+            return {}
+
+        limits = {
+            "pdf_filename": 120,
+            "page_number": 20,
+            "lesson_title": 180,
+            "section_title": 180,
+            "figure_label": 120,
+            "figure_caption": 260,
+            "image_type": 80,
+            "context_text": 700,
+            "crop_text": 260,
+            "nearby_text": 700,
+        }
+        normalized: Dict[str, str] = {}
+        for key, max_chars in limits.items():
+            value = self._clean_text(context.get(key, ""), max_chars=max_chars)
+            if value:
+                normalized[key] = value
+        return normalized
+
     def _parse_caption(self, raw_text: str) -> Dict[str, Any]:
         payload = self._extract_json(raw_text) or {}
-        caption = self._clean_text(payload.get("caption") or raw_text, max_chars=240)
+        caption = self._clean_text(payload.get(
+            "caption") or raw_text, max_chars=240)
         keywords = self._clean_list(payload.get("keywords"))
         objects = self._clean_list(payload.get("objects"))
         scene = self._clean_text(payload.get("scene") or "", max_chars=120)
@@ -197,6 +273,7 @@ class ImageCaptioner:
             "visual_objects_vi": ", ".join(objects[:8]),
             "visual_scene_vi": scene,
             "caption_source": self.model_name,
+            "caption_context_used": "no",
         }
 
     def _extract_json(self, text: str) -> Optional[Dict[str, Any]]:
@@ -237,7 +314,8 @@ class ImageCaptioner:
         return cleaned
 
     def _fallback_keywords(self, caption: str) -> List[str]:
-        stopwords = {"hinh", "anh", "mot", "tren", "trong", "cac", "voi", "cua", "va", "co"}
+        stopwords = {"hinh", "anh", "mot", "tren",
+                     "trong", "cac", "voi", "cua", "va", "co"}
         normalized = caption.lower()
         normalized = re.sub(r"[^a-zA-Z0-9À-ỹ\s]+", " ", normalized)
         return [
