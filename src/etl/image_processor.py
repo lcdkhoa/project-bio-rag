@@ -54,7 +54,64 @@ OWL_VIT_TEXT_QUERIES = [
     "a bowl of liquid",
     "a sample of raw material",
     "a coil of wire",
+    "a textbook information panel",
+    "a colored background panel with text",
+    "a callout box with portrait photo",
 ]
+
+# Patterns indicating a question/activity prompt (NOT a real figure to extract).
+QUESTION_PROMPT_PATTERNS = (
+    r"h[aãâ]y\s+quan\s+s[aá]t",
+    r"h[aãâ]y\s+t[iìí]m",
+    r"h[aãâ]y\s+cho\s+bi[eế]t",
+    r"h[aãâ]y\s+nh[aậ]n\s+x[eé]t",
+    r"h[aãâ]y\s+m[oô]\s+t[aả]",
+    r"tr[aả]\s+l[oờ]i\s+c[aâ]u\s+h[oỏ]i",
+    r"em\s+h[aãâ]y",
+    r"th[aả]o\s+lu[aậ]n",
+)
+
+# Patterns that mark Vietnamese figure/table captions.
+FIGURE_CAPTION_REGEX = re.compile(
+    r"^\s*(H[iì]nh|B[aả]ng)\s+\d+", re.IGNORECASE)
+
+# Sub-figure letter labels: "a)", "b)" ... up to "h)".
+# Vietnamese OCR often misreads "d" as "đ" and "g" as "ø", so accept both.
+SUB_FIGURE_LABEL_REGEX = re.compile(
+    r"^\s*[a-hđøA-HĐØ]\s*[\)\.]\s+", flags=re.UNICODE)
+
+# Section markers (info boxes / activities) typical for Vietnamese textbooks.
+INFO_BOX_TITLE_REGEX = re.compile(
+    r"\b(Em\s+c[oó]\s+bi[eế]t|T[iì]m\s+hi[eể]u\s+th[eê]m|"
+    r"M[oở]\s+r[oộ]ng|Ki[eế]n\s+th[uứ]c\s+m[oớ]i|"
+    r"Th[uự]c\s+h[aà]nh|V[aậ]n\s+d[uụ]ng|Luy[eệ]n\s+t[aậ]p)\b",
+    flags=re.IGNORECASE,
+)
+
+# v7 anchor-first patterns ------------------------------------------------
+
+# Strict figure caption: "Hình 1.1." / "Hình 1.1 abc"
+FIG_CAPTION_STRICT_REGEX = re.compile(
+    r"^\s*H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
+    flags=re.IGNORECASE,
+)
+
+# Strict table caption: "Bảng 1.1." / "Bảng 1.1 abc"  -> ALWAYS rejected.
+TABLE_CAPTION_STRICT_REGEX = re.compile(
+    r"^\s*B[aả]ng\s+\d+(?:\.\d+)?\s*[\.:]?",
+    flags=re.IGNORECASE,
+)
+
+# Section label patterns that precede dashed-only tool grids on page 13/25/etc.
+# "Dụng cụ đo chiều dài", "Một số dụng cụ", "Hộp dụng cụ".
+TOOL_GROUP_LABEL_REGEX = re.compile(
+    r"^\s*(D[uụ]ng\s+c[uụ]\s+(?:[ad][oơ]|trong)|"
+    r"M[oộ]t\s+s[oố]\s+d[uụ]ng\s+c[uụ]|"
+    r"H[oộ]p\s+d[uụ]ng\s+c[uụ]|"
+    r"Chu[aẩ]n\s+b[iị][:\s]|Ti[eế]n\s+h[aà]nh[:\s]|"
+    r"D[uụ]ng\s+c[uụ][:\s])",
+    flags=re.IGNORECASE,
+)
 
 VIETNAMESE_STOPWORDS = {
     "anh",
@@ -142,7 +199,8 @@ class ImageProcessor:
                 return_tensors="pt",
             )
             inputs = {
-                key: value.to(self._owlvit_device) if hasattr(value, "to") else value
+                key: value.to(self._owlvit_device) if hasattr(
+                    value, "to") else value
                 for key, value in inputs.items()
             }
 
@@ -223,41 +281,1954 @@ class ImageProcessor:
             frame_mask = cv2.morphologyEx(
                 frame_mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
 
-            contours, _ = cv2.findContours(
-                frame_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-            regions: List[Tuple[int, int, int, int]] = []
-            for contour in contours:
-                x, y, width, height = cv2.boundingRect(contour)
-                area = width * height
-                if width < 110 or height < 70:
-                    continue
-                if area < 9000 or area > page_area * 0.35:
-                    continue
-
-                aspect_ratio = width / height if height else 0
-                if aspect_ratio < 0.45 or aspect_ratio > 4.2:
-                    continue
-
-                is_wide_header = width > page_width * 0.62 and height < page_height * 0.14
-                if is_wide_header and y < page_height * 0.22:
-                    continue
-
-                border_band = frame_mask[y:y + height, x:x + width]
-                if border_band.size == 0 or float(np.mean(border_band > 0)) < 0.015:
-                    continue
-
-                regions.append(self._expand_bbox(
-                    (x, y, x + width, y + height),
-                    page_width,
-                    page_height,
-                    ratio=0.008,
-                ))
-
-            return regions
+            return self._regions_from_frame_mask(
+                frame_mask,
+                page_width,
+                page_height,
+                page_area,
+                min_width=110,
+                min_height=70,
+                min_area=9000,
+                max_area_ratio=0.35,
+                min_border_fill=0.015,
+                expand_ratio=0.008,
+            )
         except Exception as e:
             logger.warning(f"Frame-based region detection failed: {e}")
             return []
+
+    def _detect_dashed_frame_regions(self, image: np.ndarray) -> List[Tuple[int, int, int, int]]:
+        """Find sub-figure panels outlined by thin grey dashed strokes (common on some SGK pages).
+
+        Cyan/green framed detection misses these; OWL-ViT is often empty on dense grids.
+        """
+        try:
+            page_height, page_width = image.shape[0], image.shape[1]
+            page_area = page_width * page_height
+            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+
+            # Grey dashed borders: low saturation, mid brightness (not page white).
+            grey_mask = cv2.inRange(
+                hsv,
+                np.array([0, 0, 95]),
+                np.array([180, 70, 225]),
+            )
+            # Drop cyan/green strokes handled by _detect_framed_regions.
+            cyan_mask = cv2.inRange(
+                hsv,
+                np.array([70, 35, 65]),
+                np.array([105, 255, 255]),
+            )
+            grey_mask = cv2.bitwise_and(grey_mask, cv2.bitwise_not(cyan_mask))
+
+            # Tighter morphology than cyan frames so dashed cells stay separate.
+            close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+            grey_mask = cv2.dilate(grey_mask, close_kernel, iterations=1)
+            grey_mask = cv2.morphologyEx(
+                grey_mask, cv2.MORPH_CLOSE, close_kernel, iterations=1)
+
+            return self._regions_from_frame_mask(
+                grey_mask,
+                page_width,
+                page_height,
+                page_area,
+                min_width=95,
+                min_height=65,
+                min_area=7500,
+                max_area_ratio=0.32,
+                min_border_fill=0.012,
+                expand_ratio=0.006,
+            )
+        except Exception as e:
+            logger.warning(f"Dashed frame region detection failed: {e}")
+            return []
+
+    def _regions_from_frame_mask(
+        self,
+        frame_mask: np.ndarray,
+        page_width: int,
+        page_height: int,
+        page_area: int,
+        *,
+        min_width: int,
+        min_height: int,
+        min_area: int,
+        max_area_ratio: float,
+        min_border_fill: float,
+        expand_ratio: float,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Shared contour filter for cyan and grey dashed frame masks."""
+        contours, _ = cv2.findContours(
+            frame_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        regions: List[Tuple[int, int, int, int]] = []
+        for contour in contours:
+            x, y, width, height = cv2.boundingRect(contour)
+            area = width * height
+            if width < min_width or height < min_height:
+                continue
+            if area < min_area or area > page_area * max_area_ratio:
+                continue
+
+            aspect_ratio = width / height if height else 0
+            if aspect_ratio < 0.42 or aspect_ratio > 4.5:
+                continue
+
+            is_wide_header = width > page_width * 0.62 and height < page_height * 0.14
+            if is_wide_header and y < page_height * 0.22:
+                continue
+
+            border_band = frame_mask[y:y + height, x:x + width]
+            if border_band.size == 0 or float(np.mean(border_band > 0)) < min_border_fill:
+                continue
+
+            regions.append(self._expand_bbox(
+                (x, y, x + width, y + height),
+                page_width,
+                page_height,
+                ratio=expand_ratio,
+            ))
+
+        return regions
+
+    def frame_stroke_metrics(self, image: np.ndarray) -> Dict[str, float]:
+        """Pixel ratios for QA scans — cyan vs grey dashed stroke coverage."""
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        page_pixels = float(image.shape[0] * image.shape[1]) or 1.0
+
+        cyan_mask = cv2.inRange(
+            hsv,
+            np.array([70, 35, 65]),
+            np.array([105, 255, 255]),
+        )
+        grey_mask = cv2.inRange(
+            hsv,
+            np.array([0, 0, 95]),
+            np.array([180, 70, 225]),
+        )
+        grey_mask = cv2.bitwise_and(grey_mask, cv2.bitwise_not(cyan_mask))
+
+        return {
+            "cyan_stroke_ratio": float(np.count_nonzero(cyan_mask)) / page_pixels,
+            "grey_dashed_stroke_ratio": float(np.count_nonzero(grey_mask)) / page_pixels,
+        }
+
+    def _detect_colored_panel_regions(
+        self,
+        image: np.ndarray,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Detect filled pastel info panels via HSV bands.
+
+        Useful as a coarse fallback when the panel has a strong colored
+        background (e.g. some question prompts). 'Em có biết' style panels
+        with mostly-white interior are handled by the OCR-anchored detector
+        `_detect_info_boxes_via_titles` instead.
+        """
+        try:
+            page_height, page_width = image.shape[:2]
+            page_area = page_width * page_height
+            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+
+            color_ranges: List[Tuple[np.ndarray, np.ndarray]] = [
+                # Pink / peach (some question prompts have heavier saturation).
+                (np.array([0, 35, 215]), np.array([18, 140, 255])),
+                (np.array([160, 35, 215]), np.array([180, 140, 255])),
+                # Light blue / cyan
+                (np.array([85, 30, 215]), np.array([115, 120, 255])),
+                # Light yellow
+                (np.array([18, 35, 215]), np.array([40, 130, 255])),
+                # Light green
+                (np.array([40, 30, 215]), np.array([85, 110, 255])),
+            ]
+
+            combined_mask = np.zeros(
+                (page_height, page_width), dtype=np.uint8)
+            for lower, upper in color_ranges:
+                color_mask = cv2.inRange(hsv, lower, upper)
+                combined_mask = cv2.bitwise_or(combined_mask, color_mask)
+
+            close_kernel = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (25, 15))
+            combined_mask = cv2.morphologyEx(
+                combined_mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+
+            contours, _ = cv2.findContours(
+                combined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            regions: List[Tuple[int, int, int, int]] = []
+            for contour in contours:
+                x, y, w, h = cv2.boundingRect(contour)
+                area = w * h
+
+                if w < page_width * 0.45 or h < 80:
+                    continue
+                if area < 40000 or area > page_area * 0.72:
+                    continue
+                if y < page_height * 0.02:
+                    continue
+                if (y + h) > page_height * 0.985:
+                    continue
+
+                roi_mask = combined_mask[y:y + h, x:x + w]
+                if roi_mask.size == 0:
+                    continue
+                coverage = float(np.mean(roi_mask > 0))
+                # Require strong fill so we don't catch white gaps between figs.
+                if coverage < 0.40:
+                    continue
+
+                regions.append((x, y, x + w, y + h))
+
+            return regions
+        except Exception as e:
+            logger.warning(f"Colored panel detection failed: {e}")
+            return []
+
+    def _detect_info_boxes_via_titles(
+        self,
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Tuple[Tuple[int, int, int, int], str]]:
+        """Anchor info boxes to their Vietnamese title text.
+
+        For each OCR line whose text contains a known info-box title
+        ('Em có biết', 'Tìm hiểu thêm', 'Vận dụng', etc.) we build a panel
+        bbox by:
+          - top = title.y0 (minus small padding)
+          - bottom = last continuous text line below (gap budget ~6.5% page H)
+          - left/right = page text margins (5%..95% of width)
+
+        This works even when the panel background is too pale for HSV
+        detection because the panel is identified by its anchor title.
+        Returns list of (bbox, panel_label) pairs.
+        """
+        if not text_lines:
+            return []
+
+        title_indexes: List[int] = []
+        for index, line in enumerate(text_lines):
+            text = str(line["text"]).strip()
+            if INFO_BOX_TITLE_REGEX.search(text):
+                title_indexes.append(index)
+
+        if not title_indexes:
+            return []
+
+        panels: List[Tuple[Tuple[int, int, int, int], str]] = []
+        max_gap = int(page_height * 0.065)
+        pad_y_top = int(page_height * 0.012)
+        pad_y_bottom = int(page_height * 0.012)
+        x_left = max(0, int(page_width * 0.04))
+        x_right = min(page_width, int(page_width * 0.96))
+
+        title_set = set(title_indexes)
+        for current_pos, title_index in enumerate(title_indexes):
+            title_line = text_lines[title_index]
+            tx0, ty0, tx1, ty1 = title_line["bbox"]  # type: ignore[misc]
+
+            panel_y_bottom = ty1
+            prev_y_bottom = ty1
+            for next_index in range(title_index + 1, len(text_lines)):
+                if next_index in title_set:
+                    break
+                next_line = text_lines[next_index]
+                nx0, ny0, nx1, ny1 = next_line["bbox"]  # type: ignore[misc]
+
+                gap = ny0 - prev_y_bottom
+                if gap > max_gap:
+                    break
+                # Must stay roughly within the page text frame.
+                if nx1 < page_width * 0.04 or nx0 > page_width * 0.96:
+                    continue
+                # Hop over very tall non-text blocks just in case.
+                if (ny1 - ny0) > page_height * 0.10:
+                    continue
+
+                panel_y_bottom = max(panel_y_bottom, ny1)
+                prev_y_bottom = max(prev_y_bottom, ny1)
+
+            panel_bbox = (
+                x_left,
+                max(0, int(ty0) - pad_y_top),
+                x_right,
+                min(page_height, int(panel_y_bottom) + pad_y_bottom),
+            )
+
+            # Drop tiny panels (likely false title detection).
+            if (panel_bbox[3] - panel_bbox[1]) < page_height * 0.04:
+                continue
+
+            label = self._classify_panel_label(str(title_line["text"]))
+            if not label:
+                label = "textbook_info_box"
+            panels.append((panel_bbox, label))
+
+        return panels
+
+    def _collect_page_text_lines(
+        self,
+        pil_img: Image.Image,
+    ) -> List[Dict[str, object]]:
+        """Run page-level OCR ONCE and return text lines with bounding boxes.
+
+        Used by caption-aware expansion so we can stretch a figure crop to
+        cover its caption ("Hình 1.1.") or sub-figure label ("a) Tìm hiểu ...")
+        WITHOUT calling tesseract per-region.
+        """
+        try:
+            import pytesseract
+
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+            data = pytesseract.image_to_data(
+                pil_img, lang="vie", output_type=pytesseract.Output.DICT)
+        except Exception as e:
+            logger.warning(f"Page-level OCR (image_to_data) failed: {e}")
+            return []
+
+        page_width = pil_img.width
+        # Split a tesseract line when two consecutive words are separated by a
+        # horizontal gap wider than this — i.e. the 2-column gutter. Without
+        # this, a left-column cell label and a right-column question prompt on
+        # the same scan row get merged into one full-width line, which then
+        # makes figure/info boxes span both columns.
+        gutter_gap = int(page_width * 0.055)
+
+        word_count = len(data.get("text", []))
+        grouped: Dict[Tuple[int, int, int], List[Dict[str, int]]] = {}
+        order: List[Tuple[int, int, int]] = []
+        for index in range(word_count):
+            text = (data["text"][index] or "").strip()
+            try:
+                conf = int(float(data["conf"][index]))
+            except (TypeError, ValueError):
+                conf = -1
+            if not text or conf < 25:
+                continue
+
+            key = (
+                int(data["block_num"][index]),
+                int(data["par_num"][index]),
+                int(data["line_num"][index]),
+            )
+            left = int(data["left"][index])
+            top = int(data["top"][index])
+            width = int(data["width"][index])
+            height = int(data["height"][index])
+
+            if key not in grouped:
+                grouped[key] = []
+                order.append(key)
+            grouped[key].append({
+                "text_idx": index,
+                "x0": left,
+                "y0": top,
+                "x1": left + width,
+                "y1": top + height,
+                "word": text,  # type: ignore[dict-item]
+            })
+
+        lines: List[Dict[str, object]] = []
+        for key in order:
+            words = sorted(grouped[key], key=lambda w: w["x0"])
+            # Break into segments at the column gutter.
+            segments: List[List[Dict[str, int]]] = [[]]
+            prev_x1: Optional[int] = None
+            for word in words:
+                if prev_x1 is not None and (word["x0"] - prev_x1) > gutter_gap:
+                    segments.append([])
+                segments[-1].append(word)
+                prev_x1 = word["x1"]
+
+            for segment in segments:
+                if not segment:
+                    continue
+                joined = " ".join(str(w["word"]) for w in segment)
+                bbox = (
+                    min(w["x0"] for w in segment),
+                    min(w["y0"] for w in segment),
+                    max(w["x1"] for w in segment),
+                    max(w["y1"] for w in segment),
+                )
+                lines.append({"text": joined, "bbox": bbox})
+
+        lines.sort(key=lambda line: line["bbox"][1])
+        return lines
+
+    def _is_question_prompt_text(self, text: str) -> bool:
+        normalized = self._normalize_text(text or "")
+        return any(re.search(pattern, normalized) for pattern in QUESTION_PROMPT_PATTERNS)
+
+    def _find_lines_in_band(
+        self,
+        text_lines: List[Dict[str, object]],
+        y_top: int,
+        y_bottom: int,
+        x_left: int,
+        x_right: int,
+        min_x_overlap_ratio: float = 0.25,
+    ) -> List[Dict[str, object]]:
+        """Return text lines whose vertical band sits between y_top and y_bottom."""
+        results: List[Dict[str, object]] = []
+        bbox_width = max(1, x_right - x_left)
+        for line in text_lines:
+            lx0, ly0, lx1, ly1 = line["bbox"]  # type: ignore[misc]
+            line_center_y = (ly0 + ly1) / 2
+            if line_center_y < y_top or line_center_y > y_bottom:
+                continue
+            overlap = min(x_right, lx1) - max(x_left, lx0)
+            if overlap < bbox_width * min_x_overlap_ratio:
+                continue
+            results.append(line)
+        return results
+
+    def _expand_region_to_caption(
+        self,
+        bbox: Tuple[int, int, int, int],
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+        is_composite: bool = False,
+    ) -> Tuple[int, int, int, int]:
+        """Stretch bbox downward to include figure caption or sub-figure label.
+
+        For composite figures (Hình X.X.) we look up to ~7% of page height
+        below the bbox. For sub-figures (a/b/c labels) we look up to ~4.5%.
+        """
+        if not text_lines:
+            return bbox
+
+        x0, y0, x1, y1 = bbox
+        max_gap = int(page_height * (0.075 if is_composite else 0.045))
+        scan_bottom = min(page_height, y1 + max_gap)
+
+        candidates = self._find_lines_in_band(
+            text_lines,
+            y_top=y1 - 4,
+            y_bottom=scan_bottom,
+            x_left=x0,
+            x_right=x1,
+            min_x_overlap_ratio=0.18,
+        )
+
+        matched_lines: List[Dict[str, object]] = []
+        for line in candidates:
+            text = str(line["text"]).strip()
+            if not text:
+                continue
+            if FIGURE_CAPTION_REGEX.match(text):
+                if is_composite:
+                    # Composite parent SHOULD include 'Hình X.Y. ...' caption.
+                    matched_lines.append(line)
+                    continue
+                # Sub-figure should NOT reach into the main figure caption;
+                # stop scanning here so its bbox stays within its own row.
+                break
+            if not is_composite and SUB_FIGURE_LABEL_REGEX.match(text):
+                matched_lines.append(line)
+                # Sub-figure caption may wrap to a 2nd line; keep scanning a bit.
+                continue
+            if matched_lines and not is_composite:
+                # Continuation line of a sub-figure caption (no "a)" prefix).
+                prev = matched_lines[-1]
+                prev_bottom = int(prev["bbox"][3])  # type: ignore[index]
+                ly0 = int(line["bbox"][1])  # type: ignore[index]
+                if ly0 - prev_bottom <= int(page_height * 0.025):
+                    matched_lines.append(line)
+
+        if not matched_lines:
+            return bbox
+
+        pad_y = max(4, int(page_height * 0.005))
+        pad_x = max(4, int(page_width * 0.005))
+        new_y1 = max(int(line["bbox"][3]) for line in matched_lines)
+        line_x0 = min([x0] + [int(line["bbox"][0]) for line in matched_lines])
+        line_x1 = max([x1] + [int(line["bbox"][2]) for line in matched_lines])
+
+        if is_composite:
+            # Composite parent can safely expand to cover the full caption line.
+            new_x0 = line_x0
+            new_x1 = line_x1
+        else:
+            # Sub-figure caption may be wrongly OCR-merged with siblings on the
+            # same row ("a) Tìm hiểu ... b) Tìm hiểu ..."). Clip x expansion to
+            # the original bbox plus a small margin so the crop doesn't leak
+            # into a neighbouring sub-figure.
+            bbox_width = max(40, x1 - x0)
+            x_margin = max(12, int(bbox_width * 0.18))
+            new_x0 = max(line_x0, x0 - x_margin)
+            new_x1 = min(line_x1, x1 + x_margin)
+
+        return (
+            max(0, new_x0 - pad_x),
+            y0,
+            min(page_width, new_x1 + pad_x),
+            min(page_height, new_y1 + pad_y),
+        )
+
+    def _trim_region_top_to_exclude_prompt(
+        self,
+        bbox: Tuple[int, int, int, int],
+        text_lines: List[Dict[str, object]],
+        page_height: int,
+    ) -> Tuple[int, int, int, int]:
+        """If the top of a bbox contains a question prompt, trim it off.
+
+        Used for both composite parents and individual sub-figures so a
+        framed-frame detection that swallowed the question-prompt panel
+        on top of the figure doesn't make the final crop start too high.
+
+        Also follows wrap-around continuation lines (e.g. "tự nhiên.")
+        that don't match a prompt pattern on their own but immediately
+        follow a prompt line and contain no caption marker.
+        """
+        if not text_lines:
+            return bbox
+
+        x0, y0, x1, y1 = bbox
+        scan_top = y0
+        scan_bottom = min(y1, y0 + int(page_height * 0.22))
+        # Use a low x-overlap threshold so short wrap-around lines (e.g.
+        # "tự nhiên.") that take up only a fraction of the bbox width still
+        # contribute to the trim decision.
+        lines_in_top = self._find_lines_in_band(
+            text_lines,
+            y_top=scan_top,
+            y_bottom=scan_bottom,
+            x_left=x0,
+            x_right=x1,
+            min_x_overlap_ratio=0.05,
+        )
+        if not lines_in_top:
+            return bbox
+
+        lines_sorted = sorted(
+            lines_in_top, key=lambda line: int(line["bbox"][1]))
+        last_prompt_bottom: Optional[int] = None
+        wrap_gap_budget = int(page_height * 0.025)
+
+        for line in lines_sorted:
+            text = str(line["text"]).strip()
+            line_top = int(line["bbox"][1])
+            line_bottom = int(line["bbox"][3])
+
+            if self._is_question_prompt_text(text):
+                last_prompt_bottom = max(last_prompt_bottom or 0, line_bottom)
+                continue
+
+            if last_prompt_bottom is None:
+                # Haven't found a prompt yet; stop scanning once we hit a real
+                # figure caption or sub-figure label so we don't false-trim.
+                if (
+                    FIGURE_CAPTION_REGEX.match(text)
+                    or SUB_FIGURE_LABEL_REGEX.match(text)
+                ):
+                    break
+                continue
+
+            # Already inside a prompt block: include wrap-around continuation
+            # lines that are close to the previous prompt bottom and don't
+            # look like a caption.
+            if (
+                FIGURE_CAPTION_REGEX.match(text)
+                or SUB_FIGURE_LABEL_REGEX.match(text)
+            ):
+                break
+            if line_top - last_prompt_bottom <= wrap_gap_budget:
+                last_prompt_bottom = max(last_prompt_bottom, line_bottom)
+            else:
+                break
+
+        if last_prompt_bottom is None:
+            return bbox
+
+        new_y0 = min(y1 - 10, last_prompt_bottom +
+                     int(page_height * 0.008))
+        if new_y0 <= y0 + 4 or new_y0 >= y1 - 40:
+            return bbox
+        return (x0, new_y0, x1, y1)
+
+    def _classify_panel_label(self, text: str) -> str:
+        """Return a coarse label for colored panels: info_box / activity / prompt / ''."""
+        normalized = self._normalize_text(text or "")
+        if "em co biet" in normalized:
+            return "textbook_info_box"
+        if "tim hieu them" in normalized or "mo rong" in normalized:
+            return "activity_box"
+        if any(re.search(pattern, normalized) for pattern in QUESTION_PROMPT_PATTERNS):
+            return "question_prompt"
+        if "thuc hanh" in normalized or "van dung" in normalized or "luyen tap" in normalized:
+            return "activity_box"
+        return ""
+
+    # ------------------------------------------------------------------
+    # v7 anchor-first deterministic detection
+    # ------------------------------------------------------------------
+
+    _INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = [
+        ("em co biet", "textbook_info_box"),
+        ("tim hieu them", "activity_box"),
+        ("mo rong", "activity_box"),
+        ("kien thuc moi", "activity_box"),
+        ("thuc hanh", "activity_box"),
+        ("van dung", "activity_box"),
+        ("luyen tap", "activity_box"),
+        ("thi nghiem", "activity_box"),
+    ]
+
+    _FIGURE_MARKER_REGEX = re.compile(
+        r"H[iì]nh\s+\d+(?:\.\d+)?", flags=re.IGNORECASE)
+
+    def _split_merged_figure_caption(
+        self,
+        entry: Dict[str, object],
+    ) -> List[Dict[str, object]]:
+        """If a single OCR line carries multiple `Hình X.Y` markers, split it.
+
+        bbox is partitioned linearly between markers based on character index
+        — good enough because OCR line bboxes are tight to the rendered text.
+        """
+        text = str(entry["text"])
+        matches = list(self._FIGURE_MARKER_REGEX.finditer(text))
+        if len(matches) <= 1:
+            return [entry]
+
+        x0, y0, x1, y1 = entry["bbox"]  # type: ignore[misc]
+        line_width = max(1, x1 - x0)
+        text_length = max(1, len(text))
+
+        parts: List[Dict[str, object]] = []
+        for index, match in enumerate(matches):
+            start = match.start()
+            end = matches[index + 1].start() if index + \
+                1 < len(matches) else len(text)
+            slice_text = text[start:end].strip()
+            if not slice_text:
+                continue
+            part_x0 = x0 + int(start / text_length * line_width)
+            part_x1 = x0 + int(end / text_length * line_width)
+            parts.append({
+                "index": entry["index"],
+                "text": slice_text,
+                "bbox": (part_x0, y0, part_x1, y1),
+            })
+        return parts or [entry]
+
+    def _match_info_box_title(self, text: str) -> str:
+        """Return panel label if `text` is a STAND-ALONE info-box title.
+
+        The strict regex `INFO_BOX_TITLE_REGEX` is too eager because
+        Vietnamese textbook body text frequently contains phrases like
+        "trong phòng thực hành", "vận dụng vào...". Real info-box headers
+        always:
+          1. start at the line beginning, and
+          2. are short (header, no body sentence).
+        """
+        norm = self._normalize_text(text or "").strip()
+        if not norm:
+            return ""
+        # "em co the" (Em có thể — learning objectives header) must NOT match
+        # "em co biet". Guard explicitly.
+        if norm.startswith("em co the"):
+            return ""
+        for key, label in self._INFO_BOX_TITLE_KEYS:
+            if not norm.startswith(key):
+                continue
+            tail = norm[len(key):].strip()
+            # Header line: nothing after, optional ':' / '!' or a short
+            # 1-3 word subtitle. Reject when the line is clearly body text.
+            if len(tail) <= 30 and not re.search(r"\s(la|nay|cua|cho|va|hoac|trong|ben)\s", tail):
+                return label
+        return ""
+
+    def _fuzzy_info_label(self, text: str) -> str:
+        """Loose match of a (possibly noisy) re-OCR header to a panel label."""
+        norm = self._normalize_text(text or "")
+        norm = re.sub(r"\s+", " ", norm).strip()
+        if not norm:
+            return ""
+        if "em co the" in norm:        # learning-objectives header, not a panel
+            return ""
+        for key, label in self._INFO_BOX_TITLE_KEYS:
+            # allow the key to appear anywhere (tab OCR may add junk chars).
+            if key in norm:
+                return label
+            # tolerate one missing space / char by collapsing spaces.
+            if key.replace(" ", "") in norm.replace(" ", ""):
+                return label
+        return ""
+
+    def _detect_colored_info_headers(
+        self,
+        pil_img: Image.Image,
+    ) -> List[Dict[str, object]]:
+        """Find info-box headers by their coloured tab / coloured bold text.
+
+        Vietnamese SGK marks "Em có biết", "Tìm hiểu thêm", "Vận dụng" etc.
+        with a saturated pink/red or blue/teal header. When the header is a
+        filled tab with WHITE text, the page-level OCR usually fails to read
+        it (page 70). Here we locate the coloured header region directly, then
+        re-OCR it with white-text-on-colour pre-processing to recover the
+        label. Returns anchor entries shaped like OCR info_titles
+        ``{"index": -1, "text", "bbox", "label"}``.
+        """
+        try:
+            import pytesseract
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+        except Exception:
+            return []
+
+        rgb = np.array(pil_img.convert("RGB"))
+        page_height, page_width = rgb.shape[:2]
+        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        sat = hsv[:, :, 1]
+        val = hsv[:, :, 2]
+
+        # Pink/red (hue wraps) OR blue/teal — the two header colour families.
+        pink = (((hsv[:, :, 0] <= 12) | (hsv[:, :, 0] >= 158))
+                & (sat > 70) & (val > 110))
+        blue = ((hsv[:, :, 0] >= 90) & (hsv[:, :, 0] <= 120)
+                & (sat > 70) & (val > 110))
+        mask = (pink | blue).astype(np.uint8) * 255
+
+        # Connect header glyphs / tab fill into a blob.
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (35, 9))
+        closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+        contours, _ = cv2.findContours(
+            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        headers: List[Dict[str, object]] = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            # Header-like geometry: short, wider-than-tall, not a full panel.
+            if w < int(page_width * 0.06) or w > int(page_width * 0.55):
+                continue
+            if h < 16 or h > int(page_height * 0.05):
+                continue
+            if w < h * 1.3:
+                continue
+            # Re-OCR the header with white-text-on-colour pre-processing.
+            pad = 4
+            cx0 = max(0, x - pad)
+            cy0 = max(0, y - pad)
+            cx1 = min(page_width, x + w + pad)
+            cy1 = min(page_height, y + h + pad)
+            label = self._reocr_colored_header(rgb[cy0:cy1, cx0:cx1])
+            if not label:
+                continue
+            headers.append({
+                "index": -1,
+                "text": label[1],
+                "bbox": (cx0, cy0, cx1, cy1),
+                "label": label[0],
+            })
+        return headers
+
+    def _reocr_colored_header(self, crop_rgb: np.ndarray) -> Optional[Tuple[str, str]]:
+        """Re-OCR a coloured header crop. Returns (label, raw_text) or None."""
+        try:
+            import pytesseract
+        except Exception:
+            return None
+        if crop_rgb.size == 0:
+            return None
+        gray = cv2.cvtColor(crop_rgb, cv2.COLOR_RGB2GRAY)
+        candidates: List[np.ndarray] = []
+        # (a) white text on colour -> bright text.
+        _, bright = cv2.threshold(gray, 165, 255, cv2.THRESH_BINARY)
+        candidates.append(cv2.bitwise_not(bright))
+        # (b) dark coloured text on white -> dark text (e.g. blue bold text).
+        _, dark = cv2.threshold(gray, 130, 255, cv2.THRESH_BINARY)
+        candidates.append(dark)
+        for binary in candidates:
+            up = cv2.resize(binary, None, fx=3, fy=3,
+                            interpolation=cv2.INTER_CUBIC)
+            try:
+                text = pytesseract.image_to_string(
+                    up, lang="vie", config="--psm 7")
+            except Exception:
+                continue
+            label = self._fuzzy_info_label(text)
+            if label:
+                return (label, " ".join(text.split())[:40])
+        return None
+
+    def _classify_text_anchors(
+        self,
+        text_lines: List[Dict[str, object]],
+    ) -> Dict[str, List[Dict[str, object]]]:
+        """Bucket OCR lines into Hình caption / Bảng caption / info title /
+        sub-figure label / question prompt / tool-group label.
+
+        Each bucket entry is a dict ``{"index", "text", "bbox"}``.
+        """
+        figure_caps: List[Dict[str, object]] = []
+        table_caps: List[Dict[str, object]] = []
+        info_titles: List[Dict[str, object]] = []
+        sub_labels: List[Dict[str, object]] = []
+        question_prompts: List[Dict[str, object]] = []
+        tool_labels: List[Dict[str, object]] = []
+
+        for index, line in enumerate(text_lines):
+            text = str(line["text"]).strip()
+            bbox = tuple(int(value)
+                         for value in line["bbox"])  # type: ignore[misc]
+            entry = {"index": index, "text": text, "bbox": bbox}
+
+            if TABLE_CAPTION_STRICT_REGEX.match(text):
+                table_caps.append(entry)
+                continue
+            if FIG_CAPTION_STRICT_REGEX.match(text):
+                # Tesseract often merges two side-by-side captions
+                # ("Hình 14.1 ...    Hình 14.2 ...") into a single OCR line.
+                # Split the line into one entry per "Hình X.Y" marker so each
+                # figure gets its own composite.
+                split_entries = self._split_merged_figure_caption(entry)
+                figure_caps.extend(split_entries)
+                continue
+            info_label = self._match_info_box_title(text)
+            if info_label:
+                entry["label"] = info_label
+                info_titles.append(entry)
+                continue
+            if SUB_FIGURE_LABEL_REGEX.match(text):
+                sub_labels.append(entry)
+                # sub labels often co-occur with body text below; not exclusive
+            if self._is_question_prompt_text(text):
+                question_prompts.append(entry)
+                continue
+            if TOOL_GROUP_LABEL_REGEX.match(text):
+                tool_labels.append(entry)
+                continue
+
+        return {
+            "figure_captions": figure_caps,
+            "table_captions": table_caps,
+            "info_titles": info_titles,
+            "sub_labels": sub_labels,
+            "question_prompts": question_prompts,
+            "tool_group_labels": tool_labels,
+        }
+
+    def _detect_object_blobs(
+        self,
+        image: np.ndarray,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Connected-component fallback for isolated object photos on white.
+
+        OWL-ViT under-detects product-style object photos (a chair, a bucket,
+        a beaker on a white background — page 107). Here we threshold coloured
+        / dark ink, close it into blobs, and keep components whose size and
+        fill look like a picture rather than a text paragraph.
+        """
+        try:
+            page_height, page_width = image.shape[:2]
+            page_area = page_width * page_height
+            hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+            sat = hsv[:, :, 1]
+            val = hsv[:, :, 2]
+            # Coloured OR dark foreground (covers greyscale objects too).
+            colored = (sat > 55) & (val > 60) & (val < 250)
+            dark = val < 90
+            mask = (colored | dark).astype(np.uint8) * 255
+
+            close_kernel = cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (19, 19))
+            mask = cv2.morphologyEx(
+                mask, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+
+            num, labels, stats, _ = cv2.connectedComponentsWithStats(mask, 8)
+            blobs: List[Tuple[int, int, int, int]] = []
+            for i in range(1, num):
+                x = int(stats[i, cv2.CC_STAT_LEFT])
+                y = int(stats[i, cv2.CC_STAT_TOP])
+                w = int(stats[i, cv2.CC_STAT_WIDTH])
+                h = int(stats[i, cv2.CC_STAT_HEIGHT])
+                area = int(stats[i, cv2.CC_STAT_AREA])
+                bbox_area = w * h
+                if bbox_area < page_area * 0.004 or bbox_area > page_area * 0.40:
+                    continue
+                if w < page_width * 0.04 or h < page_height * 0.035:
+                    continue
+                aspect = w / max(1, h)
+                if aspect < 0.18 or aspect > 7.0:
+                    continue
+                # Solidity: a picture fills much of its bbox; a text paragraph
+                # (sparse strokes) does not.
+                fill = area / max(1, bbox_area)
+                if fill < 0.30:
+                    continue
+                blobs.append((x, y, x + w, y + h))
+            return blobs
+        except Exception as e:
+            logger.warning(f"Object-blob detection failed: {e}")
+            return []
+
+    def _text_line_coverage(
+        self,
+        region: Tuple[int, int, int, int],
+        text_lines: List[Dict[str, object]],
+    ) -> float:
+        """Fraction of `region` area covered by OCR text-line boxes.
+
+        A paragraph / heading / objectives box is almost entirely covered by
+        text lines; a figure (photo, drawing) — even one with scattered
+        labels — is mostly non-text, so its coverage is low.
+        """
+        rx0, ry0, rx1, ry1 = region
+        region_area = max(1, (rx1 - rx0) * (ry1 - ry0))
+        covered = 0
+        for line in text_lines:
+            lx0, ly0, lx1, ly1 = line["bbox"]  # type: ignore[misc]
+            ix0, iy0 = max(rx0, lx0), max(ry0, ly0)
+            ix1, iy1 = min(rx1, lx1), min(ry1, ly1)
+            if ix1 > ix0 and iy1 > iy0:
+                covered += (ix1 - ix0) * (iy1 - iy0)
+        return min(1.0, covered / region_area)
+
+    def _filter_text_visual_regions(
+        self,
+        regions: List[Tuple[int, int, int, int]],
+        pil_img: Image.Image,
+        text_lines: Optional[List[Dict[str, object]]] = None,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Drop detector regions that are actually text blocks.
+
+        Two false-positive families to remove:
+          1. OWL-ViT fires on a heading / paragraph (page 85 "I. VÌ SAO …") —
+             no colour, OCRs to several words.
+          2. A framed/colour detector fires on a coloured info/objectives box
+             (page 45 "MỤC TIÊU") — high colour from its heading, but the box
+             is wall-to-wall TEXT.
+
+        A region is dropped when OCR text-line boxes cover most of it
+        (text-line coverage), or when it is colourless yet OCRs to words.
+        A real figure — even a labelled diagram — has low text-line coverage.
+        """
+        text_lines = text_lines or []
+        kept: List[Tuple[int, int, int, int]] = []
+        for region in regions:
+            crop = pil_img.crop(region)
+            if crop.width < 4 or crop.height < 4:
+                continue
+
+            # (1) Mostly-text box (paragraph / objectives / heading panel).
+            if text_lines and self._text_line_coverage(region, text_lines) >= 0.45:
+                continue
+
+            if self._visual_content_score(crop) >= 0.03:
+                kept.append(region)
+                continue
+
+            # (2) Colourless region that OCRs to real words = text block.
+            text = self._ocr_crop_text(crop)
+            words = [
+                w for w in self._normalize_text(text).split()
+                if len(w) >= 3 and w.isalpha()
+            ]
+            if len(words) >= 2:
+                continue
+            kept.append(region)
+        return kept
+
+    def _dedupe_visual_regions(
+        self,
+        regions: List[Tuple[int, int, int, int]],
+        min_area: int = 1500,
+        iou_threshold: float = 0.55,
+    ) -> List[Tuple[int, int, int, int]]:
+        candidates = [tuple(bbox) for bbox in regions
+                      if self._bbox_area(bbox) >= min_area]
+        candidates.sort(key=lambda bbox: self._bbox_area(bbox), reverse=True)
+        kept: List[Tuple[int, int, int, int]] = []
+        for bbox in candidates:
+            skip = False
+            for other in kept:
+                if self._iou(bbox, other) > iou_threshold:
+                    skip = True
+                    break
+                if self._coverage_ratio(bbox, other) > 0.85:
+                    skip = True
+                    break
+            if not skip:
+                kept.append(bbox)
+        return kept
+
+    def _build_table_zones(
+        self,
+        table_caps: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Bảng X.Y caption + the rows immediately below → exclusion zone."""
+        zones: List[Tuple[int, int, int, int]] = []
+        if not table_caps:
+            return zones
+
+        max_gap = int(page_height * 0.055)
+        col_tol = int(page_width * 0.05)
+        for cap in table_caps:
+            cx0, cy0, cx1, cy1 = cap["bbox"]  # type: ignore[misc]
+            zone_y_bottom = cy1
+            prev_y_bottom = cy1
+            zone_x_left = cx0
+            zone_x_right = cx1
+            # Accumulated column — stops a right-column table caption from
+            # absorbing the left column's figure text into the zone (which
+            # would corrupt every downstream gutter/exclusion check).
+            col_x_left = cx0
+            col_x_right = cx1
+
+            for line in text_lines:
+                lx0, ly0, lx1, ly1 = (
+                    int(line["bbox"][0]),  # type: ignore[index]
+                    int(line["bbox"][1]),  # type: ignore[index]
+                    int(line["bbox"][2]),  # type: ignore[index]
+                    int(line["bbox"][3]),  # type: ignore[index]
+                )
+                if ly0 <= cy1:
+                    continue
+
+                text = str(line["text"]).strip()
+                if (FIG_CAPTION_STRICT_REGEX.match(text)
+                        or TABLE_CAPTION_STRICT_REGEX.match(text)
+                        or self._match_info_box_title(text)):
+                    break
+
+                gap = ly0 - prev_y_bottom
+                if gap > max_gap:
+                    break
+                # Column guard: skip text from the other column.
+                if lx1 < col_x_left - col_tol or lx0 > col_x_right + col_tol:
+                    continue
+
+                zone_y_bottom = max(zone_y_bottom, ly1)
+                zone_x_left = min(zone_x_left, lx0)
+                zone_x_right = max(zone_x_right, lx1)
+                prev_y_bottom = max(prev_y_bottom, ly1)
+                col_x_left = min(col_x_left, lx0)
+                col_x_right = max(col_x_right, lx1)
+
+            pad_x = int(page_width * 0.02)
+            pad_y = int(page_height * 0.012)
+            zones.append((
+                max(0, zone_x_left - pad_x),
+                max(0, cy0 - pad_y),
+                min(page_width, zone_x_right + pad_x),
+                min(page_height, zone_y_bottom + pad_y),
+            ))
+
+        return zones
+
+    def _bbox_center(self, bbox: Tuple[int, int, int, int]) -> Tuple[float, float]:
+        x0, y0, x1, y1 = bbox
+        return ((x0 + x1) / 2.0, (y0 + y1) / 2.0)
+
+    def _assign_regions_to_captions(
+        self,
+        figure_caps: List[Dict[str, object]],
+        visual_regions: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+        exclusion_zones: List[Tuple[int, int, int, int]],
+        column_separators: Optional[List[Tuple[int, int, int, int]]] = None,
+    ) -> Dict[int, List[Tuple[int, int, int, int]]]:
+        """Assign each visual region to the figure caption directly below it.
+
+        SGK convention: the caption sits UNDER its figure. So a region is
+        assigned to the NEAREST caption whose top is below the region and
+        whose column (horizontal centre) matches. This naturally:
+          * keeps tall single-column figures whole (page 70 Hình 12.6 —
+            cells span the full column height, all share one caption at the
+            bottom), and
+          * splits side-by-side / stacked figures cleanly (each region picks
+            its own nearest caption).
+        """
+        assignments: Dict[int, List[Tuple[int, int, int, int]]] = {
+            idx: [] for idx in range(len(figure_caps))
+        }
+        if not figure_caps:
+            return assignments
+
+        # A region belongs to a caption when (a) they horizontally overlap, or
+        # (b) the region is reasonably centred over the caption AND no
+        # other-column anchor (info-box header / table caption) sits at the
+        # region's height between it and the caption. Rule (b) lets a single
+        # full-width figure claim its edge cells (page 6) while preventing a
+        # 2-column page from pulling the other column's content onto a
+        # page-centre caption (page 70).
+        center_tol = page_width * 0.42
+        # Moderate vertical reach: a caption only claims cells reasonably near
+        # it. A tall list-figure whose interior cells were missed by OWL-ViT is
+        # rescued afterwards by text-based top-growth, not by an enormous reach
+        # here (which would let a bottom caption grab an unrelated illustration
+        # at the top of the page — page 85).
+        max_vgap = page_height * 0.34
+        separators = column_separators or []
+
+        for region in visual_regions:
+            rx0, ry0, rx1, ry1 = region
+            # Reject visual regions sitting inside a table zone.
+            if any(self._coverage_ratio(region, zone) > 0.45
+                   for zone in exclusion_zones):
+                continue
+
+            rcx = (rx0 + rx1) / 2.0
+            rcy = (ry0 + ry1) / 2.0
+            # Two-tier preference. Tier 1: captions the region horizontally
+            # OVERLAPS (true column match) — this splits side-by-side figures
+            # correctly (page 85). Tier 2 (only if no overlap exists): a
+            # centred caption within tolerance and not separated by an
+            # other-column anchor — this lets a single short caption claim the
+            # edge cells of a full-width figure (page 100).
+            overlap_best_idx: Optional[int] = None
+            overlap_best_vgap = float("inf")
+            center_best_idx: Optional[int] = None
+            center_best_vgap = float("inf")
+
+            for idx, cap in enumerate(figure_caps):
+                cx0, cy0, cx1, cy1 = cap["bbox"]  # type: ignore[misc]
+                # Caption must be roughly BELOW the region. Allow the region to
+                # dip a little past the caption top — object blobs and cells
+                # often include the caption row's leading edge.
+                if cy0 < ry1 - int(page_height * 0.045):
+                    continue
+                vgap = cy0 - ry1
+                if vgap > max_vgap:
+                    continue
+                ccx = (cx0 + cx1) / 2.0
+                hov = min(rx1, cx1) - max(rx0, cx0)
+                if hov > 0:
+                    if vgap < overlap_best_vgap:
+                        overlap_best_vgap = vgap
+                        overlap_best_idx = idx
+                    continue
+                if abs(rcx - ccx) > center_tol:
+                    continue
+                lo, hi = sorted((rcx, ccx))
+                separated = False
+                for sx0, sy0, sx1, sy1 in separators:
+                    scx = (sx0 + sx1) / 2.0
+                    if lo < scx < hi and sy0 <= rcy <= sy1:
+                        separated = True
+                        break
+                if separated:
+                    continue
+                if vgap < center_best_vgap:
+                    center_best_vgap = vgap
+                    center_best_idx = idx
+
+            best_idx = overlap_best_idx if overlap_best_idx is not None \
+                else center_best_idx
+            if best_idx is not None:
+                assignments[best_idx].append(region)
+
+        return assignments
+
+    def _build_figure_composites(
+        self,
+        figure_caps: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        visual_regions: List[Tuple[int, int, int, int]],
+        question_prompts: List[Dict[str, object]],
+        info_titles: List[Dict[str, object]],
+        sub_labels: List[Dict[str, object]],
+        exclusion_zones: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """For each Hình caption, build a bbox that wraps the figure(s) above it."""
+        outputs: List[Dict[str, object]] = []
+        if not figure_caps:
+            return outputs
+
+        # Other-column anchors that can separate a region from a caption.
+        column_separators = (
+            [t["bbox"] for t in info_titles]
+            + list(exclusion_zones)
+        )
+        assignments = self._assign_regions_to_captions(
+            figure_caps, visual_regions, page_width, page_height,
+            exclusion_zones, column_separators=column_separators,
+        )
+
+        # Per-caption upward ceiling: prev caption / info-title / question prompt / page top.
+        all_blockers = sorted(
+            [cap["bbox"] for cap in figure_caps]
+            + [cap["bbox"] for cap in info_titles]
+            + [cap["bbox"] for cap in question_prompts],
+            key=lambda b: b[1],  # type: ignore[index]
+        )
+
+        used_region_keys = set()
+        for cap_idx, cap in enumerate(figure_caps):
+            assigned = [tuple(r) for r in assignments.get(cap_idx, [])]
+            if not assigned:
+                continue
+
+            cx0, cy0, cx1, cy1 = cap["bbox"]  # type: ignore[misc]
+
+            # Upward ceiling: the highest blocker bbox-bottom that is still
+            # ABOVE the assigned region top. This is what stops the composite
+            # from absorbing the question prompt or previous caption.
+            assigned_top_y = min(r[1] for r in assigned)
+            ceiling_y = 0
+            for blocker in all_blockers:
+                bx0, by0, bx1, by1 = blocker
+                if by1 >= assigned_top_y - 2:
+                    continue
+                # Horizontal overlap with caption region must exist
+                cap_left = min(cx0, min(r[0] for r in assigned))
+                cap_right = max(cx1, max(r[2] for r in assigned))
+                hov = min(bx1, cap_right) - max(bx0, cap_left)
+                if hov <= 0:
+                    continue
+                ceiling_y = max(ceiling_y, by1 + int(page_height * 0.005))
+
+            x0 = min([cx0] + [r[0] for r in assigned])
+            x1 = max([cx1] + [r[2] for r in assigned])
+            y0 = max(ceiling_y, min(r[1] for r in assigned))
+            y1 = cy1
+
+            # Visual ceiling: walk UP from the assigned cells through visual
+            # regions that are CONTIGUOUS (gap-connected) in this figure's
+            # column, and stop at the first big vertical gap. Text-based
+            # top-growth may not climb above this ceiling.
+            #   * list-figure (page 70): cells are gap-connected up the whole
+            #     column → ceiling reaches the top.
+            #   * single photo with a coloured text box above it (page 45
+            #     "MỤC TIÊU"): the box is separated from the photo by a wide
+            #     gap → ceiling stays at the photo, so growth cannot climb
+            #     into the box.
+            col_x0, col_x1 = x0, x1
+            col_tol = int(page_width * 0.03)
+            max_cell_gap = int(page_height * 0.16)
+            column_cells = sorted(
+                [vr for vr in visual_regions
+                 if col_x0 - col_tol <= (vr[0] + vr[2]) / 2.0 <= col_x1 + col_tol
+                 and vr[1] < y0 + 2],
+                key=lambda vr: vr[1], reverse=True,  # nearest-above first
+            )
+            visual_top = y0
+            for vr in column_cells:
+                # vr sits above the current ceiling; bridge only a small gap.
+                if visual_top - vr[3] > max_cell_gap:
+                    break
+                visual_top = min(visual_top, vr[1])
+            # Only a small overshoot above the topmost contiguous cell, so the
+            # growth can pick up a cell's own label row but never a section
+            # header that sits well above a single photo (page 45).
+            grow_ceiling = max(ceiling_y, visual_top -
+                               int(page_height * 0.015))
+
+            # Extend the top UP through the figure column's own NARROW labels
+            # (page 70 "Tế bào ..."), bounded by the visual ceiling.
+            x0, y0, x1 = self._grow_figure_top(
+                x0, y0, x1, grow_ceiling, text_lines, page_width, page_height,
+            )
+
+            # Snap the figure horizontally to its column's text (e.g. the
+            # left "Tế bào ..." labels that sit beside each cell image),
+            # bounded by the gutter to the tall info/table zones so it never
+            # bleeds into an info box / table in the other column. Question
+            # prompts are NOT used as gutters — they are often small margin
+            # notes that would wrongly truncate a wide figure.
+            other_anchors = list(exclusion_zones)
+            caption_cx = (cx0 + cx1) / 2.0
+            x0, x1 = self._snap_figure_to_column(
+                (x0, y0, x1, y1), caption_cx, text_lines, other_anchors,
+                page_width, page_height,
+            )
+
+            pad_x = int(page_width * 0.008)
+            pad_y = int(page_height * 0.006)
+            bbox = (
+                max(0, x0 - pad_x),
+                max(0, y0 - pad_y),
+                min(page_width, x1 + pad_x),
+                min(page_height, y1 + pad_y),
+            )
+            # A real composite must carry sub-figure letter labels INSIDE
+            # the bbox. Otherwise (single illustration with caption) it is
+            # a single_figure and we must not slice it further.
+            sub_label_inside = False
+            for sub in sub_labels:
+                sx0, sy0, sx1, sy1 = sub["bbox"]  # type: ignore[misc]
+                if sx0 >= bbox[0] - 5 and sx1 <= bbox[2] + 5 \
+                        and sy0 >= bbox[1] - 5 and sy1 <= bbox[3] + 12:
+                    sub_label_inside = True
+                    break
+            label = (
+                "composite_figure"
+                if sub_label_inside and len(assigned) >= 2
+                else "single_figure"
+            )
+            outputs.append({
+                "bbox": bbox,
+                "image_type": label,
+                "caption_text": cap["text"],
+                "caption_bbox": cap["bbox"],
+                "assigned_regions": assigned,
+            })
+            for region in assigned:
+                used_region_keys.add(region)
+
+        return outputs
+
+    def _snap_figure_to_column(
+        self,
+        bbox: Tuple[int, int, int, int],
+        caption_cx: float,
+        text_lines: List[Dict[str, object]],
+        other_anchors: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> Tuple[int, int]:
+        """Clip a figure's x-range to its column, then widen left-only.
+
+        1. Gutter clip — infers column from other anchors (info-box, table).
+        2. Left-label widen — absorbs short row-labels to the LEFT of the
+           figure (e.g. page 70 "Tế bào ..."). NEVER widens right, which
+           prevents absorbing right-margin question prompts (CTST page 45).
+        """
+        x0, y0, x1, y1 = bbox
+        fig_height = max(1, y1 - y0)
+        margin = int(page_width * 0.01)
+        right_limit = page_width
+        left_limit = 0
+        inside_lo = y0 + 0.12 * fig_height
+        inside_hi = y1 - 0.05 * fig_height
+        for ax0, ay0, ax1, ay1 in other_anchors:
+            acy = (ay0 + ay1) / 2.0
+            if acy < inside_lo or acy > inside_hi:
+                continue
+            acx = (ax0 + ax1) / 2.0
+            if acx > caption_cx:
+                right_limit = min(right_limit, ax0 - margin)
+            elif acx < caption_cx:
+                left_limit = max(left_limit, ax1 + margin)
+
+        # Clip to gutter limits.
+        if left_limit < x1:
+            x0 = max(x0, left_limit)
+        if right_limit > x0:
+            x1 = min(x1, right_limit)
+
+        # Left-label widen: short row-labels (≤25% page width) that start
+        # to the left of x0 and reach close to (or into) the figure's x0
+        # edge. Only extends x0 LEFTWARD — x1 is untouched.
+        new_x0 = x0
+        adj_gap = int(page_width * 0.04)
+        max_line_width = int(page_width * 0.25)
+        for line in text_lines:
+            lx0, ly0, lx1, ly1 = (
+                int(line["bbox"][0]),  # type: ignore[index]
+                int(line["bbox"][1]),  # type: ignore[index]
+                int(line["bbox"][2]),  # type: ignore[index]
+                int(line["bbox"][3]),  # type: ignore[index]
+            )
+            lcy = (ly0 + ly1) / 2.0
+            if lcy < y0 or lcy > y1:
+                continue
+            if (lx1 - lx0) > max_line_width:
+                continue
+            if lx1 < left_limit or lx0 > x1 + adj_gap:
+                continue
+            # Must start to the left of x0 and reach close to it.
+            if lx0 >= new_x0 or lx1 < new_x0 - adj_gap:
+                continue
+            text = str(line["text"]).strip()
+            if (FIG_CAPTION_STRICT_REGEX.match(text)
+                    or TABLE_CAPTION_STRICT_REGEX.match(text)
+                    or self._match_info_box_title(text)
+                    or self._is_question_prompt_text(text)):
+                continue
+            new_x0 = min(new_x0, lx0)
+
+        return new_x0, x1
+
+    def _grow_figure_top(
+        self,
+        x0: int,
+        y0: int,
+        x1: int,
+        ceiling_y: int,
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> Tuple[int, int, int]:
+        """Extend a composite's top edge up through contiguous column text.
+
+        Walks text lines that (a) sit above the current top, (b) horizontally
+        overlap the current column, (c) are gap-connected, and (d) are NOT an
+        anchor line (figure / table / info title / question prompt). Each
+        absorbed line raises the top and may widen the column.
+
+        The gap budget is generous enough to bridge the whitespace between the
+        rows of a list-figure (page 70 has ~150 px between cell rows).
+        """
+        max_gap = int(page_height * 0.12)
+        cur_top = y0
+        cur_x0 = x0
+        cur_x1 = x1
+        # A figure's own cell labels are short. A full-width body paragraph is
+        # not part of the figure — never absorb it (this keeps side-by-side
+        # figures from each ballooning to the whole page, page 85).
+        max_line_width = int(page_width * 0.5)
+
+        # Candidate lines above the current top, sorted nearest-first.
+        candidates = [
+            line for line in text_lines
+            if int(line["bbox"][3]) <= cur_top + 4  # type: ignore[index]
+            and int(line["bbox"][3]) >= ceiling_y - 2  # type: ignore[index]
+        ]
+        candidates.sort(key=lambda line: int(line["bbox"][3]), reverse=True)
+
+        for line in candidates:
+            lx0, ly0, lx1, ly1 = (
+                int(line["bbox"][0]),  # type: ignore[index]
+                int(line["bbox"][1]),  # type: ignore[index]
+                int(line["bbox"][2]),  # type: ignore[index]
+                int(line["bbox"][3]),  # type: ignore[index]
+            )
+            # Horizontal overlap with the current column (small tolerance).
+            tol = int(page_width * 0.02)
+            if lx1 < cur_x0 - tol or lx0 > cur_x1 + tol:
+                continue
+            if (lx1 - lx0) > max_line_width:
+                break
+            text = str(line["text"]).strip()
+            # Anchor lines bound the figure — never absorb them.
+            if (FIG_CAPTION_STRICT_REGEX.match(text)
+                    or TABLE_CAPTION_STRICT_REGEX.match(text)
+                    or self._match_info_box_title(text)
+                    or self._is_question_prompt_text(text)):
+                break
+            gap = cur_top - ly1
+            if gap > max_gap:
+                break
+            cur_top = min(cur_top, ly0)
+            # Track the column internally so the overlap test follows the
+            # labels leftward, but do NOT return a widened x — horizontal
+            # extent is decided by `_snap_figure_to_column`, which has the
+            # gutter limits. (Returning a widened x here let a wide header row
+            # blow the figure into the margin notes — page 45.)
+            cur_x0 = min(cur_x0, lx0)
+            cur_x1 = max(cur_x1, lx1)
+
+        return x0, cur_top, x1
+
+    def _build_info_panels(
+        self,
+        info_titles: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        visual_regions: List[Tuple[int, int, int, int]],
+        all_blockers: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Anchor on info-box title; extend downward through text + adjacent visuals."""
+        outputs: List[Dict[str, object]] = []
+        if not info_titles:
+            return outputs
+
+        max_gap = int(page_height * 0.055)
+        for title in info_titles:
+            tx0, ty0, tx1, ty1 = title["bbox"]  # type: ignore[misc]
+
+            # Downward ceiling: nearest blocker top below the title.
+            floor_y = page_height
+            for blocker in all_blockers:
+                bx0, by0, bx1, by1 = blocker
+                if by0 <= ty1 + 2:
+                    continue
+                floor_y = min(floor_y, by0 - int(page_height * 0.004))
+
+            panel_y_bottom = ty1
+            prev_y_bottom = ty1
+            text_x_left = tx0
+            text_x_right = tx1
+            # Accumulated panel column — used to reject text from the OTHER
+            # column on a 2-column page (page 70: a right-column "Em có biết"
+            # must not absorb the left-column figure's cell labels).
+            col_x_left = tx0
+            col_x_right = tx1
+            col_tol = int(page_width * 0.05)
+
+            for line in text_lines:
+                lx0, ly0, lx1, ly1 = (
+                    int(line["bbox"][0]),  # type: ignore[index]
+                    int(line["bbox"][1]),  # type: ignore[index]
+                    int(line["bbox"][2]),  # type: ignore[index]
+                    int(line["bbox"][3]),  # type: ignore[index]
+                )
+                if ly0 <= ty1:
+                    continue
+                if ly1 > floor_y:
+                    break
+
+                text = str(line["text"]).strip()
+                if FIG_CAPTION_STRICT_REGEX.match(text):
+                    break
+                if TABLE_CAPTION_STRICT_REGEX.match(text):
+                    break
+                if (self._match_info_box_title(text)
+                        and line["index"] != title["index"]):  # type: ignore[index]
+                    break
+
+                gap = ly0 - prev_y_bottom
+                if gap > max_gap:
+                    break
+                # Column guard: skip lines that don't overlap the panel column.
+                if lx1 < col_x_left - col_tol or lx0 > col_x_right + col_tol:
+                    continue
+
+                panel_y_bottom = max(panel_y_bottom, ly1)
+                prev_y_bottom = max(prev_y_bottom, ly1)
+                text_x_left = min(text_x_left, lx0)
+                text_x_right = max(text_x_right, lx1)
+                col_x_left = min(col_x_left, lx0)
+                col_x_right = max(col_x_right, lx1)
+
+            # Pull in any visual region that sits inside the panel y-band AND
+            # the panel's horizontal column (e.g. Marie Curie portrait next to
+            # the text). The column guard stops a right-column info box from
+            # swallowing a figure cell in the left column (page 70).
+            region_y_bottom = panel_y_bottom
+            region_x_left = text_x_left
+            region_x_right = text_x_right
+            # Only pull in a visual whose horizontal CENTRE lies within the
+            # panel's text column. Touching the column edge is not enough — on
+            # tight 2-column layouts (page 70) the figure's rightmost cell sits
+            # just left of the info box and must not be absorbed.
+            col_left = min(tx0, text_x_left)
+            col_right = max(tx1, text_x_right)
+            for region in visual_regions:
+                rx0, ry0, rx1, ry1 = region
+                if ry0 > floor_y or ry1 < ty0:
+                    continue
+                if ry0 < ty0 - int(page_height * 0.02):
+                    continue
+                if ry1 > panel_y_bottom + int(page_height * 0.04):
+                    continue
+                rcx = (rx0 + rx1) / 2.0
+                if rcx < col_left or rcx > col_right:
+                    continue
+                region_x_left = min(region_x_left, rx0)
+                region_x_right = max(region_x_right, rx1)
+                region_y_bottom = max(region_y_bottom, ry1)
+
+            pad_x = int(page_width * 0.012)
+            pad_y = int(page_height * 0.010)
+
+            # Column-aware width. A full-width info box (title hugging the left
+            # margin, page-6 style) is clamped to the page text frame. A
+            # right/left-column info box (title indented, page-70 style) stays
+            # within its own column so it does NOT overlap a figure in the
+            # other column.
+            is_full_width = tx0 < page_width * 0.20
+            if is_full_width:
+                outer_left = int(page_width * 0.035)
+                outer_right = int(page_width * 0.965)
+                box_left = max(0, min(outer_left, region_x_left - pad_x))
+                box_right = min(page_width, max(
+                    outer_right, region_x_right + pad_x))
+            else:
+                box_left = max(0, region_x_left - pad_x)
+                box_right = min(page_width, region_x_right + pad_x)
+            bbox = (
+                box_left,
+                max(0, ty0 - pad_y),
+                box_right,
+                min(page_height, region_y_bottom + pad_y),
+            )
+            outputs.append({
+                "bbox": bbox,
+                "image_type": title.get("label", "textbook_info_box"),
+                "caption_text": title["text"],
+                "caption_bbox": title["bbox"],
+            })
+
+        return outputs
+
+    def _build_dashed_tool_groups(
+        self,
+        dashed_regions: List[Tuple[int, int, int, int]],
+        framed_regions: List[Tuple[int, int, int, int]],
+        owlvit_regions: List[Tuple[int, int, int, int]],
+        tool_labels: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        exclusion_zones: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Tool-group panels anchored on a "Dụng cụ đo ..." label.
+
+        Many SGK pages render this as a dashed-border row, but not always —
+        some pages just put 3-4 instrument photos in a row below the label
+        without a visible border. We therefore anchor on the LABEL and
+        collect every visual region in the row directly below it.
+
+        The dashed/framed detections are used as a positive signal to
+        widen the panel bbox when present.
+        """
+        outputs: List[Dict[str, object]] = []
+        if not tool_labels:
+            return outputs
+
+        # Per-cell instrument detections (rulers, scales, etc.). We must NOT
+        # use the deduped visual_regions because individual cells are fully
+        # contained in any dashed-border outer box and the coverage filter
+        # would kill them. Light intra-cell dedupe only.
+        min_cell_area = int(page_width * page_height * 0.0025)
+        raw_cells = [tuple(r) for r in owlvit_regions
+                     if self._bbox_area(r) >= min_cell_area]
+        raw_cells.sort(key=lambda b: self._bbox_area(b), reverse=True)
+        all_cells: List[Tuple[int, int, int, int]] = []
+        for cell in raw_cells:
+            duplicate = any(self._iou(cell, kept) > 0.55 for kept in all_cells)
+            if not duplicate:
+                all_cells.append(cell)
+
+        used_cells: set = set()
+        # type: ignore[index]
+        for label in sorted(tool_labels, key=lambda l: l["bbox"][1]):
+            lx0, ly0, lx1, ly1 = label["bbox"]  # type: ignore[misc]
+
+            # Find every cell sitting in the row directly below the label.
+            row_cells: List[Tuple[int, int, int, int]] = []
+            for cell in all_cells:
+                if cell in used_cells:
+                    continue
+                cx0, cy0, cx1, cy1 = cell
+                vgap = cy0 - ly1
+                if vgap < -10 or vgap > page_height * 0.10:
+                    continue
+                # Row must not extend further than ~25% page height down.
+                if cy1 - ly1 > page_height * 0.28:
+                    continue
+                # Horizontal: cell must intersect label band or be near it.
+                hov = min(lx1, cx1) - max(lx0, cx0)
+                if hov <= 0 and (cx0 > lx1 + page_width * 0.18 or
+                                 cx1 < lx0 - page_width * 0.18):
+                    continue
+                row_cells.append(cell)
+
+            # Need at least 2 instruments to count as a "group".
+            if len(row_cells) < 2:
+                continue
+
+            # Reject group when label sits inside an existing anchor zone
+            # (page header, table caption, etc.) — those rule it out.
+            if any(self._coverage_ratio(label["bbox"], zone) > 0.50  # type: ignore[arg-type]
+                   for zone in exclusion_zones):
+                continue
+
+            group_x0 = min(lx0, min(c[0] for c in row_cells))
+            group_x1 = max(lx1, max(c[2] for c in row_cells))
+            group_y0 = ly0
+            group_y1 = max(c[3] for c in row_cells)
+
+            # If a dashed/framed outer box overlaps the row strongly, widen
+            # the bbox to its full extent — OWL-ViT often misses the
+            # last cell at the right edge, and the dashed border preserves it.
+            cell_band = (group_x0, group_y0, group_x1, group_y1)
+            for outer in list(dashed_regions) + list(framed_regions):
+                ox0, oy0, ox1, oy1 = outer
+                # Outer must sit in the row band.
+                if oy0 > group_y1 + int(page_height * 0.02):
+                    continue
+                if oy1 < group_y0 - int(page_height * 0.02):
+                    continue
+                # Outer must overlap the cell band horizontally.
+                hov = min(ox1, group_x1) - max(ox0, group_x0)
+                if hov <= 0:
+                    continue
+                # And contain at least one cell.
+                if not any(self._coverage_ratio(c, outer) > 0.6
+                           for c in row_cells):
+                    continue
+                group_x0 = min(group_x0, ox0)
+                group_x1 = max(group_x1, ox1)
+                group_y0 = min(group_y0, oy0)
+                group_y1 = max(group_y1, oy1)
+
+            # Extend down to include per-tool name labels ("Thước cuộn",
+            # "Cân đồng hồ", ...). These are short text lines on the row
+            # immediately below the cells. We also use them to widen the
+            # bbox horizontally — they reliably span the full instrument
+            # row even when OWL-ViT misses cells at the edges.
+            for line in text_lines:
+                tx0, ty0, tx1, ty1 = (
+                    int(line["bbox"][0]),  # type: ignore[index]
+                    int(line["bbox"][1]),  # type: ignore[index]
+                    int(line["bbox"][2]),  # type: ignore[index]
+                    int(line["bbox"][3]),  # type: ignore[index]
+                )
+                if ty0 < group_y1 - 4 or ty0 > group_y1 + int(page_height * 0.045):
+                    continue
+                txt = str(line["text"]).strip()
+                if not txt or len(txt) > 60:
+                    continue
+                if FIG_CAPTION_STRICT_REGEX.match(txt):
+                    continue
+                if TABLE_CAPTION_STRICT_REGEX.match(txt):
+                    continue
+                if self._match_info_box_title(txt):
+                    continue
+                if SUB_FIGURE_LABEL_REGEX.match(txt):
+                    continue
+                # Must be roughly within the page text frame.
+                if tx0 < int(page_width * 0.03) or tx1 > int(page_width * 0.97):
+                    continue
+                group_y1 = max(group_y1, ty1)
+                group_x0 = min(group_x0, tx0)
+                group_x1 = max(group_x1, tx1)
+
+            group_bbox = (
+                max(0, group_x0 - int(page_width * 0.008)),
+                max(0, group_y0 - int(page_height * 0.006)),
+                min(page_width, group_x1 + int(page_width * 0.008)),
+                min(page_height, group_y1 + int(page_height * 0.008)),
+            )
+
+            # Re-check exclusion of final bbox against figure/info zones.
+            if any(self._coverage_ratio(group_bbox, zone) > 0.45
+                   for zone in exclusion_zones):
+                continue
+
+            for cell in row_cells:
+                used_cells.add(cell)
+
+            outputs.append({
+                "bbox": group_bbox,
+                "image_type": "tool_group",
+                "caption_text": str(label["text"]),
+                "caption_bbox": label["bbox"],
+            })
+
+        return outputs
+
+    def _split_composite_sub_figures(
+        self,
+        composite_bbox: Tuple[int, int, int, int],
+        assigned_regions: List[Tuple[int, int, int, int]],
+        sub_labels: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Emit one sub-figure crop per visual region inside the composite.
+
+        Each crop is extended downward to include its sub-figure caption
+        ("a) Tìm hiểu vi khuẩn ..."). When Tesseract merges siblings on the
+        same row into a single OCR line, we still keep one crop per region
+        and slice the merged label horizontally so each crop receives only
+        its share of the caption.
+        """
+        if len(assigned_regions) <= 1:
+            return []
+
+        cx0, cy0, cx1, cy1 = composite_bbox
+        inside_labels: List[Dict[str, object]] = []
+        for label in sub_labels:
+            lx0, ly0, lx1, ly1 = label["bbox"]  # type: ignore[misc]
+            if lx1 < cx0 - 5 or lx0 > cx1 + 5:
+                continue
+            if ly0 < cy0 - 5 or ly1 > cy1 + 12:
+                continue
+            inside_labels.append(label)
+
+        # Tighten the region list: drop visual regions that overlap each other
+        # heavily — sibling sub-figures are visually distinct so IoU should be
+        # tiny between them.
+        deduped = self._dedupe_visual_regions(
+            list(assigned_regions),
+            min_area=int(page_width * page_height * 0.003),
+            iou_threshold=0.35,
+        )
+
+        outputs: List[Dict[str, object]] = []
+        for region in sorted(deduped, key=lambda r: (r[1], r[0])):
+            rx0, ry0, rx1, ry1 = region
+            region_label_bottom = ry1
+            region_label_left = rx0
+            region_label_right = rx1
+            matched_text = ""
+            has_label = False
+
+            for label in inside_labels:
+                lx0, ly0, lx1, ly1 = label["bbox"]  # type: ignore[misc]
+                vgap = ly0 - ry1
+                if vgap < -8 or vgap > page_height * 0.06:
+                    continue
+                hov = min(lx1, rx1) - max(lx0, rx0)
+                region_width = max(1, rx1 - rx0)
+                if hov < region_width * 0.20:
+                    continue
+                has_label = True
+                region_label_bottom = max(region_label_bottom, ly1)
+                slice_left = max(lx0, rx0 - int(page_width * 0.02))
+                slice_right = min(lx1, rx1 + int(page_width * 0.02))
+                region_label_left = min(region_label_left, slice_left)
+                region_label_right = max(region_label_right, slice_right)
+                if not matched_text:
+                    matched_text = str(label["text"])
+
+            # If we have OCR sub-labels at all, require each emitted sub-figure
+            # to have one. Otherwise (instrument grids etc.) fall through.
+            if inside_labels and not has_label:
+                continue
+
+            pad_y = int(page_height * 0.004)
+            pad_x = int(page_width * 0.004)
+            sub_bbox = (
+                max(0, min(rx0, region_label_left) - pad_x),
+                max(0, ry0 - pad_y),
+                min(page_width, max(rx1, region_label_right) + pad_x),
+                min(page_height, region_label_bottom + pad_y),
+            )
+            outputs.append({
+                "bbox": sub_bbox,
+                "image_type": "sub_figure",
+                "caption_text": matched_text,
+            })
+
+        return outputs
+
+    def detect_regions_anchor_first(
+        self,
+        pil_img: Image.Image,
+        img_array: np.ndarray,
+        text_lines: Optional[List[Dict[str, object]]] = None,
+    ) -> Dict[str, object]:
+        """Top-level v7 detector. Returns dict with 'regions' (list) and 'debug' fields.
+
+        Each region is ``{"bbox", "image_type", "caption_text", "caption_bbox?"}``.
+        """
+        page_width = pil_img.width
+        page_height = pil_img.height
+        if text_lines is None:
+            text_lines = self._collect_page_text_lines(pil_img)
+
+        anchors = self._classify_text_anchors(text_lines)
+
+        # Augment OCR-derived info titles with colour-detected headers.
+        # Vietnamese SGK marks info boxes with a pink/blue header; when the
+        # header is a filled tab with white text, page-level OCR misses it
+        # entirely (page 70 "Em có biết"). Recover those here and merge.
+        colored_headers = self._detect_colored_info_headers(pil_img)
+        if colored_headers:
+            existing = anchors["info_titles"]
+            for header in colored_headers:
+                hx0, hy0, hx1, hy1 = header["bbox"]  # type: ignore[misc]
+                hcy = (hy0 + hy1) / 2.0
+                # Skip if an OCR title already covers this header position.
+                duplicate = False
+                for title in existing:
+                    tx0, ty0, tx1, ty1 = title["bbox"]  # type: ignore[misc]
+                    if abs((ty0 + ty1) / 2.0 - hcy) < page_height * 0.03 \
+                            and min(hx1, tx1) - max(hx0, tx0) > 0:
+                        duplicate = True
+                        break
+                if not duplicate:
+                    existing.append(header)
+            existing.sort(key=lambda e: e["bbox"][1])  # type: ignore[index]
+
+        # Raw visual detections (used by all builders, never returned as-is).
+        owlvit_regions = self._detect_regions_with_owlvit(
+            pil_img, OWL_VIT_TEXT_QUERIES)
+        framed_regions = self._detect_framed_regions(img_array)
+        dashed_regions = self._detect_dashed_frame_regions(img_array)
+        # Object-blob fallback ONLY fills gaps where OWL-ViT / frame detectors
+        # found nothing — it must not override the per-cell detections that
+        # already work (otherwise a blob spanning several sub-figures would
+        # suppress them).
+        detector_regions = (list(owlvit_regions) + list(framed_regions)
+                            + list(dashed_regions))
+        blob_regions = [
+            blob for blob in self._detect_object_blobs(img_array)
+            if not any(self._coverage_ratio(blob, d) > 0.35
+                       or self._coverage_ratio(d, blob) > 0.55
+                       for d in detector_regions)
+        ]
+        visual_regions = self._dedupe_visual_regions(
+            detector_regions + blob_regions,
+            min_area=1500,
+            iou_threshold=0.55,
+        )
+        # Drop OWL-ViT false positives that are really text blocks before they
+        # can be assigned to a figure caption.
+        visual_regions = self._filter_text_visual_regions(
+            visual_regions, pil_img, text_lines)
+
+        # 1. Table zones (exclusion-only, never emitted as regions).
+        table_zones = self._build_table_zones(
+            anchors["table_captions"], text_lines, page_width, page_height,
+        )
+
+        # 2. Info-box panels FIRST. Their full (tall) bboxes are then used as
+        # exclusion zones + column separators when assigning cells to figures,
+        # which is far more robust than the thin info-box header line (page 70:
+        # the "Tìm hiểu thêm" panel keeps its body's stray OWL-ViT detections
+        # out of the left-column figure).
+        info_blockers = (
+            [cap["bbox"] for cap in anchors["figure_captions"]]
+            + [cap["bbox"] for cap in anchors["table_captions"]]
+            + [cap["bbox"] for cap in anchors["info_titles"]]
+        )
+        info_outputs = self._build_info_panels(
+            anchors["info_titles"], text_lines, visual_regions,
+            info_blockers, page_width, page_height,
+        )
+        info_zones = [out["bbox"] for out in info_outputs]
+
+        # 3. Figure composites. Exclusion = table zones + info panels.
+        figure_outputs = self._build_figure_composites(
+            anchors["figure_captions"], text_lines, visual_regions,
+            anchors["question_prompts"], anchors["info_titles"],
+            anchors["sub_labels"],
+            list(table_zones) + list(info_zones), page_width, page_height,
+        )
+
+        # 4. Dashed-only tool groups.
+        anchor_zones = (
+            table_zones
+            + [out["bbox"] for out in figure_outputs]
+            + info_zones
+        )
+        tool_outputs = self._build_dashed_tool_groups(
+            dashed_regions, framed_regions, owlvit_regions,
+            anchors["tool_group_labels"], text_lines, anchor_zones,
+            page_width, page_height,
+        )
+
+        # 5. Sub-figure crops inside composites.
+        sub_outputs: List[Dict[str, object]] = []
+        for fig in figure_outputs:
+            if fig["image_type"] != "composite_figure":
+                continue
+            sub_outputs.extend(self._split_composite_sub_figures(
+                fig["bbox"], fig.get("assigned_regions", []),
+                anchors["sub_labels"], page_width, page_height,
+            ))
+
+        # Clean up internal fields before returning.
+        for fig in figure_outputs:
+            fig.pop("assigned_regions", None)
+
+        regions = figure_outputs + info_outputs + tool_outputs + sub_outputs
+
+        return {
+            "regions": regions,
+            "anchors": anchors,
+            "table_zones": table_zones,
+            "visual_regions": visual_regions,
+            "owlvit_regions": owlvit_regions,
+            "framed_regions": framed_regions,
+            "dashed_regions": dashed_regions,
+        }
 
     def _bbox_area(self, bbox: Tuple[int, int, int, int]) -> int:
         x0, y0, x1, y1 = bbox
@@ -313,7 +2284,8 @@ class ImageProcessor:
         if larger_area / smaller_area < min_area_ratio:
             return False
 
-        overlap_of_smaller = self._intersection_area(left, right) / smaller_area
+        overlap_of_smaller = self._intersection_area(
+            left, right) / smaller_area
         return overlap_of_smaller >= 0.86
 
     def _contained_region_count(
@@ -399,17 +2371,36 @@ class ImageProcessor:
         page_width: int,
         page_height: int,
         margin_ratio: float = 0.22,
+        text_lines: Optional[List[Dict[str, object]]] = None,
+        exclude_regions: Optional[List[Tuple[int, int, int, int]]] = None,
     ) -> List[Tuple[int, int, int, int]]:
-        """Add synthetic parent boxes for nearby sub-figures while keeping children."""
+        """Add synthetic parent boxes for nearby sub-figures while keeping children.
+
+        When text_lines is supplied, the composite parent is also stretched
+        downward to cover its Vietnamese figure caption ("Hình X.Y. ...") and
+        trimmed at the top to drop any question prompt that happens to sit
+        above the figure cluster.
+
+        ``exclude_regions`` lists regions that must NOT participate in component
+        connectivity (e.g. OCR-anchored info boxes). They are already a parent
+        themselves, so pulling them into a composite would create a union that
+        spans the whole page and gets filtered out.
+        """
         if len(regions) < 2:
             return regions
+
+        exclude_set = {tuple(bbox) for bbox in (exclude_regions or [])}
+        groupable_indexes = [
+            index for index, bbox in enumerate(regions)
+            if tuple(bbox) not in exclude_set
+        ]
 
         margin_x = max(24, int(page_width * margin_ratio))
         margin_y = max(24, int(page_width * margin_ratio))
         visited = set()
         components: List[List[Tuple[int, int, int, int]]] = []
 
-        for start_index, start_bbox in enumerate(regions):
+        for start_index in groupable_indexes:
             if start_index in visited:
                 continue
 
@@ -419,9 +2410,10 @@ class ImageProcessor:
             while stack:
                 current_index = stack.pop()
                 current_bbox = regions[current_index]
-                for candidate_index, candidate_bbox in enumerate(regions):
+                for candidate_index in groupable_indexes:
                     if candidate_index in visited:
                         continue
+                    candidate_bbox = regions[candidate_index]
                     x_gap, y_gap = self._region_gap(
                         current_bbox, candidate_bbox)
                     if x_gap <= margin_x and y_gap <= margin_y:
@@ -430,7 +2422,8 @@ class ImageProcessor:
                         stack.append(candidate_index)
 
             if len(component_indexes) >= 2:
-                components.append([regions[index] for index in component_indexes])
+                components.append([regions[index]
+                                  for index in component_indexes])
 
         composite_regions: List[Tuple[int, int, int, int]] = []
         page_area = page_width * page_height
@@ -443,6 +2436,18 @@ class ImageProcessor:
             )
             union_bbox = self._expand_bbox(
                 union_bbox, page_width, page_height, ratio=0.025)
+
+            if text_lines:
+                union_bbox = self._trim_region_top_to_exclude_prompt(
+                    union_bbox, text_lines, page_height)
+                union_bbox = self._expand_region_to_caption(
+                    union_bbox,
+                    text_lines,
+                    page_width,
+                    page_height,
+                    is_composite=True,
+                )
+
             union_area = self._bbox_area(union_bbox)
             if union_area > page_area * 0.75:
                 continue
@@ -501,9 +2506,38 @@ class ImageProcessor:
             if is_page_chrome and overlap_children >= 2:
                 continue
 
+            # Cyan false-positive: one large box swallowing several sub-figure cells.
+            nested_children = 0
+            for other in regions:
+                if other == bbox:
+                    continue
+                if self._bbox_area(other) >= area * 0.45:
+                    continue
+                if self._coverage_ratio(other, bbox) >= 0.82:
+                    nested_children += 1
+            if nested_children >= 3:
+                continue
+
             kept.append(bbox)
 
         return kept
+
+    def _coverage_ratio(
+        self,
+        inner: Tuple[int, int, int, int],
+        outer: Tuple[int, int, int, int],
+    ) -> float:
+        """Share of inner bbox area that lies inside outer."""
+        inner_area = float(self._bbox_area(inner))
+        if inner_area <= 0:
+            return 0.0
+        x0 = max(inner[0], outer[0])
+        y0 = max(inner[1], outer[1])
+        x1 = min(inner[2], outer[2])
+        y1 = min(inner[3], outer[3])
+        if x1 <= x0 or y1 <= y0:
+            return 0.0
+        return ((x1 - x0) * (y1 - y0)) / inner_area
 
     def _limit_regions_for_extraction(
         self,
@@ -941,44 +2975,63 @@ class ImageProcessor:
             page_snapshot_path = self._save_page_snapshot(
                 output_dir, page_num, pil_img)
 
-            # Phase 1: OWL-ViT open-vocabulary detection for region discovery.
-            logger.info(
-                f"[Phase 1][page={page_num}] Detecting candidate image regions with OWL-ViT")
-            owlvit_regions = self._detect_regions_with_owlvit(
-                pil_img, OWL_VIT_TEXT_QUERIES)
-            framed_regions = self._detect_framed_regions(img_array)
-            regions = owlvit_regions + framed_regions
-
-            # Phase 2: Refinement with aspect ratio, dedupe, and region caps.
-            logger.info(
-                f"[Phase 2][page={page_num}] Refining {len(owlvit_regions)} OWL-ViT and {len(framed_regions)} framed regions")
-            refined = self._refine_regions(regions, img_array)
-            refined = self._group_composite_figures(
-                refined, pil_img.width, pil_img.height)
-            refined = self._limit_regions_for_extraction(
-                refined, max_regions=24)
-
+            # Page-level OCR (image_to_data) drives the anchor-first detector.
+            page_text_lines = self._collect_page_text_lines(pil_img)
             logger.debug(
-                f"Page {page_num}: detected {len(regions)} regions, {len(refined)} after refinement")
+                f"Page {page_num}: collected {len(page_text_lines)} OCR text lines")
+
+            # v7 anchor-first detection. Yields concrete (bbox, image_type)
+            # tuples — no further refinement is required.
+            logger.info(
+                f"[v7][page={page_num}] Anchor-first detection (Hình/Bảng/info-box/dashed)"
+            )
+            detection = self.detect_regions_anchor_first(
+                pil_img, img_array, text_lines=page_text_lines)
+            # type: ignore[assignment]
+            detected_regions: List[Dict[str, object]] = detection["regions"]
+
+            logger.info(
+                f"[v7][page={page_num}] anchors: "
+                # type: ignore[index]
+                f"{len(detection['anchors']['figure_captions'])} Hình caption, "
+                # type: ignore[index]
+                f"{len(detection['anchors']['table_captions'])} Bảng (rejected), "
+                # type: ignore[index]
+                f"{len(detection['anchors']['info_titles'])} info-titles, "
+                # type: ignore[index]
+                f"{len(detection['anchors']['tool_group_labels'])} tool-labels"
+                f" → {len(detected_regions)} final regions"
+            )
+
+            # Build a lookup so the metadata loop knows the panel/figure label
+            # without having to re-run the panel classifier.
+            panel_lookup: Dict[Tuple[int, int, int, int], str] = {}
+            for region in detected_regions:
+                region_bbox = tuple(region["bbox"])  # type: ignore[arg-type]
+                region_type = str(region["image_type"])
+                panel_lookup[region_bbox] = region_type
 
             img_index = 0
             page_seen_hashes = set()
-            for bbox in refined:
+            for region in detected_regions:
+                bbox = tuple(region["bbox"])  # type: ignore[arg-type]
                 x0, y0, x1, y1 = bbox
                 crop = pil_img.crop((x0, y0, x1, y1))
 
                 if crop.width < 50 or crop.height < 50:
                     continue
 
+                panel_label = panel_lookup.get(bbox, "")
+
                 # Phase 3: Vietnamese OCR/context metadata and storage.
                 logger.info(
-                    f"[Phase 3][page={page_num}][candidate={img_index}] Building OCR/context metadata")
+                    f"[Phase 3][page={page_num}][candidate={img_index}] Building OCR/context metadata"
+                )
                 crop_text = self._ocr_crop_text(crop)
-                if self._is_text_dominant_crop(crop, crop_text):
-                    logger.debug(
-                        f"Page {page_num} img {img_index}: filtered out as text-dominant crop")
-                    img_index += 1
-                    continue
+
+                # Every v7 region is whitelisted by an anchor (Hình caption,
+                # info-box title, or labelled dashed-frame). Text-dominance
+                # filter is intentionally not applied here.
 
                 img_bytes = io.BytesIO()
                 crop.save(img_bytes, format="PNG")
@@ -1009,9 +3062,18 @@ class ImageProcessor:
                     context_text, crop_text) if part)
                 figure_label = self._extract_figure_label(local_text, "")
                 figure_caption = self._extract_figure_caption(local_text, "")
-                hierarchy_type = self._classify_region_hierarchy(bbox, refined)
-                image_type = self._infer_image_type(
-                    figure_label, context_text, crop_text, hierarchy_type)
+                detected_bboxes = [tuple(r["bbox"]) for r in detected_regions]
+                hierarchy_type = self._classify_region_hierarchy(
+                    bbox, detected_bboxes)
+
+                # v7: the anchor-first detector already labelled this region.
+                # Trust its label; fall back to keyword inference only when
+                # the detector returned the generic "panel".
+                if panel_label and panel_label not in ("panel", ""):
+                    image_type = panel_label
+                else:
+                    image_type = self._infer_image_type(
+                        figure_label, context_text, crop_text, hierarchy_type)
                 caption_context = {
                     "pdf_filename": pdf_filename,
                     "page_number": page_num,
@@ -1104,3 +3166,163 @@ class ImageProcessor:
         logger.info(
             f"[{pdf_filename}] Extracted {len(extracted_docs)} images from {total_pages} pages")
         return extracted_docs
+
+
+# ===========================================================================
+# Publisher routing
+# ===========================================================================
+
+# Filename keywords that identify each publisher variant.
+_VARIANT_CTST = "ctst"     # Chân Trời Sáng Tạo
+_VARIANT_KNTT = "kntt"     # Kết Nối Tri Thức → shares layout conventions with CD for now
+_VARIANT_CD = "cd"      # Cánh Diều
+
+
+def get_pdf_variant(pdf_filename: str) -> str:
+    """Return 'ctst', 'kntt', or 'cd' based on the PDF filename.
+
+    Matches the keyword anywhere in the stem, handling both space-separated
+    (``SGK KHTN 6 CTST.pdf``) and underscore-separated filenames.
+    """
+    stem = Path(pdf_filename).stem.lower().replace(" ", "_")
+    if "_ctst" in stem:
+        return _VARIANT_CTST
+    if "_kntt" in stem:
+        return _VARIANT_KNTT
+    return _VARIANT_CD
+
+
+def make_image_processor(
+    pdf_filename: str = "",
+    status_tracker=None,
+) -> "ImageProcessor":
+    """Factory that returns the right processor for a given PDF filename."""
+    variant = get_pdf_variant(pdf_filename)
+    if variant == _VARIANT_CTST:
+        return CtsstImageProcessor(status_tracker=status_tracker)
+    # KNTT shares the same layout conventions as CD for now.
+    return ImageProcessor(status_tracker=status_tracker)
+
+
+# ---------------------------------------------------------------------------
+# CTST — Chân Trời Sáng Tạo publisher
+# ---------------------------------------------------------------------------
+
+# CTST figures are captioned: "▲ Hình X.Y. description"
+# Tesseract OCR reads the filled-triangle ▲ as À (U+00C0), Á (U+00C1),
+# or drops it entirely, so we match all variants.
+_CTST_FIG_CAPTION_REGEX = re.compile(
+    r"^[ÀÁA▲∆.]\s*H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S"
+    r"|^H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
+    flags=re.IGNORECASE,
+)
+
+# Strip the leading triangle/OCR-artefact so the rest of the pipeline
+# receives a clean "Hình X.Y. ..." text for metadata.
+_CTST_TRIANGLE_PREFIX = re.compile(
+    r"^[ÀÁA▲∆.]\s*",
+    flags=re.IGNORECASE,
+)
+
+# CTST-specific info-box panel titles (different vocabulary from CD).
+_CTST_INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = [
+    # Exercise/practice boxes.
+    ("bai tap",      "activity_box"),
+    ("luyen tap",    "activity_box"),
+    ("van dung",     "activity_box"),
+    # Discovery / exploration boxes.
+    ("kham pha",     "activity_box"),
+    ("tim hieu",     "activity_box"),
+    # Summary / overview.
+    ("tong ket",     "activity_box"),
+    ("on tap",       "activity_box"),
+    # Lab / experiment.
+    ("thuc hanh",    "activity_box"),
+    ("thi nghiem",   "activity_box"),
+    # "Em có biết" style appears occasionally.
+    ("em co biet",   "textbook_info_box"),
+    ("mo rong",      "activity_box"),
+]
+
+
+class CtsstImageProcessor(ImageProcessor):
+    """Image ETL for SGK CTST (Chân Trời Sáng Tạo) publisher.
+
+    The only significant layout difference from CD is the figure caption
+    format.  CTST uses "▲ Hình X.Y." with a filled black triangle before
+    "Hình" that Tesseract misreads as À / Á.  Everything else (sub-figure
+    labels, composite grouping, column-awareness) is identical to the base
+    ImageProcessor.
+    """
+
+    # Override: accept CTST caption format.
+    _INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = _CTST_INFO_BOX_TITLE_KEYS
+
+    def _classify_text_anchors(
+        self,
+        text_lines: List[Dict[str, object]],
+    ) -> Dict[str, List[Dict[str, object]]]:
+        """Same as parent but treats '▲/À/Á Hình X.Y' as a figure caption."""
+        figure_caps: List[Dict[str, object]] = []
+        table_caps: List[Dict[str, object]] = []
+        info_titles: List[Dict[str, object]] = []
+        sub_labels: List[Dict[str, object]] = []
+        question_prompts: List[Dict[str, object]] = []
+        tool_labels: List[Dict[str, object]] = []
+
+        for index, line in enumerate(text_lines):
+            text = str(line["text"]).strip()
+            bbox = tuple(int(v) for v in line["bbox"])  # type: ignore[misc]
+
+            # CTST figure caption (with or without triangle prefix).
+            if _CTST_FIG_CAPTION_REGEX.match(text):
+                clean = _CTST_TRIANGLE_PREFIX.sub("", text)
+                # Keep the clean text in the entry so metadata shows "Hình…"
+                entry: Dict[str, object] = {
+                    "index": index,
+                    "text": clean,
+                    "bbox": bbox,
+                }
+                split_entries = self._split_merged_figure_caption(entry)
+                # Table caption check on clean text.
+                for se in split_entries:
+                    if TABLE_CAPTION_STRICT_REGEX.match(str(se["text"])):
+                        table_caps.append(se)
+                    else:
+                        figure_caps.append(se)
+                continue
+
+            if TABLE_CAPTION_STRICT_REGEX.match(text):
+                table_caps.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+            info_label = self._match_info_box_title(text)
+            if info_label:
+                info_titles.append({
+                    "index": index, "text": text,
+                    "bbox": bbox, "label": info_label})
+                continue
+
+            if SUB_FIGURE_LABEL_REGEX.match(text):
+                sub_labels.append({
+                    "index": index, "text": text, "bbox": bbox})
+
+            if self._is_question_prompt_text(text):
+                question_prompts.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+            if TOOL_GROUP_LABEL_REGEX.match(text):
+                tool_labels.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+        return {
+            "figure_captions":   figure_caps,
+            "table_captions":    table_caps,
+            "info_titles":       info_titles,
+            "sub_labels":        sub_labels,
+            "question_prompts":  question_prompts,
+            "tool_group_labels": tool_labels,
+        }
