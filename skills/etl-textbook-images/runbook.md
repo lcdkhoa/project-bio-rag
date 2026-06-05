@@ -10,26 +10,24 @@ Step-by-step playbook for every recurring task.
 # 1. drop the file
 copy <wherever>\<book>.pdf datasources\
 
-# 2. quick QA on first 20 pages
-python -m src.test_etl.test_image_extraction_full `
-  --pdf "datasources/<book>.pdf" `
-  --pages 1-20 `
-  --out-dir scripts/_out_test_etl_full/<book>
+# 2. quick QA — random pages from this book (deterministic by --seed)
+python -m src.test.test_random_pages_etl --pdf "datasources/<book>.pdf" --num-pages 10 --seed 42
 
-# 3. open the index in a browser and scan visually
-start scripts/_out_test_etl_full/<book>/_index.html
+# 3. open the report in a browser and scan visually
+start src/test/_out/index.html
 
 # 4. if QA passes, run the production pipeline (writes ChromaDB)
 python main.py
 ```
 
-**What to look for in QA:**
-- Every `Hình X.Y` page has at least one `composite_figure` or
-  `single_figure` region.
-- Every `Em có biết` / `Tìm hiểu thêm` / `Vận dụng` etc. is captured.
+**What to look for in QA (Snapshot / Anchors / Regions overlays per page):**
+- Every `Hình X.Y` page has at least one `composite_figure` / `single_figure`.
+- Figure crops are the picture + caption, NOT whole paragraphs (no "dính text").
+- Coloured `Em có biết` / `Tìm hiểu thêm` / `Vận dụng` boxes are captured; bare
+  text section headers are NOT emitted as images.
 - No `Bảng X.Y` row appears as a region.
-- Tool grids (instrument rows) are captured as `tool_group` if the page
-  has them.
+- Multi-cell figures with `a)/b)/c)` labels are split into `sub_figure` crops.
+- Tool grids (instrument rows) are captured as `tool_group`.
 
 If anything is missing or wrong, go to runbook §D.
 
@@ -39,10 +37,11 @@ If anything is missing or wrong, go to runbook §D.
 
 ```powershell
 # 1. bump the version so the status DB invalidates per-page caches
-# edit src/config.py:  IMAGE_EXTRACTION_VERSION = "v8_<your-tag>"
+# edit src/config.py:  IMAGE_EXTRACTION_VERSION = "v9_<your-tag>"
 
-# 2. re-run the QA test on representative pages first
-python -m src.test_etl.test_image_extraction_full --pages 6,13,22,30,40,55,70,85,100
+# 2. re-run QA: a single book first (fast), then the full random sample
+python -m src.test.test_random_pages_etl --pdf "datasources/<book>.pdf" --num-pages 5
+python -m src.test.test_random_pages_etl --seed 42  # all 12 books, 5 pages each
 
 # 3. if good, run the pipeline (skips pages already at this version)
 python main.py
@@ -50,69 +49,72 @@ python main.py
 
 ---
 
-## C. Batch QA across many pages
+## C. QA tooling
 
 ```powershell
-# every page
-python -m src.test_etl.test_image_extraction_full --all
+# canonical visual QA — all books, N random pages each
+python -m src.test.test_random_pages_etl --num-pages 5 --seed 42
 
-# subset
-python -m src.test_etl.test_image_extraction_full --pages "6,13,22-25,40"
+# focus on one book while tuning
+python -m src.test.test_random_pages_etl --pdf "datasources/SGK KHTN 6 CTST.pdf" --num-pages 5
 ```
 
-Outputs:
-- `scripts/_out_test_etl_full/page_NNN/00_page_snapshot.png` – the rendered page
-- `…/01_anchors.png` – OCR text anchors colour-coded
-- `…/02_visual_regions.png` – OWL-ViT + dashed/framed visual cells
-- `…/03_final_regions.png` – final extracted regions
-- `…/region_NN__<type>__<caption>.png` – one PNG per emitted crop
-- `_summary.csv` – page-by-page anchor / region counts
-- `_index.html` – clickable visual index
+Outputs in `src/test/_out/`:
+- `images/<book>/page_<N>_snapshot.png` – the rendered page
+- `…/page_<N>_anchors.png` – OCR text anchors colour-coded by bucket
+- `…/page_<N>_regions.png` – final extracted regions
+- `…/page_<N>_crop_<M>.png` – one PNG per emitted crop
+- `index.html` – per-page overlays + crops + quality summary
+
+To quantify a bad crop while debugging, compute its text-line coverage
+(`_text_line_coverage`, high = mostly text = a "dính text" smell) and its
+coloured visual-content score (`_visual_content_score`, low = no real picture)
+in a quick python shell against the page's text lines.
 
 ---
 
 ## D. Diagnosing a missed extraction
 
-> **Always work top-down: anchor → visual → geometry.**
+> **Always work top-down: anchor → visual → geometry.** Open
+> `page_<N>_anchors.png` first, then `page_<N>_regions.png`, then the crops.
 
-### D.1 Anchor missing (`01_anchors.png` has no box where you expected one)
+### D.1 Anchor missing (`page_<N>_anchors.png` has no box where expected)
 The OCR text didn't match the regex. Either:
-- The OCR garbled the line — open the page snapshot, look at the actual
-  text. Possible fixes: improve OCR (paddleocr, vietocr), or hard-code an
-  override in `_classify_text_anchors`.
-- The regex is too strict. Edit one of:
-  - `FIG_CAPTION_STRICT_REGEX` (figure caption)
-  - `TABLE_CAPTION_STRICT_REGEX` (table caption)
-  - `_INFO_BOX_TITLE_KEYS` (info-box titles)
-  - `TOOL_GROUP_LABEL_REGEX` (tool group labels)
-  - `SUB_FIGURE_LABEL_REGEX` (a, b, c, … sub-figures)
+- The OCR garbled the line — open the snapshot, look at the actual text.
+  If the figure is a **photo** (not a line drawing), the v9
+  `_recover_captions_below_photos` pass should rescue it by re-OCRing the
+  strip below; check the picture's `vis` ≥ `_RECOVER_MIN_VIS` (0.06).
+  Otherwise improve OCR (paddleocr/vietocr) or override `_classify_text_anchors`.
+- The regex is too strict. Edit `FIG_CAPTION_STRICT_REGEX` /
+  `_CTST_FIG_CAPTION_REGEX` / `_KNTT_FIG_*`, `TABLE_CAPTION_STRICT_REGEX`,
+  `_INFO_BOX_TITLE_KEYS`, `TOOL_GROUP_LABEL_REGEX`, `SUB_FIGURE_LABEL_REGEX`.
 
-### D.2 Anchor detected but visual cell missing (`02_visual_regions.png` lacks a red box)
+### D.2 Anchor detected but visual cell missing
 OWL-ViT did not return a box for the cell. Options:
 - Lower `OWL_VIT_CONFIDENCE_THRESHOLD` in `.env` from `0.1` to `0.05`.
-- Add a more specific query to `OWL_VIT_TEXT_QUERIES` describing the
-  missed image type ("a line drawing of a ruler", "a measuring scale").
-- If the cell sits inside a dashed border, the `dashed_regions` detector
-  should still catch it; verify by inspecting purple boxes in `02_*.png`.
+- Add a specific query to `OWL_VIT_TEXT_QUERIES` ("a line drawing of a ruler").
+- A `Hình X.Y` caption with NO visual cell is recovered as a band ONLY if the
+  band above it is near-text-free; a body-text *reference* line is correctly
+  skipped (see `_build_uncovered_caption_regions`).
 
-### D.3 Visual cell present but final region wrong (`03_final_regions.png` problem)
-This is geometry. Common causes and fixes:
+### D.3 Visual cell present but final region wrong (geometry)
 
-| Symptom | File method | Knob |
+| Symptom | Method | Knob / fix |
 |---|---|---|
-| Composite is too wide / pulls cells from a neighbour caption | `_assign_regions_to_captions` | reduce `dx * 1.4` weight, lower `vgap > page_height * 0.42` |
-| Composite top overshoots into question prompt | `_build_figure_composites` | the prompt anchor must be in `question_prompts` AND have horizontal overlap with the composite |
-| Info-box bottom too short (cuts off portrait) | `_build_info_panels` | the visual region must overlap the panel y-band; widen `ry1 > panel_y_bottom + 0.04` |
-| Sub-figures merged into 1 | `_split_composite_sub_figures` | each visual cell needs a sub-label within `vgap < page_height * 0.06`; if labels are merged in OCR, see runbook §D.4 |
-| Tool group bbox cut at right edge | `_build_dashed_tool_groups` | OWL-ViT missed the last cell — the per-tool text labels widen the bbox to compensate; if missing, lower OCR confidence threshold |
+| Crop "dính text" — swallows body paragraphs | `_assign_regions_to_captions`, `_grow_figure_top` | lower `_FIG_ASSIGN_MAX_VGAP`, `_FIG_TOP_GROW_MAX_GAP`, `_FIG_TOP_GROW_MAX_WIDTH` (per-variant attributes) |
+| Bare text section header emitted as info box | `_is_text_only_panel` | set `_INFO_REQUIRE_VISUAL=True` for the variant; tune `_INFO_MIN_VIS` |
+| Info box bleeds across the gutter into the other column | `_build_info_panels` | gutter clamp (v9) — verify the title's column side is detected |
+| Figure missing because its cells fell inside an over-grown info box | `_build_info_panels` | usually fixed by the gutter clamp; the cells are then assignable |
+| Caption above the figure not picked up | `_build_uncovered_caption_regions` | set `_FIG_CAPTION_ABOVE_OK=True` (KNTT) |
+| Sub-figures not split | `_split_region_sub_figures` | needs ≥2 OCR-readable `a)/b)` labels + ≥2 cells; check `sub_labels` anchor count |
+| Duplicate / overlapping crops ("đè mất hình") | `_suppress_overlapping_regions` | raise/lower the IoU / containment thresholds |
 
 ### D.4 Merged OCR lines (Tesseract glues neighbours)
-- "a) Tìm hiểu … b) Tìm hiểu … c) Tìm kiếm …" merged into one sub_label
-  line → handled by per-region label slicing in `_split_composite_sub_figures`.
-- "Hình 14.1. Người cổ đại  Hình 14.2. Người hiện đại" merged into one
-  figure caption → handled by `_split_merged_figure_caption`.
+- "Hình 14.1. … Hình 14.2. …" merged into one caption → `_split_merged_figure_caption`.
+- A caption merged with the other column's text (CTST page 174) → recovered
+  instead by `_recover_captions_below_photos` (re-OCR strip below the photo).
 
-If a new merge pattern appears, add a similar splitter.
+If a new merge pattern appears, add a similar splitter or recovery pass.
 
 ---
 

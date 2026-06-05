@@ -62,6 +62,10 @@ OWL_VIT_TEXT_QUERIES = [
 # Patterns indicating a question/activity prompt (NOT a real figure to extract).
 QUESTION_PROMPT_PATTERNS = (
     r"h[aãâ]y\s+quan\s+s[aá]t",
+    # Bare "Quan sát …" observation prompt (no leading "Hãy") — anchored at the
+    # line start so it never matches "quan sát" buried in body text. Common on
+    # CD pages (e.g. page 131 "Quan sát hình 23.11, …").
+    r"^quan\s+s[aá]t\b",
     r"h[aãâ]y\s+t[iìí]m",
     r"h[aãâ]y\s+cho\s+bi[eế]t",
     r"h[aãâ]y\s+nh[aậ]n\s+x[eé]t",
@@ -145,7 +149,53 @@ VIETNAMESE_STOPWORDS = {
 
 
 class ImageProcessor:
-    """Extract, filter, and enrich images from scanned PDFs using Vietnamese page context."""
+    """Extract, filter, and enrich images from scanned PDFs using Vietnamese page context.
+
+    This base class implements the Cánh Diều (CD) conventions. The shared
+    geometry / OCR helpers are reused by every publisher; the parts that
+    genuinely differ per publisher are isolated behind the tuning attributes
+    below and a small number of overridable seams
+    (``_classify_text_anchors``, ``_match_recovered_caption``,
+    ``_INFO_BOX_TITLE_KEYS``). Subclasses (``CtsstImageProcessor``,
+    ``KnttImageProcessor``) keep their distinct logic separate by overriding
+    only those seams — see the per-variant notes in
+    ``skills/etl-textbook-images``.
+    """
+
+    # ── Region-build tuning (override per publisher to keep logic separate) ──
+    # How far above a caption (fraction of page height) a visual cell may sit
+    # and still be claimed by it. Kept moderate so a bottom caption never grabs
+    # an unrelated photo near the top of the page (the main "dính text" cause).
+    _FIG_ASSIGN_MAX_VGAP: float = 0.20
+    # Top-growth through a figure's own NARROW cell labels. Body paragraphs are
+    # never absorbed: the gap budget is small and the max line width is well
+    # under a single-column body line.
+    _FIG_TOP_GROW_MAX_GAP: float = 0.045
+    _FIG_TOP_GROW_MAX_WIDTH: float = 0.34
+    # Info/activity panels: when True, a panel anchored only by a title is kept
+    # ONLY if it has a coloured background or an embedded picture (visual score
+    # >= _INFO_MIN_VIS). This drops bare section headers on white
+    # ("Tìm hiểu về …", "Thí nghiệm 1:") that are body text, not images.
+    _INFO_REQUIRE_VISUAL: bool = False
+    _INFO_MIN_VIS: float = 0.045
+    # Recover a figure when its picture is detected but the caption anchor was
+    # missed by OCR: re-OCR the strip directly below the picture (upscaled) and,
+    # if it reads "Hình X.Y", emit the figure. Robust to mangled scans.
+    _RECOVER_CAPTIONS_BELOW_PHOTOS: bool = True
+    # Minimum coloured-content score for a detected visual region to qualify as
+    # a real picture worth recovering a caption for (filters text/icon blobs).
+    _RECOVER_MIN_VIS: float = 0.06
+    # Whether a figure caption may sit ABOVE its figure (KNTT pill labels do;
+    # CD/CTST captions are always below the figure).
+    _FIG_CAPTION_ABOVE_OK: bool = False
+    # Emit one sub_figure crop per visual cell when a figure carries ≥2
+    # 'a)'/'b)'/… labels over ≥2 cells (parent composite is kept too).
+    _SPLIT_SUBFIGURES: bool = True
+    # Also split a captioned grid whose cells carry NO 'a)/b)' labels but each
+    # has a short centred TITLE line directly below it (CD page 131
+    # "Con cá heo / Con trâu / …"). Gated per-variant: on for CD, off for
+    # CTST/KNTT until each is tuned and smoke-tested separately.
+    _SPLIT_SUBFIGURES_BY_TITLE: bool = True
 
     def __init__(self, status_tracker: Optional[ProcessingStatus] = None):
         self.status_tracker = status_tracker or ProcessingStatus()
@@ -1365,7 +1415,7 @@ class ImageProcessor:
         # rescued afterwards by text-based top-growth, not by an enormous reach
         # here (which would let a bottom caption grab an unrelated illustration
         # at the top of the page — page 85).
-        max_vgap = page_height * 0.34
+        max_vgap = page_height * self._FIG_ASSIGN_MAX_VGAP
         separators = column_separators or []
 
         for region in visual_regions:
@@ -1427,6 +1477,57 @@ class ImageProcessor:
 
         return assignments
 
+    def _prompt_blocker_bboxes(
+        self,
+        question_prompts: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Expand each question-prompt anchor down through its wrapped lines.
+
+        A prompt like "Quan sát hình 23.11, …" often wraps to a 2nd line
+        ("… của các động vật trong hình.") that carries no prompt keyword. The
+        first line is the only anchor, so a figure ceiling computed from it
+        sits ABOVE the wrapped tail, letting top-growth absorb that tail into
+        the crop (page 131 "dính text"). Here we grow each prompt bbox downward
+        through continuous same-column lines (small gap, not another anchor) so
+        the ceiling sits below the WHOLE prompt paragraph.
+        """
+        blockers: List[Tuple[int, int, int, int]] = []
+        if not question_prompts:
+            return blockers
+        max_gap = int(page_height * 0.02)
+        ordered = sorted(text_lines, key=lambda ln: int(ln["bbox"][1]))
+        for prompt in question_prompts:
+            px0, py0, px1, py1 = prompt["bbox"]  # type: ignore[misc]
+            bottom = int(py1)
+            prev_bottom = int(py1)
+            for line in ordered:
+                lx0, ly0, lx1, ly1 = (
+                    int(line["bbox"][0]),  # type: ignore[index]
+                    int(line["bbox"][1]),  # type: ignore[index]
+                    int(line["bbox"][2]),  # type: ignore[index]
+                    int(line["bbox"][3]),  # type: ignore[index]
+                )
+                if ly0 <= int(py1):
+                    continue
+                if (ly0 - prev_bottom) > max_gap:
+                    break
+                # Same column as the prompt (must horizontally overlap).
+                if min(lx1, int(px1)) - max(lx0, int(px0)) <= 0:
+                    continue
+                text = str(line["text"]).strip()
+                if (FIG_CAPTION_STRICT_REGEX.match(text)
+                        or TABLE_CAPTION_STRICT_REGEX.match(text)
+                        or self._match_info_box_title(text)
+                        or SUB_FIGURE_LABEL_REGEX.match(text)):
+                    break
+                bottom = max(bottom, ly1)
+                prev_bottom = max(prev_bottom, ly1)
+            blockers.append((int(px0), int(py0), int(px1), bottom))
+        return blockers
+
     def _build_figure_composites(
         self,
         figure_caps: List[Dict[str, object]],
@@ -1455,10 +1556,14 @@ class ImageProcessor:
         )
 
         # Per-caption upward ceiling: prev caption / info-title / question prompt / page top.
+        # Prompt bboxes are expanded through their wrapped continuation lines so
+        # the ceiling sits below the whole prompt paragraph (page 131).
+        prompt_blockers = self._prompt_blocker_bboxes(
+            question_prompts, text_lines, page_width, page_height)
         all_blockers = sorted(
             [cap["bbox"] for cap in figure_caps]
             + [cap["bbox"] for cap in info_titles]
-            + [cap["bbox"] for cap in question_prompts],
+            + prompt_blockers,
             key=lambda b: b[1],  # type: ignore[index]
         )
 
@@ -1517,6 +1622,21 @@ class ImageProcessor:
                 if visual_top - vr[3] > max_cell_gap:
                     break
                 visual_top = min(visual_top, vr[1])
+            # Pull the top up to INCLUDE the gap-connected upper visual cells
+            # themselves (not merely use them as a growth ceiling). A 2-row
+            # grid whose bottom caption is too far for direct cell assignment
+            # (page 6 "Hình 1.1") otherwise drops its entire upper row of
+            # photos. Bounded by the nearest blocker above (`ceiling_y`) so it
+            # never climbs across a question prompt or previous caption — AND
+            # only when the bridged band is image-like (low text coverage). The
+            # latter is what separates page 6 (photo rows between the cells)
+            # from page 100 (a section-objectives text block / chapter banner
+            # sitting above a single figure, which must NOT be absorbed).
+            candidate_top = max(ceiling_y, visual_top)
+            if candidate_top < y0 - 2:
+                band = (x0, candidate_top, x1, y0)
+                if self._text_line_coverage(band, text_lines) < 0.22:
+                    y0 = candidate_top
             # Only a small overshoot above the topmost contiguous cell, so the
             # growth can pick up a cell's own label row but never a section
             # header that sits well above a single photo (page 45).
@@ -1669,14 +1789,14 @@ class ImageProcessor:
         The gap budget is generous enough to bridge the whitespace between the
         rows of a list-figure (page 70 has ~150 px between cell rows).
         """
-        max_gap = int(page_height * 0.12)
+        max_gap = int(page_height * self._FIG_TOP_GROW_MAX_GAP)
         cur_top = y0
         cur_x0 = x0
         cur_x1 = x1
         # A figure's own cell labels are short. A full-width body paragraph is
         # not part of the figure — never absorb it (this keeps side-by-side
         # figures from each ballooning to the whole page, page 85).
-        max_line_width = int(page_width * 0.5)
+        max_line_width = int(page_width * self._FIG_TOP_GROW_MAX_WIDTH)
 
         # Candidate lines above the current top, sorted nearest-first.
         candidates = [
@@ -1838,6 +1958,16 @@ class ImageProcessor:
             else:
                 box_left = max(0, region_x_left - pad_x)
                 box_right = min(page_width, region_x_right + pad_x)
+                # Keep a single-column box inside its own column: never bleed
+                # across the central gutter into the other column (page 56
+                # "Em có biết" was grabbing the left-column body + figure cells).
+                col_margin = int(page_width * 0.03)
+                title_cx = (tx0 + tx1) / 2.0
+                mid = page_width * 0.5
+                if title_cx >= mid:           # right-column box
+                    box_left = max(box_left, int(mid - col_margin))
+                else:                          # left-column box
+                    box_right = min(box_right, int(mid + col_margin))
             bbox = (
                 box_left,
                 max(0, ty0 - pad_y),
@@ -2011,91 +2141,296 @@ class ImageProcessor:
 
         return outputs
 
-    def _split_composite_sub_figures(
+    def _split_region_sub_figures(
         self,
-        composite_bbox: Tuple[int, int, int, int],
-        assigned_regions: List[Tuple[int, int, int, int]],
+        region_bbox: Tuple[int, int, int, int],
+        visual_regions: List[Tuple[int, int, int, int]],
         sub_labels: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        pil_img: Image.Image,
         page_width: int,
         page_height: int,
     ) -> List[Dict[str, object]]:
-        """Emit one sub-figure crop per visual region inside the composite.
+        """Split a figure / tool group into per-photo sub-figures.
 
-        Each crop is extended downward to include its sub-figure caption
-        ("a) Tìm hiểu vi khuẩn ..."). When Tesseract merges siblings on the
-        same row into a single OCR line, we still keep one crop per region
-        and slice the merged label horizontally so each crop receives only
-        its share of the caption.
+        The strategy is **caption-rows + pixel-columns**, which is robust to the
+        detector merging a whole grid into one (or a few) cells — the common CD
+        failure where OWL-ViT returns one box per coloured row (page 8) or one
+        box for the whole grid (page 131):
+          * ROWS come from the caption lines below each photo — letter labels
+            ('a)/b)/…') when present, else (CD only, via
+            `_SPLIT_SUBFIGURES_BY_TITLE`) the short centred titles below each
+            cell ("Con cá heo / …", "Thước cuộn / …").
+          * COLUMNS come from the VERTICAL WHITE GUTTERS in each row's photo
+            band (`_detect_columns_by_projection`) — so a row detected as one
+            wide cell still splits into its photos, and a ragged grid (3 photos
+            over 2) splits correctly per row.
+        A caption row with NO photo band above it (page 40 internal apparatus
+        labels "Dung dịch / Nến") is rejected by the photo-band guard.
         """
-        if len(assigned_regions) <= 1:
+        cells: List[Tuple[int, int, int, int]] = []
+        for raw in visual_regions:
+            vr = tuple(int(v) for v in raw)
+            if self._coverage_ratio(vr, region_bbox) < 0.70:
+                continue
+            cells.append(vr)
+        if not cells:
+            return []
+        ux0 = min(c[0] for c in cells)
+        uy0 = min(c[1] for c in cells)
+        ux1 = max(c[2] for c in cells)
+        uy1 = max(c[3] for c in cells)
+
+        anchors, is_label_mode = self._collect_subfig_anchors(
+            (ux0, uy0, ux1, uy1), region_bbox, sub_labels,
+            text_lines, page_width, page_height)
+        if len(anchors) < 2:
             return []
 
-        cx0, cy0, cx1, cy1 = composite_bbox
-        inside_labels: List[Dict[str, object]] = []
-        for label in sub_labels:
-            lx0, ly0, lx1, ly1 = label["bbox"]  # type: ignore[misc]
-            if lx1 < cx0 - 5 or lx0 > cx1 + 5:
-                continue
-            if ly0 < cy0 - 5 or ly1 > cy1 + 12:
-                continue
-            inside_labels.append(label)
+        # Cluster caption anchors into rows (by top-y).
+        row_tol = int(page_height * 0.03)
+        anchors.sort(key=lambda a: a["y0"])
+        rows: List[List[Dict[str, float]]] = []
+        for anchor in anchors:
+            if rows and (anchor["y0"] - rows[-1][-1]["y0"]) <= row_tol:
+                rows[-1].append(anchor)
+            else:
+                rows.append([anchor])
 
-        # Tighten the region list: drop visual regions that overlap each other
-        # heavily — sibling sub-figures are visually distinct so IoU should be
-        # tiny between them.
-        deduped = self._dedupe_visual_regions(
-            list(assigned_regions),
-            min_area=int(page_width * page_height * 0.003),
-            iou_threshold=0.35,
-        )
+        # Title-mode is inherently riskier than letter labels (legend lists,
+        # internal diagram labels). Require strong grid evidence: ≥2 distinct
+        # title columns AND at least one row holding ≥2 side-by-side titles —
+        # this rejects a vertically-stacked legend beside a single chart
+        # (page 40 "Hình 7.3" pie + legend).
+        if not is_label_mode:
+            col_tol = int(page_width * 0.10)
+            col_clusters = self._cluster_sorted_values(
+                sorted(a["cx"] for a in anchors), col_tol)
+            if len(col_clusters) < 2 or max(len(r) for r in rows) < 2:
+                return []
 
+        # Build each row's photo band; reject a caption row with no photo above
+        # it (page 40 "Hình 7.2" internal apparatus labels "Dung dịch / Nến").
+        min_photo_h = int(page_height * 0.05)
+        bands: List[Tuple[int, int, int, List[Dict[str, float]]]] = []
+        prev_bottom = int(uy0)
+        for row in rows:  # top → bottom
+            title_top = int(min(a["y0"] for a in row))
+            title_bottom = int(max(a["y1"] for a in row))
+            if title_top - prev_bottom < min_photo_h:
+                return []
+            bands.append((prev_bottom, title_top, title_bottom, row))
+            prev_bottom = title_bottom
+
+        # A cell is "granular" when it fits inside a single row's photo band
+        # (the detector separated the photos — page 6, 109). When the only
+        # cells span multiple rows / a whole coloured row (page 8, 131) there
+        # are none, and we fall back to pixel-gutter column detection.
+        min_col_w = int(page_width * 0.05)
+        min_cell_h = int(page_height * 0.03)
+        fit_tol = int(page_height * 0.02)
+        granular: List[Tuple[int, int, int, int]] = []
+        for cell in cells:
+            cw, ch = cell[2] - cell[0], cell[3] - cell[1]
+            if cw < min_col_w or ch < min_cell_h:
+                continue
+            for ptop, ttop, _tbot, _row in bands:
+                if cell[1] >= ptop - fit_tol and cell[3] <= ttop + fit_tol:
+                    granular.append(cell)
+                    break
+        granular = self._dedupe_visual_regions(
+            granular, min_area=int(page_width * page_height * 0.003),
+            iou_threshold=0.35)
+
+        pad_x = int(page_width * 0.004)
+        pad_y = int(page_height * 0.004)
         outputs: List[Dict[str, object]] = []
-        for region in sorted(deduped, key=lambda r: (r[1], r[0])):
-            rx0, ry0, rx1, ry1 = region
-            region_label_bottom = ry1
-            region_label_left = rx0
-            region_label_right = rx1
-            matched_text = ""
-            has_label = False
 
-            for label in inside_labels:
-                lx0, ly0, lx1, ly1 = label["bbox"]  # type: ignore[misc]
-                vgap = ly0 - ry1
-                if vgap < -8 or vgap > page_height * 0.06:
+        if len(granular) >= 2 and len(granular) >= len(rows):
+            # CELL MODE — one crop per detected cell, caption attached below.
+            for cell in sorted(granular, key=lambda c: (c[1], c[0])):
+                cx0, cy0, cx1, cy1 = cell
+                bottom = cy1
+                caption_text = ""
+                for anchor in anchors:
+                    if not (cx0 <= anchor["cx"] <= cx1):
+                        continue
+                    if anchor["y0"] < cy1 - fit_tol \
+                            or anchor["y0"] > cy1 + page_height * 0.06:
+                        continue
+                    bottom = max(bottom, int(anchor["y1"]))
+                    caption_text = str(anchor["text"])
+                    break
+                outputs.append({
+                    "bbox": (
+                        max(0, cx0 - pad_x), max(0, cy0 - pad_y),
+                        min(page_width, cx1 + pad_x),
+                        min(page_height, bottom + pad_y),
+                    ),
+                    "image_type": "sub_figure",
+                    "caption_text": caption_text,
+                })
+        else:
+            # PROJECTION MODE — split each row's band at vertical white gutters.
+            for ptop, ttop, tbot, row in bands:
+                columns = self._detect_columns_by_projection(
+                    pil_img, (ux0, ptop, ux1, ttop), page_width, page_height)
+                if not columns:
                     continue
-                hov = min(lx1, rx1) - max(lx0, rx0)
-                region_width = max(1, rx1 - rx0)
-                if hov < region_width * 0.20:
-                    continue
-                has_label = True
-                region_label_bottom = max(region_label_bottom, ly1)
-                slice_left = max(lx0, rx0 - int(page_width * 0.02))
-                slice_right = min(lx1, rx1 + int(page_width * 0.02))
-                region_label_left = min(region_label_left, slice_left)
-                region_label_right = max(region_label_right, slice_right)
-                if not matched_text:
-                    matched_text = str(label["text"])
+                for cseg0, cseg1 in columns:
+                    caption_text = ""
+                    for anchor in row:
+                        if cseg0 <= anchor["cx"] <= cseg1:
+                            caption_text = str(anchor["text"])
+                            break
+                    outputs.append({
+                        "bbox": (
+                            max(0, cseg0 - pad_x), max(0, ptop - pad_y),
+                            min(page_width, cseg1 + pad_x),
+                            min(page_height, tbot + pad_y),
+                        ),
+                        "image_type": "sub_figure",
+                        "caption_text": caption_text,
+                    })
 
-            # If we have OCR sub-labels at all, require each emitted sub-figure
-            # to have one. Otherwise (instrument grids etc.) fall through.
-            if inside_labels and not has_label:
-                continue
-
-            pad_y = int(page_height * 0.004)
-            pad_x = int(page_width * 0.004)
-            sub_bbox = (
-                max(0, min(rx0, region_label_left) - pad_x),
-                max(0, ry0 - pad_y),
-                min(page_width, max(rx1, region_label_right) + pad_x),
-                min(page_height, region_label_bottom + pad_y),
-            )
-            outputs.append({
-                "bbox": sub_bbox,
-                "image_type": "sub_figure",
-                "caption_text": matched_text,
-            })
-
+        if len(outputs) < 2:
+            return []
         return outputs
+
+    @staticmethod
+    def _cluster_sorted_values(values: List[float], tol: float) -> List[float]:
+        """Cluster ascending values whose neighbour-gap ≤ tol; return centroids."""
+        clusters: List[float] = []
+        current: List[float] = []
+        for value in values:
+            if current and (value - current[-1]) > tol:
+                clusters.append(sum(current) / len(current))
+                current = []
+            current.append(value)
+        if current:
+            clusters.append(sum(current) / len(current))
+        return clusters
+
+    def _collect_subfig_anchors(
+        self,
+        band: Tuple[int, int, int, int],
+        region_bbox: Tuple[int, int, int, int],
+        sub_labels: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> Tuple[List[Dict[str, float]], bool]:
+        """Caption anchors below each cell, plus a flag for which kind.
+
+        Returns ``(anchors, is_label_mode)``. Each anchor =
+        ``{"cx", "x0", "x1", "y0", "y1", "text"}``. Letter labels win when
+        present (the reliable per-cell markers, ``is_label_mode=True``); only
+        when a region carries NONE does the CD title path collect short centred
+        captions ("Con cá heo", "Thước cuộn") so unlabelled photo grids and
+        tool rows still split (``is_label_mode=False``).
+        """
+        ux0, uy0, ux1, uy1 = band
+        rx0, ry0, rx1, ry1 = region_bbox
+        label_margin = int(page_height * 0.05)
+        anchors: List[Dict[str, float]] = []
+        for label in sub_labels:
+            lx0, ly0, lx1, ly1 = (int(v) for v in label["bbox"])  # type: ignore[misc]
+            if lx0 >= rx0 - 5 and lx1 <= rx1 + 5 \
+                    and ly0 >= ry0 - 5 and ly0 <= ry1 + label_margin:
+                anchors.append({
+                    "cx": (lx0 + lx1) / 2.0,
+                    "x0": float(lx0), "x1": float(lx1),
+                    "y0": float(ly0), "y1": float(ly1),
+                    "text": str(label["text"])})  # type: ignore[dict-item]
+        if anchors:
+            return anchors, True
+        if not self._SPLIT_SUBFIGURES_BY_TITLE:
+            return [], False
+
+        x_tol = int(page_width * 0.01)
+        below_limit = uy1 + int(page_height * 0.04)
+        max_title_width = int(page_width * 0.22)
+        for line in text_lines:
+            lx0, ly0, lx1, ly1 = (int(v) for v in line["bbox"])  # type: ignore[misc]
+            cx = (lx0 + lx1) / 2.0
+            if cx < ux0 - x_tol or cx > ux1 + x_tol:
+                continue
+            if ly0 < uy0 or ly0 > below_limit:
+                continue
+            if (lx1 - lx0) > max_title_width:
+                continue
+            text = str(line["text"]).strip()
+            if (FIG_CAPTION_STRICT_REGEX.match(text)
+                    or TABLE_CAPTION_STRICT_REGEX.match(text)
+                    or SUB_FIGURE_LABEL_REGEX.match(text)
+                    or self._match_info_box_title(text)
+                    or self._is_question_prompt_text(text)
+                    or TOOL_GROUP_LABEL_REGEX.match(text)):
+                continue
+            # Drop OCR junk (stray glyphs like 'La', '"') — a real caption has
+            # at least a few letters.
+            if len(re.sub(r"[^a-z]", "", self._normalize_text(text))) < 3:
+                continue
+            anchors.append({
+                "cx": cx, "x0": float(lx0), "x1": float(lx1),
+                "y0": float(ly0), "y1": float(ly1),
+                "text": text})  # type: ignore[dict-item]
+        return anchors, False
+
+    def _detect_columns_by_projection(
+        self,
+        pil_img: Image.Image,
+        band: Tuple[int, int, int, int],
+        page_width: int,
+        page_height: int,
+    ) -> List[Tuple[int, int]]:
+        """Split a photo band into column x-ranges at vertical white gutters.
+
+        A real inter-photo gutter is a near-white vertical strip spanning the
+        band height. Thin white columns INSIDE a photo are bridged so a single
+        picture is never sliced.
+        """
+        bx0, by0, bx1, by1 = (int(band[0]), int(band[1]),
+                              int(band[2]), int(band[3]))
+        if by1 - by0 < 12 or bx1 - bx0 < int(page_width * 0.06):
+            return []
+        crop = np.array(
+            pil_img.crop((bx0, by0, bx1, by1)).convert("L")).astype(np.float32)
+        if crop.size == 0:
+            return []
+        # Per-column variance down the band: a gutter is a vertically-uniform
+        # strip (white page OR a flat coloured row background — page 8 cells sit
+        # on blue/green panels), so its std is low; a photo column varies a lot.
+        col_std = crop.std(axis=0)
+        is_content = col_std >= 14.0
+        # Bridge thin gutters (white runs narrower than min_gutter) so an
+        # internal white stripe inside a photo doesn't split it.
+        min_gutter = max(6, int(page_width * 0.012))
+        width = len(is_content)
+        index = 0
+        while index < width:
+            if is_content[index]:
+                index += 1
+                continue
+            run_start = index
+            while index < width and not is_content[index]:
+                index += 1
+            if (index - run_start) < min_gutter:
+                is_content[run_start:index] = True
+        # Collect content runs wide enough to be a photo column.
+        min_col_w = int(page_width * 0.05)
+        columns: List[Tuple[int, int]] = []
+        index = 0
+        while index < width:
+            if not is_content[index]:
+                index += 1
+                continue
+            run_start = index
+            while index < width and is_content[index]:
+                index += 1
+            if (index - run_start) >= min_col_w:
+                columns.append((bx0 + run_start, bx0 + index))
+        return columns
 
     def detect_regions_anchor_first(
         self,
@@ -2204,21 +2539,79 @@ class ImageProcessor:
             page_width, page_height,
         )
 
-        # 5. Sub-figure crops inside composites.
-        sub_outputs: List[Dict[str, object]] = []
-        for fig in figure_outputs:
-            if fig["image_type"] != "composite_figure":
-                continue
-            sub_outputs.extend(self._split_composite_sub_figures(
-                fig["bbox"], fig.get("assigned_regions", []),
-                anchors["sub_labels"], page_width, page_height,
-            ))
-
         # Clean up internal fields before returning.
         for fig in figure_outputs:
             fig.pop("assigned_regions", None)
 
-        regions = figure_outputs + info_outputs + tool_outputs + sub_outputs
+        regions = figure_outputs + info_outputs + tool_outputs
+
+        # ── Recover figures the caption-first builder missed ──────────────
+        # (a) Caption anchor present but no visual region was assigned to it
+        #     (B&W line drawings OWL-ViT skipped, side-by-side singles, or a
+        #     caption whose cells were stolen by an over-grown neighbour).
+        #     Build a region from the visual/whitespace band directly above it.
+        covered_caps = {
+            tuple(f["caption_bbox"]) for f in figure_outputs  # type: ignore[arg-type]
+            if f.get("caption_bbox")
+        }
+        uncovered_caps = [
+            c for c in anchors["figure_captions"]
+            if tuple(c["bbox"]) not in covered_caps  # type: ignore[arg-type]
+        ]
+        if uncovered_caps:
+            extra = self._build_uncovered_caption_regions(
+                uncovered_caps, visual_regions, regions, text_lines,
+                list(table_zones) + list(info_zones),
+                page_width, page_height,
+            )
+            regions = regions + extra
+
+        # ── Drop text-only info/activity panels (publisher opt-in) ────────
+        #    A real info box has a coloured background or an embedded picture;
+        #    a bare section header on white is body text, not an image. Done
+        #    BEFORE photo recovery so a dropped text box doesn't shadow a real
+        #    picture sitting inside it (CTST page 174).
+        if self._INFO_REQUIRE_VISUAL:
+            regions = [r for r in regions
+                       if not self._is_text_only_panel(r, pil_img)]
+
+        # (b) Picture detected but its caption anchor was missed by OCR
+        #     (e.g. CTST '▲ Hình' mangled to 'Aình403'): re-OCR the strip
+        #     directly below the picture. Publisher opt-in.
+        if self._RECOVER_CAPTIONS_BELOW_PHOTOS:
+            emitted = [tuple(r["bbox"]) for r in regions]  # type: ignore[arg-type]
+            recovered = self._recover_captions_below_photos(
+                pil_img, visual_regions, emitted, page_width, page_height,
+            )
+            regions = regions + recovered
+
+        # ── Final overlap suppression (fixes duplicate / "đè mất" crops) ──
+        regions = self._suppress_overlapping_regions(
+            regions, page_width, page_height)
+
+        # ── Split multi-cell figures into per-cell sub-figures (a/b/c/d) ──
+        #    Runs AFTER recovery so recovered composites (KNTT caption-above
+        #    mushroom rows, CD a/b line drawings) split too. Parent is kept and
+        #    relabelled composite_figure; sub-figures are added alongside it.
+        if self._SPLIT_SUBFIGURES:
+            sub_outputs: List[Dict[str, object]] = []
+            for region in regions:
+                rtype = region.get("image_type")
+                if rtype not in (
+                        "single_figure", "composite_figure", "tool_group"):
+                    continue
+                subs = self._split_region_sub_figures(
+                    tuple(region["bbox"]), visual_regions,  # type: ignore[arg-type]
+                    anchors["sub_labels"], text_lines, pil_img,
+                    page_width, page_height,
+                )
+                if len(subs) >= 2:
+                    # A figure that splits is a composite; a tool group keeps
+                    # its type (the per-tool crops are added alongside it).
+                    if rtype != "tool_group":
+                        region["image_type"] = "composite_figure"
+                    sub_outputs.extend(subs)
+            regions = regions + sub_outputs
 
         return {
             "regions": regions,
@@ -2229,6 +2622,270 @@ class ImageProcessor:
             "framed_regions": framed_regions,
             "dashed_regions": dashed_regions,
         }
+
+    # ------------------------------------------------------------------
+    # Recovery / cleanup helpers (shared; tuned via the class attributes)
+    # ------------------------------------------------------------------
+
+    def _match_recovered_caption(self, text: str) -> str:
+        """Return cleaned 'Hình X.Y …' if a figure marker appears in `text`.
+
+        Used on re-OCR'd caption strips, so it SEARCHES anywhere in the line
+        (the strip may carry a leading marker such as the CTST '▲' OCR'd as
+        'A'). Subclasses with different caption vocabulary may override.
+        """
+        match = re.search(
+            r"H[iì]nh\s+\d+(?:\.\d+)?[a-h]?", text, flags=re.IGNORECASE)
+        if not match:
+            return ""
+        tail = text[match.start():].strip()
+        if TABLE_CAPTION_STRICT_REGEX.match(tail):
+            return ""
+        return tail
+
+    def _reocr_caption_below(
+        self,
+        pil_img: Image.Image,
+        picture_bbox: Tuple[int, int, int, int],
+        page_width: int,
+        page_height: int,
+    ) -> Optional[Tuple[str, Tuple[int, int, int, int]]]:
+        """Re-OCR (upscaled) the strip directly below a picture.
+
+        Returns (clean_caption_text, strip_bbox) when the strip reads as a
+        figure caption, else None. Robust to mangled page-level OCR because it
+        crops tight and upscales 3× before thresholding.
+        """
+        try:
+            import pytesseract
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+        except Exception:
+            return None
+
+        px0, py0, px1, py1 = picture_bbox
+        pad_x = int((px1 - px0) * 0.06)
+        sx0 = max(0, px0 - pad_x)
+        sx1 = min(page_width, px1 + pad_x)
+        sy0 = max(0, py1 - int(page_height * 0.004))
+        sy1 = min(page_height, py1 + int(page_height * 0.065))
+        if sy1 - sy0 < 12 or sx1 - sx0 < 30:
+            return None
+
+        strip = np.array(pil_img.convert("RGB"))[sy0:sy1, sx0:sx1]
+        if strip.size == 0:
+            return None
+        gray = cv2.cvtColor(strip, cv2.COLOR_RGB2GRAY)
+        up = cv2.resize(gray, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+        _, bw = cv2.threshold(up, 150, 255, cv2.THRESH_BINARY)
+        for psm in ("7", "6"):
+            try:
+                text = pytesseract.image_to_string(
+                    bw, lang="vie", config=f"--psm {psm}")
+            except Exception:
+                continue
+            caption = self._match_recovered_caption(" ".join(text.split()))
+            if caption:
+                return caption, (sx0, sy0, sx1, sy1)
+        return None
+
+    def _recover_captions_below_photos(
+        self,
+        pil_img: Image.Image,
+        visual_regions: List[Tuple[int, int, int, int]],
+        emitted: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Emit a figure for each real picture whose caption OCR was missed.
+
+        Only fires on pictures NOT already inside an emitted region, that look
+        like real photos (visual score), and only when the re-OCR'd strip below
+        actually reads 'Hình X.Y'. This is what rescues CTST pages whose
+        '▲ Hình' caption was mangled by page-level OCR.
+        """
+        outputs: List[Dict[str, object]] = []
+        for raw in visual_regions:
+            vr = tuple(int(v) for v in raw)
+            if any(self._coverage_ratio(vr, e) > 0.5 for e in emitted):
+                continue
+            width = vr[2] - vr[0]
+            height = vr[3] - vr[1]
+            if width < page_width * 0.10 or height < page_height * 0.06:
+                continue
+            if self._visual_content_score(pil_img.crop(vr)) < self._RECOVER_MIN_VIS:
+                continue
+            result = self._reocr_caption_below(
+                pil_img, vr, page_width, page_height)
+            if not result:
+                continue
+            caption_text, (cx0, cy0, cx1, cy1) = result
+            pad_x = int(page_width * 0.006)
+            pad_y = int(page_height * 0.005)
+            bbox = (
+                max(0, min(vr[0], cx0) - pad_x),
+                max(0, vr[1] - pad_y),
+                min(page_width, max(vr[2], cx1) + pad_x),
+                min(page_height, cy1 + pad_y),
+            )
+            outputs.append({
+                "bbox": bbox,
+                "image_type": "single_figure",
+                "caption_text": caption_text,
+            })
+            emitted.append(bbox)
+        return outputs
+
+    def _build_uncovered_caption_regions(
+        self,
+        uncovered_caps: List[Dict[str, object]],
+        visual_regions: List[Tuple[int, int, int, int]],
+        existing_regions: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        exclusion_zones: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Build a figure for each 'Hình X.Y' caption that got no region.
+
+        Prefers the visual cells sitting directly above the caption in its
+        column (the picture). Honours 'wider context' — captures the picture
+        fully + the caption. Falls back to a bounded band above the caption
+        only when no visual was detected (faint line drawing).
+        """
+        outputs: List[Dict[str, object]] = []
+        existing = [tuple(r["bbox"]) for r in existing_regions]  # type: ignore[arg-type]
+
+        for cap in sorted(uncovered_caps, key=lambda c: c["bbox"][1]):  # type: ignore[index]
+            cx0, cy0, cx1, cy1 = cap["bbox"]  # type: ignore[misc]
+            cap_cx = (cx0 + cx1) / 2.0
+
+            # Ceiling: bottom of the nearest region/caption above in this column.
+            ceiling = 0
+            for ex in existing:
+                if ex[3] <= cy0 - 2 and min(ex[2], cx1) - max(ex[0], cx0) > 0:
+                    ceiling = max(ceiling, ex[3])
+            for other in uncovered_caps:
+                ob = other["bbox"]  # type: ignore[index]
+                if ob is cap["bbox"]:
+                    continue
+                if ob[3] < cy0 - 2 and min(ob[2], cx1) - max(ob[0], cx0) > 0:
+                    ceiling = max(ceiling, ob[3])
+            top_limit = max(ceiling, cy0 - int(page_height * 0.26))
+
+            # Picture sits ABOVE the caption (the normal SGK convention). Some
+            # publishers (KNTT pill labels) put the caption ABOVE the figure
+            # row — `_FIG_CAPTION_ABOVE_OK` enables that direction too.
+            below_reach = int(page_height * 0.32)
+            col_cells: List[Tuple[int, int, int, int]] = []
+            for raw in visual_regions:
+                vr = tuple(int(v) for v in raw)
+                vx0, vy0, vx1, vy1 = vr
+                above = (top_limit - 2) <= vy0 and vy1 <= cy0 + int(page_height * 0.04)
+                below = (self._FIG_CAPTION_ABOVE_OK
+                         and vy0 >= cy1 - int(page_height * 0.04)
+                         and vy1 <= cy1 + below_reach)
+                if not (above or below):
+                    continue
+                vcx = (vx0 + vx1) / 2.0
+                hov = min(vx1, cx1) - max(vx0, cx0)
+                if abs(vcx - cap_cx) > page_width * 0.30 and hov <= 0:
+                    continue
+                if any(self._coverage_ratio(vr, z) > 0.5 for z in exclusion_zones):
+                    continue
+                if any(self._coverage_ratio(vr, e) > 0.6 for e in existing):
+                    continue
+                col_cells.append(vr)
+
+            if col_cells:
+                x0 = min([cx0] + [c[0] for c in col_cells])
+                x1 = max([cx1] + [c[2] for c in col_cells])
+                y0 = min([int(cy0)] + [c[1] for c in col_cells])
+                y1 = max([int(cy1)] + [c[3] for c in col_cells])
+                bbox = (
+                    max(0, x0 - 4), max(0, y0 - 4),
+                    min(page_width, x1 + 4), min(page_height, y1 + 4),
+                )
+            else:
+                # No detected visual cell. This is either a faint line drawing
+                # OWL-ViT skipped (recover it) or a body-text *reference* to the
+                # figure ("Hình 9.5 là một mô hình …", recover NOTHING). They are
+                # told apart by the area above the caption: a figure area is
+                # almost text-free, a paragraph reference is not.
+                band_h = int(page_height * 0.16)
+                y0 = max(top_limit, int(cy0) - band_h)
+                cw = max(40, cx1 - cx0)
+                bbox = (
+                    max(0, int(cx0 - cw * 0.15)), max(0, y0 - 4),
+                    min(page_width, int(cx1 + cw * 0.15)),
+                    min(page_height, int(cy1) + 4),
+                )
+                if (bbox[3] - bbox[1]) < page_height * 0.05:
+                    continue
+                band_only = (bbox[0], bbox[1], bbox[2], int(cy0))
+                if self._text_line_coverage(band_only, text_lines) >= 0.18:
+                    continue
+
+            outputs.append({
+                "bbox": bbox,
+                "image_type": "single_figure",
+                "caption_text": cap.get("text", ""),
+                "caption_bbox": cap["bbox"],
+            })
+            existing.append(bbox)
+        return outputs
+
+    def _is_text_only_panel(
+        self,
+        region: Dict[str, object],
+        pil_img: Image.Image,
+    ) -> bool:
+        """True when an info/activity panel is bare text on white (not a real box)."""
+        if region.get("image_type") not in ("textbook_info_box", "activity_box"):
+            return False
+        crop = pil_img.crop(tuple(region["bbox"]))  # type: ignore[arg-type]
+        return self._visual_content_score(crop) < self._INFO_MIN_VIS
+
+    def _suppress_overlapping_regions(
+        self,
+        regions: List[Dict[str, object]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """Drop duplicate / heavily-overlapping emitted regions.
+
+        Preserves the legitimate composite→sub_figure hierarchy; only removes
+        same-tier near-duplicates and a region almost entirely contained by
+        another (keeps the larger, caption-bearing one).
+        """
+        if len(regions) <= 1:
+            return regions
+        order = sorted(
+            regions,
+            key=lambda r: self._bbox_area(tuple(r["bbox"])),  # type: ignore[arg-type]
+            reverse=True,
+        )
+        kept: List[Dict[str, object]] = []
+        for region in order:
+            rb = tuple(region["bbox"])  # type: ignore[arg-type]
+            rtype = region.get("image_type")
+            drop = False
+            for keeper in kept:
+                kb = tuple(keeper["bbox"])  # type: ignore[arg-type]
+                ktype = keeper.get("image_type")
+                # A sub_figure legitimately nests inside its composite parent.
+                if {rtype, ktype} == {"sub_figure", "composite_figure"}:
+                    continue
+                if self._iou(rb, kb) > 0.60:
+                    drop = True
+                    break
+                if (self._coverage_ratio(rb, kb) > 0.85
+                        or self._coverage_ratio(kb, rb) > 0.85):
+                    drop = True
+                    break
+            if not drop:
+                kept.append(region)
+        kept.sort(key=lambda r: tuple(r["bbox"])[1])  # type: ignore[arg-type]
+        return kept
 
     def _bbox_area(self, bbox: Tuple[int, int, int, int]) -> int:
         x0, y0, x1, y1 = bbox
@@ -3200,7 +3857,8 @@ def make_image_processor(
     variant = get_pdf_variant(pdf_filename)
     if variant == _VARIANT_CTST:
         return CtsstImageProcessor(status_tracker=status_tracker)
-    # KNTT shares the same layout conventions as CD for now.
+    if variant == _VARIANT_KNTT:
+        return KnttImageProcessor(status_tracker=status_tracker)
     return ImageProcessor(status_tracker=status_tracker)
 
 
@@ -3209,18 +3867,19 @@ def make_image_processor(
 # ---------------------------------------------------------------------------
 
 # CTST figures are captioned: "▲ Hình X.Y. description"
-# Tesseract OCR reads the filled-triangle ▲ as À (U+00C0), Á (U+00C1),
-# or drops it entirely, so we match all variants.
+# Tesseract reads the filled-triangle ▲ inconsistently: as À/Á/A, as a dot,
+# as a pipe/bracket, OR as TWO junk chars (e.g. ".A Hình 8.1"). Allow a short
+# leading run of those artefact characters before "Hình" so every form matches.
+_CTST_FIG_PREFIX = r"[ÀÁAa▲∆.,'`|()\s]{0,4}"
 _CTST_FIG_CAPTION_REGEX = re.compile(
-    r"^[ÀÁA▲∆.]\s*H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S"
-    r"|^H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
+    r"^" + _CTST_FIG_PREFIX + r"H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
     flags=re.IGNORECASE,
 )
 
 # Strip the leading triangle/OCR-artefact so the rest of the pipeline
 # receives a clean "Hình X.Y. ..." text for metadata.
 _CTST_TRIANGLE_PREFIX = re.compile(
-    r"^[ÀÁA▲∆.]\s*",
+    r"^" + _CTST_FIG_PREFIX + r"(?=H[iì]nh)",
     flags=re.IGNORECASE,
 )
 
@@ -3232,7 +3891,10 @@ _CTST_INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = [
     ("van dung",     "activity_box"),
     # Discovery / exploration boxes.
     ("kham pha",     "activity_box"),
-    ("tim hieu",     "activity_box"),
+    # NOTE: "tim hieu" intentionally NOT a key — in CTST "Tìm hiểu về …" is a
+    # section header on white (body text), not a coloured info box. It used to
+    # spawn text-only activity boxes (page 174). Real CTST boxes are coloured
+    # and matched by the keys above.
     # Summary / overview.
     ("tong ket",     "activity_box"),
     ("on tap",       "activity_box"),
@@ -3257,6 +3919,19 @@ class CtsstImageProcessor(ImageProcessor):
 
     # Override: accept CTST caption format.
     _INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = _CTST_INFO_BOX_TITLE_KEYS
+
+    # ── CTST-specific tuning (kept separate from CD/KNTT) ──
+    # CTST info/activity boxes are always coloured panels; a bare title on
+    # white (section header / experiment prose) must NOT become an image.
+    _INFO_REQUIRE_VISUAL: bool = True
+    _INFO_MIN_VIS: float = 0.045
+    # CTST captions are '▲ Hình X.Y' and the triangle frequently corrupts the
+    # page-level OCR of the whole line; recovering the caption by re-OCRing the
+    # strip below each detected photo is essential here.
+    _RECOVER_CAPTIONS_BELOW_PHOTOS: bool = True
+    # Title-below sub-figure splitting is CD-tuned for now; keep CTST on the
+    # letter-label path only until it is smoke-tested separately.
+    _SPLIT_SUBFIGURES_BY_TITLE: bool = False
 
     def _classify_text_anchors(
         self,
@@ -3290,6 +3965,277 @@ class CtsstImageProcessor(ImageProcessor):
                         table_caps.append(se)
                     else:
                         figure_caps.append(se)
+                continue
+
+            if TABLE_CAPTION_STRICT_REGEX.match(text):
+                table_caps.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+            info_label = self._match_info_box_title(text)
+            if info_label:
+                info_titles.append({
+                    "index": index, "text": text,
+                    "bbox": bbox, "label": info_label})
+                continue
+
+            if SUB_FIGURE_LABEL_REGEX.match(text):
+                sub_labels.append({
+                    "index": index, "text": text, "bbox": bbox})
+
+            if self._is_question_prompt_text(text):
+                question_prompts.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+            if TOOL_GROUP_LABEL_REGEX.match(text):
+                tool_labels.append({
+                    "index": index, "text": text, "bbox": bbox})
+                continue
+
+        return {
+            "figure_captions":   figure_caps,
+            "table_captions":    table_caps,
+            "info_titles":       info_titles,
+            "sub_labels":        sub_labels,
+            "question_prompts":  question_prompts,
+            "tool_group_labels": tool_labels,
+        }
+
+
+# ---------------------------------------------------------------------------
+# KNTT — Kết Nối Tri Thức publisher
+# ---------------------------------------------------------------------------
+
+# KNTT figure captions are rendered inside a coloured pill / badge.
+# Tesseract OCR may:
+#   - miss the pill entirely → "Hình" absent from OCR text
+#   - produce garbage chars before "Hình" (pipe, bracket, digit, etc.)
+#   - wrap in parentheses: "(Hình 42.1a)"
+# The permissive regex below matches "Hình X.Y" *anywhere* in the line by
+# scanning past an arbitrary prefix, then validates the number pattern.
+_KNTT_FIG_CAPTION_REGEX = re.compile(
+    r".*?(?:H[iì]nh\s+\d+(?:\.\d+)?[a-h]?)",
+    flags=re.IGNORECASE,
+)
+
+# Strip everything before (and including) the first "Hình" so the pipeline
+# receives a clean "Hình X.Y. ..." text for metadata.  Also strips a
+# leading open-parenthesis that Tesseract may add: "(Hình 42.1a)".
+_KNTT_FIG_CLEAN_PREFIX = re.compile(
+    r"^[^(]*?(?:\(\s*)?(?=H[iì]nh)",
+    flags=re.IGNORECASE,
+)
+
+# Extract "Hình X.Y" plus clean description text.  After the figure number
+# (and optional sub-figure letter), optionally skip a closing parenthesis
+# and capture the description (no parens allowed in description).
+# "(Hình 42.1a) thì lò xo dãn ra (" → "Hình 42.1a thì lò xo dãn ra"
+# "(Hình 42.1b)." → "Hình 42.1b"
+_KNTT_FIG_EXTRACT = re.compile(
+    r"(H[iì]nh\s+\d+(?:\.\d+)?[a-h]?)[)]?"
+    r"(?:\s+([^\s\(\)]\S*(?:\s+[^\s\(\)]\S*)*))?",
+    flags=re.IGNORECASE,
+)
+
+
+class KnttImageProcessor(ImageProcessor):
+    """Image ETL for SGK KNTT (Kết Nối Tri Thức) publisher.
+
+    The key difference from CD is the figure caption format.  KNTT renders
+    "Hình X.Y" inside a coloured pill / badge with white text on an orange
+    (or similar) background.  Tesseract OCR either misses the pill entirely,
+    adds garbage prefix characters, or wraps the text in parentheses.
+
+    This subclass:
+    1. Pre-processes the page image to make pill text readable — detects
+       coloured regions via HSV, thresholds white-on-colour text to
+       black-on-white, and pastes the enhanced crops back onto the page.
+    2. Uses a permissive regex that finds "Hình X.Y" anywhere in the OCR
+       line and strips any prefix to produce clean caption text.
+    """
+
+    # ── KNTT-specific tuning (kept separate from CD/CTST) ──
+    # KNTT pill captions frequently sit ABOVE the row of sub-figures they label
+    # (e.g. page 109 "Hình 32.1" above the a/b/c/d mushroom row), so caption
+    # recovery must also look below the caption.
+    _FIG_CAPTION_ABOVE_OK: bool = True
+    # Title-below sub-figure splitting is CD-tuned for now; keep KNTT on the
+    # letter-label path only until it is smoke-tested separately.
+    _SPLIT_SUBFIGURES_BY_TITLE: bool = False
+
+    def _detect_pill_figure_captions(
+        self,
+        pil_img: Image.Image,
+    ) -> List[Dict[str, object]]:
+        """Detect figure captions hidden inside coloured pills / badges.
+
+        KNTT renders "Hình X.Y" as white text on an orange pill.  Standard
+        page-level OCR misses these.  This method:
+        1. Finds orange pill regions via HSV colour detection.
+        2. Crops each pill, thresholds to isolate white text, and OCRs it.
+        3. Returns anchor entries for any line matching "Hình \\d+".
+
+        Returns entries shaped like ``{"index": -1, "text", "bbox"}`` where
+        bbox is the pill's bounding box on the full page.
+        """
+        try:
+            import cv2
+            import pytesseract
+            pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+        except Exception:
+            return []
+
+        rgb = np.array(pil_img.convert("RGB"))
+        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        page_h, page_w = rgb.shape[:2]
+
+        # KNTT uses coloured pills in various hues across books.
+        # Detect orange, green, blue, and purple pill backgrounds.
+        orange = cv2.inRange(hsv, (5, 50, 50), (25, 255, 255))
+        green = cv2.inRange(hsv, (35, 50, 50), (85, 255, 255))
+        blue = cv2.inRange(hsv, (90, 50, 50), (130, 255, 255))
+        purple = cv2.inRange(hsv, (130, 50, 50), (165, 255, 255))
+        pill_mask = cv2.bitwise_or(
+            cv2.bitwise_or(orange, green),
+            cv2.bitwise_or(blue, purple),
+        )
+
+        # Connect glyphs into a solid blob.
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 7))
+        closed = cv2.morphologyEx(pill_mask, cv2.MORPH_CLOSE, kernel,
+                                  iterations=2)
+
+        contours, _ = cv2.findContours(
+            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        captions: List[Dict[str, object]] = []
+        for contour in contours:
+            x, y, w, h = cv2.boundingRect(contour)
+            # Pill-like geometry: wider than tall, reasonable size.
+            if w < int(page_w * 0.03) or w > int(page_w * 0.4):
+                continue
+            if h < 12 or h > int(page_h * 0.04):
+                continue
+            if w < h * 1.2:
+                continue
+
+            # Extract and preprocess the pill crop for OCR.
+            pad = 4
+            cx0 = max(0, x - pad)
+            cy0 = max(0, y - pad)
+            cx1 = min(page_w, x + w + pad)
+            cy1 = min(page_h, y + h + pad)
+            crop = rgb[cy0:cy1, cx0:cx1]
+
+            # Threshold to isolate white text on black background.
+            gray = cv2.cvtColor(crop, cv2.COLOR_RGB2GRAY)
+            _, bw = cv2.threshold(gray, 190, 255, cv2.THRESH_BINARY)
+
+            crop_img = Image.fromarray(bw)
+            try:
+                text = pytesseract.image_to_string(
+                    crop_img, config="--psm 7 -l vie").strip()
+            except Exception:
+                continue
+
+            if not text:
+                continue
+
+            # Match "Hình X.Y" pattern in the OCR result.
+            em = _KNTT_FIG_EXTRACT.search(text)
+            if em:
+                text = em.group(1)
+                if em.group(2):
+                    text = text + " " + em.group(2).strip()
+            else:
+                m2 = re.search(r"H[iì]nh\s+\d+", text, re.IGNORECASE)
+                if m2:
+                    text = text[m2.start():]
+
+            if FIG_CAPTION_STRICT_REGEX.match(text) or \
+                    re.match(r"^\s*H[iì]nh\s+\d+", text, re.IGNORECASE):
+                captions.append({
+                    "index": -1,
+                    "text": text.strip(),
+                    "bbox": (cx0, cy0, cx1, cy1),
+                })
+
+        return captions
+
+    def detect_regions_anchor_first(
+        self,
+        pil_img: Image.Image,
+        img_array: np.ndarray,
+        text_lines: Optional[List[Dict[str, object]]] = None,
+    ) -> Dict[str, object]:
+        """Override to inject pill captions into text_lines before OCR-based detection.
+
+        KNTT renders "Hình X.Y" inside coloured pills that standard Tesseract
+        misses.  This method detects those pills, OCRs them individually, and
+        injects the results as synthetic text lines so the parent's anchor
+        classification and region building pick them up naturally.
+        """
+        if text_lines is None:
+            text_lines = self._collect_page_text_lines(pil_img)
+
+        # Detect pill-based figure captions missed by standard OCR.
+        pill_captions = self._detect_pill_figure_captions(pil_img)
+
+        if pill_captions:
+            # Convert pill detections to synthetic text_lines entries.
+            # Use index=-1 so they sort to the top and are easy to identify.
+            for pc in pill_captions:
+                text_lines.append({
+                    "text": pc["text"],
+                    "bbox": pc["bbox"],
+                    "conf": 99,
+                    "line_num": -1,
+                    "block_num": -1,
+                })
+
+        return super().detect_regions_anchor_first(
+            pil_img, img_array, text_lines=text_lines)
+
+    def _classify_text_anchors(
+        self,
+        text_lines: List[Dict[str, object]],
+    ) -> Dict[str, List[Dict[str, object]]]:
+        """Same as parent but uses permissive regex for KNTT pill captions.
+
+        Even after preprocessing, some pill text may arrive with prefix
+        artefacts (parentheses, digits).  The permissive regex strips
+        everything before "Hình" to produce clean caption text.
+        """
+        figure_caps: List[Dict[str, object]] = []
+        table_caps: List[Dict[str, object]] = []
+        info_titles: List[Dict[str, object]] = []
+        sub_labels: List[Dict[str, object]] = []
+        question_prompts: List[Dict[str, object]] = []
+        tool_labels: List[Dict[str, object]] = []
+
+        for index, line in enumerate(text_lines):
+            text = str(line["text"]).strip()
+            bbox = tuple(int(v) for v in line["bbox"])  # type: ignore[misc]
+
+            # KNTT figure caption — permissive match with prefix stripping.
+            if _KNTT_FIG_CAPTION_REGEX.match(text):
+                # Use finditer to extract all "Hình X.Y" markers in the line.
+                # Each marker becomes its own caption entry.
+                for em in _KNTT_FIG_EXTRACT.finditer(text):
+                    clean = em.group(1)
+                    if em.group(2):
+                        clean = clean + " " + em.group(2).strip()
+                    entry: Dict[str, object] = {
+                        "index": index,
+                        "text": clean,
+                        "bbox": bbox,
+                    }
+                    # Table caption check on clean text.
+                    if TABLE_CAPTION_STRICT_REGEX.match(clean):
+                        table_caps.append(entry)
+                    else:
+                        figure_caps.append(entry)
                 continue
 
             if TABLE_CAPTION_STRICT_REGEX.match(text):

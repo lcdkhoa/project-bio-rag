@@ -11,7 +11,124 @@ metadata:
   applies_to: scanned-vietnamese-sgk
 ---
 
-# ETL — Textbook image extraction (v8 column-aware anchor-first)
+# ETL — Textbook image extraction (v10 per-variant, column-aware anchor-first)
+
+## v10 changes (CD figure-bound + caption-row/pixel-column sub-figures)
+
+v10 fixes the CD failures found on pages 6 / 8 / 13 / 131 (and the false-split
+risks on 40 / 100 / 30). All target the base `ImageProcessor`; the shared
+pieces (1, 2) help every variant, the title-anchored half of the splitter (3)
+is **CD-only for now** (`_SPLIT_SUBFIGURES_BY_TITLE` = False on CTST/KNTT until
+each is smoke-tested).
+
+**1. "Quan sát …" prompts + multi-line prompt ceilings.** `QUESTION_PROMPT_PATTERNS`
+now matches a bare `^Quan sát …` lead-in (no "Hãy"), and
+`_prompt_blocker_bboxes` expands each prompt anchor DOWN through its wrapped
+continuation lines. A figure's upward ceiling then sits below the WHOLE prompt
+paragraph, so top-growth can't absorb a prompt's tail line (page 131
+"… của các động vật trong hình." was being swallowed into the crop).
+
+**2. Composite top includes gap-connected upper cells** (`_build_figure_composites`).
+A 2-row grid whose bottom `Hình X.Y` caption is too far for direct cell
+assignment (page 6 "Hình 1.1") used to lose its entire upper photo row. The
+top is now pulled up to the topmost gap-connected visual cell (`visual_top`) —
+but ONLY when the bridged band is image-like (`_text_line_coverage < 0.22`).
+That guard is what separates page 6 (photo rows between cells) from page 100
+(a "em có thể" objectives block / chapter banner above a single figure, which
+must NOT be absorbed — without the guard the composite ballooned to y=0).
+
+**3. Sub-figure splitting = caption-rows + pixel-columns**
+(`_split_region_sub_figures`, rewritten). The old per-cell splitter emitted one
+crop per OWL cell — but OWL-ViT routinely merges a grid into one box per
+coloured row (page 8: 5 fields → 2 row boxes) or one box for the whole grid
+(page 131: 2×2 animals → 1 box), so it produced "dính chung" row-crops. The new
+splitter derives structure independently of the detector:
+  - **Rows** come from the caption lines below each photo —
+    `_collect_subfig_anchors` returns letter labels `a)/b)/…` when present
+    (`is_label_mode=True`, all variants), else (CD only) the short centred
+    titles below each cell ("Con cá heo", "Thước cuộn"). Anchors cluster into
+    rows by y.
+  - **Columns** come from `_detect_columns_by_projection`: per-column *variance*
+    down each row's photo band — a gutter is a vertically-uniform strip (white
+    page OR a flat coloured row background), a photo column varies a lot. Thin
+    internal white stripes are bridged so one picture is never sliced.
+  - **Dispatch:** a cell that fits inside ONE row's photo band is "granular"
+    (the detector separated the photos — page 6, 109) → CELL MODE, one crop per
+    cell. When the only cells span multiple rows / a whole coloured row
+    (page 8, 131) there are none → PROJECTION MODE.
+  Three guards keep it precise: every caption row needs a real photo band above
+  it (`≥5% page H` — rejects internal apparatus labels, page 40 "Dung dịch/Nến");
+  and TITLE-mode additionally requires ≥2 title columns AND ≥1 row with ≥2
+  titles (rejects a vertical legend beside one chart — page 40 "Hình 7.3" pie;
+  and the thermometer internal scale labels, page 30). Tool groups are split
+  too (page 13: per-tool crops alongside the kept `tool_group`).
+
+## v9 changes (per-variant separation + recovery + clean crops)
+
+v9 keeps the v8 anchor-first, column-aware core but makes the per-publisher
+logic **separate** (CD / CTST / KNTT) and fixes the cross-variant failures that
+made crops "dính text" (swallow body paragraphs), miss figures, and emit
+text-only boxes. The base `ImageProcessor` (= Cánh Diều) owns all shared
+geometry/OCR; each variant overrides only the seams that genuinely differ.
+
+**1. Per-variant tuning attributes (the separation mechanism).** Instead of
+hard-coded constants buried in the region builders, the knobs are class
+attributes on `ImageProcessor`; subclasses override them. Keep new
+publisher-specific behaviour here, not in forked copies of the builders.
+
+| Attribute | Base (CD) | CTST | KNTT | Meaning |
+|---|---|---|---|---|
+| `_FIG_ASSIGN_MAX_VGAP` | 0.20 | 0.20 | 0.20 | how far (frac page H) above a caption a cell may sit and still be claimed — was 0.34, the main "dính text" cause |
+| `_FIG_TOP_GROW_MAX_GAP` | 0.045 | ″ | ″ | gap budget when growing a figure top through its own narrow labels |
+| `_FIG_TOP_GROW_MAX_WIDTH` | 0.34 | ″ | ″ | max line width absorbed as a figure label (never a body paragraph) |
+| `_INFO_REQUIRE_VISUAL` | False | **True** | False | drop info/activity panels that are bare text on white (no colour/picture) |
+| `_INFO_MIN_VIS` | 0.045 | 0.045 | 0.045 | visual-score threshold for "is a real coloured box" |
+| `_RECOVER_CAPTIONS_BELOW_PHOTOS` | True | True | True | re-OCR the strip below an uncaptioned picture to recover its `Hình X.Y` |
+| `_RECOVER_MIN_VIS` | 0.06 | ″ | ″ | min visual score for a picture to be worth recovering |
+| `_FIG_CAPTION_ABOVE_OK` | False | False | **True** | caption may sit ABOVE its figure (KNTT pill labels) |
+| `_SPLIT_SUBFIGURES` | True | True | True | emit one `sub_figure` per cell when ≥2 `a)/b)` labels confirm a composite |
+| `_SPLIT_SUBFIGURES_BY_TITLE` | **True** | False | False | (v10) split a titled photo grid with NO `a)/b)` labels by reconstructing the grid from the centred titles below each cell (CD page 131); off for CTST/KNTT until tuned |
+
+**2. Caption-anchored recovery (two passes, after the caption-first builder).**
+   - `_build_uncovered_caption_regions` — a `Hình X.Y` caption that got no
+     assigned cell builds a region from the real visual cells in its column
+     (above, or below when `_FIG_CAPTION_ABOVE_OK`). With no visual cell it
+     falls back to a bounded band ONLY if that band is near-text-free
+     (`text_line_coverage < 0.18`) — this distinguishes a faint line drawing
+     (recover) from a body-text *reference* "Hình 9.5 là một mô hình …" (skip).
+   - `_recover_captions_below_photos` — a detected picture with NO caption
+     anchor (CTST `▲ Hình` OCR-mangled to `Aình403`) is rescued by re-OCRing
+     the strip directly below it, upscaled 3× + thresholded
+     (`_reocr_caption_below` → `_match_recovered_caption`).
+
+**3. Text-only panel drop** (`_is_text_only_panel`, opt-in via
+   `_INFO_REQUIRE_VISUAL`). A real info box is a coloured panel or has an
+   embedded picture; a bare section header on white ("Tìm hiểu về …",
+   "Thí nghiệm 1:") is body text and is dropped. Done BEFORE photo recovery so
+   a dropped text box doesn't shadow a real picture sitting inside it (CTST
+   page 174). NOTE: CTST also drops the `tim hieu` info-box key entirely.
+
+**4. Column-clamped info panels.** `_build_info_panels` now clamps a
+   single-column box to its own side of the central gutter, so a right-column
+   "Em có biết" no longer grabs the left column's body text + figure cells
+   (which previously excluded them and made the figure disappear — CD page 56).
+
+**5. General sub-figure split** (`_split_region_sub_figures`) runs AFTER
+   recovery on any figure region, sourcing cells from `visual_regions` (not the
+   builder's `assigned_regions`), so recovered composites split too (KNTT
+   caption-above mushroom rows). ≥2 `a)/b)` labels confirm the composite; then
+   one crop per cell is emitted, label text attached when it pairs.
+
+**6. Overlap suppression** (`_suppress_overlapping_regions`) removes duplicate /
+   near-contained crops at the end (fixes CTST "đè mất hình"), while preserving
+   the legitimate composite→sub_figure nesting.
+
+Smoke status after v9 (probe set, seed 42): CD KHTN7 p9 (Hình 2/4), p56 (Hình
+9.3 + 9.4 recovered, Em-có-biết clamped), p60; CTST KHTN6 p174 (Hình 40.3
+recovered from mangled OCR), p58, p36; KNTT KHTN6 p23, p109 (caption-above
+composite split into 4 sub-figures), p152. Remaining limits: side-by-side
+single figures sharing one OWL cell can merge (CD p9 Hình 2+3); sub-figure
+splitting needs ≥2 OCR-readable `a)/b)` labels (KNTT p23 clock labels unread).
 
 ## v8 changes (column-awareness + robust info boxes)
 
@@ -105,43 +222,65 @@ title, except labelled dashed-frame tool groups (page-13 case).
 ## 2. File map
 
 ```
-src/etl/image_processor.py                 ← the detector (v8)
+src/etl/image_processor.py                 ← the detector (v9)
+  Per-variant tuning attributes (override on subclass — see v9 table)
+  ├─ _FIG_ASSIGN_MAX_VGAP / _FIG_TOP_GROW_*  figure-growth limits
+  ├─ _INFO_REQUIRE_VISUAL / _INFO_MIN_VIS    drop text-only panels (CTST)
+  ├─ _RECOVER_CAPTIONS_BELOW_PHOTOS          photo→caption re-OCR
+  ├─ _FIG_CAPTION_ABOVE_OK                    caption above figure (KNTT)
+  └─ _SPLIT_SUBFIGURES                        a/b/c/d splitting
   Anchors / regex
-  ├─ FIG_CAPTION_STRICT_REGEX               Hình X.Y anchor
+  ├─ FIG_CAPTION_STRICT_REGEX               Hình X.Y anchor (CD base)
+  ├─ _CTST_FIG_CAPTION_REGEX                 ▲ Hình X.Y (CtsstImageProcessor)
+  ├─ _KNTT_FIG_* + _detect_pill_figure_captions  pill caption (KnttImageProcessor)
   ├─ TABLE_CAPTION_STRICT_REGEX             Bảng X.Y reject
-  ├─ INFO_BOX_TITLE_REGEX / _INFO_BOX_TITLE_KEYS
+  ├─ _INFO_BOX_TITLE_KEYS                    per-variant info-box titles
   ├─ TOOL_GROUP_LABEL_REGEX                 dụng cụ … / một số …
   OCR + anchors
   ├─ _collect_page_text_lines               OCR, with 2-column GUTTER SPLIT
-  ├─ _classify_text_anchors                 lines → buckets
+  ├─ _classify_text_anchors                 lines → buckets (overridden per variant)
   ├─ _match_info_box_title                  strict, start-of-line
-  ├─ _detect_colored_info_headers           pink/blue header + re-OCR (v8)
+  ├─ _detect_colored_info_headers           pink/blue header + re-OCR
   Visual detection
   ├─ _detect_regions_with_owlvit            zero-shot regions
   ├─ _detect_framed_regions / _detect_dashed_frame_regions
-  ├─ _detect_object_blobs                   CC fallback for object photos (v8)
-  ├─ _filter_text_visual_regions            drop OWL text false-positives (v8)
-  Region builders (order matters: tables+info BEFORE figures)
+  ├─ _detect_object_blobs                   CC fallback for object photos
+  ├─ _filter_text_visual_regions            drop OWL text false-positives
+  Region builders (order: tables+info BEFORE figures)
   ├─ _build_table_zones                     exclusion zone (column-aware)
-  ├─ _build_info_panels                     panel (column-aware)
-  ├─ _assign_regions_to_captions            two-tier hov / centred (v8)
+  ├─ _build_info_panels                     panel (column-aware + gutter clamp v9)
+  ├─ _assign_regions_to_captions            two-tier hov / centred
   ├─ _build_figure_composites
-  │    ├─ _grow_figure_top                  narrow-label top-growth
+  │    ├─ _grow_figure_top                  narrow-label top-growth (knobbed v9)
   │    └─ _snap_figure_to_column            gutter clip + label widen
   ├─ _build_dashed_tool_groups
-  ├─ _split_composite_sub_figures
+  Post-processing (v9, inside detect_regions_anchor_first)
+  ├─ _build_uncovered_caption_regions       recover unassigned captions
+  ├─ _is_text_only_panel                    drop bare-text info boxes
+  ├─ _recover_captions_below_photos         re-OCR strip below uncaptioned photo
+  │    └─ _reocr_caption_below / _match_recovered_caption
+  ├─ _suppress_overlapping_regions          dedupe final crops
+  ├─ _split_region_sub_figures              per-cell sub-figures (general)
   └─ detect_regions_anchor_first            top-level entrypoint
-src/test_etl/test_image_extraction_full.py  ← single / batch / --sample-books QA
-src/config.py                               ← IMAGE_EXTRACTION_VERSION (v8)
+src/test/test_random_pages_etl.py          ← canonical QA: random pages → HTML report
+src/config.py                               ← IMAGE_EXTRACTION_VERSION
 ```
 
-### Multi-book QA sampling
+### QA sampling
 
 ```powershell
-# 5 random pages from EVERY pdf in datasources/, deterministic by --seed
-python -m src.test_etl.test_image_extraction_full --sample-books 5 --seed 42
-start scripts/_out_test_etl_full/_sample/_index.html
+# all pdfs in datasources/, 5 random pages each, deterministic by --seed
+python -m src.test.test_random_pages_etl --seed 42
+start src/test/_out/index.html
+
+# fast dev loop while tuning: one book, a few pages
+python -m src.test.test_random_pages_etl --pdf "datasources/SGK KHTN 7 CD.pdf" --num-pages 3
 ```
+
+OWL-ViT runs on CPU here (~2-8 s/page after model load, and the model reloads
+per book), so iterate on a single `--pdf` first, then confirm with the full
+random sample. Read the per-page Regions overlay + crops in `index.html`; a
+crop that is mostly text (over-grown / "dính text") is the smell to watch for.
 
 ## 3. Publisher routing (v8 multi-publisher)
 
@@ -159,27 +298,43 @@ proc = make_image_processor("SGK KHTN 7 CD.pdf")     # → ImageProcessor (CD)
 | Keyword in filename | Variant key | Class |
 |---|---|---|
 | `_CTST` (or `<space>CTST`) | `ctst` | `CtsstImageProcessor` |
-| `_KNTT` / `<space>KNTT` | `kntt` | `ImageProcessor` (same as CD for now) |
-| anything else | `cd` | `ImageProcessor` |
+| `_KNTT` / `<space>KNTT` | `kntt` | `KnttImageProcessor` |
+| anything else | `cd` | `ImageProcessor` (base) |
+
+### CD — base `ImageProcessor` (Cánh Diều)
+
+Owns all shared geometry/OCR. Caption `^Hình X.Y` OR `^Hình X.` (the
+sub-number is optional — `FIG_CAPTION_STRICT_REGEX` already allows "Hình 2.").
+Captions always sit BELOW the figure. Photos with a missed caption are
+recovered by `_recover_captions_below_photos`.
 
 ### CTST differences (`CtsstImageProcessor`)
 
 | Aspect | CD behaviour | CTST behaviour |
 |---|---|---|
-| Figure caption | `^Hình X.Y` | `^[ÀÁ▲.]? Hình X.Y` — prefix `▲` OCR'd as `À`/`Á` |
-| Triangle strip | — | Strips prefix before storing metadata so caption reads "Hình X.Y …" |
-| Info-box titles | Em có biết, Tìm hiểu thêm, … | Bài tập, Khám phá, Vận dụng, Tổng kết, Ôn tập, Thực hành, Thí nghiệm |
+| Figure caption | `^Hình X.Y` | `^[ÀÁ▲.]? Hình X.Y` — prefix `▲` OCR'd as `À`/`Á`; when the whole line is mangled (`Aình403`) the caption is recovered by re-OCRing the strip below the photo |
+| Info-box titles | Em có biết, Tìm hiểu thêm, … | Bài tập, Khám phá, Vận dụng, Tổng kết, Ôn tập, Thực hành, Thí nghiệm — but **`_INFO_REQUIRE_VISUAL=True`** so bare section headers on white ("Tìm hiểu về …", "Thí nghiệm 1:") are dropped, not emitted. `tim hieu` is NOT a key. |
 | Sub-figure labels | `a)`, `b)` … | identical |
-| Composite grouping | v8 column-aware | identical (inherited) |
+
+### KNTT differences (`KnttImageProcessor`)
+
+| Aspect | CD behaviour | KNTT behaviour |
+|---|---|---|
+| Figure caption | plain OCR text | rendered in a coloured **pill** — `_detect_pill_figure_captions` HSV-detects the pill, re-OCRs white-on-colour text, injects synthetic text lines |
+| Caption position | below figure | may sit ABOVE the figure row → `_FIG_CAPTION_ABOVE_OK=True` so recovery looks below the caption too (page 109) |
+| Sub-figures | a/b/c/d | identical splitter; limited only by whether OCR reads the `a)/b)` labels |
 
 ### Adding a new publisher
 
-1. Identify the figure caption format and any publisher-specific info-box titles.
+1. Identify the figure caption format, info-box titles, and caption position.
 2. Subclass `ImageProcessor`.
-3. Override `_classify_text_anchors` and `_INFO_BOX_TITLE_KEYS`.
-4. Add a keyword check in `get_pdf_variant`.
-5. Return the new class from `make_image_processor`.
-6. Add a smoke-test page set to the runbook.
+3. Override the SEAMS, not the builders: `_classify_text_anchors`,
+   `_INFO_BOX_TITLE_KEYS`, the v9 tuning attributes (table above), and
+   `_match_recovered_caption` if the caption vocabulary differs.
+4. Add a keyword check in `get_pdf_variant` and return the class from
+   `make_image_processor`.
+5. Add a smoke-test page set to the runbook and export the class in
+   `src/etl/__init__.py`.
 
 `IMAGE_EXTRACTION_VERSION` gates the per-page status DB — bump it whenever
 the detector logic changes so pages are reprocessed on next run.

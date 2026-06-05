@@ -1,9 +1,10 @@
 # Page taxonomy — Vietnamese SGK image ETL
 
-Reference card listing every layout the v7 detector currently understands,
+Reference card listing every layout the v9 detector currently understands,
 the anchor signal it relies on, and the expected output regions.
 
 Use this list to sanity-check QA overlays when validating a new textbook.
+Per-variant differences (CD / CTST / KNTT) are in `SKILL.md` §v9.
 
 ---
 
@@ -39,7 +40,26 @@ linearly by character index into two anchors.
 **Output:** 1 × `single_figure` per marker. Each caption claims the
 visual cell whose horizontal centre is closest.
 
-**Example:** page 85.
+**Example:** page 85. *Limitation:* if OWL-ViT returns ONE wide cell covering
+both photos, they merge into a single crop (CD KHTN7 p9 Hình 2+3).
+
+## C-bis. Caption ABOVE the figure (KNTT pill labels)
+
+**Anchor:** a `Hình X.Y` pill caption that sits ABOVE its figure / sub-figure
+row instead of below it. Enabled per-variant with `_FIG_CAPTION_ABOVE_OK=True`.
+
+**Output:** `composite_figure` spanning caption + the cell row below it, then
+split into `sub_figure` crops.
+
+**Example:** KNTT KHTN6 p109 (Hình 32.1 above the a/b/c/d mushroom row).
+
+## C-ter. Photo whose caption OCR was lost
+
+**Anchor:** none survives page-level OCR (e.g. CTST `▲ Hình 40.3` mangled to
+`Aình403` and merged with the other column). Recovered by re-OCRing the strip
+directly below each detected photo (`_recover_captions_below_photos`).
+
+**Output:** 1 × `single_figure`. **Example:** CTST KHTN6 p174 (Hình 40.3).
 
 ## D. Info-box panel (Em có biết / Tìm hiểu thêm / …)
 
@@ -49,6 +69,11 @@ visual cell whose horizontal centre is closest.
   `Thực hành`, `Vận dụng`, `Luyện tập` → `activity_box`
 
 Must be at line start AND followed by ≤30 chars (header, not body).
+
+**v9 drop rule:** when the variant sets `_INFO_REQUIRE_VISUAL=True` (CTST), a
+panel is kept ONLY if it has a coloured background or an embedded picture
+(`visual_content_score ≥ _INFO_MIN_VIS`). Bare section headers on white
+("Tìm hiểu về …", "Thí nghiệm 1:") are body text and are dropped.
 
 **Bbox:** grows DOWN through continuous text lines (max gap 5.5% page H)
 and widens horizontally to pull in any OWL-ViT visual cell that sits in

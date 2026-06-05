@@ -7,6 +7,7 @@ from src.etl.processing_status import ProcessingStatus, compute_file_hash, compu
 from src.etl.image_processor import (
     ImageProcessor,
     CtsstImageProcessor,
+    KnttImageProcessor,
     make_image_processor,
     get_pdf_variant,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "compute_string_hash",
     "ImageProcessor",
     "CtsstImageProcessor",
+    "KnttImageProcessor",
     "make_image_processor",
     "get_pdf_variant",
     "ImageReviewManager",
