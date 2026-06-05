@@ -46,6 +46,8 @@ logs/
 # Model cache
 .cache/
 hf_cache/
+models/
+database/
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

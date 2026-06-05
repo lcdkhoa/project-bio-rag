@@ -51,9 +51,9 @@ USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "tesseract").strip() or "tesseract"
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 
-EMBEDDING_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-LLM_MODEL = "Qwen/Qwen2.5-3B-Instruct"
-CLIP_MODEL = "openai/clip-vit-base-patch16"
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+LLM_MODEL = os.getenv("LLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
+CLIP_MODEL = os.getenv("CLIP_MODEL", "openai/clip-vit-base-patch16")
 OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
 OWL_VIT_CONFIDENCE_THRESHOLD = float(
     os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
