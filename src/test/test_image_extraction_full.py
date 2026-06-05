@@ -256,9 +256,13 @@ def run_page(
 
     detection = processor.detect_regions_anchor_first(
         pil_img, img_array, text_lines=text_lines)
-    anchors: Dict[str, List[Dict[str, object]]] = detection["anchors"]  # type: ignore[assignment]
-    regions: List[Dict[str, object]] = detection["regions"]  # type: ignore[assignment]
-    visual_regions: List[Tuple[int, int, int, int]] = detection["visual_regions"]  # type: ignore[assignment]
+    anchors: Dict[str, List[Dict[str, object]]
+                  ] = detection["anchors"]  # type: ignore[assignment]
+    # type: ignore[assignment]
+    regions: List[Dict[str, object]] = detection["regions"]
+    # type: ignore[assignment]
+    visual_regions: List[Tuple[int, int, int, int]
+                         ] = detection["visual_regions"]
 
     report.anchor_counts = {key: len(value) for key, value in anchors.items()}
 
@@ -282,7 +286,8 @@ def run_page(
         image_type = str(region["image_type"])
         region_counts[image_type] = region_counts.get(image_type, 0) + 1
 
-        bbox = tuple(int(value) for value in region["bbox"])  # type: ignore[arg-type]
+        bbox = tuple(int(value)
+                     for value in region["bbox"])  # type: ignore[arg-type]
         crop = pil_img.crop(bbox)
         caption = str(region.get("caption_text", ""))
         snippet = _safe_label(caption[:60])
@@ -438,7 +443,8 @@ def run_batch(
     for page in pages:
         page_dir = out_dir / f"page_{page:03d}"
         try:
-            report = run_page(processor, pdf_path, page, page_dir, keep_old=False)
+            report = run_page(processor, pdf_path, page,
+                              page_dir, keep_old=False)
         except Exception as exc:
             logger.warning("Page %d failed: %s", page, exc)
             continue
@@ -487,7 +493,8 @@ def run_sample_all(
         for page in pages:
             page_dir = out_dir / _safe_label(book, 40) / f"page_{page:03d}"
             try:
-                report = run_page(processor, pdf, page, page_dir, keep_old=False)
+                report = run_page(processor, pdf, page,
+                                  page_dir, keep_old=False)
             except Exception as exc:
                 logger.warning("%s page %d failed: %s", book, page, exc)
                 continue
@@ -525,7 +532,8 @@ def main() -> int:
             return 1
         run_sample_all(args.datasources, args.sample_books,
                        args.out_dir / "_sample", args.seed)
-        print(f"\n[OK] book sample → {args.out_dir / '_sample' / '_index.html'}")
+        print(
+            f"\n[OK] book sample → {args.out_dir / '_sample' / '_index.html'}")
         return 0
 
     if not args.pdf.exists():
@@ -536,7 +544,8 @@ def main() -> int:
         total = _page_count(args.pdf)
         pages = _parse_pages_arg(args.pages, total)
         if not pages:
-            print(f"[ERR] No valid pages in --pages='{args.pages}' (total {total})")
+            print(
+                f"[ERR] No valid pages in --pages='{args.pages}' (total {total})")
             return 1
         run_batch(args.pdf, pages, args.out_dir)
         print(f"\n[OK] batch QA → {args.out_dir / '_index.html'}")

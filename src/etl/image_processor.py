@@ -196,6 +196,16 @@ class ImageProcessor:
     # "Con cá heo / Con trâu / …"). Gated per-variant: on for CD, off for
     # CTST/KNTT until each is tuned and smoke-tested separately.
     _SPLIT_SUBFIGURES_BY_TITLE: bool = True
+    # Max rows of TITLE anchors a split may span. CD grids stack (page 131 is
+    # 2 rows of animal titles) so the base allows many; a publisher whose
+    # figures are single-row photo strips but whose diagrams carry scattered
+    # internal labels (CTST biogas) sets this to 1 to reject the diagrams.
+    _SUBFIG_TITLE_MAX_ROWS: int = 99
+    # Opt-in extra detector for LARGE PALE photos (beige building, sketches)
+    # that are not colour-saturated, so OWL-ViT and the colour-blob detector
+    # both miss them (CTST page 59 "Hình 11.9"). Text blocks it also picks up
+    # are removed afterwards by `_filter_text_visual_regions`.
+    _DETECT_TEXTURED_PHOTOS: bool = False
 
     def __init__(self, status_tracker: Optional[ProcessingStatus] = None):
         self.status_tracker = status_tracker or ProcessingStatus()
@@ -926,8 +936,11 @@ class ImageProcessor:
         ("thi nghiem", "activity_box"),
     ]
 
+    # A figure marker is "Hình <number>" NOT immediately followed by a letter,
+    # so "hình 3R" / "hình 3D" (mô hình 3R) is never mistaken for a caption and
+    # never triggers a spurious split (CTST page 59).
     _FIGURE_MARKER_REGEX = re.compile(
-        r"H[iì]nh\s+\d+(?:\.\d+)?", flags=re.IGNORECASE)
+        r"H[iì]nh\s+\d+(?:\.\d+)?(?![A-Za-z])", flags=re.IGNORECASE)
 
     def _split_merged_figure_caption(
         self,
@@ -1213,6 +1226,60 @@ class ImageProcessor:
             return blobs
         except Exception as e:
             logger.warning(f"Object-blob detection failed: {e}")
+            return []
+
+    def _detect_textured_photo_regions(
+        self,
+        image: np.ndarray,
+    ) -> List[Tuple[int, int, int, int]]:
+        """Detect large photo regions by local TEXTURE (not colour).
+
+        A pale photo (beige building + sky, a pencil sketch) has high local
+        pixel variance everywhere but low colour saturation, so OWL-ViT and the
+        colour/dark blob detector both miss it (CTST page 59 "Hình 11.9"). Here
+        we threshold local std-dev into blobs. Text paragraphs are also textured
+        and get caught — they are dropped afterwards by
+        `_filter_text_visual_regions` (high OCR text-line coverage), leaving the
+        captionless picture.
+        """
+        try:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY).astype(np.float32)
+            page_height, page_width = gray.shape
+            page_area = page_width * page_height
+            kernel_size = 9
+            mean = cv2.boxFilter(gray, -1, (kernel_size, kernel_size))
+            mean_sq = cv2.boxFilter(gray * gray, -1, (kernel_size, kernel_size))
+            std = np.sqrt(np.clip(mean_sq - mean * mean, 0, None))
+            textured = (std > 18).astype(np.uint8) * 255
+
+            close_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (27, 27))
+            textured = cv2.morphologyEx(
+                textured, cv2.MORPH_CLOSE, close_kernel, iterations=2)
+            open_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (11, 11))
+            textured = cv2.morphologyEx(
+                textured, cv2.MORPH_OPEN, open_kernel, iterations=1)
+
+            num, _labels, stats, _ = cv2.connectedComponentsWithStats(
+                textured, 8)
+            regions: List[Tuple[int, int, int, int]] = []
+            for i in range(1, num):
+                x = int(stats[i, cv2.CC_STAT_LEFT])
+                y = int(stats[i, cv2.CC_STAT_TOP])
+                w = int(stats[i, cv2.CC_STAT_WIDTH])
+                h = int(stats[i, cv2.CC_STAT_HEIGHT])
+                area = int(stats[i, cv2.CC_STAT_AREA])
+                bbox_area = w * h
+                # Big rectangular blobs only — a real picture, not a stray line.
+                if bbox_area < page_area * 0.02 or bbox_area > page_area * 0.55:
+                    continue
+                if w < page_width * 0.12 or h < page_height * 0.06:
+                    continue
+                if area / max(1, bbox_area) < 0.40:
+                    continue
+                regions.append((x, y, x + w, y + h))
+            return regions
+        except Exception as e:
+            logger.warning(f"Textured-photo detection failed: {e}")
             return []
 
     def _text_line_coverage(
@@ -2208,6 +2275,10 @@ class ImageProcessor:
                 sorted(a["cx"] for a in anchors), col_tol)
             if len(col_clusters) < 2 or max(len(r) for r in rows) < 2:
                 return []
+            # Reject diagrams with labels scattered over many rows (CTST biogas
+            # flow chart) for publishers whose titled figures are single-row.
+            if len(rows) > self._SUBFIG_TITLE_MAX_ROWS:
+                return []
 
         # Build each row's photo band; reject a caption row with no photo above
         # it (page 40 "Hình 7.2" internal apparatus labels "Dung dịch / Nến").
@@ -2482,6 +2553,12 @@ class ImageProcessor:
         # suppress them).
         detector_regions = (list(owlvit_regions) + list(framed_regions)
                             + list(dashed_regions))
+        # Pale-photo fallback (publisher opt-in): large textured regions OWL and
+        # the colour-blob detector miss. Text blocks are dropped below by
+        # `_filter_text_visual_regions`.
+        if self._DETECT_TEXTURED_PHOTOS:
+            detector_regions += list(
+                self._detect_textured_photo_regions(img_array))
         blob_regions = [
             blob for blob in self._detect_object_blobs(img_array)
             if not any(self._coverage_ratio(blob, d) > 0.35
@@ -2666,7 +2743,11 @@ class ImageProcessor:
         pad_x = int((px1 - px0) * 0.06)
         sx0 = max(0, px0 - pad_x)
         sx1 = min(page_width, px1 + pad_x)
-        sy0 = max(0, py1 - int(page_height * 0.004))
+        # Start slightly INSIDE the picture bottom: a detector box often
+        # over-extends to swallow the caption row sitting at its lower edge
+        # (CTST page 59 building), so a strict "below the bottom" strip would
+        # miss it. The "Hình X.Y" match still anchors on the caption text.
+        sy0 = max(0, py1 - int(page_height * 0.03))
         sy1 = min(page_height, py1 + int(page_height * 0.065))
         if sy1 - sy0 < 12 or sx1 - sx0 < 30:
             return None
@@ -3868,9 +3949,10 @@ def make_image_processor(
 
 # CTST figures are captioned: "▲ Hình X.Y. description"
 # Tesseract reads the filled-triangle ▲ inconsistently: as À/Á/A, as a dot,
-# as a pipe/bracket, OR as TWO junk chars (e.g. ".A Hình 8.1"). Allow a short
-# leading run of those artefact characters before "Hình" so every form matches.
-_CTST_FIG_PREFIX = r"[ÀÁAa▲∆.,'`|()\s]{0,4}"
+# a pipe/bracket, TWO junk chars (".A Hình 8.1"), OR — when the marker is a
+# RIGHT-pointing ▶ (page 59 "▶ Hình 11.8") — as "}>" / "{>" / "›". Allow a short
+# leading run of any of those artefact characters before "Hình".
+_CTST_FIG_PREFIX = r"[ÀÁAa▲▶∆.,'`|()<>{}»›\[\]\s]{0,4}"
 _CTST_FIG_CAPTION_REGEX = re.compile(
     r"^" + _CTST_FIG_PREFIX + r"H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
     flags=re.IGNORECASE,
@@ -3910,11 +3992,17 @@ _CTST_INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = [
 class CtsstImageProcessor(ImageProcessor):
     """Image ETL for SGK CTST (Chân Trời Sáng Tạo) publisher.
 
-    The only significant layout difference from CD is the figure caption
-    format.  CTST uses "▲ Hình X.Y." with a filled black triangle before
-    "Hình" that Tesseract misreads as À / Á.  Everything else (sub-figure
-    labels, composite grouping, column-awareness) is identical to the base
-    ImageProcessor.
+    CTST differs from CD in ways that need their OWN logic (kept here, not in
+    the shared base, so CD stays untouched):
+
+    1. Caption format ``▲ Hình X.Y`` — the filled triangle is OCR-mangled
+       (`_classify_text_anchors` override + `_CTST_FIG_CAPTION_REGEX`).
+    2. Caption is **left-aligned under a figure that often spans the full
+       content width**. CD's centred-caption assignment clips the right half of
+       such a figure (page 64 biogas, page 135 food-chain), so CTST gets its
+       own band-based builder ``_build_figure_composites`` below.
+    3. Sub-figure splitting (per-photo crops) IS wanted for CTST grids
+       (food-chain circles, stopwatch a/b) — enabled here.
     """
 
     # Override: accept CTST caption format.
@@ -3929,9 +4017,196 @@ class CtsstImageProcessor(ImageProcessor):
     # page-level OCR of the whole line; recovering the caption by re-OCRing the
     # strip below each detected photo is essential here.
     _RECOVER_CAPTIONS_BELOW_PHOTOS: bool = True
-    # Title-below sub-figure splitting is CD-tuned for now; keep CTST on the
-    # letter-label path only until it is smoke-tested separately.
-    _SPLIT_SUBFIGURES_BY_TITLE: bool = False
+    # CTST figures are captioned grids (food-chain circles "Cỏ / Châu chấu / …",
+    # stopwatch a)/b)) — split them into per-photo sub-figures.
+    _SPLIT_SUBFIGURES_BY_TITLE: bool = True
+    # CTST titled figures are single-row photo strips; its multi-component
+    # diagrams (biogas flow chart, page 64) carry internal labels at many
+    # heights — cap title-split to one row so those diagrams stay whole.
+    _SUBFIG_TITLE_MAX_ROWS: int = 1
+    # CTST has pale building/landscape photos OWL misses entirely (page 59
+    # "Hình 11.9") — enable the texture-based photo fallback.
+    _DETECT_TEXTURED_PHOTOS: bool = True
+    # A CTST figure sits in the vertical BAND above its caption; cap that band
+    # so the first caption on a page can't reach decorative header art.
+    _CTST_FIG_MAX_BAND_FRAC: float = 0.55
+
+    def _build_figure_composites(
+        self,
+        figure_caps: List[Dict[str, object]],
+        text_lines: List[Dict[str, object]],
+        visual_regions: List[Tuple[int, int, int, int]],
+        question_prompts: List[Dict[str, object]],
+        info_titles: List[Dict[str, object]],
+        sub_labels: List[Dict[str, object]],
+        exclusion_zones: List[Tuple[int, int, int, int]],
+        page_width: int,
+        page_height: int,
+    ) -> List[Dict[str, object]]:
+        """CTST figure builder — band-based, full-width (separate from CD).
+
+        CTST's ``▲ Hình X.Y`` caption is left-aligned at the BOTTOM of a figure
+        that frequently spans the full content width. CD's centred-caption
+        assignment then clips the right half (page 64, 135). Here each caption
+        instead claims EVERY visual cell in the vertical band between it and the
+        previous caption / info title above it, and the figure bbox is the union
+        of those cells — so a full-width figure is captured whole, while a
+        half-width figure still bounds tightly to its own cells.
+
+        Question prompts are deliberately NOT used as the band ceiling: a CTST
+        right-column prompt frequently sits at the same height as a left-column
+        figure and would wrongly truncate the band (page 135 Hình 29.3).
+        """
+        outputs: List[Dict[str, object]] = []
+        if not figure_caps:
+            return outputs
+
+        caps = sorted(figure_caps, key=lambda c: int(c["bbox"][1]))  # type: ignore[index]
+        # Ceilings: bottoms of OTHER captions / info titles / exclusion zones
+        # above a caption. (Prompts excluded on purpose — see docstring.)
+        ceiling_bottoms = (
+            [int(c["bbox"][3]) for c in figure_caps]  # type: ignore[index]
+            + [int(t["bbox"][3]) for t in info_titles]  # type: ignore[index]
+            + [int(z[3]) for z in exclusion_zones]
+        )
+        max_band = int(page_height * self._CTST_FIG_MAX_BAND_FRAC)
+
+        # Each caption's vertical band [band_top, caption_top] and x-centre.
+        band_info: List[Dict[str, float]] = []
+        for cap in caps:
+            cx0, cy0, cx1, cy1 = (int(v) for v in cap["bbox"])  # type: ignore[misc]
+            ceiling = 0
+            for bottom in ceiling_bottoms:
+                if bottom < cy0 - 2:
+                    ceiling = max(ceiling, bottom)
+            band_info.append({
+                "top": float(max(ceiling, cy0 - max_band)),
+                "cap_top": float(cy0), "ccx": (cx0 + cx1) / 2.0})
+
+        # Assign each visual cell to the NEAREST caption (by x-centre) among the
+        # captions whose band contains it. Side-by-side figures sharing a y-band
+        # (page 58 Hình 11.4 ship + 11.5 gears) thus split by column, while a
+        # lone caption over a full-width figure (food chain) claims every cell.
+        assigned_by_cap: List[List[Tuple[int, int, int, int]]] = [
+            [] for _ in caps]
+        for raw in visual_regions:
+            vx0, vy0, vx1, vy1 = (int(v) for v in raw)
+            vcy = (vy0 + vy1) / 2.0
+            vcx = (vx0 + vx1) / 2.0
+            if any(self._coverage_ratio((vx0, vy0, vx1, vy1), zone) > 0.45
+                   for zone in exclusion_zones):
+                continue
+            candidates = [i for i, b in enumerate(band_info)
+                          if b["top"] <= vcy <= b["cap_top"]]
+            if not candidates:
+                continue
+            best = min(candidates,
+                       key=lambda i: abs(vcx - band_info[i]["ccx"]))
+            assigned_by_cap[best].append((vx0, vy0, vx1, vy1))
+
+        for cap_index, cap in enumerate(caps):
+            cx0, cy0, cx1, cy1 = (int(v) for v in cap["bbox"])  # type: ignore[misc]
+            assigned = assigned_by_cap[cap_index]
+            if not assigned:
+                continue
+
+            x0 = min([cx0] + [r[0] for r in assigned])
+            y0 = min(r[1] for r in assigned)
+            x1 = max([cx1] + [r[2] for r in assigned])
+            pad_x = int(page_width * 0.008)
+            pad_y = int(page_height * 0.006)
+            bbox = (
+                max(0, x0 - pad_x), max(0, y0 - pad_y),
+                min(page_width, x1 + pad_x), min(page_height, cy1 + pad_y),
+            )
+            # A prompt that slipped into the figure top is trimmed off.
+            bbox = self._trim_region_top_to_exclude_prompt(
+                bbox, text_lines, page_height)
+
+            sub_inside = sum(
+                1 for s in sub_labels
+                if bbox[0] - 5 <= int(s["bbox"][0])  # type: ignore[index]
+                and int(s["bbox"][2]) <= bbox[2] + 5  # type: ignore[index]
+                and bbox[1] - 5 <= int(s["bbox"][1]) <= bbox[3] + 12)  # type: ignore[index]
+            label = ("composite_figure"
+                     if sub_inside >= 1 and len(assigned) >= 2
+                     else "single_figure")
+            outputs.append({
+                "bbox": bbox,
+                "image_type": label,
+                "caption_text": cap["text"],
+                "caption_bbox": cap["bbox"],
+                "assigned_regions": assigned,
+            })
+        return outputs
+
+    def detect_regions_anchor_first(
+        self,
+        pil_img: Image.Image,
+        img_array: np.ndarray,
+        text_lines: Optional[List[Dict[str, object]]] = None,
+    ) -> Dict[str, object]:
+        """CTST override: recover ``▲ Hình`` captions the page OCR missed.
+
+        The filled-triangle prefix makes Tesseract drop whole caption lines on
+        some pages (page 29: only 'Hình 6.4' is read, so 'Hình 6.2/6.3' vanish
+        and the three figures collapse into one). Before building, re-OCR the
+        strip below each detected cell and inject any recovered ``Hình X.Y`` as
+        a synthetic caption line, so the band builder sees all three captions.
+        """
+        if text_lines is None:
+            text_lines = self._collect_page_text_lines(pil_img)
+        text_lines = self._inject_recovered_captions(
+            pil_img, img_array, text_lines)
+        return super().detect_regions_anchor_first(
+            pil_img, img_array, text_lines=text_lines)
+
+    def _inject_recovered_captions(
+        self,
+        pil_img: Image.Image,
+        img_array: np.ndarray,
+        text_lines: List[Dict[str, object]],
+    ) -> List[Dict[str, object]]:
+        page_width, page_height = pil_img.size
+
+        def fig_number(text: str) -> str:
+            match = re.search(r"H[iì]nh\s+(\d+(?:\.\d+)?)", text,
+                              flags=re.IGNORECASE)
+            return match.group(1) if match else ""
+
+        # Figure numbers the page OCR already produced — never re-inject one,
+        # so a caption read by both passes can't spawn a duplicate figure
+        # (page 10 "Hình 2.10").
+        seen_numbers = {fig_number(str(ln["text"]))
+                        for ln in text_lines
+                        if _CTST_FIG_CAPTION_REGEX.match(str(ln["text"]).strip())}
+        seen_numbers.discard("")
+        # Cheap CV cell candidates (no OWL): framed panels + object blobs +
+        # textured pale photos (so a building photo whose caption the page OCR
+        # dropped — page 59 "Hình 11.9" — gets its strip re-OCR'd).
+        cells = self._dedupe_visual_regions(
+            list(self._detect_framed_regions(img_array))
+            + list(self._detect_object_blobs(img_array))
+            + list(self._detect_textured_photo_regions(img_array)),
+            min_area=int(page_width * page_height * 0.004),
+            iou_threshold=0.5,
+        )
+        recovered: List[Dict[str, object]] = []
+        for cell in cells:
+            result = self._reocr_caption_below(
+                pil_img, cell, page_width, page_height)
+            if not result:
+                continue
+            caption_text, strip_bbox = result
+            number = fig_number(caption_text)
+            if not number or number in seen_numbers:
+                continue
+            seen_numbers.add(number)
+            recovered.append({"text": caption_text, "bbox": strip_bbox})
+        if recovered:
+            text_lines = list(text_lines) + recovered
+            text_lines.sort(key=lambda ln: int(ln["bbox"][1]))
+        return text_lines
 
     def _classify_text_anchors(
         self,

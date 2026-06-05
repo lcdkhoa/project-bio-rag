@@ -11,7 +11,56 @@ metadata:
   applies_to: scanned-vietnamese-sgk
 ---
 
-# ETL — Textbook image extraction (v10 per-variant, column-aware anchor-first)
+# ETL — Textbook image extraction (v11 per-variant, column-aware anchor-first)
+
+## v11 changes (CTST gets its OWN figure builder + caption recovery)
+
+v11 fixes CTST (pages 64 / 135 / 29 / 58) with logic kept **entirely inside
+`CtsstImageProcessor`** — CD's builder is untouched (the user's hard
+requirement: CTST must not share CD's figure logic). Three CTST-specific
+pieces:
+
+1. **Band-based figure builder** (`CtsstImageProcessor._build_figure_composites`,
+   overrides CD's). CTST's ``▲ Hình X.Y`` caption is **left-aligned under a
+   figure that often spans the full content width**; CD's centred-caption
+   assignment clips the right half (page 64 biogas lost the generator; page 135
+   food-chain lost rắn + diều). Instead each caption claims every visual cell in
+   the vertical band between it and the nearest caption/info-title above, and
+   each cell goes to the **nearest caption by x-centre** — so a full-width
+   figure is captured whole while side-by-side figures (page 58) still split.
+   Question prompts are NOT band ceilings (a right-column prompt would wrongly
+   truncate a left-column figure's band).
+2. **Caption pre-recovery** (`_inject_recovered_captions`, CTST
+   `detect_regions_anchor_first` override). The filled triangle makes Tesseract
+   drop whole caption lines (page 29: only ``Hình 6.4`` is read → the three
+   stopwatch figures collapse into one). Before building, re-OCR the strip
+   below each cheap CV cell (frames + blobs, no OWL) and inject any recovered
+   ``Hình X.Y``; **deduped by figure NUMBER** so a caption read by both passes
+   can't spawn a duplicate figure (page 10 "Hình 2.10").
+3. **Sub-figure splitting enabled** (`_SPLIT_SUBFIGURES_BY_TITLE=True`) but
+   capped to **one title row** (`_SUBFIG_TITLE_MAX_ROWS=1`): CTST titled figures
+   are single-row photo strips (food-chain → 5 sub-figures), while its
+   multi-component diagrams carry internal labels at many heights — the cap
+   keeps the biogas flow chart (page 64) whole instead of slicing it.
+4. **Pale-photo recall + caption robustness** (page 59, where OWL-ViT returned
+   *nothing* usable and both captions were OCR-broken):
+   - `_detect_textured_photo_regions` (base, opt-in via `_DETECT_TEXTURED_PHOTOS`,
+     **on for CTST**) finds large photos by local std-dev, so a pale beige
+     building OWL + the colour-blob detector both miss is detected; text blocks
+     it also catches are dropped by `_filter_text_visual_regions`. It also feeds
+     the caption pre-recovery, so the building's strip is re-OCR'd.
+   - `_CTST_FIG_PREFIX` now also absorbs a **▶** marker OCR'd as `}>`/`{>`/`›`.
+   - `_FIGURE_MARKER_REGEX` requires the figure number NOT be followed by a
+     letter, so "mô hình **3R**" no longer counts as a marker / triggers a split.
+   - `_reocr_caption_below` starts its strip slightly INSIDE the picture bottom
+     (a detector box often swallows the caption row at its lower edge).
+
+Status: CTST p64 (whole biogas), p135 (food-chain full-width + 5 sub-figures,
+29.3 + 2), p58 (side-by-side split), p59 (building Hình 11.9 recovered via the
+texture detector despite OWL=0), p36/p174 unchanged. Partial: p29 recovers
+2 of 3 ``▲`` captions (the 3rd is below OCR threshold); p59 Hình 11.8 (3R icons
+with a left-side caption) still not built; side-by-side photos that
+OWL merges into one cell still merge (p58 top 11.4+11.5).
 
 ## v10 changes (CD figure-bound + caption-row/pixel-column sub-figures)
 
@@ -87,7 +136,10 @@ publisher-specific behaviour here, not in forked copies of the builders.
 | `_RECOVER_MIN_VIS` | 0.06 | ″ | ″ | min visual score for a picture to be worth recovering |
 | `_FIG_CAPTION_ABOVE_OK` | False | False | **True** | caption may sit ABOVE its figure (KNTT pill labels) |
 | `_SPLIT_SUBFIGURES` | True | True | True | emit one `sub_figure` per cell when ≥2 `a)/b)` labels confirm a composite |
-| `_SPLIT_SUBFIGURES_BY_TITLE` | **True** | False | False | (v10) split a titled photo grid with NO `a)/b)` labels by reconstructing the grid from the centred titles below each cell (CD page 131); off for CTST/KNTT until tuned |
+| `_SPLIT_SUBFIGURES_BY_TITLE` | **True** | **True** | False | (v10) split a titled photo grid with NO `a)/b)` labels from the centred titles below each cell (CD page 131, CTST food-chain); KNTT off until tuned |
+| `_SUBFIG_TITLE_MAX_ROWS` | 99 | **1** | 99 | (v11) max title-anchor rows a split may span; CTST=1 keeps multi-label diagrams (biogas) whole |
+| `_CTST_FIG_MAX_BAND_FRAC` | — | **0.55** | — | (v11) CTST-only: cap the band height a single caption can claim above it |
+| `_DETECT_TEXTURED_PHOTOS` | False | **True** | False | (v11) detect large PALE photos by local texture (OWL/colour-blob miss them — page 59 building); text blocks dropped by the text filter |
 
 **2. Caption-anchored recovery (two passes, after the caption-first builder).**
    - `_build_uncovered_caption_regions` — a `Hình X.Y` caption that got no
@@ -312,9 +364,11 @@ recovered by `_recover_captions_below_photos`.
 
 | Aspect | CD behaviour | CTST behaviour |
 |---|---|---|
-| Figure caption | `^Hình X.Y` | `^[ÀÁ▲.]? Hình X.Y` — prefix `▲` OCR'd as `À`/`Á`; when the whole line is mangled (`Aình403`) the caption is recovered by re-OCRing the strip below the photo |
+| Figure caption | `^Hình X.Y` | `^[ÀÁ▲.]? Hình X.Y` — prefix `▲` OCR'd as `À`/`Á`; a fully-mangled or dropped caption is recovered by re-OCRing the strip below the photo (v11 does this BEFORE building via `_inject_recovered_captions`, deduped by figure number) |
+| Figure building | CD `_build_figure_composites` (centred caption claims cells near its centre) | **own** `_build_figure_composites` (v11): left-aligned caption claims the full-width band above it; each cell → nearest caption by x-centre. CD's builder is untouched. |
 | Info-box titles | Em có biết, Tìm hiểu thêm, … | Bài tập, Khám phá, Vận dụng, Tổng kết, Ôn tập, Thực hành, Thí nghiệm — but **`_INFO_REQUIRE_VISUAL=True`** so bare section headers on white ("Tìm hiểu về …", "Thí nghiệm 1:") are dropped, not emitted. `tim hieu` is NOT a key. |
 | Sub-figure labels | `a)`, `b)` … | identical |
+| Sub-figure split | titles, multi-row | titles enabled but **single-row only** (`_SUBFIG_TITLE_MAX_ROWS=1`) so flow diagrams stay whole |
 
 ### KNTT differences (`KnttImageProcessor`)
 
