@@ -62,7 +62,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("image_etl_v7_test")
 
-DEFAULT_PDF = ROOT / "datasources" / "SGK KHTN 6 CD.pdf"
+DEFAULT_PDF = ROOT / "datasources" / "SGK KHTN 6 KNTT.pdf"
 DEFAULT_PAGE = 6
 DEFAULT_OUT_DIR = ROOT / "scripts" / "_out_test_etl_full"
 

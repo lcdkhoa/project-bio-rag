@@ -58,7 +58,7 @@ OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
 OWL_VIT_CONFIDENCE_THRESHOLD = float(
     os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
 IMAGE_EXTRACTION_VERSION = os.getenv(
-    "IMAGE_EXTRACTION_VERSION", "v11_per_variant")
+    "IMAGE_EXTRACTION_VERSION", "v15_per_variant")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(

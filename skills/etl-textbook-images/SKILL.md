@@ -11,7 +11,106 @@ metadata:
   applies_to: scanned-vietnamese-sgk
 ---
 
-# ETL — Textbook image extraction (v11 per-variant, column-aware anchor-first)
+# ETL — Textbook image extraction (v15 per-variant, column-aware anchor-first)
+
+## v15 changes (KNTT photo-rectangle detector)
+
+Fixes the KNTT figure crops that were CUT because OWL only detected a partial
+cell of a hard photo. New `_detect_photo_rectangles` (base method, opt-in
+`_DETECT_PHOTO_RECTANGLES`, **on for KNTT**): masks non-white page content and
+morphologically OPENS it (9×9) so thin text strokes vanish while solid photo
+fills survive → full photo rectangles. A small close (7×7) avoids bridging the
+gutter between a coloured question box and the figure below (page 13). Two
+companion fixes in the KNTT builder:
+- cell membership is by CENTRE, not "whole cell above the caption", because a
+  KNTT pill often sits ON the photo's bottom edge (page 131 bat caption);
+- the prev-caption ceiling still keeps each figure's cells separate.
+
+Result: page 131 bat now full (was a thin sliver); page 13 warning triangles
+full incl. the apexes (was cut + merged with the question box). CD/CTST
+untouched (KNTT-gated). Remaining: page 80 diagram top circles are merged with
+the "MỤC TIÊU" title cell so they're text-gated out (still cut); page 95 pill
+number OCR; pages 13/60 extra info/activity box.
+
+## v14 changes (KNTT crop precision)
+
+KNTT figure crops were cut / over-grown / wrong. All KNTT-scoped:
+- **Contiguity band, text-gated** (replaces the fixed `_KNTT_FIG_MAX_BAND_FRAC`
+  cap, now just a runaway backstop 0.85): the figure band walks the figure-side
+  cells bridging gaps ≤25% page-H, but STOPS at a text-heavy cell
+  (`_text_line_coverage > 0.25`). A tall connected diagram is kept whole
+  (page 80), the band reaches a pure-image cell 0.23·H away (page 131 sheep),
+  but it won't swallow a title bar / objectives block (page 80 "MỤC TIÊU") or
+  an unrelated far photo (page 109).
+- **Body-reference rejection**: a line like "(Hình 42.1a) thì lò xo dãn ra
+  (Hình 42.1b)." is dropped WHOLE when any marker is followed by a Vietnamese
+  function word (`_KNTT_REF_FUNCTION_WORDS`) or a closing ")", so it no longer
+  builds a figure over the question table (page 152).
+- **Sub-figure splitting DISABLED for KNTT** (`_SPLIT_SUBFIGURES=False`): the
+  per-cell crops came out partial and lost the a)/b) titles (pages 69, 109);
+  keeping the (correct) composite whole is cleaner until KNTT cell detection
+  improves.
+
+Status: KNTT p23/p30/p120 exact; p69/p109 clean composites (no junk subs); p80
+diagram (top circles lost — merged with the title cell, see limits); p131
+sheep+bees correct; p152 no longer a wrong text-box. Remaining (detection
+limits): p131 bat + p13 triangle-apex are cut (OWL detects only a partial cell
+of a dark/thin photo); p95 pill-number OCR (2 of 3); p13/p60 emit an extra
+info/activity box.
+
+## v13 changes (KNTT gets its OWN figure builder)
+
+KNTT now has its own `_build_figure_composites` (like CTST), so CD's centred
+builder no longer clips/merges KNTT figures. A KNTT pill sits ABOVE or BELOW
+its figure, which can span multiple stacked or side-by-side photos:
+- Per caption, the figure **side** (above/below) = whichever has the smaller
+  adjacent visual-cell gap (page 109 caption-above mushrooms vs page 131
+  caption-below).
+- Captions are grouped into **rows** (same side, similar y); each row's band of
+  cells is split into **columns at the caption x-midpoints**, so a row of N
+  captions over one OWL-merged wide cell becomes N figures (page 95 three
+  disease photos), while a lone caption keeps the full-width figure (page 13
+  hazards full-width, page 131 Hình 36.16 spans sheep **and** bees).
+- The band height is capped (`_KNTT_FIG_MAX_BAND_FRAC=0.45`) so a bottom caption
+  can't swallow unrelated art near the page top (page 109 ballooning fixed).
+
+Also: the pill mask uses several hue bands (orange/yellow/green/teal/blue/
+purple/pink-red) — NOT an all-hue mask, which caught colourful photos and
+bridged adjacent pills (page 95). Status: KNTT p13 (full-width hazards), p131
+(bat + sheep&bees), p69/p109 (composite + sub), p23/p152 unchanged. Partial:
+p95 gets 2 of 3 (pill *number* OCR misreads on that page). CD/CTST untouched.
+
+## v12 changes (KNTT pill-caption anchor detection)
+
+KNTT renders every figure title "Hình X.Y" inside a **colour-varying pill**;
+the page OCR misses it, so the anchor was absent (pages 13/69) or wrong
+(page 131). All fixes live in `KnttImageProcessor`; CD/CTST untouched.
+
+1. **Pill OCR robustness** (`_detect_pill_figure_captions`). The pill colour
+   varies, so the mask now accepts ANY saturated hue (`inRange (0,60,60)–
+   (180,255,255)`) instead of a fixed orange/green/blue/purple set; the strict
+   "must OCR to Hình X.Y" gate rejects non-caption blobs. The crop is upscaled
+   3× (grayscale, then threshold — upscaling the *binary* added ringing) and
+   tried at several thresholds.
+2. **Mangled-pill normalisation** (`_normalise_kntt_caption`). A tight pill
+   drops the space and dot: "Hình 19.3" → `Hình193`, "Hình 2.2" → `Hình22`.
+   The KNTT regexes now use `\s*` and `[.,]?`, and the normaliser re-inserts the
+   dot (`193`→`19.3`, `22`→`2.2`, `3615`→`36.15`) — best-effort, its job is to
+   anchor the figure.
+3. **Caption = pill / line-start only** (`_KNTT_FIG_START_REGEX`). The old
+   permissive `.*?Hình` `.match` was effectively a search, so body references
+   ("… (Hình 36.15).") became spurious captions → duplicate figures (page 131).
+   Now a caption must START with the marker (after ≤4 pill-junk chars).
+4. **Dedupe by figure number** (`_dedupe_kntt_captions`). A pill plus its
+   page-OCR'd caption line for the same number kept the longest text only.
+
+Status: KNTT p13 (Hình 2.2 found), p69 (composite + 3 sub), p131 (2 figures,
+no duplicates), p23/p109/p152 unchanged. Partial: KNTT figure *building* from a
+pill that sits below/beside a multi-photo figure still under-covers (p131 Hình
+36.16 catches the bees but not the sheep above; p13 width slightly short) — a
+follow-up on the KNTT caption-above/full-width assignment.
+
+## v11 changes (CTST gets its OWN figure builder + caption recovery)
 
 ## v11 changes (CTST gets its OWN figure builder + caption recovery)
 
@@ -374,9 +473,12 @@ recovered by `_recover_captions_below_photos`.
 
 | Aspect | CD behaviour | KNTT behaviour |
 |---|---|---|
-| Figure caption | plain OCR text | rendered in a coloured **pill** — `_detect_pill_figure_captions` HSV-detects the pill, re-OCRs white-on-colour text, injects synthetic text lines |
-| Caption position | below figure | may sit ABOVE the figure row → `_FIG_CAPTION_ABOVE_OK=True` so recovery looks below the caption too (page 109) |
-| Sub-figures | a/b/c/d | identical splitter; limited only by whether OCR reads the `a)/b)` labels |
+| Figure caption | plain OCR text | rendered in a **colour-varying pill** — `_detect_pill_figure_captions` masks ANY saturated hue, upscales + re-OCRs white-on-colour text, `_normalise_kntt_caption` repairs the dropped space/dot ("Hình193"→"Hình 19.3"), injects synthetic lines (v12) |
+| Caption match | strict `^Hình X.Y` | `_KNTT_FIG_START_REGEX` — must START with the marker (≤4 junk chars) so inline body refs "(Hình X.Y)" aren't captions; then `_dedupe_kntt_captions` collapses a pill + its OCR'd line by number (v12) |
+| Caption position | below figure | may sit ABOVE **or** below; v13 `_build_figure_composites` picks the side by the smaller adjacent cell gap (page 109 above, page 131 below) |
+| Figure building | CD centred-caption | **own** builder (v13): rows of captions → columns at caption x-midpoints (splits a wide merged cell, page 95), lone caption → full-width / multi-photo union (page 131 sheep+bees); band capped by `_KNTT_FIG_MAX_BAND_FRAC` |
+| Sub-figures | a/b/c/d | **disabled** (v14, `_SPLIT_SUBFIGURES=False`) — KNTT per-cell crops came out partial / title-less; keep the composite whole |
+| Body refs | n/a | (v14) a line whose `Hình X.Y` is followed by a function word or ")" is a reference, dropped whole (page 152) |
 
 ### Adding a new publisher
 
