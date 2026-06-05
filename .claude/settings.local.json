@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(grep -vE \"WARNING|UserWarning|warnings.warn|^\\\\s*$\")",
+      "Bash(grep -vE \"WARNING|UserWarning|warnings.warn|FutureWarning|^\\\\s*$\")",
+      "PowerShell(Get-ChildItem \"D:\\\\personal_repo\\\\project_rag\\\\src\\\\test\\\\_out\\\\images\\\\SGK KHTN 7 CTST\" -Filter \"*crop*.png\" | Select-Object -ExpandProperty Name; \"---KHTN8 CD---\"; Get-ChildItem \"D:\\\\personal_repo\\\\project_rag\\\\src\\\\test\\\\_out\\\\images\\\\SGK KHTN8 CD\" -Filter \"*crop*.png\" | Select-Object -ExpandProperty Name)",
+      "Bash(awk -F: '$1>=2060 && $1<=2520')",
+      "PowerShell(Remove-Item *)",
+      "Bash(PYTHONPATH=. python scripts/_dbg131.py)"
+    ]
+  }
+}
