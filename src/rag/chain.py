@@ -45,8 +45,11 @@ Bạn là trợ lý AI môn Sinh học THCS. Bạn PHẢI trả lời hoàn toà
 {question}
 
 [QUY TẮC NGHIÊM NGẶT]:
-1. CHỈ dùng thông tin trong tài liệu trên. KHÔNG tự suy diễn.
-2. Nếu tài liệu không chứa câu trả lời, hãy trả lời ĐÚNG CÂU SAU: "Thông tin này không được đề cập trong sách giáo khoa."<|im_end|>
+1. CHỈ dùng thông tin trong tài liệu trên. KHÔNG tự suy diễn, KHÔNG bịa.
+2. CHỈ trả lời ĐÚNG nội dung được hỏi. KHÔNG thêm thông tin không liên quan đến câu hỏi.
+3. KHÔNG ghép nối các thông tin rời rạc từ những đoạn khác chủ đề để tạo câu trả lời.
+4. Nếu một đoạn tài liệu không liên quan đến câu hỏi, hãy BỎ QUA đoạn đó.
+5. Nếu tài liệu không chứa câu trả lời, hãy trả lời ĐÚNG CÂU SAU: "Thông tin này không được đề cập trong sách giáo khoa."<|im_end|>
 <|im_start|>assistant
 """
         )

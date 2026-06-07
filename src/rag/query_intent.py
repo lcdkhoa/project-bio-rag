@@ -82,6 +82,25 @@ def normalize_query_text(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9\s]+", " ", normalized)).strip()
 
 
+def strip_accents(text: str) -> str:
+    """Remove Vietnamese diacritics from already-normalized text."""
+    decomposed = unicodedata.normalize("NFD", str(text or ""))
+    return "".join(char for char in decomposed if unicodedata.category(char) != "Mn")
+
+
+def normalize_accented_text(text: str) -> str:
+    """Lowercase and keep letters/digits + single spaces, PRESERVING diacritics.
+
+    Unlike :func:`normalize_query_text`, this keeps Vietnamese tone/vowel marks so
+    that distinct words are not conflated — e.g. "trâu" (buffalo) stays different
+    from "trầu" (betel). Use this for exact lexical/phrase matching; accent folding
+    is only safe for the accent-free intent-keyword lookups.
+    """
+    lowered = unicodedata.normalize("NFC", str(text or "").lower())
+    kept = [char if (char.isalnum() or char.isspace()) else " " for char in lowered]
+    return re.sub(r"\s+", " ", "".join(kept)).strip()
+
+
 def has_image_intent(query: str) -> bool:
     normalized_query = normalize_query_text(query)
     if not normalized_query:

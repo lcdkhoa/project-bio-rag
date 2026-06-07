@@ -89,6 +89,14 @@ LLM_MAX_NEW_TOKENS = 500
 LLM_TOP_P = 0.75
 
 RETRIEVER_K = 3
+# How many candidates to pull from the vector store before relevance gating.
+RETRIEVER_FETCH_K = int(os.getenv("RETRIEVER_FETCH_K", "8"))
+# Max chunks kept after gating (upper bound on context size).
+RETRIEVER_MAX_K = int(os.getenv("RETRIEVER_MAX_K", "4"))
+# Relative distance gate: keep a chunk only if its distance is within
+# (1 + margin) * best_distance. Drops off-topic chunks that are far from the
+# best match (e.g. unrelated pages bleeding into the answer).
+RETRIEVER_DISTANCE_MARGIN = float(os.getenv("RETRIEVER_DISTANCE_MARGIN", "0.3"))
 IMAGE_RETRIEVER_K = int(os.getenv("IMAGE_RETRIEVER_K", "5"))
 IMAGE_RETRIEVER_FETCH_K = int(os.getenv("IMAGE_RETRIEVER_FETCH_K", "48"))
 IMAGE_METADATA_FETCH_K = int(os.getenv("IMAGE_METADATA_FETCH_K", "64"))

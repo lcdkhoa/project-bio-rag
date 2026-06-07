@@ -23,7 +23,12 @@ from ..config import (
     IMAGE_RETRIEVER_FETCH_K,
     IMAGE_RELEVANCE_THRESHOLD,
 )
-from .query_intent import has_image_intent, normalize_query_text
+from .query_intent import (
+    has_image_intent,
+    normalize_query_text,
+    normalize_accented_text,
+    strip_accents,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +48,32 @@ VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
     "hat": "seed",
     "re": "root",
 }
+
+# Words that carry no object meaning in an image request ("cho tôi hình ...").
+# Stripped when extracting the query's content phrase, but classifier words
+# like "con"/"cây" are kept so the phrase "con trâu" stays intact.
+PHRASE_FILLER_WORDS = {
+    "a", "an", "and", "anh", "are", "as", "can", "chi", "cho", "cua", "co",
+    "duoc", "em", "gi", "giup", "hay", "hinh", "image", "la", "lay", "minh",
+    "mot", "muon", "nhung", "photo", "picture", "please", "sach", "show",
+    "the", "tim", "toi", "trong", "tui", "ve", "what", "which", "with", "xem",
+}
+# Classifiers kept inside phrases but ignored as standalone match tokens
+# (they are too generic on their own: "con", "cây", ...).
+CLASSIFIER_WORDS = {"con", "cay", "cai", "cac", "loai", "nhom"}
+# Figure-identity fields used for the high-precision phrase boost: the OCR of
+# the cropped image region plus the visual model's description of that crop.
+# Caption/keyword fields are deliberately excluded here because composite-figure
+# captions list several subjects and page-level keyword dumps repeat a term
+# across every figure on the page, both of which cause false phrase matches.
+PHRASE_IDENTITY_FIELDS = (
+    "crop_text", "visual_objects_vi", "visual_caption_vi", "visual_keywords_vi",
+)
+# Broader set used only to pull candidates into the pool (recall, not ranking).
+LEXICAL_IDENTITY_FIELDS = PHRASE_IDENTITY_FIELDS + (
+    "figure_label", "figure_caption", "final_caption_vi", "caption",
+    "keywords_vi", "caption_vi",
+)
 
 class ImageVectorDB:
     """ChromaDB-backed image store with CLIP embeddings for semantic image search."""
@@ -160,8 +191,15 @@ class ImageVectorDB:
             return None
 
     def _encode_text(self, text: str) -> torch.Tensor:
-        """Encode text query to CLIP embedding."""
-        inputs = self._clip_processor(text=[text], return_tensors="pt", padding=True)
+        """Encode text query to CLIP embedding.
+
+        CLIP's text encoder caps at 77 positions, so truncate long queries
+        (the eval's generated questions can exceed it) instead of erroring.
+        """
+        inputs = self._clip_processor(
+            text=[text], return_tensors="pt", padding=True,
+            truncation=True, max_length=77,
+        )
         with torch.no_grad():
             output = self._clip_model.get_text_features(**inputs)
             embedding = self._to_projected_embedding(output, "text_projection")
@@ -306,41 +344,27 @@ class ImageVectorDB:
 
         return len(ids)
 
+    # Accent-free stopwords; matched against the accent-stripped form of each
+    # token so accented inputs ("hình", "tôi") are still recognised.
+    _STOPWORDS = {
+        "a", "an", "and", "are", "as", "anh", "cho", "cua", "co", "con",
+        "duoc", "gi", "hinh", "la", "mot", "nhung", "the", "tim", "toi",
+        "trong", "ve", "xem", "what", "which", "with",
+    }
+
     def _normalize_text(self, text: str) -> str:
         return normalize_query_text(text)
 
+    def _normalize_accented(self, text: str) -> str:
+        """Diacritic-preserving normalization for exact Vietnamese matching."""
+        return normalize_accented_text(text)
+
     def _tokenize(self, text: str) -> List[str]:
-        stopwords = {
-            "a",
-            "an",
-            "and",
-            "are",
-            "as",
-            "anh",
-            "cho",
-            "cua",
-            "co",
-            "con",
-            "duoc",
-            "gi",
-            "hinh",
-            "la",
-            "mot",
-            "nhung",
-            "the",
-            "tim",
-            "toi",
-            "trong",
-            "ve",
-            "xem",
-            "what",
-            "which",
-            "with",
-        }
+        """Tokenize keeping diacritics, but drop stopwords by their bare form."""
         return [
             token
-            for token in self._normalize_text(text).split()
-            if len(token) > 1 and token not in stopwords
+            for token in self._normalize_accented(text).split()
+            if len(token) > 1 and strip_accents(token) not in self._STOPWORDS
         ]
 
     def _expand_query_for_clip(self, query: str) -> str:
@@ -403,8 +427,8 @@ class ImageVectorDB:
             str(metadata.get("nearby_text") or "")[:350],
         )
 
-        normalized_query = self._normalize_text(query).strip()
-        direct_text = self._normalize_text(
+        normalized_query = self._normalize_accented(query).strip()
+        direct_text = self._normalize_accented(
             " ".join(
                 str(metadata.get(field) or "")
                 for field in (
@@ -628,16 +652,24 @@ class ImageVectorDB:
             visual_score = float(metadata.get("image_visual_score") or 0.0)
             lexical_score = self._lexical_score(query, doc)
             direct_evidence_score = self._direct_evidence_score(query, doc)
+            phrase_score = self._phrase_match_score(query, doc)
             page_score = self._page_boost(doc, page_boosts)
             quality_adjustment = self._image_quality_adjustment(doc)
+            if phrase_score > 0:
+                # The queried object literally appears on this figure (its OCR
+                # label / caption), so don't let the generic "looks like a text
+                # crop" penalty bury an otherwise exact match.
+                quality_adjustment = max(quality_adjustment, 0.0)
             final_score = (
                 (metadata_score * 0.35)
                 + (lexical_score * 0.35)
                 + (visual_score * 0.12)
+                + (phrase_score * 0.45)
                 + page_score
                 + quality_adjustment
             )
 
+            metadata["image_phrase_score"] = round(phrase_score, 4)
             metadata["image_lexical_score"] = round(lexical_score, 4)
             metadata["image_direct_evidence_score"] = round(direct_evidence_score, 4)
             metadata["image_quality_adjustment"] = round(quality_adjustment, 4)
@@ -705,6 +737,90 @@ class ImageVectorDB:
         )
         return filtered
 
+    def _query_content_phrases(self, query: str):
+        """Return (phrases, match_tokens) describing the object the user wants.
+
+        ``phrases`` are 2+ word contiguous content phrases (e.g. "con trau") used
+        for high-precision matching; ``match_tokens`` are the individual content
+        tokens minus generic classifiers, used for candidate recall.
+        """
+        # Keep diacritics in the tokens themselves (so "trâu" != "trầu"), but
+        # decide filler/classifier membership via the accent-free bare form.
+        tokens = [
+            token
+            for token in self._normalize_accented(query).split()
+            if len(token) > 1 and strip_accents(token) not in PHRASE_FILLER_WORDS
+        ]
+        phrases = []
+        if len(tokens) >= 2:
+            phrases.append(" ".join(tokens))
+            phrases.extend(f"{a} {b}" for a, b in zip(tokens, tokens[1:]))
+        phrases = sorted(
+            {p for p in phrases if len(p.split()) >= 2}, key=lambda p: -len(p)
+        )
+        match_tokens = [t for t in tokens if strip_accents(t) not in CLASSIFIER_WORDS]
+        return phrases, match_tokens
+
+    def _identity_text(self, metadata: Dict[str, Any], fields) -> str:
+        return self._normalize_accented(
+            " ".join(str(metadata.get(field) or "") for field in fields)
+        )
+
+    def _phrase_match_score(self, query: str, doc: Document) -> float:
+        """1.0 when the query's content phrase appears in the figure's own label/caption."""
+        phrases, _ = self._query_content_phrases(query)
+        if not phrases:
+            return 0.0
+        identity_text = f" {self._identity_text(doc.metadata or {}, PHRASE_IDENTITY_FIELDS)} "
+        return 1.0 if any(f" {phrase} " in identity_text for phrase in phrases) else 0.0
+
+    def _get_lexical_candidates(self, query: str, limit: int = 30) -> List[Document]:
+        """Find images whose OCR label / caption literally contains the query object.
+
+        CLIP and the multilingual metadata embedding both miss small scanned
+        sub-figures (e.g. a buffalo crop labelled "Con trâu"), so this exact-text
+        channel guarantees such images enter the candidate pool.
+        """
+        phrases, match_tokens = self._query_content_phrases(query)
+        if not phrases and not match_tokens:
+            return []
+
+        try:
+            snapshot = self._metadata_chroma._collection.get(
+                include=["documents", "metadatas"]
+            )
+        except Exception as e:
+            logger.debug(f"Lexical candidate fetch failed: {e}")
+            return []
+
+        ids = snapshot.get("ids", []) or []
+        metadatas = snapshot.get("metadatas", []) or []
+        documents = snapshot.get("documents", []) or []
+
+        scored = []
+        for i, doc_id in enumerate(ids):
+            metadata = dict(metadatas[i] or {})
+            phrase_text = f" {self._identity_text(metadata, PHRASE_IDENTITY_FIELDS)} "
+            recall_text = f" {self._identity_text(metadata, LEXICAL_IDENTITY_FIELDS)} "
+            phrase_hit = any(f" {phrase} " in phrase_text for phrase in phrases)
+            token_hits = sum(1 for token in match_tokens if f" {token} " in recall_text)
+            if not phrase_hit and token_hits == 0:
+                continue
+
+            metadata["image_doc_id"] = doc_id
+            metadata["image_metadata_distance"] = None
+            metadata["image_metadata_score"] = 0.0
+            metadata["image_visual_distance"] = None
+            metadata["image_visual_score"] = 0.0
+            metadata["image_retrieval_source"] = "lexical"
+            scored.append((
+                (1 if phrase_hit else 0, token_hits),
+                Document(page_content=documents[i] or "", metadata=metadata),
+            ))
+
+        scored.sort(key=lambda pair: pair[0], reverse=True)
+        return [doc for _, doc in scored[:limit]]
+
     def similarity_search(
         self,
         query: str,
@@ -753,6 +869,7 @@ class ImageVectorDB:
                 )
             )
             candidates.extend(self._get_page_candidates(page_boosts))
+            candidates.extend(self._get_lexical_candidates(query))
             return self._rerank(query, candidates, page_boosts, k, min_score)
         except Exception as e:
             logger.error(f"Image similarity search failed: {e}")
