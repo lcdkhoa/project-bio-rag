@@ -9,11 +9,10 @@ from main import _should_skip_file
 
 
 def test_same_name_new_hash_not_skipped():
-    processed_names = {"SGK KHTN8 KNTT.pdf"}
-    # a file already in the name list but whose pages still need text must NOT be skipped
-    assert _should_skip_file("SGK KHTN8 KNTT.pdf", pages_needing_text=[1, 2, 3],
-                             processed_names=processed_names) is False
+    # a file already in the (advisory, no-longer-consulted) name list but whose pages
+    # still need text must NOT be skipped
+    assert _should_skip_file("SGK KHTN8 KNTT.pdf", pages_needing_text=[1, 2, 3]) is False
 
 
 def test_fully_done_file_skipped():
-    assert _should_skip_file("x.pdf", pages_needing_text=[], processed_names={"x.pdf"}) is True
+    assert _should_skip_file("x.pdf", pages_needing_text=[]) is True

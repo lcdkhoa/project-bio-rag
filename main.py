@@ -44,11 +44,28 @@ def mark_image_as_processed(filename: str):
         f.write(f"{filename}\n")
 
 
-def _should_skip_file(filename, pages_needing_text, processed_names):
+def _should_skip_file(filename, pages_needing_text):
     """Skip only when the CONTENT (via hash-based status) has no pages left.
-    The filename list is advisory; a replaced same-named file (new hash) will
-    report pages_needing_text and therefore NOT be skipped."""
+    A replaced same-named file (new hash) will report pages_needing_text and
+    therefore NOT be skipped."""
     return len(pages_needing_text) == 0
+
+
+def _index_pdf_pages(loader, text_db, status_tracker, pdf_file, pdf_hash, filename, pages_to_index):
+    """Index only the pages that still need text (resume-safe).
+
+    Loads and adds one page at a time via `loader.load_page` (0-based index),
+    using a deterministic id per chunk (`{pdf_hash}_p{page_num}_c{chunk_index}`)
+    so re-adding an already-indexed page upserts instead of creating duplicate
+    rows. Marks each page as indexed even when it produced no chunks, so it
+    isn't retried forever.
+    """
+    for page_num in pages_to_index:
+        page_docs = loader.load_page(pdf_file, page_num - 1)
+        if page_docs:
+            ids = [f"{pdf_hash}_p{page_num}_c{d.metadata['chunk_index']}" for d in page_docs]
+            text_db.add_documents(page_docs, ids=ids)
+        status_tracker.mark_text_indexed(pdf_hash, page_num, filename)
 
 
 def run_etl_text_only():
@@ -97,7 +114,7 @@ def run_etl_text_only():
             pages_to_index = status_tracker.get_pages_needing_text(
                 pdf_hash, num_pages)
 
-            if _should_skip_file(filename, pages_to_index, processed_files):
+            if _should_skip_file(filename, pages_to_index):
                 logger.info(
                     f"[{filename}] All pages already indexed, skipping")
                 mark_file_as_processed(filename)
@@ -105,17 +122,8 @@ def run_etl_text_only():
 
             logger.info(f"[{filename}] Pages to index (1-based PDF index): {pages_to_index}")
 
-            docs = loader.load_pdf(pdf_file)
-            if not docs:
-                logger.warning(f"No text extracted from {filename}")
-                continue
-
-            logger.info(f"[{filename}] Loaded {len(docs)} chunks")
-            text_db.add_documents(docs)
-
-            for pdf_index in pages_to_index:
-                status_tracker.mark_text_indexed(
-                    pdf_hash, pdf_index, filename)
+            _index_pdf_pages(loader, text_db, status_tracker, pdf_file,
+                              pdf_hash, filename, pages_to_index)
 
             mark_file_as_processed(filename)
             logger.info(f"Completed: {filename}")
