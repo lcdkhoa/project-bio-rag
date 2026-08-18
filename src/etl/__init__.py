@@ -13,6 +13,7 @@ from src.etl.image_processor import (
 )
 from src.etl.image_review import ImageReviewManager
 from src.etl.local_image_importer import LocalImageImporter
+from src.etl.layout.loader import LayoutOCRLoader
 
 __all__ = [
     "SimpleLoader",
@@ -29,4 +30,5 @@ __all__ = [
     "get_pdf_variant",
     "ImageReviewManager",
     "LocalImageImporter",
+    "LayoutOCRLoader",
 ]
