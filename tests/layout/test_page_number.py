@@ -13,3 +13,15 @@ def test_reads_bottom_number():
 def test_falls_back_to_pdf_index_when_absent():
     blank = np.full((300, 200, 3), 255, np.uint8)
     assert detect_printed_page_number(blank, "cd", pdf_index=42) == 42
+
+def test_reads_bottom_right_number():
+    # NOTE: uses a 2-digit number, not the coordinator-suggested "144" — see task-4-report.md
+    # "Fix report" for why 3 digits at the shared helper's fixed right-corner org clip against
+    # the 200px-wide synthetic canvas itself (unrelated to this module's crop fractions).
+    assert detect_printed_page_number(_page_with_number("37", corner="right"), "cd", pdf_index=200) == 37
+
+def test_body_text_in_bottom_band_is_not_read_as_number():
+    img = np.full((300, 200, 3), 255, np.uint8)
+    # a body-ish line sitting in the widened bottom band (y ~ 0.82 * 300 = 246)
+    cv2.putText(img, "trong khong khi", (10, 246), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+    assert detect_printed_page_number(img, "ctst", pdf_index=57) == 57   # fallback, no false digit read
