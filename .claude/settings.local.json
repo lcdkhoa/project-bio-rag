@@ -28,7 +28,9 @@
       "Bash(rm -f out_build.log out_build2.log)",
       "Bash(grep -cE 'Overfull \\\\\\\\vbox' build2.log build.log)",
       "Bash(grep -E 'Overfull \\\\\\\\vbox \\\\\\([0-9]{2,}' build.log)",
-      "Bash(grep -iE 'Overfull \\\\\\\\hbox \\\\\\([5-9]\\\\.|Overfull \\\\\\\\hbox \\\\\\([0-9]{2,}' b.log)"
+      "Bash(grep -iE 'Overfull \\\\\\\\hbox \\\\\\([5-9]\\\\.|Overfull \\\\\\\\hbox \\\\\\([0-9]{2,}' b.log)",
+      "Bash(git lfs *)",
+      "Bash(git rm *)"
     ]
   }
 }

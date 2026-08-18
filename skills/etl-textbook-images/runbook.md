@@ -143,4 +143,5 @@ status = ProcessingStatus()
 # either bump IMAGE_EXTRACTION_VERSION (preferred) or reset the table
 ```
 
-The `reset_status.py` script in the project root provides a CLI for this.
+The simplest reset is to bump `IMAGE_EXTRACTION_VERSION` in `.env` (preferred), or delete the
+`database/` directory to rebuild everything from scratch.

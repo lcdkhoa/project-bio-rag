@@ -18,12 +18,12 @@ Luồng end-to-end:
 
 ```mermaid
 flowchart TD
-    A[PDF trong data/] --> B[OCR text per page]
+    A[PDF trong datasources/] --> B[OCR text per page]
     B --> C[Text chunking]
     C --> D[Text VectorDB: biology_text]
 
     B --> E[Image extraction per page]
-    E --> F[Region detect + filter + CLIP + OCR local]
+    E --> F[Anchor-first detect + OWL-ViT + per-variant + caption]
     F --> G[Image metadata + search_text]
     G --> H[Image VectorDB: biology_image_metadata + biology_images]
     G --> I[Manifest review JSONL]
@@ -42,32 +42,35 @@ flowchart TD
 ## 2) Cấu trúc codebase
 
 ```text
-main.py
-reset_status.py
+main.py                      # entry CLI (ETL, review CRUD, API)
+datasources/                 # PDF SGK đầu vào
+database/                    # Chroma DB + ảnh crop + manifest (sinh ra khi chạy)
 src/
-  config.py
+  config.py                  # cấu hình tập trung (đọc .env)
   etl/
-    loaders.py
-    cleaner.py
-    text_splitter.py
-    processing_status.py
-    image_processor.py
-    image_captioner.py
-    image_review.py
+    loaders.py               # OCR PDF -> Document
+    cleaner.py               # chuẩn hóa text tiếng Việt
+    text_splitter.py         # chunking
+    processing_status.py     # checkpoint resume theo version
+    image_processor.py       # detect/crop ảnh (anchor-first, per-variant)
+    image_captioner.py       # caption ảnh bằng VLM
+    image_review.py          # CRUD metadata ảnh (export/upsert/apply/replace)
+    local_image_importer.py  # import ảnh từ thư mục, bỏ qua PDF
   rag/
-    vectorstore.py
-    image_vectorstore.py
-    hybrid_retriever.py
-    chain.py
-    llm.py
+    vectorstore.py           # text store + relevance gate
+    image_vectorstore.py     # image store (CLIP + metadata) + rerank
+    hybrid_retriever.py      # gộp text + image retrieval
+    query_intent.py          # phát hiện ý định hỏi ảnh
+    chain.py                 # prompt + LLM + parser
+    llm.py                   # nạp Qwen2.5
   app/
-    api.py
-    dependencies.py
-document/
-  huong_dan_van_hanh_rag.md
-  huong_dan_van_hanh_rag.html
-  technical_handover_rag.md
-  technical_handover_rag.html
+    api.py                   # Flask API (chat/stream, ETL, image CRUD)
+    dependencies.py          # singleton nạp model 1 lần
+  utils/
+    download_models.py       # tải sẵn model để chạy offline
+  test/                      # bộ đánh giá RAG (IR metrics + LLM judge) & QA ETL ảnh
+document/                    # tài liệu (xem document/README.md)
+skills/etl-textbook-images/  # runbook chi tiết cho ETL ảnh
 ```
 
 ## 3) Ý nghĩa các block code chính
@@ -142,13 +145,15 @@ os.environ["RAG_DATA_DIR"] = "/content/drive/MyDrive/project_bio_rag/data"
 
 ### 3.5 Image ETL (`src/etl/image_processor.py`)
 
-`extract_images_from_pdf()` theo phase:
-1. render page
-2. detect vùng ảnh (nhiều chiến lược)
-3. refine + dedupe + suppress container
-4. CLIP filter + loại crop text-dominant
-5. enrich metadata (`figure_*`, context OCR, caption, keywords)
-6. build `search_text`, save file ảnh, append manifest, mark status.
+`extract_images_from_pdf()` dùng cơ chế **anchor-first deterministic** (v15), chọn lớp xử lý theo nhà xuất bản (CD / CTST / KNTT) qua `make_image_processor()`:
+1. render page ở DPI cao.
+2. tìm **anchor** từ OCR (nhãn `Hình`, `Bảng`, box "Em có biết"...) để biết chỗ nào chắc chắn có ảnh.
+3. detect vùng ứng viên bằng OWL-ViT + heuristic khung/đường nét theo từng variant.
+4. dedupe + suppress container + ghép sub-figure thành composite.
+5. enrich metadata (`figure_*`, context OCR, caption + keywords từ VLM).
+6. build `search_text`, lưu file ảnh + snapshot page, append manifest, mark status theo version.
+
+Chi tiết thuật toán xem `document/image_etl_technical.md` và `skills/etl-textbook-images/`.
 
 ### 3.6 Caption model (`src/etl/image_captioner.py`)
 

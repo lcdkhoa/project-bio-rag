@@ -80,6 +80,16 @@ Kết quả:
 
 ## 5. File trong thư mục
 
+**Đánh giá RAG (text + câu trả lời):**
 - `metrics.py` — hàm tính Precision@k / Recall@k / MRR (page & book level).
-- `generate_testsets.py` — sinh 12 bộ test có ground-truth nguồn.
-- `evaluator.py` — chạy RAG thật, đo IR, Gemini chấm lại, xếp hạng.
+- `generate_testsets.py` — sinh 12 bộ test có ground-truth nguồn (dùng LLM đánh giá).
+- `evaluator.py` — chạy RAG thật, đo IR, LLM thứ 2 chấm lại, xếp hạng 12 sách.
+- `recall_at_k.py` — benchmark Recall@3/5/10 nhanh, **không gọi LLM**, để chẩn đoán recall thô.
+- `eval_llm.py` — dựng client LLM đánh giá (endpoint OpenAI-compatible: Groq/MiMo/OpenRouter...).
+- `testsets/` — các file `*_testset.csv` (test) và `*_result.csv` (kết quả từng câu).
+- `evaluation_report.{csv,md}`, `recall_at_k_report.{csv,md}` — báo cáo tổng hợp/xếp hạng.
+
+**QA cho ETL ảnh (không đụng DB):**
+- `test_image_extraction_full.py` — render 1 page/PDF, vẽ overlay anchor + region + xuất crop PNG
+  và index HTML để soi trực quan chất lượng cắt ảnh. Đây là công cụ QA ảnh chính.
+- `scan_layout_cases.py` — quét hàng loạt page snapshot, phân loại bố cục (composite, grid, info-box).
