@@ -16,7 +16,13 @@ A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-dr
 
 Key locked choices: full clean rebuild of `database/` (re-ETL all 12 books on Colab Pro); new `layout_segmenter` spine (classical CV) separating main-text / sidebar / figure regions; text embedding → `BAAI/bge-m3`; add `BAAI/bge-reranker-v2-m3` cross-encoder; Vietnamese diacritic post-correction; sidebar/info-box as separate labeled chunks; checkpoint keyed on **content hash** not filename.
 
-**Operating rules for this work:** log each decision in `document/decision_log.html`; keep spec/plan in `document/specs/`; keep CLAUDE.md + memory current; **adversarially review every code change for hidden bugs before claiming done.**
+## Working rules (always)
+
+- **Adversarially review every code change for hidden bugs before claiming done** — trace edge cases, off-by-ones, coordinate/index mismatches, stale caches; don't trust that a passing test means correct.
+- **Do NOT run the full test suite while iterating.** Run only the focused test(s) for the code you changed (e.g. `python -m pytest tests/layout/test_segmenter.py -v`). Run the whole suite only when explicitly asked or right before finishing a milestone.
+- **Keep tests small and targeted.** Avoid large/slow/expensive tests unless they're truly necessary; prefer focused unit tests with synthetic fixtures over heavy end-to-end runs.
+- **Commit messages: NO `Co-Authored-By` trailer** (and no "Generated with" lines). Plain messages only.
+- Log each decision in `document/decision_log.html`; keep spec/plan in `document/specs/`; keep CLAUDE.md + memory current.
 
 ## Commands
 
