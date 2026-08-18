@@ -21,7 +21,11 @@ def test_reads_bottom_right_number():
     assert detect_printed_page_number(_page_with_number("37", corner="right"), "cd", pdf_index=200) == 37
 
 def test_body_text_in_bottom_band_is_not_read_as_number():
+    # Scope: locks "pure-letter body text in the band is not misread as a page number."
+    # The harder case -- a running footer with BOTH a grade digit and the real page number in
+    # the same corner (e.g. "...NHIEN 7   45") -- is real-page calibration, deferred to Task 10.
     img = np.full((300, 200, 3), 255, np.uint8)
-    # a body-ish line sitting in the widened bottom band (y ~ 0.82 * 300 = 246)
-    cv2.putText(img, "trong khong khi", (10, 246), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,0), 1)
+    # ink must land INSIDE the left crop box: x in [0,50], y in [255,300].
+    # putText org y is the BASELINE (glyphs drawn above it), so org_y ~292 => ink ~y275-292.
+    cv2.putText(img, "abc", (4, 292), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
     assert detect_printed_page_number(img, "ctst", pdf_index=57) == 57   # fallback, no false digit read
