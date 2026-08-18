@@ -17,7 +17,7 @@ from ..config import (
     RETRIEVER_FETCH_K,
     RETRIEVER_MAX_K,
     RETRIEVER_DISTANCE_MARGIN,
-    HF_TOKEN,
+    embedding_model_kwargs,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class VectorDB:
         self.collection_name = collection_name
         self.embedding = HuggingFaceEmbeddings(
             model_name=embedding_model,
-            model_kwargs={"token": HF_TOKEN} if HF_TOKEN else {},
+            model_kwargs=embedding_model_kwargs(),
         )
         self.db = self._build_db(documents)
         logger.info(f"VectorDB initialized with {self.db._collection.count()} existing chunks")

@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 
-from ..config import PERSIST_DIR, STATUS_COLLECTION_NAME, HF_TOKEN, EMBEDDING_MODEL
+from ..config import PERSIST_DIR, STATUS_COLLECTION_NAME, EMBEDDING_MODEL, embedding_model_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class ProcessingStatus:
     def __init__(self):
         self.embedding = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
-            model_kwargs={"token": HF_TOKEN} if HF_TOKEN else {},
+            model_kwargs=embedding_model_kwargs(),
         )
         self.db = Chroma(
             collection_name=STATUS_COLLECTION_NAME,
