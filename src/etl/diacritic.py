@@ -28,6 +28,7 @@ SCIENCE_ALLOWLIST = {"oxygen", "hydrogen", "nitrogen", "sulfuric", "acid",
                      "carbon", "dioxide", "chlorine", "sodium", "iron"}
 
 _TOKEN = re.compile(r"\w+|\W+", re.UNICODE)
+_WORD = re.compile(r"^\w+$", re.UNICODE)
 
 def _skip(tok: str) -> bool:
     if any(ch.isdigit() for ch in tok):
@@ -43,21 +44,35 @@ def _apply_case(src: str, repl: str) -> str:
 
 def fix_diacritics(text: str) -> str:
     toks = _TOKEN.findall(text)
-    words = [t for t in toks if t.strip()]  # for prev-word lookups
-    out, wi = [], -1
+    out = []
+    # Running window of the last up to 2 *word* tokens (lowercase), most
+    # recent last. Punctuation-only / whitespace-only tokens never enter
+    # this window, so a trigger word still guards a confusion across
+    # intervening punctuation (e.g. "sự, tổn tại"), and the window spans
+    # up to 2 words back (e.g. "sản xuất giây").
+    prev_words = []
+
+    def _remember(tok: str, low: str) -> None:
+        if _WORD.match(tok):
+            prev_words.append(low)
+            if len(prev_words) > 2:
+                prev_words.pop(0)
+
     for t in toks:
         if not t.strip():
             out.append(t); continue
-        wi += 1
         low = t.lower()
         if _skip(t):
-            out.append(t); continue
-        prev = words[wi - 1].lower() if wi > 0 else ""
+            out.append(t)
+            _remember(t, low)
+            continue
         if low in _CONTEXT_GUARDED:
             g = _CONTEXT_GUARDED[low]
-            out.append(_apply_case(t, g["to"]) if prev in g["prev"] else t)
-        elif low in _CONFUSIONS and low not in _CONTEXT_GUARDED:
+            fire = bool(g["prev"] & set(prev_words))
+            out.append(_apply_case(t, g["to"]) if fire else t)
+        elif low in _CONFUSIONS:
             out.append(_apply_case(t, _CONFUSIONS[low]))
         else:
             out.append(t)
+        _remember(t, low)
     return "".join(out)

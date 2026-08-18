@@ -12,3 +12,23 @@ def test_preserves_science_and_english_terms():
 def test_idempotent():
     once = fix_diacritics("phát triên")
     assert fix_diacritics(once) == once
+
+def test_context_guard_fires_adjacent():
+    once = fix_diacritics("sự tổn tại")
+    assert once == "sự tồn tại"
+    assert fix_diacritics(once) == once
+
+def test_context_guard_fires_across_punctuation():
+    once = fix_diacritics("sự, tổn tại")
+    assert once == "sự, tồn tại"
+    assert fix_diacritics(once) == once
+
+def test_context_guard_fires_at_two_token_distance():
+    once = fix_diacritics("sản xuất giây")
+    assert once == "sản xuất giấy"
+    assert fix_diacritics(once) == once
+
+def test_context_guard_does_not_fire_without_trigger():
+    once = fix_diacritics("một giây trôi qua")
+    assert once == "một giây trôi qua"
+    assert fix_diacritics(once) == once
