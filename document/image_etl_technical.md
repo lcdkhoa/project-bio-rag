@@ -1,6 +1,6 @@
 # Tài liệu kỹ thuật — ETL trích xuất hình ảnh từ PDF scan
 
-Tài liệu mô tả **logic**, **luồng xử lý (code flow)** và **cách debug/mở rộng** module trích ảnh trong pipeline RAG. Nội dung bám sát code hiện tại tại `src/etl/image_processor.py` (phiên bản extract **v6**).
+Tài liệu mô tả **logic**, **luồng xử lý (code flow)** và **cách debug/mở rộng** module trích ảnh trong pipeline RAG. Nội dung bám sát code tại `src/etl/image_processor.py` (kiến trúc anchor-first, version hiện tại `v15_per_variant`, tinh chỉnh riêng cho CD/CTST/KNTT). Quy ước bố cục & playbook mới nhất: `skills/etl-textbook-images/`.
 
 **Đối tượng đọc:** developer tiếp nhận ETL, người QA visual bbox, người mở rộng detector cho SGK khác series.
 
@@ -10,9 +10,10 @@ Tài liệu mô tả **logic**, **luồng xử lý (code flow)** và **cách deb
 |------|----------|
 | `document/technical_handover_rag.md` | Handover tổng thể hệ thống |
 | `document/huong_dan_van_hanh_rag.md` | Vận hành, env, reprocess |
-| `src/test_etl/test_image_extraction_full.py` | Dry-run 1 trang + overlay QA |
-| `src/test_etl/scan_layout_cases.py` | Quét 182 snapshot → phân loại layout + JSON |
-| `scripts/test_image_extraction_page6.py` | Smoke test helper (không OWL-ViT) |
+| `document/phat_trien_mo_rong.md` | Hướng dẫn mở rộng (thêm sách, thêm biến thể NXB) |
+| `src/test/test_image_extraction_full.py` | Dry-run 1 trang + overlay QA (không đụng DB) |
+| `src/test/scan_layout_cases.py` | Quét snapshot → phân loại layout + JSON |
+| `skills/etl-textbook-images/` | Runbook & taxonomy bố cục theo NXB |
 
 ---
 

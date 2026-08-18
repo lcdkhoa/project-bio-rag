@@ -78,9 +78,9 @@ cp .env.example .env
 - `TESSERACT_CMD`: đường dẫn `tesseract.exe` trên Windows, ví dụ `C:/Program Files/Tesseract-OCR/tesseract.exe`.
 - `POPPLER_PATH`: đường dẫn thư mục `bin` của Poppler trên Windows, ví dụ `C:/poppler/Library/bin`.
 - `RAG_DATABASE_DIR`: nơi lưu thư mục database. Để rỗng thì dùng `./database`; trên Colab nên trỏ vào Google Drive.
-- `RAG_DATA_DIR`: nơi đọc PDF đầu vào. Để rỗng thì dùng `./data`.
+- `RAG_DATA_DIR`: nơi đọc PDF đầu vào. Để rỗng thì dùng `./datasources`.
 - `IMAGE_CAPTION_ENABLED=true|false`: bật/tắt caption model cho ảnh.
-- `IMAGE_EXTRACTION_VERSION=v4_owlvit_context_caption`: version thuật toán extract/caption ảnh, đổi version sẽ buộc reprocess image page.
+- `IMAGE_EXTRACTION_VERSION=v15_per_variant`: version thuật toán extract/caption ảnh, đổi version sẽ buộc reprocess image page.
 - `IMAGE_REVIEW_MANIFEST_PATH`: nơi lưu manifest review ảnh. Để rỗng thì mặc định nằm trong `RAG_DATABASE_DIR`.
 
 Nếu chưa biết máy cài Poppler/Tesseract ở đâu, repo có sẵn:
@@ -291,27 +291,36 @@ Lưu ý:
 
 ## 6) Reset và xử lý sự cố
 
-Script `reset_status.py`:
+Hệ thống dùng cơ chế **resume theo version** thay cho script reset riêng. Có 3 cách reset tùy mức độ:
 
-## Reset trạng thái image cho tất cả page
+### 6.1 Reprocess ảnh bằng cách bump version (khuyến nghị)
+
+Đổi `IMAGE_EXTRACTION_VERSION` trong `.env` sang một giá trị mới (ví dụ `v15_per_variant` -> `v16_test`). Lần ETL ảnh tiếp theo, mọi page có version cũ sẽ tự được trích xuất lại; text index không bị ảnh hưởng.
+
 ```bash
-python reset_status.py --all
+# Sau khi đổi version trong .env
+python main.py --image-only
 ```
 
-## Xóa image vector collections
+### 6.2 Replace image DB từ snapshot
+
+Khi chỉ muốn dựng lại image index theo dữ liệu đã duyệt mà không OCR lại:
+
 ```bash
-python reset_status.py --image-index
+python main.py --export-image-db database/all_image_db.json
+python main.py --replace-image-db database/all_image_db.json --review-user charlie
 ```
 
-## Reset cả status + image index
-```bash
-python reset_status.py --images-full
+### 6.3 Reset toàn bộ (rebuild from scratch)
+
+Xóa thư mục `database/` rồi chạy lại ETL từ đầu. Thao tác này xóa luôn checkpoint (`processed_files.txt`, `processed_images.txt`), Chroma DB và ảnh đã crop.
+
+```powershell
+Remove-Item -Recurse -Force "D:\personal_repo\project_rag\database"
+python main.py --etl
 ```
 
-## Reset image status theo 1 file PDF
-```bash
-python reset_status.py "D:/personal_repo/project_rag/data/SGK KHTN 6 CD.pdf"
-```
+> Trên Colab khi `RAG_DATABASE_DIR` trỏ vào Google Drive, chỉ xóa đúng thư mục Drive đó nếu thực sự muốn rebuild — đừng `%rm -rf database` trong runtime local.
 
 ---
 

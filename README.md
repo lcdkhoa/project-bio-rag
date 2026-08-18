@@ -1,12 +1,86 @@
-# Biology RAG (Text + Image)
+# Biology RAG — Trợ lý hỏi đáp SGK Khoa học tự nhiên (Text + Image)
 
-Dự án RAG cho SGK KHTN/Sinh học với 2 pipeline chính:
-- ETL text: OCR tiếng Việt -> chunk -> index vào Chroma.
-- ETL image: detect/crop ảnh theo từng page -> enrich metadata -> index image + metadata.
+Hệ thống **RAG (Retrieval-Augmented Generation)** trả lời câu hỏi dựa trên Sách giáo khoa
+Khoa học tự nhiên (SGK KHTN) bậc THCS. Người dùng hỏi bằng tiếng Việt, hệ thống truy xuất
+**đoạn văn bản** và **hình ảnh minh họa** liên quan từ SGK rồi sinh câu trả lời có trích nguồn.
 
-Hệ thống hỗ trợ human-review và CRUD metadata ảnh để tăng chất lượng image retrieval.
+Dữ liệu nguồn là PDF SGK scan (ảnh chụp trang), nên hệ thống tự OCR tiếng Việt và trích xuất
+hình ảnh theo bố cục của từng nhà xuất bản (Cánh Diều, Chân Trời Sáng Tạo, Kết Nối Tri Thức).
 
-## 1) Cài đặt
+> Người mới tiếp nhận dự án nên đọc theo thứ tự: **README này → [document/technical_handover_rag.md](document/technical_handover_rag.md) (kiến trúc) → [document/phat_trien_mo_rong.md](document/phat_trien_mo_rong.md) (cách mở rộng)**.
+
+---
+
+## 1) Hệ thống làm gì
+
+- **ETL text**: OCR tiếng Việt từng trang PDF → chia chunk → index vào ChromaDB.
+- **ETL image**: phát hiện/cắt ảnh theo từng trang (anchor-first + OWL-ViT, theo từng NXB) →
+  sinh caption/keyword bằng mô hình thị giác → index ảnh + metadata.
+- **Retrieval lai (hybrid)**: gộp truy xuất text + ảnh, định tuyến theo ý định câu hỏi
+  (câu hỏi đòi ảnh sẽ ưu tiên kênh ảnh).
+- **Sinh câu trả lời**: LLM Qwen2.5 trả lời bằng tiếng Việt, chỉ dựa trên ngữ cảnh SGK, kèm trích nguồn.
+- **Human-in-the-loop**: export metadata ảnh ra file để người dùng sửa caption/loại ảnh sai,
+  rồi apply ngược lại nhằm tăng độ chính xác của image retrieval.
+- **Flask API**: phục vụ chat (có streaming), upload PDF chạy ETL, và CRUD metadata ảnh cho frontend.
+
+---
+
+## 2) Kiến trúc tổng quan
+
+```
+                 ┌─────────────────────────── ETL (offline) ───────────────────────────┐
+  PDF SGK  ─────▶│  OCR (Tesseract vie)                                                  │
+ datasources/    │     │                                                                 │
+                 │     ├─▶ TextSplitter ──▶ ChromaDB: biology_text                        │
+                 │     │                                                                  │
+                 │     └─▶ ImageProcessor (anchor-first + OWL-ViT, per-variant)           │
+                 │            │   └─▶ ImageCaptioner (VLM) ──▶ caption_vi / keywords_vi    │
+                 │            └─▶ ChromaDB: biology_images (CLIP) + biology_image_metadata │
+                 │                 └─▶ image_review_manifest.jsonl ◀── human review CRUD   │
+                 └───────────────────────────────────────────────────────────────────────┘
+                                                  │
+                 ┌──────────────────────── Truy vấn (online) ──────────────────────────┐
+  Câu hỏi  ─────▶│  HybridRetriever ──┬─▶ text store (RelevanceGatedRetriever)          │
+  (Flask API)    │   (query_intent)   └─▶ image store (CLIP + metadata + rerank)        │
+                 │        │                                                             │
+                 │        └─▶ BiologyRAG (prompt) ──▶ Qwen2.5 LLM ──▶ answer + gallery   │
+                 └─────────────────────────────────────────────────────────────────────┘
+```
+
+**4 khối chính** (chi tiết: [document/technical_handover_rag.md](document/technical_handover_rag.md)):
+
+| Khối | Module chính | Vai trò |
+|---|---|---|
+| Ingestion + ETL text | `src/etl/loaders.py`, `text_splitter.py`, `cleaner.py` | OCR + chunk + index text |
+| ETL image + review | `src/etl/image_processor.py`, `image_captioner.py`, `image_review.py` | Cắt ảnh, caption, CRUD metadata |
+| Storage + retrieval | `src/rag/vectorstore.py`, `image_vectorstore.py`, `hybrid_retriever.py`, `query_intent.py` | Vector store + truy xuất lai |
+| QA chain + API | `src/rag/chain.py`, `llm.py`, `src/app/api.py`, `dependencies.py` | Prompt + LLM + Flask API |
+
+---
+
+## 3) Cấu trúc thư mục
+
+```
+main.py                  # Entry CLI: ETL, review CRUD, chạy API
+requirements.txt
+.env.example             # Mẫu cấu hình — copy thành .env
+datasources/             # PDF SGK đầu vào (12 cuốn)
+database/                # Sinh ra khi chạy: Chroma DB, ảnh crop, manifest, checkpoint
+windows_tools/           # poppler.zip, tesseract-ocr.zip (tiện cài trên Windows)
+src/
+  config.py              # Cấu hình tập trung, đọc từ .env
+  etl/                   # Pipeline ETL text + image
+  rag/                   # Vector store, retriever, LLM, QA chain
+  app/                   # Flask API + dependency singleton
+  utils/download_models.py  # Tải sẵn model để chạy offline
+  test/                  # Bộ đánh giá RAG (IR metrics + LLM judge) & QA ETL ảnh
+document/                # Tài liệu kỹ thuật & vận hành (xem document/README.md)
+skills/etl-textbook-images/  # Runbook chi tiết cho ETL ảnh theo NXB
+```
+
+---
+
+## 4) Cài đặt
 
 ```bash
 pip install -r requirements.txt
@@ -14,231 +88,147 @@ cp .env.example .env
 ```
 
 Thiết lập tối thiểu trong `.env`:
-- `HF_TOKEN=<your_token>`
-- `USE_GPU=true` (nếu có GPU)
+- `HF_TOKEN=<your_token>` — bắt buộc để tải model từ Hugging Face.
+- `USE_GPU=true` — nếu máy có GPU (CUDA).
 
-Nếu chạy OCR trên Windows, khai báo thêm:
+### OCR trên Windows
+
+Cần Poppler (render PDF) và Tesseract (OCR tiếng Việt). Khai báo trong `.env`:
 
 ```env
 TESSERACT_CMD=C:/Program Files/Tesseract-OCR/tesseract.exe
 POPPLER_PATH=C:/poppler/Library/bin
 ```
 
-Repo có sẵn zip local trong `windows_tools/`:
+Repo có sẵn `windows_tools/poppler.zip` và `windows_tools/tesseract-ocr.zip`.
+Hướng dẫn giải nén và khai báo path: [document/windows_tools_setup.md](document/windows_tools_setup.md).
 
-```text
-windows_tools/poppler.zip
-windows_tools/tesseract-ocr.zip
+### OCR trên Google Colab / Linux
+
+```bash
+apt-get update
+apt-get install -y poppler-utils tesseract-ocr tesseract-ocr-vie
 ```
 
-Nếu chưa biết máy cài Poppler/Tesseract ở đâu, xem hướng dẫn giải nén và khai báo path tại `document/windows_tools_setup.md`.
-
-Nếu chạy trên Google Colab, cài thêm system libs trước khi ETL:
+Trên Colab nên trỏ database vào Google Drive để không mất dữ liệu khi runtime ngắt:
 
 ```python
-!apt-get update
-!apt-get install -y poppler-utils
-!apt-get install -y tesseract-ocr tesseract-ocr-vie
-```
-
-### Lưu `database` trên Google Drive khi chạy Colab
-
-Mặc định project ghi Chroma DB, checkpoint ETL, ảnh crop, manifest review và caption cache vào `./database`.
-Trên Colab, thư mục này nằm trong runtime tạm và có thể mất khi runtime bị ngắt. Để lưu thẳng vào Google Drive, mount Drive rồi đặt `RAG_DATABASE_DIR` trước khi chạy ETL:
-
-```python
-from google.colab import drive
-drive.mount("/content/drive")
-
+from google.colab import drive; drive.mount("/content/drive")
 import os
 os.environ["RAG_DATABASE_DIR"] = "/content/drive/MyDrive/project_bio_rag/database"
 ```
 
-Sau đó chạy lại lệnh ETL như bình thường:
+Chi tiết Colab/Drive & xử lý sự cố: [document/huong_dan_van_hanh_rag.md](document/huong_dan_van_hanh_rag.md).
+
+---
+
+## 5) Quy trình sử dụng (khuyến nghị)
 
 ```bash
-python main.py --etl
-# hoặc
+# 1. Build text index
 python main.py --text-only
+
+# 2. Build image index (cắt ảnh + caption)
 python main.py --image-only
+
+# 3. Export metadata ảnh để người dùng review
+python main.py --export-image-review database/review_images.json
+
+# 4. (Thủ công) sửa caption / loại ảnh sai trong file JSON
+
+# 5. Apply review trở lại DB
+python main.py --apply-image-review database/review_images.json --review-user charlie
+
+# 6. Chạy API
+python main.py --api --port 5000
 ```
 
-Nếu PDF cũng nằm trên Drive, có thể đặt thêm:
+Muốn build nhanh text + image trong một lệnh: `python main.py --etl`.
 
-```python
-os.environ["RAG_DATA_DIR"] = "/content/drive/MyDrive/project_bio_rag/data"
-```
+> ETL có **checkpoint resume**: chạy lại sẽ bỏ qua trang đã xử lý. Muốn ép trích xuất ảnh lại,
+> đổi `IMAGE_EXTRACTION_VERSION` trong `.env` (xem mục 6 của [huong_dan_van_hanh_rag.md](document/huong_dan_van_hanh_rag.md)).
 
-Lưu ý: không chạy `%rm -rf database` trong notebook nếu đang muốn giữ checkpoint. Khi `RAG_DATABASE_DIR` trỏ vào Drive, muốn xóa DB thì chỉ xóa đúng thư mục Drive đó khi thật sự cần rebuild từ đầu.
+---
 
-## 2) Lệnh chính
+## 6) Bảng lệnh CLI
 
 | Lệnh | Mục đích |
 |---|---|
 | `python main.py --text-only` | ETL text (OCR + chunk + index text) |
-| `python main.py --image-only` | ETL image (extract/crop + metadata + index image) |
+| `python main.py --image-only` | ETL image (cắt ảnh + metadata + index image) |
 | `python main.py --etl` | ETL full text + image |
-| `python main.py --export-image-review <path.json>` | Export danh sách ảnh để reviewer chỉnh caption/xóa ảnh sai |
-| `python main.py --export-image-review <path.json> --review-pdf "<file.pdf>"` | Export review theo 1 PDF |
-| `python main.py --export-image-review <path.json> --review-include-completed` | Export cả item đã review |
-| `python main.py --export-image-db <path.json>` | Export snapshot metadata DB (manifest) |
-| `python main.py --export-image-db <path.json> --review-pdf "<file.pdf>"` | Export snapshot metadata DB theo 1 PDF |
+| `python main.py --import-images-dir <dir>` | Import ảnh từ thư mục local, bỏ qua PDF |
+| `python main.py --export-image-review <path.json>` | Export ảnh để reviewer chỉnh caption/loại ảnh sai |
+| `python main.py --export-image-db <path.json>` | Export snapshot toàn bộ metadata DB (manifest) |
 | `python main.py --upsert-image-review-item <item.json> --review-user <name>` | Upsert 1 item metadata theo `image_id` |
 | `python main.py --apply-image-review <path.json> --review-user <name>` | Apply batch review vào DB + sync image index |
-| `python main.py --apply-image-review <path.json> --review-pdf "<file.pdf>" --review-user <name>` | Apply batch chỉ cho 1 PDF |
-| `python main.py --replace-image-db <path.json> --review-user <name>` | Replace toàn bộ manifest + rebuild image index theo snapshot JSON |
-| `python main.py --api` | Chạy Flask API server (mặc định cổng 5000) |
-| `python main.py --api --port <port>` | Chạy Flask API server trên cổng tùy chỉnh |
+| `python main.py --replace-image-db <path.json> --review-user <name>` | Replace toàn bộ manifest + rebuild image index theo snapshot |
+| `python main.py --api --port <port>` | Chạy Flask API server (mặc định 5000) |
 
-## 3) Chạy Frontend (Next.js)
+Cờ phụ: `--review-pdf "<file.pdf>"` lọc theo 1 cuốn; `--review-include-completed` export cả item đã duyệt.
 
-Thư mục `fe` chứa mã nguồn frontend Next.js.
+**Quy tắc apply/upsert/replace (quan trọng):**
+1. `--apply-image-review` là **upsert theo item** trong file JSON, không phải sync full.
+2. Xóa item khỏi array JSON **không** đồng nghĩa xóa item khỏi DB (trừ `--replace-image-db`).
+3. Loại ảnh khỏi retrieval: đặt `review_status=rejected|deleted`, hoặc `is_active=false`, hoặc `delete=true`.
+4. `--replace-image-db` coi file JSON là nguồn sự thật: item không còn trong file sẽ bị xóa khỏi manifest và image index.
 
-### Cài đặt
-```bash
-cd fe
-npm install
-```
+Ví dụ JSON cho từng kịch bản (upsert 1 item, replace toàn bộ DB...) xem
+[document/huong_dan_van_hanh_rag.md](document/huong_dan_van_hanh_rag.md) mục 5.
 
-### Chạy cục bộ
-```bash
-npm run dev
-```
+---
 
-### Chạy trên Google Colab (cùng với Backend)
-
-1. **Chạy Backend (API)**:
-   ```bash
-   python main.py --api --port 5000 &
-   ```
-
-2. **Chạy Frontend**:
-   ```bash
-   cd fe
-   npm run colab
-   ```
-
-3. **Mở giao diện**:
-   Sử dụng công cụ của Colab để mở cổng 3000:
-   ```python
-   from google.colab import output
-   output.serve_kernel_port_as_window(3000)
-   ```
-
-**Lưu ý:** Nếu bạn dùng tunnel (ngrok/localtunnel) cho Backend, hãy đặt biến môi trường `NEXT_PUBLIC_API_HOST` trỏ về URL của tunnel đó trước khi chạy Frontend.
-
-## 4) Quy tắc apply/upsert/replace (quan trọng)
-
-1. `--apply-image-review` là upsert theo item trong file JSON, không phải sync full theo file.
-2. Xóa item khỏi array JSON không đồng nghĩa xóa item khỏi DB.
-3. Muốn loại ảnh khỏi retrieval: đặt `review_status=rejected|deleted`, hoặc `is_active=false`, hoặc `delete=true`.
-4. `--upsert-image-review-item`:
-- `image_id` đã có -> update
-- `image_id` chưa có -> create mới
-5. `--replace-image-db` coi file JSON là nguồn sự thật: item không còn trong file sẽ bị xóa khỏi manifest và image index.
-6. Với item thêm mới thủ công, cần đảm bảo `image_path` tồn tại để index visual hoạt động ổn định.
-
-## 4) Flow khuyến nghị khi làm mới DB
-
-1. Xóa DB cũ và tạo lại thư mục `database`.
-2. Chạy `python main.py --text-only`.
-3. Chạy `python main.py --image-only`.
-4. Export review: `python main.py --export-image-review database/review_images.json`.
-5. Reviewer chỉnh metadata thủ công.
-6. Apply review: `python main.py --apply-image-review database/review_images.json --review-user <name>`.
-7. Chạy API: `python main.py --api --port 5000`.
-
-## 5) Ví dụ upsert 1 item
-
-`database/one_item.json`:
-
-```json
-{
-  "image_id": "manual_0001",
-  "pdf_filename": "SGK KHTN 6 CD.pdf",
-  "page_number": 88,
-  "image_path": "D:/personal_repo/project_rag/database/images/SGK KHTN 6 CD/page_88_img_manual_1.png",
-  "page_snapshot_path": "D:/personal_repo/project_rag/database/images/SGK KHTN 6 CD/pages/page_88_snapshot.png",
-  "bbox": "0,0,100,100",
-  "figure_label": "Hình bổ sung",
-  "figure_caption": "Mô tả bổ sung thủ công",
-  "caption_vi_manual": "Hai con hải mã trên tảng băng",
-  "keywords_vi_manual": "hải mã, vùng cực, băng tuyết",
-  "review_status": "edited",
-  "is_active": true,
-  "review_notes": "added manually"
-}
-```
-
-Chạy:
+## 7) Flask API
 
 ```bash
-python main.py --upsert-image-review-item database/one_item.json --review-user charlie
+python main.py --api --port 5000
 ```
 
-## 6) Ví dụ replace toàn bộ image DB
+| Endpoint | Method | Mô tả |
+|---|---|---|
+| `/api/chat` | POST | Hỏi đáp RAG, trả answer + gallery ảnh |
+| `/api/chat/stream` | POST | Trả lời dạng SSE stream (render từng phần) |
+| `/api/etl` | POST | Upload PDF và chạy ETL nền |
+| `/api/etl/status` | GET | Poll tiến trình ETL theo `filename` |
+| `/api/images` | GET / PUT / POST | Lấy / thay thế metadata ảnh (cho UI review) |
+| `/images/<path>` | GET | Serve file ảnh tĩnh |
 
-Export snapshot:
+Chi tiết request/response & ví dụ frontend: [document/api_server_docs.md](document/api_server_docs.md).
+
+---
+
+## 8) Đánh giá chất lượng
+
+Bộ đánh giá trong `src/test/` đo **chất lượng truy xuất** (Precision/Recall/MRR — số liệu IR
+xác định) và **chất lượng câu trả lời** (một LLM thứ 2 chấm 1–5), cho từng cuốn trong 12 sách.
 
 ```bash
-python main.py --export-image-db database/all_image_db.json
+python src/test/generate_testsets.py   # sinh test set có ground-truth (cần EVAL_LLM_* trong .env)
+python src/test/evaluator.py           # chạy RAG thật, đo IR, LLM chấm, xếp hạng 12 sách
+python src/test/recall_at_k.py         # benchmark recall nhanh, không gọi LLM
 ```
 
-Chỉnh `database/all_image_db.json`, sau đó replace lại DB:
+Chi tiết: [src/test/README.md](src/test/README.md).
 
-```bash
-python main.py --replace-image-db database/all_image_db.json --review-user charlie
-```
+---
 
-Payload là JSON array. Ví dụ rút gọn:
+## 9) Mở rộng & phát triển
 
-```json
-[
-  {
-    "image_id": "manual_0001",
-    "pdf_filename": "SGK KHTN 6 CD.pdf",
-    "page_number": 88,
-    "image_path": "D:/personal_repo/project_rag/database/images/SGK KHTN 6 CD/page_88_img_manual_1.png",
-    "page_snapshot_path": "D:/personal_repo/project_rag/database/images/SGK KHTN 6 CD/pages/page_88_snapshot.png",
-    "bbox": "0,0,100,100",
-    "figure_label": "Hình bổ sung",
-    "figure_caption": "Mô tả bổ sung thủ công",
-    "caption_vi": "Mô tả tự động nếu có",
-    "keywords_vi": "từ khóa tự động",
-    "caption_vi_manual": "Hai con hải mã trên tảng băng",
-    "keywords_vi_manual": "hải mã, vùng cực, băng tuyết",
-    "review_status": "edited",
-    "is_active": true,
-    "review_notes": "kept by snapshot"
-  }
-]
-```
+Hướng dẫn dành cho người muốn thêm sách mới, thêm biến thể NXB, tinh chỉnh retrieval,
+hay thêm endpoint API: **[document/phat_trien_mo_rong.md](document/phat_trien_mo_rong.md)**.
 
-Nếu muốn loại item khỏi retrieval nhưng vẫn giữ trong manifest snapshot, đặt:
+---
 
-```json
-{
-  "image_id": "bad_image_0001",
-  "review_status": "rejected",
-  "is_active": false
-}
-```
+## 10) Tài liệu
 
-Nếu xóa hẳn object khỏi array rồi chạy `--replace-image-db`, item đó sẽ bị xóa khỏi manifest và image index.
+| Tài liệu | Nội dung |
+|---|---|
+| [document/technical_handover_rag.md](document/technical_handover_rag.md) | Kiến trúc, code flow, schema metadata ảnh |
+| [document/huong_dan_van_hanh_rag.md](document/huong_dan_van_hanh_rag.md) | Vận hành chi tiết, CRUD metadata, reset & sự cố |
+| [document/image_etl_technical.md](document/image_etl_technical.md) | Thuật toán ETL ảnh (anchor-first, OWL-ViT) |
+| [document/api_server_docs.md](document/api_server_docs.md) | Tham chiếu Flask API |
+| [document/phat_trien_mo_rong.md](document/phat_trien_mo_rong.md) | Hướng dẫn mở rộng/phát triển |
+| [document/windows_tools_setup.md](document/windows_tools_setup.md) | Cài Poppler/Tesseract trên Windows |
+| [skills/etl-textbook-images/](skills/etl-textbook-images/) | Runbook chi tiết cho ETL ảnh theo NXB |
 
-## 7) Tài liệu bàn giao kỹ thuật
-
-- Technical handover (Markdown): `document/technical_handover_rag.md`
-- Technical handover (HTML): `document/technical_handover_rag.html`
-- Vận hành nhanh (Markdown): `document/huong_dan_van_hanh_rag.md`
-- Vận hành nhanh (HTML): `document/huong_dan_van_hanh_rag.html`
-- Windows tools setup: `document/windows_tools_setup.md`
-
-## 8) Reset tiện ích
-
-```bash
-python reset_status.py --all
-python reset_status.py --image-index
-python reset_status.py --images-full
-python reset_status.py "D:/personal_repo/project_rag/data/SGK KHTN 6 CD.pdf"
-```
+Xem [document/README.md](document/README.md) để có bản đồ tài liệu đầy đủ.
