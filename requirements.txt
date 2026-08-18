@@ -41,3 +41,6 @@ Flask-CORS>=4.0.0
 langchain-openai>=0.1.0          # judge/generator qua endpoint OpenAI-compatible (MiMo/Groq/OpenRouter)
 pandas>=2.0.0
 rapidfuzz
+
+# Testing
+pytest

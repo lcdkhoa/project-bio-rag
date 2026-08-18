@@ -104,3 +104,12 @@ IMAGE_RELEVANCE_THRESHOLD = float(
     os.getenv("IMAGE_RELEVANCE_THRESHOLD", "0.36"))
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+# --- Layout-aware ETL (M1) ---
+RENDER_DPI = int(os.getenv("RENDER_DPI", "220"))
+# HSV saturation floor for detecting colored sidebar/info boxes (0-255).
+LAYOUT_BOX_MIN_SATURATION = int(os.getenv("LAYOUT_BOX_MIN_SATURATION", "45"))
+# Min area fraction of the page for a colored region to count as a box.
+LAYOUT_BOX_MIN_AREA_FRAC = float(os.getenv("LAYOUT_BOX_MIN_AREA_FRAC", "0.02"))
+# Diacritic fix (D-09)
+DIACRITIC_FIX_ENABLED = os.getenv("DIACRITIC_FIX_ENABLED", "true").lower() == "true"
