@@ -12,11 +12,15 @@ langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.1.0
 langchain-text-splitters>=0.2.0
-langchain-chroma>=0.2.0
+# Pin a compatible langchain-chroma / chromadb pair: unbounded upper limits let a
+# fresh install resolve an incompatible pair (langchain-chroma needing a chromadb
+# `Search` API absent in older chromadb -> KeyError '_type' when opening the DB).
+# Known-good combo used to build the current DB: langchain-chroma 0.2.6 + chromadb 1.5.9.
+langchain-chroma>=0.2.6,<0.3
 langchain-huggingface
 
 # Vector Database
-chromadb>=0.5.0
+chromadb>=1.5.0,<2.0
 
 # PDF & OCR
 pypdf>=4.2.0
