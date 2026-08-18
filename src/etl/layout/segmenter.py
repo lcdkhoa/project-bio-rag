@@ -4,15 +4,29 @@ import numpy as np
 from .regions import Region, RegionType, BBox
 from ...config import LAYOUT_BOX_MIN_SATURATION, LAYOUT_BOX_MIN_AREA_FRAC
 
+# Per-variant layout params. Identical across publishers for now; Task 10
+# (real-page QA) calibrates any divergence. Threading `variant` here makes the
+# parameter live and gives per-variant tuning one home.
+_VARIANT_PARAMS = {
+    "cd":   {"min_sat": LAYOUT_BOX_MIN_SATURATION, "min_area_frac": LAYOUT_BOX_MIN_AREA_FRAC, "close_kernel": 25},
+    "ctst": {"min_sat": LAYOUT_BOX_MIN_SATURATION, "min_area_frac": LAYOUT_BOX_MIN_AREA_FRAC, "close_kernel": 25},
+    "kntt": {"min_sat": LAYOUT_BOX_MIN_SATURATION, "min_area_frac": LAYOUT_BOX_MIN_AREA_FRAC, "close_kernel": 25},
+}
 
-def _colored_boxes(image: np.ndarray) -> list[BBox]:
+
+def _params_for(variant: str) -> dict:
+    return _VARIANT_PARAMS.get(variant, _VARIANT_PARAMS["cd"])
+
+
+def _colored_boxes(image: np.ndarray, min_sat: int, min_area_frac: float,
+                    close_kernel: int = 25) -> list[BBox]:
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     sat = hsv[:, :, 1]
-    mask = (sat >= LAYOUT_BOX_MIN_SATURATION).astype(np.uint8) * 255
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((25, 25), np.uint8))
+    mask = (sat >= min_sat).astype(np.uint8) * 255
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((close_kernel, close_kernel), np.uint8))
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     h, w = image.shape[:2]
-    min_area = LAYOUT_BOX_MIN_AREA_FRAC * h * w
+    min_area = min_area_frac * h * w
     boxes = []
     for c in contours:
         x, y, bw, bh = cv2.boundingRect(c)
@@ -30,7 +44,9 @@ def _classify_box(bbox: BBox, image_w: int) -> RegionType:
 
 def segment_page(image: np.ndarray, variant: str) -> list[Region]:
     h, w = image.shape[:2]
-    boxes = _colored_boxes(image)
+    params = _params_for(variant)
+    boxes = _colored_boxes(image, params["min_sat"], params["min_area_frac"],
+                            params.get("close_kernel", 25))
     regions: list[Region] = []
     # Main body = the whole page minus box columns; first in reading order.
     regions.append(Region(RegionType.BODY, (0, 0, w, h), reading_order=0,
