@@ -200,6 +200,12 @@
       notes: "Repo đã dọn: merge M1 vào master; thay KNTT8/KNTT9 (LFS); xoá DB cũ (database/ chỉ còn .gitkeep) — rebuild đổ ra Drive trên Colab. Datasources→LFS (KNTT9 140MB). Chưa push (ahead origin ~27 commit; chủ dự án tự push sau khi kiểm quota LFS).",
       tags: ["Process","ETL","Infra"],
     },
+    {
+      id: "D-19", date: "2026-08-19",
+      decision: "**Chốt scope M2 (retrieval rerank + citation):** commit thẳng **bge-m3** (bỏ A/B, MiniLM chỉ fallback qua .env); thêm cross-encoder **`bge-reranker-v2-m3` cho CẢ text lẫn ảnh**; **citation do CODE chèn từ metadata chunk thật** (không để LLM sinh số trang), **kèm tên mục** cho sidebar/info-box.",
+      notes: "Theo yêu cầu chủ dự án: citation 'chính xác tuyệt đối, không bịa' vì là thông tin tra cứu cho học sinh. Reranker fetch rộng → rerank → top MAX_K → gate score tuyệt đối (lưới lui). Ảnh: cross-encoder là term bổ sung có cờ tắt, không thay fusion thủ công. Prompt giữ nguyên. Spec: document/specs/2026-08-19-m2-retrieval-rerank-citation-design.md.",
+      tags: ["Retrieval","Architecture","Process"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);
