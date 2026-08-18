@@ -48,6 +48,28 @@ HF_TOKEN = os.getenv("HF_TOKEN", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 USE_GPU = os.getenv("USE_GPU", "true").lower() == "true"
+
+
+def embedding_model_kwargs() -> dict:
+    """model_kwargs for HuggingFaceEmbeddings, shared by every embedder.
+
+    Puts the model on CUDA when USE_GPU is set AND a GPU is actually present
+    (so a Colab GPU run embeds fast, while a Windows/CPU box silently stays on
+    CPU instead of crashing on a missing CUDA device).
+    """
+    kwargs: dict = {}
+    if HF_TOKEN:
+        kwargs["token"] = HF_TOKEN
+    if USE_GPU:
+        try:
+            import torch
+            if torch.cuda.is_available():
+                kwargs["device"] = "cuda"
+        except Exception:
+            pass
+    return kwargs
+
+
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "tesseract").strip() or "tesseract"
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 

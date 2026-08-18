@@ -22,6 +22,7 @@ from ..config import (
     IMAGE_RETRIEVER_K,
     IMAGE_RETRIEVER_FETCH_K,
     IMAGE_RELEVANCE_THRESHOLD,
+    embedding_model_kwargs,
 )
 from .query_intent import (
     has_image_intent,
@@ -91,7 +92,7 @@ class ImageVectorDB:
         self._clip_processor: Optional[CLIPProcessor] = None
         self._metadata_embedding = HuggingFaceEmbeddings(
             model_name=EMBEDDING_MODEL,
-            model_kwargs={"token": HF_TOKEN} if HF_TOKEN else {},
+            model_kwargs=embedding_model_kwargs(),
         )
 
         self._init_clip()
