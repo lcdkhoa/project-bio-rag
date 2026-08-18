@@ -194,6 +194,12 @@
       notes: "Vòng phản biện chặn 5 bug ẩn (guard diacritic, test giả, variant chết, trùng-chunk-resume, + F-A/PSM-7 khi soi trang thật). Runbook: document/runbooks/m1_rebuild_text.md. Tiếp theo: M2 (bge-m3 + reranker + prompt/citation), M3 (cắt hình).",
       tags: ["Process","ETL","Architecture"],
     },
+    {
+      id: "D-18", date: "2026-08-19",
+      decision: "**Chạy `--text-only` trước, phần ảnh để sau M3.** ETL full (`--etl`) bây giờ sẽ dùng image pipeline CŨ (chưa redesign) → tách ra: index text chất lượng M1 ngay, cắt hình làm sau khi có M3.",
+      notes: "Repo đã dọn: merge M1 vào master; thay KNTT8/KNTT9 (LFS); xoá DB cũ (database/ chỉ còn .gitkeep) — rebuild đổ ra Drive trên Colab. Datasources→LFS (KNTT9 140MB). Chưa push (ahead origin ~27 commit; chủ dự án tự push sau khi kiểm quota LFS).",
+      tags: ["Process","ETL","Infra"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);
