@@ -170,6 +170,30 @@
       notes: "Plan: document/specs/2026-08-18-m1-data-path-plan.md. Toàn bộ M1 test được local Windows (CPU+Tesseract) trước khi chạy ETL 12 cuốn trên Colab.",
       tags: ["Architecture","ETL","Process"],
     },
+    {
+      id: "D-14", date: "2026-08-19",
+      decision: "**Chạm giới hạn chi tiêu API → chuyển phần còn lại của M1 sang chạy INLINE** (controller tự code + verify), tạm ngưng subagent-driven. Vẫn giữ TDD + validate trên trang thật.",
+      notes: "Vòng phản biện subagent 2 tầng đã bắt được 4 bug ẩn ở Task 3/4/5/9 (guard diacritic, test giả, variant chết, trùng-chunk-khi-resume). Có thể bật lại subagent khi nâng limit.",
+      tags: ["Process"],
+    },
+    {
+      id: "D-15", date: "2026-08-19",
+      decision: "**Fix F-A (box nhạt màu):** thêm kênh HSV tint-nhạt + guard 'nền đồng-nhất & thực-sự-tint' vào segmenter. Bắt được sidebar/bảng nền nhạt (trước bị miss → rò vào body), đồng thời loại figure/ảnh-trên-trắng (trước bị box nhầm).",
+      notes: "Validate trực quan trên CTST7 p40 + KNTT8 p60 (cả 2 failure mode đều hết) + 2 test regression, 35/35 pass. Commit 30d82c6. Chưa validate biến thể CD — kiểm qua qa_layout trước/trong khi ETL 12 cuốn.",
+      tags: ["ETL"],
+    },
+    {
+      id: "D-16", date: "2026-08-19",
+      decision: "**Fix page-number OCR:** đổi PSM 7 → PSM 6 + crop góc chặt tuned cho trang thật; tham số hoá corners/psm để test synthetic giữ geometry riêng. Trước đó PSM 7 fail cả trên trang sạch → trích dẫn sai số trang.",
+      notes: "Validate 4/5 trang thật đúng chính xác (CTST7 40/41, KNTT8 60, KNTT9 89); CD8 97-DPI miss → fallback sạch. Commit 248150e. Follow-up: CD8 lowres + footer chứa số lớp.",
+      tags: ["ETL"],
+    },
+    {
+      id: "D-17", date: "2026-08-19",
+      decision: "**M1 (data-path text ETL) HOÀN TẤT** — 11/11 task + F-A + page-number trên nhánh `feat/m1-layout-etl` (1d18bd6..544b152), 36 test pass. Sẵn sàng chạy rebuild ETL 12 cuốn trên Colab theo runbook.",
+      notes: "Vòng phản biện chặn 5 bug ẩn (guard diacritic, test giả, variant chết, trùng-chunk-resume, + F-A/PSM-7 khi soi trang thật). Runbook: document/runbooks/m1_rebuild_text.md. Tiếp theo: M2 (bge-m3 + reranker + prompt/citation), M3 (cắt hình).",
+      tags: ["Process","ETL","Architecture"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);
