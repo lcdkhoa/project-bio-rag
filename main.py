@@ -145,10 +145,9 @@ def run_etl_image_only():
     os.makedirs(PERSIST_DIR, exist_ok=True)
 
     from tqdm import tqdm
-    from src.etl import RobustOCRLoader, ImageProcessor, ProcessingStatus, compute_file_hash
+    from src.etl import RobustOCRLoader, ProcessingStatus, compute_file_hash, make_image_processor
 
     loader = RobustOCRLoader()
-    image_processor = ImageProcessor()
     status_tracker = ProcessingStatus()
 
     from src.rag.image_vectorstore import ImageVectorDB
@@ -175,6 +174,10 @@ def run_etl_image_only():
             continue
 
         logger.info(f"Processing: {filename}")
+
+        # Per-variant processor (CTST/KNTT get their subclasses); shares the
+        # single status_tracker so the versioned checkpoint stays consistent.
+        image_processor = make_image_processor(filename, status_tracker=status_tracker)
 
         try:
             pdf_hash = compute_file_hash(pdf_file)
@@ -236,11 +239,10 @@ def run_etl():
     os.makedirs(PERSIST_DIR, exist_ok=True)
 
     from tqdm import tqdm
-    from src.etl import RobustOCRLoader, TextSplitter, ImageProcessor, ProcessingStatus, compute_file_hash
+    from src.etl import RobustOCRLoader, TextSplitter, ProcessingStatus, compute_file_hash, make_image_processor
 
     loader = RobustOCRLoader()
     text_splitter = TextSplitter()
-    image_processor = ImageProcessor()
     status_tracker = ProcessingStatus()
 
     from src.rag.vectorstore import VectorDB
@@ -272,6 +274,10 @@ def run_etl():
             continue
 
         logger.info(f"Processing: {filename}")
+
+        # Per-variant processor (CTST/KNTT get their subclasses); shares the
+        # single status_tracker so the versioned checkpoint stays consistent.
+        image_processor = make_image_processor(filename, status_tracker=status_tracker)
 
         try:
             pdf_hash = compute_file_hash(pdf_file)
