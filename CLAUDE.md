@@ -86,7 +86,9 @@ Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RA
 
 ## Key conventions
 
-- **Models are configured via `.env` / `src/config.py`**, not hardcoded. Defaults: MiniLM (embeddings), Qwen2.5-3B-Instruct (LLM), CLIP-ViT (image), OWL-ViT (detection), Vintern-1B (captioning). `src/utils/download_models.py` pre-fetches them for offline runs.
+- **Models are configured via `.env` / `src/config.py`**, not hardcoded. Defaults: `BAAI/bge-m3` (text embeddings, M2), Qwen2.5-3B-Instruct (LLM), CLIP-ViT (image), OWL-ViT (detection), Vintern-1B (captioning). `src/utils/download_models.py` pre-fetches them for offline runs.
+- **Cross-encoder reranker** `BAAI/bge-reranker-v2-m3` (`src/rag/reranker.py::CrossEncoderReranker`/`get_reranker()`, shared singleton, GPU/CPU-safe) reranks both sides: text via `RerankedRetriever` (`src/rag/vectorstore.py`, toggle `RERANK_ENABLED`, fetch width `RERANK_FETCH_K`, absolute floor `RERANK_SCORE_MIN`) and images as an additive scoring term (`src/rag/image_vectorstore.py`, toggle `IMAGE_RERANK_ENABLED`, `IMAGE_RERANK_TOP_N`, `IMAGE_RERANK_WEIGHT`) — never a replacement for the existing image fusion.
+- **Citations are deterministic, not LLM-generated**: `src/rag/citations.py` builds them from real chunk metadata (page/section, including sidebar labels) and `src/app/api.py` attaches them to chat + stream responses — the LLM never invents page numbers.
 - **Windows is the primary dev environment.** OCR needs Poppler + Tesseract (`vie`); paths set via `TESSERACT_CMD` / `POPPLER_PATH`. Prebuilt zips are in `windows_tools/`.
 - **Image-review JSON semantics are subtle and easy to get wrong**: `--apply-image-review` upserts per-item (removing an item from the array does NOT delete it from the DB); only `--replace-image-db` treats the file as the full source of truth. To remove a figure from retrieval, set `review_status=rejected|deleted` / `is_active=false` / `delete=true`. See README §6.
 - Detailed per-variant image-ETL runbook: `skills/etl-textbook-images/runbook.md`.

@@ -206,6 +206,12 @@
       notes: "Theo yêu cầu chủ dự án: citation 'chính xác tuyệt đối, không bịa' vì là thông tin tra cứu cho học sinh. Reranker fetch rộng → rerank → top MAX_K → gate score tuyệt đối (lưới lui). Ảnh: cross-encoder là term bổ sung có cờ tắt, không thay fusion thủ công. Prompt giữ nguyên. Spec: document/specs/2026-08-19-m2-retrieval-rerank-citation-design.md.",
       tags: ["Retrieval","Architecture","Process"],
     },
+    {
+      id: "D-20", date: "2026-08-19",
+      decision: "**M2 CODE HOÀN TẤT** trên nhánh `worktree-m2-retrieval-rerank` (8/8 task): bge-m3 config, `CrossEncoderReranker`/`get_reranker()` dùng chung, `RerankedRetriever` + toggle `RERANK_ENABLED`, citation xác định (`src/rag/citations.py` + `src/app/api.py`), cross-encoder bổ sung phía ảnh (`IMAGE_RERANK_ENABLED`), `recall_at_k.py` (base-vs-rerank + MRR), và integration test skip-if-offline cho reranker thật.",
+      notes: "Tất cả test đơn vị + tích hợp-giả (fixtures tổng hợp) pass; chưa có số eval thật vì cần DB `bge-m3` dựng lại từ Colab (D-18) trước. Runbook đo + tune `RERANK_SCORE_MIN`/`IMAGE_RERANK_WEIGHT`: document/runbooks/m2_eval.md — chạy xong sẽ log số Recall@k/MRR chốt tại đây làm follow-up.",
+      tags: ["Retrieval","Process"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);
