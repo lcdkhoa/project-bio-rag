@@ -13,6 +13,7 @@ from werkzeug.utils import secure_filename
 from src.config import DATA_DIR, IMAGES_DIR, LLM_MAX_NEW_TOKENS, LLM_TEMPERATURE, LLM_TOP_P
 from src.app.dependencies import AppServices
 from src.etl.image_review import ImageReviewManager
+from src.rag.citations import build_citations, format_citations_block, is_fallback_answer
 
 logger = logging.getLogger(__name__)
 
@@ -94,26 +95,20 @@ def prepare_chat_payload(question):
     context_texts = [doc.page_content for doc in text_docs if hasattr(doc, "page_content")]
     context_str = "\n\n".join(context_texts)
 
-    citations = set()
-    for doc in text_docs:
-        source = doc.metadata.get("source", "Sách Giáo Khoa") if hasattr(doc, "metadata") else "Sách Giáo Khoa"
-        page = doc.metadata.get("page", "?") if hasattr(doc, "metadata") else "?"
-        citations.add(f"Trang {page} - {source}")
-    citations_str = " | ".join(sorted(citations))
-
     return {
         "mode": "llm",
         "formatted_prompt": services.rag.prompt.format(context=context_str, question=question),
-        "citations_str": citations_str,
+        "citations": build_citations(text_docs),
         "images": gallery_items,
         "services": services,
     }
 
 
-def append_citations(answer, citations_str):
-    if "không được đề cập" not in answer.lower() and citations_str:
-        return f"{answer}\n\n📚 Thông tin được tham khảo từ: {citations_str}"
-    return answer
+def append_citations(answer, citations):
+    if is_fallback_answer(answer) or not citations:
+        return answer
+    block = format_citations_block(citations)
+    return f"{answer}\n\n{block}" if block else answer
 
 
 def stream_static_answer(answer):
@@ -198,7 +193,7 @@ def create_chat_stream_response(question):
                 yield sse_event("answer_delta", {"type": "answer_delta", "delta": chunk})
 
             parsed_answer = payload["services"].rag.answer_parser.parse("".join(chunks))
-            answer = append_citations(parsed_answer, payload["citations_str"])
+            answer = append_citations(parsed_answer, payload["citations"])
             yield sse_event("done", {
                 "type": "done",
                 "answer": answer,
@@ -294,7 +289,7 @@ def chat():
                 logger.error(f"RAG chain failed: {e}")
                 answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
                 
-            answer = append_citations(answer, payload["citations_str"])
+            answer = append_citations(answer, payload["citations"])
                 
         return jsonify({
             "answer": answer,
