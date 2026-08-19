@@ -22,6 +22,9 @@ from ..config import (
     IMAGE_RETRIEVER_K,
     IMAGE_RETRIEVER_FETCH_K,
     IMAGE_RELEVANCE_THRESHOLD,
+    IMAGE_RERANK_ENABLED,
+    IMAGE_RERANK_TOP_N,
+    IMAGE_RERANK_WEIGHT,
     embedding_model_kwargs,
 )
 from .query_intent import (
@@ -30,6 +33,7 @@ from .query_intent import (
     normalize_accented_text,
     strip_accents,
 )
+from .reranker import get_reranker
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +101,7 @@ class ImageVectorDB:
 
         self._init_clip()
         self._init_chroma(documents)
+        self._reranker = get_reranker() if IMAGE_RERANK_ENABLED else None
 
         logger.info(f"ImageVectorDB initialized, collection: {self.collection_name}")
 
@@ -604,6 +609,39 @@ class ImageVectorDB:
         except (TypeError, ValueError):
             return 0.0
 
+    def _cross_encoder_boost(self, query: str, scored_docs: List[Document]) -> List[Document]:
+        """Add a cross-encoder relevance term to the top-N fused candidates.
+
+        The figure's text identity (search_text / caption) is scored against the
+        query and blended into image_relevance_score with a small weight, then
+        the list is re-sorted. No-op when disabled or the reranker is missing.
+        The weight is deliberately below the exact-phrase bonus (0.45) so an
+        exact label match is never overturned by the cross-encoder.
+        """
+        if not IMAGE_RERANK_ENABLED or not scored_docs:
+            return scored_docs
+        reranker = getattr(self, "_reranker", None)
+        if reranker is None:
+            return scored_docs
+
+        top = scored_docs[:IMAGE_RERANK_TOP_N]
+        texts = [
+            str((d.metadata or {}).get("search_text") or d.page_content or "")
+            for d in top
+        ]
+        ce = reranker.score(query, texts)
+        if not ce or len(ce) != len(top):
+            return scored_docs
+        for doc, s in zip(top, ce):
+            metadata = doc.metadata
+            base = float(metadata.get("image_relevance_score") or 0.0)
+            metadata["image_cross_encoder_score"] = round(float(s), 4)
+            metadata["image_relevance_score"] = round(base + IMAGE_RERANK_WEIGHT * float(s), 4)
+        scored_docs.sort(
+            key=lambda d: d.metadata.get("image_relevance_score", 0.0), reverse=True
+        )
+        return scored_docs
+
     def _rerank(
         self,
         query: str,
@@ -679,6 +717,7 @@ class ImageVectorDB:
             scored_docs.append(Document(page_content=doc.page_content, metadata=metadata))
 
         scored_docs.sort(key=lambda doc: doc.metadata.get("image_relevance_score", 0.0), reverse=True)
+        scored_docs = self._cross_encoder_boost(query, scored_docs)
         top_score = scored_docs[0].metadata.get("image_relevance_score", 0.0) if scored_docs else 0.0
         has_page_request = any(
             "requested_page" in str((doc.metadata or {}).get("image_retrieval_source") or "")
