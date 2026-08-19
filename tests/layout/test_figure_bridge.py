@@ -29,23 +29,35 @@ def test_containment_ratio():
     assert FB._containment((0, 0, 10, 10), (50, 50, 60, 60)) == 0.0
 
 
-def test_drops_figure_inside_box(monkeypatch):
+def test_drops_generic_panel_inside_box(monkeypatch):
     _patch_boxes(monkeypatch, [(0, 0, 100, 100)])
-    regions = [_fig((10, 10, 90, 90))]              # fully inside the box
+    # only generic / unanchored types are drop-eligible
+    regions = [_fig((10, 10, 90, 90), image_type="panel")]   # fully inside the box
     out = FB.reconcile_with_layout(regions, np.zeros((120, 120, 3), np.uint8), "cd")
     assert out == []
 
 
-def test_keeps_marginally_overlapping_figure(monkeypatch):
+def test_keeps_caption_anchored_figure_inside_box(monkeypatch):
+    # A caption/label-anchored figure fully inside a colour box is TRUSTED and
+    # kept (CD6 p6 sub-figure "g)" regression guard) — the detector is
+    # high-precision on anchored figures.
     _patch_boxes(monkeypatch, [(0, 0, 100, 100)])
-    regions = [_fig((80, 80, 300, 300))]            # mostly outside the box
+    for t in ("single_figure", "composite_figure", "sub_figure"):
+        regions = [_fig((10, 10, 90, 90), image_type=t)]
+        out = FB.reconcile_with_layout(regions, np.zeros((120, 120, 3), np.uint8), "cd")
+        assert out == regions, f"{t} must not be dropped"
+
+
+def test_keeps_marginally_overlapping_panel(monkeypatch):
+    _patch_boxes(monkeypatch, [(0, 0, 100, 100)])
+    regions = [_fig((80, 80, 300, 300), image_type="panel")]   # mostly outside the box
     out = FB.reconcile_with_layout(regions, np.zeros((320, 320, 3), np.uint8), "cd")
     assert out == regions
 
 
 def test_keeps_figure_when_no_boxes(monkeypatch):
     _patch_boxes(monkeypatch, [])
-    regions = [_fig((10, 10, 90, 90))]
+    regions = [_fig((10, 10, 90, 90), image_type="panel")]
     out = FB.reconcile_with_layout(regions, np.zeros((120, 120, 3), np.uint8), "cd")
     assert out == regions
 

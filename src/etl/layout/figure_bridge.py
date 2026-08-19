@@ -24,7 +24,15 @@ from ...config import FIGURE_IN_BOX_DROP_RATIO
 logger = logging.getLogger(__name__)
 
 _BOX_TYPES = (RegionType.SIDEBAR, RegionType.INFO_BOX)
+# All figure-ish labels — used only to colour the QA overlay / map to RegionType.
 _FIGURE_TYPES = {"single_figure", "composite_figure", "sub_figure", "panel", "figure"}
+# Drop-eligible types: ONLY the generic / unanchored detector guesses. The
+# anchor-first detector is high-precision on caption/label-anchored figures
+# (single_figure / composite_figure / sub_figure), so those are trusted and
+# never dropped — real-page QA (CD6 p6 sub-figure "g)") showed a legit
+# coloured illustration was otherwise dropped when its flat background tripped
+# the box detector. Only "panel"/"figure" (no anchor) may be a mis-detected box.
+_DROP_ELIGIBLE_TYPES = {"panel", "figure"}
 
 
 def _containment(fig_bbox, box_bbox) -> float:
@@ -64,7 +72,7 @@ def reconcile_with_layout(regions: List[dict], image_rgb: np.ndarray, variant: s
     for region in regions:
         image_type = str(region.get("image_type", "")).lower()
         bbox = tuple(region["bbox"])
-        if image_type in _FIGURE_TYPES and any(
+        if image_type in _DROP_ELIGIBLE_TYPES and any(
             _containment(bbox, box) >= FIGURE_IN_BOX_DROP_RATIO for box in boxes
         ):
             logger.info("reconcile: drop %s figure %s inside colour box", image_type, bbox)

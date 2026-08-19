@@ -57,7 +57,7 @@ _extract_page_image (150 DPI, RGB)
 
 ### 4.1 `reconcile_with_layout(regions, img_array_rgb, variant) -> regions`
 1. `boxes = segment_page(cv2.cvtColor(img_array_rgb, COLOR_RGB2BGR), variant)` → lấy các Region `SIDEBAR`/`INFO_BOX` (bỏ BODY). **Cùng hệ toạ độ** với `regions` vì cùng mảng.
-2. **Drop** một figure region **chỉ khi** phần diện tích của nó nằm trong một box ≥ `FIGURE_IN_BOX_DROP_RATIO` (mặc định **0.80**). Tức figure gần như-toàn-bộ nằm trong sidebar/info-box → là dương-tính-giả.
+2. **Drop** một region **chỉ khi** (a) `image_type` là loại **generic/không-anchor** (`panel`/`figure`) VÀ (b) phần diện tích của nó nằm trong một box ≥ `FIGURE_IN_BOX_DROP_RATIO` (mặc định **0.80**). Figure có **anchor caption/label** (`single_figure`/`composite_figure`/`sub_figure`) được TIN tuyệt đối và **không bao giờ drop** — QA thật (CD6 p6) cho thấy quy tắc drop theo-mọi-figure-type bỏ nhầm một sub_figure hợp lệ (minh hoạ nền màu bị box-detector bắt). Điều này cũng triệt tiêu rủi ro radial CD8 (radial luôn là single/composite → miễn drop).
 3. **Bảo thủ, chỉ-drop, ngưỡng cao, KHÔNG clip.** Lý do (D-15): figure **radial CD8** (Hình 8.3/8.4: phân tử trung tâm + các icon-spoke bão hoà màu) có thể bị box-detector nhận nhầm là box; ngưỡng cao + chỉ-drop bảo vệ figure thật khỏi bị ăn. Ngưỡng tính theo **diện tích figure nằm trong box / diện tích figure** (containment), KHÔNG phải IoU đối xứng — để một box lớn bao trùm không "loãng" chỉ số.
 
 ### 4.2 `to_layout_regions(regions) -> list[Region]`
