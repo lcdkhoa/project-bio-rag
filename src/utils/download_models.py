@@ -2,8 +2,12 @@ import os
 import argparse
 from huggingface_hub import snapshot_download
 
+# Redesign 2026-08 (D-19): text embedding -> BAAI/bge-m3, add cross-encoder
+# BAAI/bge-reranker-v2-m3. MiniLM is a fallback only (via EMBEDDING_MODEL in
+# .env) so it is no longer pre-fetched here.
 MODELS = [
-    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "BAAI/bge-m3",
+    "BAAI/bge-reranker-v2-m3",
     "Qwen/Qwen2.5-3B-Instruct",
     "openai/clip-vit-base-patch16",
     "google/owlvit-base-patch32",
