@@ -285,12 +285,11 @@ def chat():
             try:
                 llm_response = payload["services"].llm.invoke(payload["formatted_prompt"])
                 answer = payload["services"].rag.answer_parser.parse(llm_response)
+                answer = append_citations(answer, payload["citations"])
             except Exception as e:
                 logger.error(f"RAG chain failed: {e}")
                 answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
-                
-            answer = append_citations(answer, payload["citations"])
-                
+
         return jsonify({
             "answer": answer,
             "images": payload["images"]

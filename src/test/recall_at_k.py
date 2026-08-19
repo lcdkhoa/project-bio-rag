@@ -55,7 +55,7 @@ def main():
         print("Không tìm thấy bộ test trong testsets/. Chạy generate_testsets.py trước.")
         return
 
-    print("Đang nạp text vector DB (MiniLM)...")
+    print("Đang nạp text vector DB (bge-m3)...")
     db = VectorDB().db
     max_k = max(KS)
 

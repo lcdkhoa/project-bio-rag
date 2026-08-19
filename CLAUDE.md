@@ -62,7 +62,7 @@ python src/test/test_image_extraction_full.py   # canonical VISUAL QA for image 
 Two phases: **ETL (offline)** builds the indexes; **query (online)** serves via Flask.
 
 ### Storage — four ChromaDB collections (`src/config.py`)
-- `biology_text` — OCR'd text chunks (MiniLM embeddings, `CHUNK_SIZE=400/overlap=120`)
+- `biology_text` — OCR'd text chunks (bge-m3 embeddings, `CHUNK_SIZE=400/overlap=120`)
 - `biology_images` — figure crops (CLIP embeddings)
 - `biology_image_metadata` — caption/keyword metadata for figures (separately searchable)
 - `processing_status` — per-page checkpoint state enabling resumable ETL
