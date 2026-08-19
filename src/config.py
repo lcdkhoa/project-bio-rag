@@ -73,7 +73,7 @@ def embedding_model_kwargs() -> dict:
 TESSERACT_CMD = os.getenv("TESSERACT_CMD", "tesseract").strip() or "tesseract"
 POPPLER_PATH = os.getenv("POPPLER_PATH", "").strip() or None
 
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "BAAI/bge-m3")
 LLM_MODEL = os.getenv("LLM_MODEL", "Qwen/Qwen2.5-3B-Instruct")
 CLIP_MODEL = os.getenv("CLIP_MODEL", "openai/clip-vit-base-patch16")
 OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
@@ -135,3 +135,16 @@ LAYOUT_BOX_MIN_SATURATION = int(os.getenv("LAYOUT_BOX_MIN_SATURATION", "45"))
 LAYOUT_BOX_MIN_AREA_FRAC = float(os.getenv("LAYOUT_BOX_MIN_AREA_FRAC", "0.02"))
 # Diacritic fix (D-09)
 DIACRITIC_FIX_ENABLED = os.getenv("DIACRITIC_FIX_ENABLED", "true").lower() == "true"
+
+# --- M2: reranker + citation ---
+RERANK_ENABLED = os.getenv("RERANK_ENABLED", "true").lower() == "true"
+RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
+# Candidates pulled from the vector store before cross-encoder reranking.
+RERANK_FETCH_K = int(os.getenv("RERANK_FETCH_K", "20"))
+# Absolute safety gate on the rerank score (0..1): a chunk below this is
+# dropped so an all-irrelevant fetch yields no context (LLM emits fallback).
+RERANK_SCORE_MIN = float(os.getenv("RERANK_SCORE_MIN", "0.2"))
+# Image side: cross-encoder is an additive term over the manual fusion score.
+IMAGE_RERANK_ENABLED = os.getenv("IMAGE_RERANK_ENABLED", "true").lower() == "true"
+IMAGE_RERANK_TOP_N = int(os.getenv("IMAGE_RERANK_TOP_N", "12"))
+IMAGE_RERANK_WEIGHT = float(os.getenv("IMAGE_RERANK_WEIGHT", "0.25"))
