@@ -80,7 +80,7 @@ OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
 OWL_VIT_CONFIDENCE_THRESHOLD = float(
     os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
 IMAGE_EXTRACTION_VERSION = os.getenv(
-    "IMAGE_EXTRACTION_VERSION", "v15_per_variant")
+    "IMAGE_EXTRACTION_VERSION", "v16_layout_reconcile")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
@@ -135,6 +135,13 @@ LAYOUT_BOX_MIN_SATURATION = int(os.getenv("LAYOUT_BOX_MIN_SATURATION", "45"))
 LAYOUT_BOX_MIN_AREA_FRAC = float(os.getenv("LAYOUT_BOX_MIN_AREA_FRAC", "0.02"))
 # Diacritic fix (D-09)
 DIACRITIC_FIX_ENABLED = os.getenv("DIACRITIC_FIX_ENABLED", "true").lower() == "true"
+
+# --- M3: figure extraction (layout reconcile) ---
+# Drop a FIGURE region only when this fraction of its area lies inside a
+# segmenter colour box (sidebar/info-box). Containment (intersection / figure
+# area), NOT symmetric IoU — a large box must not dilute the signal. High +
+# drop-only so a radial figure with coloured icons is never eaten.
+FIGURE_IN_BOX_DROP_RATIO = float(os.getenv("FIGURE_IN_BOX_DROP_RATIO", "0.80"))
 
 # --- M2: reranker + citation ---
 RERANK_ENABLED = os.getenv("RERANK_ENABLED", "true").lower() == "true"
