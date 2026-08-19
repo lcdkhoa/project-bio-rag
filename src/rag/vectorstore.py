@@ -1,7 +1,7 @@
 """Vector database management using ChromaDB."""
 
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -10,6 +10,7 @@ from langchain_core.callbacks import CallbackManagerForRetrieverRun
 from langchain_core.retrievers import BaseRetriever
 from pydantic import ConfigDict
 
+from .reranker import get_reranker
 from ..config import (
     EMBEDDING_MODEL,
     TEXT_COLLECTION_NAME,
@@ -17,6 +18,9 @@ from ..config import (
     RETRIEVER_FETCH_K,
     RETRIEVER_MAX_K,
     RETRIEVER_DISTANCE_MARGIN,
+    RERANK_ENABLED,
+    RERANK_FETCH_K,
+    RERANK_SCORE_MIN,
     embedding_model_kwargs,
 )
 
@@ -72,6 +76,54 @@ class RelevanceGatedRetriever(BaseRetriever):
         return kept
 
 
+class RerankedRetriever(BaseRetriever):
+    """Fetch wide, cross-encoder rerank, keep top max_k, gate on rerank score.
+
+    Cross-encoder relevance (higher = better) replaces embedding distance for
+    the final ordering. An absolute score gate (score_min) drops weak chunks so
+    an all-irrelevant fetch returns nothing and the LLM emits its fallback. If
+    the reranker yields no usable scores, fall back to distance order.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    vectorstore: Any
+    reranker: Any = None
+    fetch_k: int = RERANK_FETCH_K
+    max_k: int = RETRIEVER_MAX_K
+    score_min: float = RERANK_SCORE_MIN
+
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+    ) -> List[Document]:
+        scored = self.vectorstore.similarity_search_with_score(query, k=self.fetch_k)
+        if not scored:
+            return []
+        docs = [doc for doc, _ in scored]
+        reranker = self.reranker or get_reranker()
+        ce = reranker.score(query, [doc.page_content for doc in docs])
+
+        if not ce or len(ce) != len(docs):
+            scored_sorted = sorted(scored, key=lambda pair: pair[1])
+            logger.warning("RerankedRetriever: reranker unavailable, distance fallback")
+            return [doc for doc, _ in scored_sorted[: self.max_k]]
+
+        paired = sorted(zip(docs, ce), key=lambda pair: pair[1], reverse=True)
+        kept: List[Document] = []
+        for doc, score in paired:
+            if score < self.score_min:
+                break
+            doc.metadata["rerank_score"] = round(float(score), 4)
+            kept.append(doc)
+            if len(kept) >= self.max_k:
+                break
+        logger.info(
+            "RerankedRetriever: %d/%d kept (top=%.3f, min=%.2f) for query=%r",
+            len(kept), len(docs), paired[0][1], self.score_min, query,
+        )
+        return kept
+
+
 class VectorDB:
     """ChromaDB vector store wrapper with embedding support."""
 
@@ -115,6 +167,12 @@ class VectorDB:
         # chunks kept *after* relevance gating; the wider candidate sweep is
         # controlled by fetch_k.
         max_k = search_kwargs.get("k", RETRIEVER_MAX_K)
+        if RERANK_ENABLED:
+            return RerankedRetriever(
+                vectorstore=self.db,
+                fetch_k=max(RERANK_FETCH_K, max_k),
+                max_k=max_k,
+            )
         return RelevanceGatedRetriever(
             vectorstore=self.db,
             fetch_k=max(RETRIEVER_FETCH_K, max_k),
