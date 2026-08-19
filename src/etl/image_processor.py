@@ -3792,6 +3792,13 @@ class ImageProcessor:
             # type: ignore[assignment]
             detected_regions: List[Dict[str, object]] = detection["regions"]
 
+            # M3: drop figure regions the layout segmenter shows are actually a
+            # colour sidebar/info box. Local import avoids an image_processor <->
+            # layout import cycle. Same 150-DPI/RGB array the detector used.
+            from .layout.figure_bridge import reconcile_with_layout
+            detected_regions = reconcile_with_layout(
+                detected_regions, img_array, get_pdf_variant(pdf_filename))
+
             logger.info(
                 f"[v7][page={page_num}] anchors: "
                 # type: ignore[index]
