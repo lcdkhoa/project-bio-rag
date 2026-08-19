@@ -43,6 +43,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+# Pre-load pyarrow before the heavy transitive chain this module pulls
+# (src.etl -> langchain_community -> langchain_text_splitters.sentence_transformers
+# -> datasets -> pyarrow). On Windows a *late* pyarrow load collides with other
+# native DLLs and segfaults with an access violation; importing it first avoids
+# it. Guarded so a pyarrow-less environment still runs.
+try:  # noqa: SIM105
+    import pyarrow  # noqa: F401
+except Exception:
+    pass
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
@@ -279,6 +289,21 @@ def run_page(
     )
     _save_final_overlay(
         pil_img, out_dir / "03_final_regions.png", regions, font)
+
+    # M3: overlay of the layout reconcile step — kept figures green, dropped
+    # (figure sitting ~entirely inside a segmenter colour box) red. Same
+    # 150-DPI/RGB array the production path feeds reconcile_with_layout.
+    from src.etl.layout.figure_bridge import reconcile_with_layout
+    from src.etl.image_processor import get_pdf_variant
+    kept = reconcile_with_layout(regions, img_array, get_pdf_variant(pdf_path.name))
+    kept_bboxes = {tuple(r["bbox"]) for r in kept}
+    reconciled = pil_img.convert("RGB").copy()
+    rdraw = ImageDraw.Draw(reconciled)
+    for r in regions:
+        bbox = tuple(r["bbox"])
+        colour = (0, 170, 0) if bbox in kept_bboxes else (220, 0, 0)
+        _draw_box(rdraw, bbox, colour, str(r.get("image_type", "")), font=font)
+    reconciled.save(out_dir / "04_reconciled.png")
 
     region_counts: Dict[str, int] = {}
     saved_crop_paths: List[str] = []

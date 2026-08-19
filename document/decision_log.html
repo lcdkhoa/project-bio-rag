@@ -212,6 +212,12 @@
       notes: "Tất cả test đơn vị + tích hợp-giả (fixtures tổng hợp) pass; chưa có số eval thật vì cần DB `bge-m3` dựng lại từ Colab (D-18) trước. Runbook đo + tune `RERANK_SCORE_MIN`/`IMAGE_RERANK_WEIGHT`: document/runbooks/m2_eval.md — chạy xong sẽ log số Recall@k/MRR chốt tại đây làm follow-up.",
       tags: ["Retrieval","Process"],
     },
+    {
+      id: "D-21", date: "2026-08-19",
+      decision: "**Chốt scope M3 (cắt hình) = REUSE + layout bridge, KHÔNG rewrite.** Giữ nguyên bộ detect anchor-first per-variant (`image_processor.py`, v7→v15); chèn một bước `reconcile_with_layout` (`src/etl/layout/figure_bridge.py`) **chỉ-drop, bảo thủ**: bỏ region **kiểu figure** có containment ≥ `FIGURE_IN_BOX_DROP_RATIO` (0.80) vào một colour box của segmenter. Kèm: entrypoint ETL dùng `make_image_processor` **theo từng cuốn** (sửa lỗ hổng base-class), bump `IMAGE_EXTRACTION_VERSION=v16_layout_reconcile`, và fix `đ`-fold ở kênh lexical ảnh.",
+      notes: "Lý do (brainstorming): lỗi cắt hình gốc là **mong manh heuristic per-variant**, không phải 'đọc phẳng' (khác 3 lỗi text M1 đã sửa) → tầng layout đóng vai **loại trừ** (box → drop figure dương-tính-giả), không thay bộ detect. Trục chống-bug: reconcile chạy `segment_page` trên **chính mảng 150-DPI RGB** của detector (đổi RGB→BGR) để cùng hệ toạ độ; KHÔNG clip; **KHÔNG bao giờ** drop `textbook_info_box`/`activity_box`/`tool_group`; fail-open khi segmentation lỗi. Rủi ro #1 = radial CD8 bị box nhầm → ngưỡng cao + chỉ-drop; QA overlay `04_reconciled.png` (kept xanh / dropped đỏ). Môi trường: QA tool từng segfault do pyarrow/DLL-order → preload `pyarrow` sớm trong tool; worktree thiếu `.env` (TESSERACT_CMD) → copy từ master. Spec: document/specs/2026-08-19-m3-figure-extraction-design.md; plan: ...-m3-plan.md. Số trang hard-case + ngưỡng chốt sau khi xem overlay.",
+      tags: ["ETL","Architecture","Process"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);
