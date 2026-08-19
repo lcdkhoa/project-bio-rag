@@ -35,6 +35,16 @@ from .query_intent import (
 )
 from .reranker import get_reranker
 
+
+def _fold_accents(text: str) -> str:
+    """strip_accents + fold the Vietnamese stroked D (đ/Đ), which Unicode treats
+    as a distinct base letter so strip_accents leaves it (e.g. "được"->"đuoc").
+    Membership sets (_STOPWORDS / PHRASE_FILLER_WORDS / CLASSIFIER_WORDS) are
+    written đ-free ("duoc"), so compare against the folded form. Mirrors the
+    _fold helper in citations.py.
+    """
+    return strip_accents(text).replace("đ", "d").replace("Đ", "D")
+
 logger = logging.getLogger(__name__)
 
 VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
@@ -370,7 +380,7 @@ class ImageVectorDB:
         return [
             token
             for token in self._normalize_accented(text).split()
-            if len(token) > 1 and strip_accents(token) not in self._STOPWORDS
+            if len(token) > 1 and _fold_accents(token) not in self._STOPWORDS
         ]
 
     def _expand_query_for_clip(self, query: str) -> str:
@@ -789,7 +799,7 @@ class ImageVectorDB:
         tokens = [
             token
             for token in self._normalize_accented(query).split()
-            if len(token) > 1 and strip_accents(token) not in PHRASE_FILLER_WORDS
+            if len(token) > 1 and _fold_accents(token) not in PHRASE_FILLER_WORDS
         ]
         phrases = []
         if len(tokens) >= 2:
@@ -798,7 +808,7 @@ class ImageVectorDB:
         phrases = sorted(
             {p for p in phrases if len(p.split()) >= 2}, key=lambda p: -len(p)
         )
-        match_tokens = [t for t in tokens if strip_accents(t) not in CLASSIFIER_WORDS]
+        match_tokens = [t for t in tokens if _fold_accents(t) not in CLASSIFIER_WORDS]
         return phrases, match_tokens
 
     def _identity_text(self, metadata: Dict[str, Any], fields) -> str:
