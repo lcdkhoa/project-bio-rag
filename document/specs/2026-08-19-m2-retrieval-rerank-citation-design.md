@@ -110,9 +110,10 @@ Tái cấu trúc `BiologyRAG.get_chain`:
 
 **Suppress khi fallback:** nếu `answer` là câu fallback `"Thông tin này không được đề cập trong sách giáo khoa."` (so khớp chuẩn hoá) → trả `sources = []` (không xuất nguồn). Cùng vậy khi `docs` rỗng.
 
-**Điểm nối:**
-- `src/app/dependencies.py`: `rag_chain` dùng `VectorDB.get_retriever()` (giờ có thể là RerankedRetriever) và chain trả `{answer, sources}`.
-- `src/app/api.py`: trả thêm trường `sources` cạnh `answer` trong response chat (+ nhánh SSE stream). Đọc kỹ khi implement để không phá contract UI hiện tại.
+**Điểm nối (đã đọc lại code — CHỈNH so với bản đầu):** đường chat production **không dùng LCEL chain** — `api.py::prepare_chat_payload` gọi `hybrid_retriever.search()` → tự `prompt.format()` → `llm.invoke()`, và **đã có citation thô** (dòng ~97–116: set `"Trang {page} - {source}"` + `append_citations` đã suppress khi "không được đề cập"). Do đó:
+- **Không** restructure `chain.py` (LCEL `rag_chain` không nằm trên đường chat → YAGNI, để nguyên).
+- Reranker cắm qua `VectorDB.get_retriever()` → tự chảy vào `HybridRetriever._text_retriever` → `prepare_chat_payload`. Một điểm nối.
+- Citation: thay khối dòng 97–102 + `append_citations` bằng `citations.py` (build từ `text_docs` thật, thêm tên mục + chuẩn hoá tên sách). Sửa cả 2 call site (stream ~201, non-stream ~297) và key payload `citations_str` → `citations`.
 
 ### C6. Prompt (`chain.py`)
 
