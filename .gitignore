@@ -48,13 +48,6 @@ logs/
 hf_cache/
 models/
 
-# ETL page snapshots: full-page PNGs used only by the image-review UI as
-# context next to each crop. Regenerable from datasources/*.pdf and ~1.4GB,
-# so they stay out of git; the figure crops themselves ARE committed.
-database/images/**/pages/
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# dependencies
 /node_modules
 /.pnp
 .pnp.*
