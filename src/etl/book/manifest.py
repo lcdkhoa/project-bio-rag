@@ -99,29 +99,40 @@ def build_manifest(pdf_path: str, *,
              for record in page_records if record.source == "model_inferred"]
     flags += [{"kind": flag.kind, "detail": flag.detail} for flag in spine_flags]
 
+    book_id = book_id_from_filename(Path(pdf_path).name)
+    if not spine:
+        # Không banner nào, không TOC entry nào -> không nguồn nào nói gì, khác
+        # hẳn "một nguồn im lặng" (đã có flag riêng, không chặn). Sách coi như
+        # chưa định danh được Bài nào, phải chặn G1 (review round 1, finding 2).
+        flags.append({
+            "kind": "no_bai_detected",
+            "detail": f"{book_id}: không phát hiện banner Bài nào và MỤC LỤC "
+                      f"không có entry nào -> 0 Bài được dựng cho sách này"})
+
     bai_of_page: dict[int, int] = {}
     for record in spine:
         for index in range(record.start, record.end + 1):
             bai_of_page[index] = record.bai_so
     first_content = min((r.start for r in spine), default=n_pages)
-    last_content = max((r.end for r in spine), default=-1)
+    # Bài cuối luôn được `build_bai_spine` kéo `end` tới n_pages - 1, nên
+    # last_content luôn bằng n_pages - 1 khi spine không rỗng -> "index >
+    # last_content" không bao giờ đúng, back_matter là dead code (review round
+    # 1, finding 3). Hệ quả: trang bìa sau/mục lục thuật ngữ hiện bị gắn nhãn
+    # "content" và tính vào Bài cuối cùng. M0 chưa có tín hiệu để biết back
+    # matter bắt đầu ở đâu nên việc phát hiện nó bị hoãn sang milestone sau —
+    # không đoán bằng heuristic (ví dụ "N trang cuối").
 
     pages = []
     for record in page_records:
         index = record.pdf_index
-        if index < first_content:
-            role = "front_matter"
-        elif index > last_content:
-            role = "back_matter"
-        else:
-            role = "content"
+        role = "front_matter" if index < first_content else "content"
         pages.append({"pdf_index": index, "printed_page": record.printed_page,
                       "source": record.source, "side": record.side,
                       "conf": record.conf, "bai_so": bai_of_page.get(index),
                       "role": role})
 
     return BookManifest(
-        book_id=book_id_from_filename(Path(pdf_path).name),
+        book_id=book_id,
         pdf_name=Path(pdf_path).name,
         pdf_hash=compute_file_hash(pdf_path),
         n_pages=n_pages,

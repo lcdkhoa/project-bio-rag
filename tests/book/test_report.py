@@ -36,9 +36,26 @@ def test_g1_fails_on_a_spine_out_of_order_conflict():
     assert any("spine_out_of_order" in p for p in problems)
 
 
+def test_g1_fails_on_a_no_bai_detected_conflict():
+    ok, problems = g1_check(_manifest(100, 100, flags=("no_bai_detected",)))
+    assert not ok
+    assert any("no_bai_detected" in p for p in problems)
+
+
 def test_g1_tolerates_page_number_not_read_flags_within_the_ratio():
     ok, _ = g1_check(_manifest(96, 100, flags=("page_number_not_read",) * 4))
     assert ok
+
+
+def test_g1_tolerates_banner_without_toc_because_the_banner_still_gives_a_page():
+    # banner_without_toc means a banner fired but the TOC has no matching entry
+    # for it -- one source (TOC) is silent while the other (banner) still gives
+    # an authoritative start page; only the title is missing. This is a known,
+    # measured corpus failure mode (dropped TOC lessons), not a contradiction
+    # between two sources, so G1 must not block on it (review round 1, finding 1).
+    ok, problems = g1_check(_manifest(100, 100, flags=("banner_without_toc",)))
+    assert ok
+    assert problems == []
 
 
 def test_g1_report_lists_every_book_with_its_numbers():

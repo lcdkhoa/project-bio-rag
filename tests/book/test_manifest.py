@@ -74,8 +74,30 @@ def test_build_manifest_flags_pages_whose_number_was_not_read(tmp_path):
     )
     assert manifest.pages[3]["source"] == "model_inferred"
     assert manifest.pages[3]["printed_page"] == 3
-    assert [f["kind"] for f in manifest.flags] == ["page_number_not_read"]
-    assert "3" in manifest.flags[0]["detail"]
+    # Empty TOC + no banners also means zero Bài were resolved for this book,
+    # so build_manifest now also raises no_bai_detected (review round 1, finding 2).
+    kinds = [f["kind"] for f in manifest.flags]
+    assert "page_number_not_read" in kinds
+    assert "no_bai_detected" in kinds
+    page_flag = next(f for f in manifest.flags if f["kind"] == "page_number_not_read")
+    assert "3" in page_flag["detail"]
+
+
+def test_build_manifest_flags_no_bai_detected_when_the_spine_is_empty(tmp_path):
+    # No banners fire and the TOC yields no entries -> zero Bài were resolved.
+    # This must be flagged (and later blocked by G1) rather than silently
+    # accepted as an all-front_matter book (review round 1, finding 2).
+    pdf = _make_pdf(tmp_path, pages=4)
+    manifest = build_manifest(
+        pdf,
+        read_candidates=_fake_candidates({i: i for i in range(4)}),
+        read_toc=lambda path: [],
+        detect_banner=lambda img: None,
+    )
+    assert manifest.bai == []
+    no_bai_flags = [f for f in manifest.flags if f["kind"] == "no_bai_detected"]
+    assert len(no_bai_flags) == 1
+    assert "KHTN6-KNTT" in no_bai_flags[0]["detail"]
 
 
 def test_build_manifest_tags_pages_with_their_bai_and_role(tmp_path):

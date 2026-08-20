@@ -4,17 +4,28 @@ Ngưỡng (spec §4): 100% trang có `printed_page`, >= 95% là `ocr_confirmed`,
 **0** conflict spine chưa giải. `page_number_not_read` KHÔNG phải conflict — nó
 đã được mô hình offset xử lý và ghi provenance; chỉ tỉ lệ confirmed mới chặn.
 
-`spine_out_of_order` (bổ sung sau review Task 5) LÀ một conflict: nó nghĩa là
-thứ tự Bài mâu thuẫn với thứ tự trang trong spine đã dựng — không thể coi là đã
-giải quyết chỉ vì mỗi trang có số. Ngưỡng G1 cho conflict là 0, nên nó vào
-UNRESOLVED_FLAG_KINDS như banner_out_of_order/banner_without_toc.
+Nguyên tắc chặn (review round 1): G1 chỉ chặn khi **hai nguồn mâu thuẫn nhau**.
+Một nguồn im lặng (không có tin) trong khi nguồn kia vẫn cho đủ thông tin thì
+KHÔNG phải conflict — `toc_without_banner` (MỤC LỤC có Bài, không thấy banner —
+dùng trang TOC) và `banner_without_toc` (banner có Bài, MỤC LỤC không liệt kê —
+banner vẫn cho trang bắt đầu đáng tin, chỉ thiếu tiêu đề) là cùng một tình huống
+soi gương: cả hai chỉ ghi lại một nguồn bị thiếu, không nguồn nào bị sai. MỤC
+LỤC bỏ sót Bài là lỗi đã đo được trên corpus thật (không phải giả thuyết), nên
+CHẶN trên `banner_without_toc` sẽ làm rớt sách thật vì một điều kiện đã biết
+trước là bình thường — vì vậy nó KHÔNG ở trong UNRESOLVED_FLAG_KINDS. Ngược lại
+`banner_out_of_order` (banner tự mâu thuẫn với chính banner khác), `spine_out_of_order`
+(bổ sung sau review Task 5: thứ tự Bài mâu thuẫn với thứ tự trang trong spine đã
+dựng), và `no_bai_detected` (bổ sung sau review round 1: cả banner lẫn TOC đều
+không cho Bài nào — không phải "một nguồn im lặng" mà là "không nguồn nào nói
+gì", sách coi như chưa định danh được) đều LÀ conflict thật, nên ở trong
+UNRESOLVED_FLAG_KINDS.
 """
 from __future__ import annotations
 
 from typing import Sequence
 
 UNRESOLVED_FLAG_KINDS = (
-    "banner_out_of_order", "banner_without_toc", "spine_out_of_order")
+    "banner_out_of_order", "spine_out_of_order", "no_bai_detected")
 
 
 def g1_check(manifest, min_confirmed_ratio: float = 0.95):
