@@ -154,7 +154,7 @@ Build một lần cho mỗi quyển, lưu `database/manifests/<book_id>.json`, c
 người đọc được bằng mắt:
 
 ```json
-{ "book_id": "KHTN6-KNTT", "pdf_sha256": "...", "n_pages": 198,
+{ "book_id": "KHTN6-KNTT", "pdf_hash": "...", "n_pages": 198,
   "page_offset": 0, "offset_votes": [180, 188],
   "pages": [ {"pdf_index": 20, "printed_page": 20,
               "source": "ocr_confirmed", "side": "L", "conf": 91.2,
@@ -164,9 +164,14 @@ người đọc được bằng mắt:
   "flags": [ {"pdf_index": 41, "kind": "page_number_not_read"} ] }
 ```
 
+`pdf_hash` dùng đúng `processing_status.compute_file_hash` (MD5) để khoá manifest và
+khoá checkpoint là **một** giá trị, không phải hai hệ băm khác nhau.
+
 Thuật toán số trang:
 1. Dải đáy 12%, `image_to_data psm 11`, giữ token `^\d{1,3}$` conf >= 50 trong 22% lề ngoài.
-2. Áp **parity**: index chẵn → chỉ nhận lề trái; lẻ → chỉ nhận lề phải (đo: 695/695 đúng).
+2. Áp **parity trên GIÁ TRỊ đọc được, không trên index**: candidate giá trị chẵn phải
+   nằm ở lề trái, giá trị lẻ phải ở lề phải (đo: 695/695 đúng). Ràng buộc theo giá trị
+   nên **không vòng tròn** — không cần biết trước số trang mới lọc được candidate.
 3. `offset = mode(value - index)`; **yêu cầu >= 80% phiếu đồng thuận**, nếu không → dừng
    quyển đó và báo lỗi to (đo được 96–99% nên ngưỡng này an toàn).
 4. Trang có token khớp `index + offset` → `ocr_confirmed`; ngược lại → `model_inferred`
