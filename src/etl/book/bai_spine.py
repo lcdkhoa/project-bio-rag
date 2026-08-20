@@ -13,6 +13,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
+from .toc import TocEntry
+
 
 @dataclass(frozen=True)
 class BannerHit:
@@ -46,7 +48,8 @@ def _repair_candidate(observed: int, lower: Optional[int], upper: Optional[int],
     return fits[0] if len(fits) == 1 else None
 
 
-def build_bai_spine(toc, banners, n_pages: int):
+def build_bai_spine(toc: Sequence[TocEntry], banners: Sequence[BannerHit],
+                    n_pages: int) -> tuple[list[BaiRecord], list[SpineFlag]]:
     titles = {e.bai_so: e.title for e in toc}
     toc_pages = {e.bai_so: e.start_page for e in toc}
     known = sorted(titles)
@@ -61,6 +64,14 @@ def build_bai_spine(toc, banners, n_pages: int):
                           if previous is None or h.bai_so > previous), None)
         bai_so = hit.bai_so
         if previous is not None and bai_so <= previous:
+            # Refuse to repair if upper bound is absent: a dropped hit is recoverable
+            # from TOC (as flagged toc_without_banner), but an invented number is not.
+            if following is None:
+                flags.append(SpineFlag(
+                    "banner_out_of_order",
+                    f"trang {hit.pdf_index}: Bài {bai_so} không tăng sau Bài "
+                    f"{previous}; không có cận trên -> bỏ hit"))
+                continue
             repaired = _repair_candidate(bai_so, previous, following, known)
             if repaired is None:
                 flags.append(SpineFlag(
@@ -107,4 +118,15 @@ def build_bai_spine(toc, banners, n_pages: int):
             else n_pages - 1
         spine.append(BaiRecord(bai_so=bai_so, title=titles.get(bai_so, ""),
                                start=start, end=max(start, end), source=source))
+
+    # 4. validate that bai_so increases strictly when walking spine in page order
+    for position in range(len(spine) - 1):
+        current = spine[position]
+        next_record = spine[position + 1]
+        if next_record.bai_so <= current.bai_so:
+            flags.append(SpineFlag(
+                "spine_out_of_order",
+                f"Bài {current.bai_so} (trang {current.start}) không tăng trước "
+                f"Bài {next_record.bai_so} (trang {next_record.start})"))
+
     return spine, flags

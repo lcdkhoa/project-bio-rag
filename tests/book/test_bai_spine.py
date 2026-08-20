@@ -75,3 +75,38 @@ def test_duplicate_banner_for_the_same_bai_keeps_the_first_page():
 def test_empty_inputs_produce_an_empty_spine_without_crashing():
     spine, flags = build_bai_spine([], [], n_pages=10)
     assert spine == [] and flags == []
+
+
+def test_refuses_to_repair_when_upper_bound_is_absent():
+    # Real failure mode: OCR truncates "Bài 20" to "Bài 2", it is the last hit,
+    # and no later banner provides an upper bound. TOC lists 19 and 25 but not 20-24.
+    # The repair rule must refuse — it would invent "2 -> 25" (unique in (19, None))
+    # which is wrong. Instead, drop the hit and flag it, leaving lesson 20 recoverable
+    # as a flagged toc_without_banner.
+    toc = [TocEntry(19, "A", 100), TocEntry(25, "B", 200)]
+    banners = [BannerHit(100, 19), BannerHit(150, 2)]
+    spine, flags = build_bai_spine(toc, banners, n_pages=250)
+    assert [b.bai_so for b in spine] == [19, 25]
+    # Should NOT repair "2" — should drop it
+    assert not any(f.kind == "bai_so_repaired" for f in flags)
+    # Should flag the drop with explanation of absent upper bound
+    assert any(f.kind == "banner_out_of_order" for f in flags)
+    out_of_order_flag = [f for f in flags if f.kind == "banner_out_of_order"][0]
+    assert "upper bound" in out_of_order_flag.detail.lower() or "không" in out_of_order_flag.detail
+
+
+def test_flags_toc_only_lesson_that_breaks_monotonic_order():
+    # A TOC-only lesson (no banner) has a corrupted page number that would place it
+    # before an earlier-numbered lesson. The spine is built in page order (necessary
+    # for computing end ranges), but the violation must be flagged as spine_out_of_order.
+    # The record is NOT dropped.
+    toc = [TocEntry(5, "A", 50), TocEntry(6, "B", 10)]  # Bài 6's page (10) < Bài 5's page (50)
+    banners = [BannerHit(50, 5)]  # Only 5 has a banner
+    spine, flags = build_bai_spine(toc, banners, n_pages=100)
+    # Spine contains both lessons, sorted by page (not dropped)
+    assert len(spine) == 2
+    assert [b.bai_so for b in spine] == [6, 5]  # page order: 10 < 50
+    # The violation must be flagged
+    assert any(f.kind == "spine_out_of_order" for f in flags)
+    spine_out_of_order_flag = [f for f in flags if f.kind == "spine_out_of_order"][0]
+    assert "5" in spine_out_of_order_flag.detail and "6" in spine_out_of_order_flag.detail
