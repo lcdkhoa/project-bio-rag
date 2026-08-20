@@ -89,3 +89,34 @@ def test_page_with_no_docs_still_gets_marked():
 
     assert text_db.add_calls == []
     assert status_tracker.marked == [("h", 3, "f.pdf")]
+
+
+def test_failing_page_is_skipped_and_left_unmarked():
+    """One bad page must not abort the rest of the book.
+
+    --etl now shares this helper with --text-only. The old --etl path swallowed
+    OCR errors inside RobustOCRLoader.load_pdf, so a mid-book failure still let
+    the image side run; if the exception escapes here instead, it kills the
+    whole book (text AND figures). The failing page must also stay unmarked so
+    the next run retries it.
+    """
+    class FlakyLoader:
+        def __init__(self):
+            self.calls = []
+
+        def load_page(self, pdf_file, index):
+            self.calls.append(index)
+            if index == 3:  # page 4
+                raise RuntimeError("tesseract blew up on this page")
+            return [FakeDoc(chunk_index=0)]
+
+    loader = FlakyLoader()
+    text_db = FakeTextDB()
+    status_tracker = FakeStatusTracker()
+
+    _index_pdf_pages(loader, text_db, status_tracker, "some.pdf", "h",
+                      "f.pdf", [2, 4, 6])
+
+    assert loader.calls == [1, 3, 5], "must keep going after the failing page"
+    assert [p for _, p, _ in status_tracker.marked] == [2, 6], \
+        "failed page must stay unmarked so it is retried"

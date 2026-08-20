@@ -33,9 +33,9 @@ pip install -r requirements.txt
 cp .env.example .env          # then set HF_TOKEN (required) and USE_GPU
 
 # ETL (offline indexing) — has checkpoint resume; re-runs skip processed pages
-python main.py --text-only    # OCR + chunk + index text → ChromaDB
+python main.py --text-only    # layout-aware OCR + chunk + index text → ChromaDB
 python main.py --image-only   # crop figures + caption + index images
-python main.py --etl          # both
+python main.py --etl          # both (same text path as --text-only)
 
 # Image metadata human-review cycle (see README §6 for exact JSON semantics)
 python main.py --export-image-review database/review_images.json
@@ -67,7 +67,12 @@ Two phases: **ETL (offline)** builds the indexes; **query (online)** serves via 
 - `biology_image_metadata` — caption/keyword metadata for figures (separately searchable)
 - `processing_status` — per-page checkpoint state enabling resumable ETL
 
+**Checkpoint semantics (all three ETL entrypoints agree):** `processing_status` is the single truth source. It is keyed on the PDF's **content hash** and, for images, on `IMAGE_EXTRACTION_VERSION`, so replacing a PDF under the same filename or bumping the extraction version re-processes it. `database/processed_files.txt` / `processed_images.txt` are **advisory progress logs only** — nothing skips work because of them (they used to, which silently defeated version bumps). Each entrypoint queries the checkpoint *before* doing any OCR, so a book with nothing left to do costs one file hash plus a `fitz` page count.
+
 Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RAG_DATABASE_DIR` (point at Google Drive on Colab). `datasources/` holds input PDFs.
+
+### Text ETL (`src/etl/layout/loader.py`)
+`LayoutOCRLoader.load_page()` is the M1 layout spine and the **only** text path: render page → `preprocess_page` → `segment_page` → `detect_printed_page_number` → `extract_text_units` → `chunk_units`. It returns already-chunked Documents (body split by `TextSplitter`, each sidebar/info-box kept atomic) carrying `source`/`page`/`variant`/`region_type`/`chunk_index`. `citations.py` reads `region_type` for the section label, so a chunk missing it silently degrades to a body-only citation. `--etl` and `--text-only` both go through `_index_pdf_pages()` in `main.py`, one page at a time with deterministic ids (`{hash}_p{page}_c{idx}`) so a resume upserts instead of duplicating; a page that raises is logged, left unmarked, and retried next run. The legacy whole-page `RobustOCRLoader` is **not** a text path any more — it survives only to supply full-page OCR text for figure-caption anchoring on the image side.
 
 ### Retrieval flow (`src/rag/`)
 1. `hybrid_retriever.py::HybridRetriever.search()` is the entry. It calls `query_intent.py::is_image_only_query()` to **route**: image-only queries (e.g. "cho tôi hình con X") skip text retrieval entirely.
@@ -80,7 +85,7 @@ Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RA
 - Detection is **anchor-first + deterministic** (find figure-caption text anchors, then crop the band above), with OWL-ViT as a secondary detector. When touching this, verify against the visual QA tool above, not just unit output.
 - **M3 layout reconcile**: right after `detect_regions_anchor_first`, `extract_images_from_pdf` runs `src/etl/layout/figure_bridge.py::reconcile_with_layout` — a **drop-only** step that removes a region sitting ≥`FIGURE_IN_BOX_DROP_RATIO` (0.80) inside a segmenter colour box (sidebar/info-box false positive). It runs `segment_page` on the detector's **own 150-DPI RGB array (converted to BGR)** so bboxes share one coordinate space; it never clips/grows a figure. **Only generic/unanchored types (`panel`/`figure`) are drop-eligible** — caption/label-anchored figures (`single_figure`/`composite_figure`/`sub_figure`) are trusted and never dropped (real-page QA showed a legit coloured sub-figure was otherwise eaten when its flat background tripped the box detector), and `textbook_info_box`/`activity_box`/`tool_group` are legit boxes, also never dropped. Fail-open on segmentation error. QA overlay `04_reconciled.png` shows kept=green / dropped=red.
 - **Entrypoints use `make_image_processor(filename)` per book** (`run_etl`/`run_etl_image_only`) so CTST/KNTT get their subclasses — previously the batch path used base `ImageProcessor()` for every book.
-- `IMAGE_EXTRACTION_VERSION` in `.env` gates the crop cache: **bump it to force re-extraction** after changing crop logic (otherwise checkpoints skip already-processed pages). Current default `v16_layout_reconcile` (M3).
+- `IMAGE_EXTRACTION_VERSION` in `.env` gates the crop cache: **bump it to force re-extraction** after changing crop logic (otherwise the per-page checkpoint skips already-processed pages). Current default `v16_layout_reconcile` (M3). A bump is honoured by `--etl` and `--image-only` alike — see the checkpoint-semantics note under Storage.
 
 ### API + app (`src/app/`)
 - `dependencies.py::AppServices` is a **singleton** that loads all heavy models once (VectorDB, HybridRetriever, LLM, RAG chain). Never instantiate models per-request; go through this.
