@@ -4,17 +4,71 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A Vietnamese-language **RAG system over scanned Vietnamese science textbooks (SGK KHTN, THCS)**. Source data is scanned-image PDFs, so the pipeline OCRs Vietnamese text and crops figures per publisher layout, then serves hybrid text+image retrieval with a local Qwen2.5 LLM answering in Vietnamese with citations. Scaling target is ~12 books across three publishers: **Cánh Diều (CD), Chân Trời Sáng Tạo (CTST), Kết Nối Tri Thức (KNTT)**.
+A Vietnamese-language **RAG system over image-only Vietnamese science textbook PDFs (SGK KHTN, THCS)**. The pipeline OCRs Vietnamese text and crops figures, then serves hybrid text+image retrieval with a local Qwen2.5 LLM answering in Vietnamese with citations.
+
+**Corpus as of 2026-08-20 (measured, not assumed):** the Ministry unified textbooks onto **Kết Nối Tri Thức only** — CD and CTST are withdrawn. The corpus is now exactly 4 books, `datasources/SGK-KHTN-Lop-{6,7,8,9}.pdf`, **809 pages**. They are *not* born-digital PDFs: producer `jsPDF 2.5.1`, **0/809 pages carry a text layer**, one JPEG per page at 1094×1536 px = **132 DPI effective** (lower than the old scans' 138–150). A publisher watermark is baked into every page. So **OCR remains mandatory**, 132 DPI is a hard ceiling (the user confirmed no better source exists), and all per-publisher (CD/CTST/KNTT) branching is now dead weight scheduled for deletion. Full evidence: `document/specs/2026-08-20-kntt-only-etl-rebuild-design.md`.
 
 Most docs (`README.md`, `document/`) are in Vietnamese; code and comments mix English/Vietnamese. Match the surrounding language when editing.
+
+## Philosophy — tư tưởng của repo (đọc trước khi viết bất kỳ dòng code nào)
+
+Đây là **sách giáo khoa cho học sinh**. Một câu trích sai dấu, một số trang sai, một
+hình gán sai bài — là dạy sai một đứa trẻ. Toàn bộ repo được thiết kế quanh một câu
+hỏi duy nhất: *làm sao để không bao giờ nói điều mình không chứng minh được?*
+
+Bảy nguyên tắc, theo thứ tự ưu tiên. Khi hai nguyên tắc xung đột, nguyên tắc đứng
+trước thắng.
+
+1. **Không bịa (no fabrication).** Trang, hình, chú thích, số liệu — tất cả phải truy
+   được về pixel/bytes của file PDF gốc. Citations là **deterministic**, dựng từ
+   metadata của chunk thật (`src/rag/citations.py`); LLM không bao giờ được sinh số
+   trang. Nếu không biết, hệ thống nói "không biết" — không nội suy, không đoán.
+2. **Bằng chứng trước khẳng định (evidence before assertion).** Không "chắc là", không
+   "thường thì". Trước khi kết luận về corpus: mở PDF ra đo. Trước khi nói code chạy
+   đúng: chạy nó và dán output. Một giả định chưa đo là một **câu hỏi mở**, phải ghi
+   ra rõ ràng, không được lặng lẽ biến thành thiết kế.
+3. **Đo, đừng đoán (measure, don't assume).** Mọi lựa chọn kỹ thuật ảnh hưởng độ chính
+   xác (OCR engine, render DPI, chunk size, ngưỡng threshold) phải được chọn bằng số
+   trên một **gold set do người xác nhận**, không bằng trực giác hay mặc định của thư
+   viện. Đổi tham số mà không có phép đo trước/sau là hồi quy chờ xảy ra.
+4. **Phản biện chính code của mình (adversarial self-review).** Test pass ≠ đúng. Với
+   mỗi thay đổi: truy edge case, off-by-one, lệch hệ toạ độ/hệ chỉ số (0-based vs
+   1-based), cache cũ, fallback âm thầm. Chủ động đi tìm trang làm mình sai — QA thật
+   trên trang thật, không chỉ unit test trên fixture tổng hợp.
+5. **Fail loudly, never silently.** Một trang OCR lỗi phải được **để lại chưa xử lý**
+   và log ra, để lần chạy sau làm lại — không được ghi vào index một nửa dữ liệu. Một
+   fallback im lặng (ví dụ đoán số trang = index+1) tệ hơn một lỗi ồn ào, vì nó đẩy
+   sai lệch xuống tới câu trả lời cho học sinh. Bước "sửa" tự động phải là **drop-only**
+   hoặc **flag-for-review**, không tự bịa thêm dữ liệu.
+6. **Một nguồn sự thật duy nhất (single source of truth).** Checkpoint là
+   `processing_status` (khoá theo **content hash** + version), không phải file log.
+   Cấu trúc sách là MỤC LỤC của chính quyển sách, không phải hằng số hardcode. Khi hai
+   nguồn độc lập không khớp → không chọn bừa, mà **flag** để người xem.
+7. **Xoá code mạnh tay khi phạm vi hẹp lại (delete aggressively).** Heuristic tồn tại
+   để phục vụ một thực tế đo được. Khi thực tế đó biến mất (một nhà xuất bản thay vì
+   ba), heuristic đó là nợ, không phải tài sản. Code ít hơn = ít chỗ để sai hơn. Ưu
+   tiên deterministic (CV/regex có anchor) hơn "model magic" ở mọi chỗ mà kết quả phải
+   giải thích được cho giáo viên.
+
+Hệ quả vận hành: mỗi quyết định ghi vào `document/decision_log.html`; mỗi thay đổi
+đúng-sai được đo bằng eval trong `src/test/`; test nhỏ và nhắm đúng chỗ (đừng chạy cả
+suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, cái gì chưa.
 
 ## Active redesign (2026-08) — read this first
 
 A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
-- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here).
-- **Spec:** `document/specs/2026-08-18-rag-etl-retrieval-redesign-design.md`. Implementation plan lives alongside in `document/specs/`.
+- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently D-01…D-28).
+- **Current spec (supersedes the corpus + image-ETL parts of the older ones):** `document/specs/2026-08-20-kntt-only-etl-rebuild-design.md`. Earlier: `2026-08-18-rag-etl-retrieval-redesign-design.md`, `2026-08-19-m2-*`, `2026-08-19-m3-*`. Implementation plans live alongside in `document/specs/`.
 
-Key locked choices: full clean rebuild of `database/` (re-ETL all 12 books on Colab Pro); new `layout_segmenter` spine (classical CV) separating main-text / sidebar / figure regions; text embedding → `BAAI/bge-m3`; add `BAAI/bge-reranker-v2-m3` cross-encoder; Vietnamese diacritic post-correction; sidebar/info-box as separate labeled chunks; checkpoint keyed on **content hash** not filename.
+Still locked from the earlier design: full clean rebuild of `database/`; classical-CV layout segmenter spine; text embedding → `BAAI/bge-m3`; `BAAI/bge-reranker-v2-m3` cross-encoder; Vietnamese diacritic post-correction; sidebar/info-box as separate labeled chunks; checkpoint keyed on **content hash** not filename.
+
+New in the 2026-08-20 rebuild (KNTT-only corpus), all of it evidence-backed in the spec:
+- **Page identity is verified, never guessed.** `printed_page == pdf_index` (0-based) holds for all 4 books — established by a global `mode(value − index)` offset model over digit tokens plus a parity rule (even index → left margin, odd → right), which held 695/695 reads. A `BookManifest` JSON per book (page map + Chương/Bài spine) becomes the single source of truth. The existing `index + 1` fallback in `page_number.py` is an **off-by-one bug**.
+- **MỤC LỤC is a hypothesis, not truth** (measured: missing bài, wrong page numbers). The Bài spine comes from TOC + in-page "Bài N" banner detection + a strict-monotonic global constraint; disagreements are flagged, not resolved by guessing.
+- **Text OCR = dual-engine consensus per line**, labelled `agree` / `conflict_diacritic` / `conflict_text` / `single_engine`, feeding a per-chunk confidence and `needs_review`. Engine B (PaddleOCR VN candidate) is chosen by a measured bake-off, not assumed. `RENDER_DPI=220` is not the measured optimum (300 was best of 132/200/300/400).
+- **Figures anchor on the caption pill** (solid coloured rounded rect + white `Hình N.M`), and completeness is *proved* per Bài by checking the figure numbers form a continuous `1..k` — gaps mean missing figures.
+- **Add `TEXT_EXTRACTION_VERSION`** to the checkpoint key: today only images have a version gate, so changing OCR logic cannot force a re-OCR.
+- Quality gates G1–G5, including **G3 page-accuracy** (does the cited page really contain the answer) — a metric the repo never had.
 
 ## Working rules (always)
 
