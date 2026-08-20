@@ -3,3 +3,9 @@ database/chroma.sqlite3 filter=lfs diff=lfs merge=lfs -text
 # limit); applied to all datasources for a consistent, churn-free tree. Note:
 # pushing uploads ~800MB to LFS storage — ensure your git host has LFS quota.
 datasources/*.pdf filter=lfs diff=lfs merge=lfs -text
+
+# Generated ETL artifacts under database/ are data, not source: keep them
+# byte-exact so a Windows checkout does not rewrite line endings in the
+# checkpoint logs / review manifest.
+database/*.txt -text
+database/*.jsonl -text
