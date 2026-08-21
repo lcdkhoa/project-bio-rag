@@ -89,10 +89,18 @@ next-env.d.ts
 
 .superpowers/
 
-# ChromaDB store — dữ liệu sinh ra, không commit (manifest thì CÓ commit)
-database/chroma.sqlite3
-database/*.sqlite3
-database/**/*.bin
+# `database/` là thư mục SINH RA (index Chroma, crop ảnh, log tiến độ, cache).
+# Chỉ MANIFEST được commit — nó là nguồn sự thật về số trang in và đi theo repo.
+#
+# Dùng allowlist chứ không liệt kê từng file: bản trước liệt kê `*.sqlite3` +
+# `**/*.bin` nên `processed_files.txt`, `processed_images.txt`,
+# `image_caption_cache.json`, `review_images.json`... vẫn lọt vào git sau một lượt
+# `--etl`. Allowlist thì mọi thứ ETL sinh ra về sau đều bị chặn sẵn.
+database/*
+!database/.gitkeep
+!database/manifests/
+database/manifests/*
+!database/manifests/*.json
 
 # QA output (anh overlay, report.json) — sinh ra, khong commit
 scripts/_out_test_etl_full/
