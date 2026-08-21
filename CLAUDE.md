@@ -67,7 +67,8 @@ suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, c�
 
 A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
 - **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently D-01…D-39).
-- **Current plan (supersedes the corpus + OCR parts of every older spec):** `document/specs/2026-08-21-png-source-etl-prompt.md` — the PNG-source migration, with every measured number so nothing needs re-measuring. Earlier: `2026-08-20-kntt-only-etl-rebuild-design.md`, `2026-08-18-rag-etl-retrieval-redesign-design.md`, `2026-08-19-m2-*`, `2026-08-19-m3-*`. Implementation plans live alongside in `document/specs/`.
+- **What to do next:** `document/specs/2026-08-21-pending-to-report-prompt.md` — the pending-work → Colab ETL → demo → report chain, with the dependency order (Bài spine before G4), the report's honesty constraint (corpus changed 12 books → 4, so the old 0.63 recall is a historical mark, not a comparison target), and the open questions that must be asked rather than guessed.
+- **What was already done and measured:** `document/specs/2026-08-21-png-source-etl-report.md`. The prompt that produced it: `document/specs/2026-08-21-png-source-etl-prompt.md` — the PNG-source migration, with every measured number so nothing needs re-measuring. Earlier: `2026-08-20-kntt-only-etl-rebuild-design.md`, `2026-08-18-rag-etl-retrieval-redesign-design.md`, `2026-08-19-m2-*`, `2026-08-19-m3-*`. Implementation plans live alongside in `document/specs/`.
 
 Still locked from the earlier design: full clean rebuild of `database/`; classical-CV layout segmenter spine; text embedding → `BAAI/bge-m3`; `BAAI/bge-reranker-v2-m3` cross-encoder; sidebar/info-box as separate labeled chunks; checkpoint keyed on **content hash** not filename. (Dropped: "Vietnamese diacritic post-correction" — measured useless and it rewrote text, see D-34.)
 
