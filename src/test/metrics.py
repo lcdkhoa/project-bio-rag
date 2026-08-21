@@ -7,17 +7,27 @@ xác định bằng cách đối chiếu metadata của chunk truy xuất đư�
 số liệu minh bạch và lặp lại được.
 
 Quy ước:
-    - "page-level": chunk đúng khi cùng sách VÀ cùng trang nguồn (cho phép sai số
-      ±PAGE_TOLERANCE trang để dung sai ranh giới chunk / OCR).
+    - "page-level": chunk đúng khi cùng sách VÀ **đúng** trang nguồn
+      (PAGE_TOLERANCE = 0, xem chú thích bên dưới).
     - "book-level": chunk đúng khi chỉ cần cùng sách. Dùng để đo nhiễu chéo sách
-      (cross-book contamination) — toàn bộ 12 sách nằm chung 1 collection.
+      (cross-book contamination) — cả 4 quyển nằm chung 1 collection.
 """
 
 from typing import Callable, List, Optional
 
-# Dung sai số trang khi đối chiếu page-level. Một câu hỏi sinh từ trang N có thể
-# được trả lời bởi chunk nằm ở trang N-1/N+1 do chunk tràn qua ranh giới trang.
-PAGE_TOLERANCE = 1
+# Dung sai số trang khi đối chiếu page-level. **Đặt 0 kể từ 2026-08-21.**
+#
+# Lý do cũ ("chunk tràn qua ranh giới trang") KHÔNG còn đúng: đường text hiện tại
+# là `LayoutOCRLoader.load_page` -> `chunk_units(units, source, page, ...)`, xử lý
+# TỪNG TRANG một và gán đúng một giá trị `page` cho mọi chunk của trang đó. Không
+# chunk nào chứa chữ của trang bên cạnh, nên dung sai ±1 chỉ làm một chunk ở trang
+# KHÁC được tính là "trúng" -> recall bị thổi lên.
+#
+# Nó còn che một lỗi thật: bộ test cũ ghi `source_page` = số trong tên file
+# (= số trang in + 1 trên corpus này), tức khoá trang sai 1 — mà với dung sai ±1
+# thì phép so vẫn trả True, nên không ai phát hiện. Xem
+# `src/test/generate_testsets.py` và test `tests/test_eval_gold_keys.py`.
+PAGE_TOLERANCE = 0
 
 
 def _norm_source(value: Optional[str]) -> str:
