@@ -88,14 +88,26 @@ IMAGE_EXTRACTION_VERSION = os.getenv(
 # OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
 TEXT_EXTRACTION_VERSION = os.getenv(
     "TEXT_EXTRACTION_VERSION", "v2_bai_spine")
+# TẮT theo mặc định vì ĐÃ ĐO, không phải vì chưa làm (D-47). Vintern-1B chạy
+# được (đường InternVL đã sửa trong image_captioner.py) nhưng trên 12 crop thật:
+# 4/12 caption BỊA chi tiết không có trong ảnh, 0/4 số hiệu hình do model tự nêu
+# là đúng, JSON parse 6/12, và 17,6 s/crop trên CPU (~4,8 h cho ~976 crop). Phần
+# duy nhất đáng tin là chữ nó OCR lại từ chính crop — thứ pipeline đã có
+# deterministic (pill.py + anchor caption). Bật lại chỉ khi đo được cải thiện.
 IMAGE_CAPTION_ENABLED = os.getenv(
-    "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
+    "IMAGE_CAPTION_ENABLED", "false").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
     "IMAGE_CAPTION_MODEL",
     "5CD-AI/Vintern-1B-v2",
 )
 IMAGE_CAPTION_MAX_NEW_TOKENS = int(
     os.getenv("IMAGE_CAPTION_MAX_NEW_TOKENS", "96"))
+# Vintern-1B là InternVL: ảnh được cắt thành các ô 448x448 theo tỉ lệ khung
+# (dynamic patches) + 1 thumbnail. Số ô càng nhiều càng nét nhưng chi phí tăng
+# gần như tuyến tính (mỗi ô = 256 token ảnh). Trên CPU đây là tham số chi phí
+# quan trọng nhất, nên để cấu hình được và ĐO trước khi đổi.
+IMAGE_CAPTION_MAX_PATCHES = int(
+    os.getenv("IMAGE_CAPTION_MAX_PATCHES", "6"))
 IMAGE_CAPTION_CACHE_PATH = _database_child_path_from_env(
     "IMAGE_CAPTION_CACHE_PATH",
     PERSIST_DIR / "image_caption_cache.json",
