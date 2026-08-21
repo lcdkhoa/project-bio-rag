@@ -12,7 +12,8 @@ def _manifest(confirmed, total, flags=(), covers=0):
     return BookManifest(book_id="KHTN6-KNTT", source_name="SGK_KHTN_6_KNTT",
                         source_hash="x" * 32, n_pages=total, page_offset=-1,
                         offset_votes=[confirmed, total], pages=pages, bai=[],
-                        chuong=[], flags=[{"kind": k, "detail": ""} for k in flags])
+                        chuong=[], banner_votes=[0, 0],
+                        flags=[{"kind": k, "detail": ""} for k in flags])
 
 
 def test_g1_passes_when_every_page_has_a_number_and_confirmation_is_high():

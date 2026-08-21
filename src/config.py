@@ -87,7 +87,7 @@ IMAGE_EXTRACTION_VERSION = os.getenv(
 # Gate re-OCR cho ĐƯỜNG TEXT. Trước đây chỉ ảnh có version gate nên đổi logic
 # OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
 TEXT_EXTRACTION_VERSION = os.getenv(
-    "TEXT_EXTRACTION_VERSION", "v1_png_region_psm")
+    "TEXT_EXTRACTION_VERSION", "v2_bai_spine")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(

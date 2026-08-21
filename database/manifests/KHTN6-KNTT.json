@@ -78,8 +78,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 9,
@@ -87,8 +87,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 10,
@@ -96,8 +96,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 11,
@@ -105,8 +105,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 12,
@@ -114,8 +114,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 2,
+   "role": "content"
   },
   {
    "page_index": 13,
@@ -123,8 +123,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 2,
+   "role": "content"
   },
   {
    "page_index": 14,
@@ -132,8 +132,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 3,
+   "role": "content"
   },
   {
    "page_index": 15,
@@ -141,8 +141,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 3,
+   "role": "content"
   },
   {
    "page_index": 16,
@@ -150,8 +150,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 4,
+   "role": "content"
   },
   {
    "page_index": 17,
@@ -159,8 +159,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 4,
+   "role": "content"
   },
   {
    "page_index": 18,
@@ -168,8 +168,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 5,
+   "role": "content"
   },
   {
    "page_index": 19,
@@ -177,8 +177,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 5,
+   "role": "content"
   },
   {
    "page_index": 20,
@@ -186,8 +186,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 5,
+   "role": "content"
   },
   {
    "page_index": 21,
@@ -195,8 +195,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 97.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 6,
+   "role": "content"
   },
   {
    "page_index": 22,
@@ -204,8 +204,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 6,
+   "role": "content"
   },
   {
    "page_index": 23,
@@ -213,8 +213,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 7,
+   "role": "content"
   },
   {
    "page_index": 24,
@@ -222,8 +222,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 7,
+   "role": "content"
   },
   {
    "page_index": 25,
@@ -231,8 +231,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 8,
+   "role": "content"
   },
   {
    "page_index": 26,
@@ -240,8 +240,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 8,
+   "role": "content"
   },
   {
    "page_index": 27,
@@ -249,8 +249,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 8,
+   "role": "content"
   },
   {
    "page_index": 28,
@@ -258,8 +258,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 8,
+   "role": "content"
   },
   {
    "page_index": 29,
@@ -267,8 +267,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 9,
+   "role": "content"
   },
   {
    "page_index": 30,
@@ -276,8 +276,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 9,
+   "role": "content"
   },
   {
    "page_index": 31,
@@ -285,8 +285,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 32,
@@ -294,8 +294,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 33,
@@ -303,8 +303,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 34,
@@ -312,8 +312,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 35,
@@ -321,8 +321,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 36,
@@ -330,8 +330,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 10,
+   "role": "content"
   },
   {
    "page_index": 37,
@@ -339,8 +339,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 38,
@@ -348,8 +348,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 39,
@@ -357,8 +357,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 40,
@@ -366,8 +366,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 41,
@@ -375,8 +375,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 42,
@@ -384,8 +384,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 11,
+   "role": "content"
   },
   {
    "page_index": 43,
@@ -393,8 +393,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 12,
+   "role": "content"
   },
   {
    "page_index": 44,
@@ -402,8 +402,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 12,
+   "role": "content"
   },
   {
    "page_index": 45,
@@ -411,8 +411,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 12,
+   "role": "content"
   },
   {
    "page_index": 46,
@@ -420,8 +420,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 12,
+   "role": "content"
   },
   {
    "page_index": 47,
@@ -429,8 +429,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 13,
+   "role": "content"
   },
   {
    "page_index": 48,
@@ -438,8 +438,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 13,
+   "role": "content"
   },
   {
    "page_index": 49,
@@ -447,8 +447,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 13,
+   "role": "content"
   },
   {
    "page_index": 50,
@@ -456,8 +456,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 13,
+   "role": "content"
   },
   {
    "page_index": 51,
@@ -465,8 +465,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 14,
+   "role": "content"
   },
   {
    "page_index": 52,
@@ -474,8 +474,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 14,
+   "role": "content"
   },
   {
    "page_index": 53,
@@ -483,8 +483,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 15,
+   "role": "content"
   },
   {
    "page_index": 54,
@@ -492,8 +492,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 15,
+   "role": "content"
   },
   {
    "page_index": 55,
@@ -501,8 +501,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 15,
+   "role": "content"
   },
   {
    "page_index": 56,
@@ -510,8 +510,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 15,
+   "role": "content"
   },
   {
    "page_index": 57,
@@ -519,8 +519,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 16,
+   "role": "content"
   },
   {
    "page_index": 58,
@@ -528,8 +528,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 16,
+   "role": "content"
   },
   {
    "page_index": 59,
@@ -537,8 +537,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 16,
+   "role": "content"
   },
   {
    "page_index": 60,
@@ -546,8 +546,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 16,
+   "role": "content"
   },
   {
    "page_index": 61,
@@ -555,8 +555,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 17,
+   "role": "content"
   },
   {
    "page_index": 62,
@@ -564,8 +564,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 17,
+   "role": "content"
   },
   {
    "page_index": 63,
@@ -573,8 +573,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 17,
+   "role": "content"
   },
   {
    "page_index": 64,
@@ -582,8 +582,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 97.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 17,
+   "role": "content"
   },
   {
    "page_index": 65,
@@ -591,8 +591,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 18,
+   "role": "content"
   },
   {
    "page_index": 66,
@@ -600,8 +600,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 97.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 18,
+   "role": "content"
   },
   {
    "page_index": 67,
@@ -609,8 +609,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 18,
+   "role": "content"
   },
   {
    "page_index": 68,
@@ -618,8 +618,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 19,
+   "role": "content"
   },
   {
    "page_index": 69,
@@ -627,8 +627,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 19,
+   "role": "content"
   },
   {
    "page_index": 70,
@@ -636,8 +636,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 19,
+   "role": "content"
   },
   {
    "page_index": 71,
@@ -645,8 +645,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 20,
+   "role": "content"
   },
   {
    "page_index": 72,
@@ -654,8 +654,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 20,
+   "role": "content"
   },
   {
    "page_index": 73,
@@ -663,8 +663,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 20,
+   "role": "content"
   },
   {
    "page_index": 74,
@@ -672,8 +672,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 21,
+   "role": "content"
   },
   {
    "page_index": 75,
@@ -681,8 +681,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 21,
+   "role": "content"
   },
   {
    "page_index": 76,
@@ -690,8 +690,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 22,
+   "role": "content"
   },
   {
    "page_index": 77,
@@ -699,8 +699,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 22,
+   "role": "content"
   },
   {
    "page_index": 78,
@@ -708,8 +708,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 22,
+   "role": "content"
   },
   {
    "page_index": 79,
@@ -717,8 +717,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 22,
+   "role": "content"
   },
   {
    "page_index": 80,
@@ -726,8 +726,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 23,
+   "role": "content"
   },
   {
    "page_index": 81,
@@ -735,8 +735,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 23,
+   "role": "content"
   },
   {
    "page_index": 82,
@@ -744,8 +744,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 94.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 23,
+   "role": "content"
   },
   {
    "page_index": 83,
@@ -753,8 +753,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 23,
+   "role": "content"
   },
   {
    "page_index": 84,
@@ -762,8 +762,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 24,
+   "role": "content"
   },
   {
    "page_index": 85,
@@ -771,8 +771,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 24,
+   "role": "content"
   },
   {
    "page_index": 86,
@@ -780,8 +780,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 24,
+   "role": "content"
   },
   {
    "page_index": 87,
@@ -789,8 +789,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 25,
+   "role": "content"
   },
   {
    "page_index": 88,
@@ -798,8 +798,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 25,
+   "role": "content"
   },
   {
    "page_index": 89,
@@ -807,8 +807,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 25,
+   "role": "content"
   },
   {
    "page_index": 90,
@@ -816,8 +816,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 25,
+   "role": "content"
   },
   {
    "page_index": 91,
@@ -843,7 +843,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 27,
    "role": "content"
   },
   {
@@ -852,7 +852,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 27,
    "role": "content"
   },
   {
@@ -861,7 +861,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 27,
    "role": "content"
   },
   {
@@ -870,7 +870,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 27,
    "role": "content"
   },
   {
@@ -879,7 +879,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 28,
    "role": "content"
   },
   {
@@ -888,7 +888,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 26,
+   "bai_so": 28,
    "role": "content"
   },
   {
@@ -933,7 +933,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 30,
    "role": "content"
   },
   {
@@ -942,7 +942,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 30,
    "role": "content"
   },
   {
@@ -951,7 +951,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 30,
    "role": "content"
   },
   {
@@ -960,7 +960,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 30,
    "role": "content"
   },
   {
@@ -969,7 +969,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 31,
    "role": "content"
   },
   {
@@ -978,7 +978,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 31,
    "role": "content"
   },
   {
@@ -987,7 +987,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 32,
    "role": "content"
   },
   {
@@ -996,7 +996,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 32,
    "role": "content"
   },
   {
@@ -1005,7 +1005,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 32,
    "role": "content"
   },
   {
@@ -1014,7 +1014,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 32,
    "role": "content"
   },
   {
@@ -1023,7 +1023,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 33,
    "role": "content"
   },
   {
@@ -1032,7 +1032,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 33,
    "role": "content"
   },
   {
@@ -1041,7 +1041,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 33,
    "role": "content"
   },
   {
@@ -1050,7 +1050,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1059,7 +1059,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1068,7 +1068,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1077,7 +1077,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1086,7 +1086,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1095,7 +1095,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1104,7 +1104,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1113,7 +1113,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1122,7 +1122,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 35,
    "role": "content"
   },
   {
@@ -1131,7 +1131,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 35,
    "role": "content"
   },
   {
@@ -1140,7 +1140,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1149,7 +1149,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1158,7 +1158,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1167,7 +1167,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1176,7 +1176,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1185,7 +1185,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1194,7 +1194,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1203,7 +1203,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 36,
    "role": "content"
   },
   {
@@ -1212,7 +1212,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 37,
    "role": "content"
   },
   {
@@ -1221,7 +1221,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 37,
    "role": "content"
   },
   {
@@ -1230,7 +1230,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 38,
    "role": "content"
   },
   {
@@ -1239,7 +1239,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 38,
    "role": "content"
   },
   {
@@ -1248,7 +1248,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 38,
    "role": "content"
   },
   {
@@ -1257,7 +1257,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 38,
    "role": "content"
   },
   {
@@ -1266,7 +1266,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1275,7 +1275,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1284,7 +1284,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1293,7 +1293,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1302,7 +1302,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1311,7 +1311,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 40,
    "role": "content"
   },
   {
@@ -1320,7 +1320,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 40,
    "role": "content"
   },
   {
@@ -1329,7 +1329,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 40,
    "role": "content"
   },
   {
@@ -1338,7 +1338,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1347,7 +1347,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1356,7 +1356,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1365,7 +1365,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1374,7 +1374,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 42,
    "role": "content"
   },
   {
@@ -1383,7 +1383,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 42,
    "role": "content"
   },
   {
@@ -1392,7 +1392,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 42,
    "role": "content"
   },
   {
@@ -1401,7 +1401,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 43,
    "role": "content"
   },
   {
@@ -1410,7 +1410,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 43,
    "role": "content"
   },
   {
@@ -1419,7 +1419,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 43,
    "role": "content"
   },
   {
@@ -1428,7 +1428,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 44,
    "role": "content"
   },
   {
@@ -1437,7 +1437,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 44,
    "role": "content"
   },
   {
@@ -1446,7 +1446,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 44,
    "role": "content"
   },
   {
@@ -1455,7 +1455,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 45,
    "role": "content"
   },
   {
@@ -1464,7 +1464,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 45,
    "role": "content"
   },
   {
@@ -1473,7 +1473,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 46,
    "role": "content"
   },
   {
@@ -1482,7 +1482,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 46,
    "role": "content"
   },
   {
@@ -1491,7 +1491,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 46,
    "role": "content"
   },
   {
@@ -1500,7 +1500,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 47,
    "role": "content"
   },
   {
@@ -1509,7 +1509,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 47,
    "role": "content"
   },
   {
@@ -1518,7 +1518,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 47,
    "role": "content"
   },
   {
@@ -1527,7 +1527,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 48,
    "role": "content"
   },
   {
@@ -1536,7 +1536,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 48,
    "role": "content"
   },
   {
@@ -1545,7 +1545,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 48,
    "role": "content"
   },
   {
@@ -1554,7 +1554,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 49,
    "role": "content"
   },
   {
@@ -1563,7 +1563,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 49,
    "role": "content"
   },
   {
@@ -1572,7 +1572,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 50,
    "role": "content"
   },
   {
@@ -1581,7 +1581,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 50,
    "role": "content"
   },
   {
@@ -1590,7 +1590,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 50,
    "role": "content"
   },
   {
@@ -1599,7 +1599,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 51,
    "role": "content"
   },
   {
@@ -1608,7 +1608,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 51,
    "role": "content"
   },
   {
@@ -1617,7 +1617,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 51,
    "role": "content"
   },
   {
@@ -1626,7 +1626,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 52,
    "role": "content"
   },
   {
@@ -1635,7 +1635,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 52,
    "role": "content"
   },
   {
@@ -1644,7 +1644,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 52,
    "role": "content"
   },
   {
@@ -1653,7 +1653,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 52,
    "role": "content"
   },
   {
@@ -1662,7 +1662,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 53,
    "role": "content"
   },
   {
@@ -1671,7 +1671,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 53,
    "role": "content"
   },
   {
@@ -1680,7 +1680,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 53,
    "role": "content"
   },
   {
@@ -1689,7 +1689,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 29,
+   "bai_so": 53,
    "role": "content"
   },
   {
@@ -1725,7 +1725,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   },
   {
@@ -1734,7 +1734,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   },
   {
@@ -1743,7 +1743,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   },
   {
@@ -1752,7 +1752,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   },
   {
@@ -1761,7 +1761,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   },
   {
@@ -1770,46 +1770,407 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 54,
+   "bai_so": 55,
    "role": "content"
   }
  ],
  "bai": [
   {
+   "bai_so": 1,
+   "title": "Giới thiệu về Khoa học tự nhiên",
+   "start": 8,
+   "end": 11,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 2,
+   "title": "An toàn trong phòng thực hành",
+   "start": 12,
+   "end": 13,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 3,
+   "title": "Sử dụng kính lúp",
+   "start": 14,
+   "end": 15,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 4,
+   "title": "Sử dụng kính hiển vi quang học",
+   "start": 16,
+   "end": 17,
+   "source": "toc"
+  },
+  {
+   "bai_so": 5,
+   "title": "Đo chiều dài",
+   "start": 18,
+   "end": 20,
+   "source": "toc"
+  },
+  {
+   "bai_so": 6,
+   "title": "Đo khối lượng",
+   "start": 21,
+   "end": 22,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 7,
+   "title": "Đo thời gian",
+   "start": 23,
+   "end": 24,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 8,
+   "title": "Đo nhiệt độ",
+   "start": 25,
+   "end": 28,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 9,
+   "title": "Sự đa dạng của chát",
+   "start": 29,
+   "end": 30,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 10,
+   "title": "Các thể của chát và sự chuyển thể",
+   "start": 31,
+   "end": 36,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 11,
+   "title": "Oxygen. Không khí CHƯƠNG II - MỘT SÓ VẬT LIỆU, NGUYÊN LIỆU, NHIÊN LIỆU,",
+   "start": 37,
+   "end": 42,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 12,
+   "title": "Một số vật liệu",
+   "start": 43,
+   "end": 46,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 13,
+   "title": "Một số nguyên liệu",
+   "start": 47,
+   "end": 50,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 14,
+   "title": "Một số nhiên liệu",
+   "start": 51,
+   "end": 52,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 15,
+   "title": "Một số lương thực, thực phẩm \"¬a-.Ầ.ẮÃỗẽ ỗẼỗ5. ẼỀ Ê Ê ốẽố ẽốẽẽẽốố n ốc",
+   "start": 53,
+   "end": 56,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 16,
+   "title": "Hỗn hợp các chát",
+   "start": 57,
+   "end": 60,
+   "source": "toc"
+  },
+  {
+   "bai_so": 17,
+   "title": "Tách chát khỏi hỗn hợp",
+   "start": 61,
+   "end": 64,
+   "source": "toc"
+  },
+  {
+   "bai_so": 18,
+   "title": "Tế bào — Đơn vị cơ bản của sự sống",
+   "start": 65,
+   "end": 67,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 19,
+   "title": "Cấu tạo và chức năng các thành phần của tế bào",
+   "start": 68,
+   "end": 70,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 20,
+   "title": "Sự lớn lên và sinh sản của té bào",
+   "start": 71,
+   "end": 73,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 21,
+   "title": "Thực hành: Quan sát và phân biệt một só loại tế bào “LII PVLAI/^\\1/I “ĐI UP TẾ hmÀ¬ m NI mở TL",
+   "start": 74,
+   "end": 75,
+   "source": "toc"
+  },
+  {
+   "bai_so": 22,
+   "title": "Cơ thể sinh vật",
+   "start": 76,
+   "end": 79,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 23,
+   "title": "Tổ chức cơ thể đa bào",
+   "start": 80,
+   "end": 83,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 24,
+   "title": "Thực hành: Quan sát và mô tả cơ thể đơn bào, cơ thể đa bào Tố. .ố...&",
+   "start": 84,
+   "end": 86,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 25,
+   "title": "Hệ thống phân loại sinh vật",
+   "start": 87,
+   "end": 90,
+   "source": "toc+banner"
+  },
+  {
    "bai_so": 26,
-   "title": "",
+   "title": "Khoá lưỡng phân",
    "start": 91,
+   "end": 92,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 27,
+   "title": "Vi khuẩn",
+   "start": 93,
+   "end": 96,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 28,
+   "title": "Thực hành: Làm sữa chua và quan sát vi khuẩn",
+   "start": 97,
    "end": 98,
-   "source": "banner"
+   "source": "toc+banner"
   },
   {
    "bai_so": 29,
-   "title": "",
+   "title": "Virus",
    "start": 99,
+   "end": 102,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 30,
+   "title": "Nguyên sinh vật",
+   "start": 103,
+   "end": 106,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 31,
+   "title": "Thực hành: Quan sát nguyên sinh vật",
+   "start": 107,
+   "end": 108,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 32,
+   "title": "Nắm",
+   "start": 109,
+   "end": 112,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 33,
+   "title": "Thực hành: Quan sát các loại nắm",
+   "start": 113,
+   "end": 115,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 34,
+   "title": "Thực vật",
+   "start": 116,
+   "end": 123,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 35,
+   "title": "Thực hành: Quan sát và phân biệt một số nhóm thực vật",
+   "start": 124,
+   "end": 125,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 36,
+   "title": "Động vật",
+   "start": 126,
+   "end": 133,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 37,
+   "title": "Thực hành: Quan sát và nhận biết một só nhóm động vật ngoài thiên nhiên",
+   "start": 134,
+   "end": 135,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 38,
+   "title": "Đa dạng sinh học",
+   "start": 136,
+   "end": 139,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 39,
+   "title": "Tìm hiểu sinh vật ngoài thiên nhiên",
+   "start": 140,
+   "end": 144,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 40,
+   "title": "Lực là gì?",
+   "start": 145,
+   "end": 147,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 41,
+   "title": "Biểu diễn lực",
+   "start": 148,
+   "end": 151,
+   "source": "toc"
+  },
+  {
+   "bai_so": 42,
+   "title": "Biến dạng của lò xo",
+   "start": 152,
+   "end": 154,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 43,
+   "title": "Trọng lượng, lực háp dẫn",
+   "start": 155,
+   "end": 157,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 44,
+   "title": "Lực ma sát",
+   "start": 158,
+   "end": 160,
+   "source": "toc"
+  },
+  {
+   "bai_so": 45,
+   "title": "Lực cản của nước ^ALI DVTAI/^A10v/ KAIXAI^I110^2A^I1^",
+   "start": 161,
+   "end": 162,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 46,
+   "title": "Năng lượng và sự truyền năng lượng",
+   "start": 163,
+   "end": 165,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 47,
+   "title": "Một số dạng năng lượng",
+   "start": 166,
+   "end": 168,
+   "source": "toc"
+  },
+  {
+   "bai_so": 48,
+   "title": "Sự chuyển hoá năng lượng",
+   "start": 169,
+   "end": 171,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 49,
+   "title": "Năng lượng hao phí",
+   "start": 172,
+   "end": 173,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 50,
+   "title": "Năng lượng tái tạo",
+   "start": 174,
+   "end": 176,
+   "source": "toc+banner"
+  },
+  {
+   "bai_so": 51,
+   "title": "Tiết kiệm năng lượng “^LIIPĐ^AI/^Xx ThÁI hBẮT\\/À hBÃ¡IÌ Th>iI",
+   "start": 177,
+   "end": 179,
+   "source": "toc"
+  },
+  {
+   "bai_so": 52,
+   "title": "Chuyển động nhìn tháy của Mặt Trời. Thiên thể",
+   "start": 180,
+   "end": 183,
+   "source": "toc"
+  },
+  {
+   "bai_so": 53,
+   "title": "Mặt Trăng",
+   "start": 184,
    "end": 187,
-   "source": "banner"
+   "source": "toc"
   },
   {
    "bai_so": 54,
-   "title": "",
+   "title": "Hệ Mặt Trời",
    "start": 188,
-   "end": 196,
-   "source": "banner"
-  }
- ],
- "chuong": [
-  {
-   "label": "I",
-   "title": "MỞ ĐẦU VỀ KHOA HỌC TỰ NHIÊN",
-   "after_bai": null
+   "end": 190,
+   "source": "toc"
   },
   {
-   "label": "VII",
-   "title": "ĐA DẠNG THÉ GIỚI SÓNG",
-   "after_bai": null
+   "bai_so": 55,
+   "title": "Ngân Hà",
+   "start": 191,
+   "end": 196,
+   "source": "toc+banner"
   }
  ],
+ "banner_votes": [
+  43,
+  55
+ ],
+ "chuong": [],
  "flags": [
+  {
+   "kind": "toc_page_ambiguous",
+   "detail": "Bài 3: nhiều ứng viên [13, 43] -> lấy 13 (nhỏ nhất hợp đơn điệu)"
+  },
   {
    "kind": "page_number_not_read",
    "detail": "trang 1: không đọc được số trang, suy ra 0 từ offset -1"
@@ -1819,21 +2180,9 @@
    "detail": "trang 2: không đọc được số trang, suy ra 1 từ offset -1"
   },
   {
-   "kind": "banner_without_toc",
-   "detail": "Bài 26 ở trang 91 không có trong MỤC LỤC"
-  },
-  {
-   "kind": "banner_without_toc",
-   "detail": "Bài 29 ở trang 99 không có trong MỤC LỤC"
-  },
-  {
-   "kind": "banner_without_toc",
-   "detail": "Bài 54 ở trang 188 không có trong MỤC LỤC"
-  },
-  {
-   "kind": "bai_numbers_not_contiguous",
-   "detail": "3 Bài dựng được, cao nhất 54; thiếu [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] …"
+   "kind": "banner_toc_mismatch",
+   "detail": "trang 166: MỤC LỤC nói Bài 47, huy hiệu đọc ra [40] -> giữ MỤC LỤC"
   }
  ],
- "manifest_version": 2
+ "manifest_version": 3
 }

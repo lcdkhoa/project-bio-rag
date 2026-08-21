@@ -69,8 +69,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 8,
@@ -78,8 +78,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 9,
@@ -87,8 +87,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 10,
@@ -96,8 +96,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 11,
@@ -105,8 +105,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 12,
@@ -114,8 +114,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 13,
@@ -123,8 +123,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 14,
@@ -132,8 +132,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 15,
@@ -141,8 +141,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 16,
@@ -1383,7 +1383,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 35,
+   "bai_so": 34,
    "role": "content"
   },
   {
@@ -1536,7 +1536,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 38,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1545,7 +1545,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 38,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1554,7 +1554,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 38,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -1563,7 +1563,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 38,
+   "bai_so": 39,
    "role": "content"
   },
   {
@@ -2064,6 +2064,13 @@
  ],
  "bai": [
   {
+   "bai_so": 1,
+   "title": "Nhận biết một số dụng cụ, hoá chất. Thuyết trình một vấn để khoa học",
+   "start": 7,
+   "end": 15,
+   "source": "toc"
+  },
+  {
    "bai_so": 2,
    "title": "Động năng. Thế năng",
    "start": 16,
@@ -2114,7 +2121,7 @@
   },
   {
    "bai_so": 9,
-   "title": "Ihực hành do tiêu cự của thấu kính hội tụ",
+   "title": "Ihực hành đo tiêu cự của thấu kính hội tụ",
    "start": 48,
    "end": 50,
    "source": "toc"
@@ -2135,7 +2142,7 @@
   },
   {
    "bai_so": 12,
-   "title": "Đoạn mạch nối tiếp, song song,",
+   "title": "Đoạn mạch nối tiếp, song song",
    "start": 61,
    "end": 64,
    "source": "toc"
@@ -2146,13 +2153,6 @@
    "start": 65,
    "end": 67,
    "source": "toc"
-  },
-  {
-   "bai_so": 1,
-   "title": "Nhận biết một số dụng cụ, hoá chất. Thuyết trình một vấn đề khoa học",
-   "start": 68,
-   "end": 68,
-   "source": "banner+toc"
   },
   {
    "bai_so": 14,
@@ -2298,13 +2298,13 @@
    "bai_so": 34,
    "title": "Khai thác đá vôi. Công nghiệp silicate",
    "start": 150,
-   "end": 152,
+   "end": 153,
    "source": "toc"
   },
   {
    "bai_so": 35,
-   "title": "Khai thác nhiên liệu hoá thạch. Nguồn carbon.",
-   "start": 153,
+   "title": "Khai thác nhiên liệu hoá thạch. Nguồn carbon. Chu trình carbon và sự ấm lên toàn cầu",
+   "start": 154,
    "end": 159,
    "source": "toc"
   },
@@ -2326,12 +2326,19 @@
    "bai_so": 38,
    "title": "Nucleic acid và gene",
    "start": 167,
+   "end": 169,
+   "source": "toc"
+  },
+  {
+   "bai_so": 39,
+   "title": "Tái bản DNA và phiên mã tạo RNA",
+   "start": 170,
    "end": 173,
    "source": "toc"
   },
   {
    "bai_so": 40,
-   "title": "Dịch mã và mối quan hệ từ gene dến tính trạng.",
+   "title": "Dịch mã và mối quan hệ từ gene dến tính trạng",
    "start": 174,
    "end": 178,
    "source": "toc"
@@ -2345,24 +2352,24 @@
   },
   {
    "bai_so": 42,
-   "title": "Nhiễm sắc thể và bộ nhiễm sắc thế",
+   "title": "Nhiễm sắc thế và bộ nhiễm sắc thể",
    "start": 182,
    "end": 186,
    "source": "toc"
   },
   {
    "bai_so": 43,
-   "title": "Nguyên phân và giảm phân",
+   "title": "Nguyên phản và giảm phân",
    "start": 187,
    "end": 191,
    "source": "toc"
   },
   {
    "bai_so": 44,
-   "title": "Nhiễm sắc thể giới tính và cơ chế xác định giới tính",
+   "title": "Nhiễm sắc thể giới tính và cơ chế xác dịnh giới tính",
    "start": 192,
    "end": 194,
-   "source": "banner+toc"
+   "source": "toc"
   },
   {
    "bai_so": 45,
@@ -2397,7 +2404,7 @@
    "title": "Khái niệm tiến hoá và các hình thức chọn lọc",
    "start": 212,
    "end": 214,
-   "source": "banner+toc"
+   "source": "toc"
   },
   {
    "bai_so": 50,
@@ -2414,75 +2421,79 @@
    "source": "toc"
   }
  ],
+ "banner_votes": [
+  0,
+  51
+ ],
  "chuong": [
   {
    "label": "I",
-   "title": "NĂNG LƯỢNG CƠ HỌC 15",
+   "title": "NĂNG LƯỢNG CƠ HỌC",
    "after_bai": 1
   },
   {
    "label": "II",
-   "title": "ÁNH SÁNG 25",
+   "title": "ÁNH SÁNG",
    "after_bai": 4
   },
   {
-   "label": "III",
-   "title": "ĐIỆN Sẽ)",
+   "label": "II",
+   "title": "ĐIỆN",
    "after_bai": 10
   },
   {
    "label": "IV",
-   "title": "ĐIỆN TỪ 67",
+   "title": "ĐIỆN TỪ",
    "after_bai": 13
   },
   {
    "label": "V",
-   "title": "NĂNG LƯỢNG VỚI CUỘC SỐNG. 75",
+   "title": "NĂNG LƯỢNG VỚI CUỘC SỐNG",
    "after_bai": 15
   },
   {
    "label": "VI",
-   "title": "KIM LOẠI. SỰ KHÁC NHAU CƠ BẢN GIỮA PHI KIM VÀ KIM LOẠI 87",
+   "title": "KIM LOẠI. SỰ KHÁC NHAU CƠ BẢN GIỮA PHI KIM VÀ KIM LOẠI",
    "after_bai": 17
   },
   {
-   "label": "VII",
-   "title": "GIỚI THIỆU VỀ CHẤT HỮU CƠ. =",
+   "label": "V",
+   "title": "ỊI. GIỚI THIỆU VỀ CHẤT HỮU CƠ. HYDROCARBON VÀ NGUỒN NHIÊN LIÊU",
    "after_bai": 21
   },
   {
    "label": "VII",
-   "title": "ETHYLIC ALCOHOL VÀ ACETIC ACID. 118",
+   "title": "ETHYLIC ALCOHOL VÀ ACETIC ACID",
    "after_bai": 25
   },
   {
    "label": "IX",
-   "title": "LIPID. CARBOHYDRATE. PROTEIN. POLYMER 128",
+   "title": "LIPID. CARBOHYDRATE. PROTEIN. POLYMER",
    "after_bai": 27
   },
   {
    "label": "X",
-   "title": "KHAI THÁC TÀI NGUYÊN TỪ VỎ TRÁI ĐẤT 146",
+   "title": "KHAI THÁC TÀI NGUYÊN TỪ VỎ TRÁI ĐẤT",
    "after_bai": 32
   },
   {
    "label": "XI",
-   "title": "DI TRUYỂN HỌC MENDEL. CƠ SỞ PHÂN TỬ CỦA HIỆN TƯỢNG EÐ",
+   "title": "DI TRUYỂN HỌC MENDEL. CƠ SỞ PHÂN TỬ CỦA HIỆN TƯỢNG DI TRUYỀN",
    "after_bai": 35
   },
   {
    "label": "XII",
-   "title": "DI TRUYỂN NHIỄM SẮC THỂ 181",
+   "title": "DI TRUYỀN NHIỄM SẮC THỂ",
    "after_bai": 41
   },
   {
-   "label": "XII",
-   "title": "DI TRUYỀN HỌC VỚI CON NGƯỜI VÀ ĐỜI SỐNG 201",
+   "label": "XI",
+   "title": "DI TRUYỀN HỌC VỚI CON NGƯỜI VÀ ĐỜI SỐNG",
    "after_bai": 46
   },
   {
    "label": "XIV",
-   "title": "TIẾN HOÁ 211",
+   "title": "TIẾN HOÁ",
    "after_bai": 48
   }
  ],
@@ -2494,207 +2505,7 @@
   {
    "kind": "page_number_not_read",
    "detail": "trang 2: không đọc được số trang, suy ra 1 từ offset -1"
-  },
-  {
-   "kind": "toc_page_mismatch",
-   "detail": "Bài 1: TOC ghi trang 7, banner ở trang 68 -> lấy banner"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 2: không thấy banner, dùng trang TOC 16"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 3: không thấy banner, dùng trang TOC 19"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 4: không thấy banner, dùng trang TOC 22"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 5: không thấy banner, dùng trang TOC 26"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 6: không thấy banner, dùng trang TOC 31"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 7: không thấy banner, dùng trang TOC 35"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 8: không thấy banner, dùng trang TOC 41"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 9: không thấy banner, dùng trang TOC 48"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 10: không thấy banner, dùng trang TOC 51"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 11: không thấy banner, dùng trang TOC 54"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 12: không thấy banner, dùng trang TOC 61"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 13: không thấy banner, dùng trang TOC 65"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 14: không thấy banner, dùng trang TOC 68"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 15: không thấy banner, dùng trang TOC 73"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 16: không thấy banner, dùng trang TOC 76"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 17: không thấy banner, dùng trang TOC 81"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 18: không thấy banner, dùng trang TOC 88"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 19: không thấy banner, dùng trang TOC 93"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 20: không thấy banner, dùng trang TOC 96"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 21: không thấy banner, dùng trang TOC 101"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 22: không thấy banner, dùng trang TOC 104"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 23: không thấy banner, dùng trang TOC 108"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 24: không thấy banner, dùng trang TOC 112"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 25: không thấy banner, dùng trang TOC 115"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 26: không thấy banner, dùng trang TOC 119"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 27: không thấy banner, dùng trang TOC 124"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 28: không thấy banner, dùng trang TOC 129"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 29: không thấy banner, dùng trang TOC 132"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 30: không thấy banner, dùng trang TOC 136"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 31: không thấy banner, dùng trang TOC 139"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 32: không thấy banner, dùng trang TOC 142"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 33: không thấy banner, dùng trang TOC 147"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 34: không thấy banner, dùng trang TOC 150"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 35: không thấy banner, dùng trang TOC 153"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 36: không thấy banner, dùng trang TOC 160"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 37: không thấy banner, dùng trang TOC 163"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 38: không thấy banner, dùng trang TOC 167"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 40: không thấy banner, dùng trang TOC 174"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 41: không thấy banner, dùng trang TOC 179"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 42: không thấy banner, dùng trang TOC 182"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 43: không thấy banner, dùng trang TOC 187"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 45: không thấy banner, dùng trang TOC 195"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 46: không thấy banner, dùng trang TOC 198"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 47: không thấy banner, dùng trang TOC 202"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 48: không thấy banner, dùng trang TOC 208"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 50: không thấy banner, dùng trang TOC 215"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 51: không thấy banner, dùng trang TOC 220"
-  },
-  {
-   "kind": "spine_out_of_order",
-   "detail": "Bài 13 (trang 65) không tăng trước Bài 1 (trang 68)"
-  },
-  {
-   "kind": "bai_numbers_not_contiguous",
-   "detail": "50 Bài dựng được, cao nhất 51; thiếu [39]"
   }
  ],
- "manifest_version": 2
+ "manifest_version": 3
 }

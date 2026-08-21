@@ -27,6 +27,14 @@ logger = logging.getLogger(__name__)
 
 SKIP_ROLES = ("cover",)
 
+# Spine Bài chỉ được ghi vào metadata chunk khi chính manifest KHÔNG tự tố là nó
+# hỏng. Hai flag này nghĩa là "số Bài dựng ra không tin được", và ghi một số Bài
+# chưa chứng minh được vào index là nói điều mình không chứng minh được
+# (nguyên tắc 1). Đo 2026-08-21: cả 4 quyển đều sạch hai flag này (55/42/47/51
+# Bài liền mạch, D-43) nên `bai_so` đi vào index — chặn của D-39 được gỡ, nhưng
+# gỡ CÓ ĐIỀU KIỆN chứ không gỡ hẳn: quyển nào hỏng lại thì tự động thôi ghi.
+SPINE_UNTRUSTED_FLAGS = ("bai_numbers_not_contiguous", "spine_out_of_order")
+
 
 class ManifestMissing(RuntimeError):
     """Chưa dựng BookManifest cho quyển này — phải chạy --build-manifests trước."""
@@ -39,6 +47,7 @@ class LayoutOCRLoader:
         self.manifest_dir = Path(manifest_dir) if manifest_dir else MANIFEST_DIR
         self._manifests: dict[str, object] = {}
         self._page_meta: dict[str, dict] = {}
+        self._spine_trusted: dict[str, bool] = {}   # cảnh báo một lần/quyển
 
     def manifest_for(self, source):
         name = source.name
@@ -54,6 +63,19 @@ class LayoutOCRLoader:
             self._page_meta[name] = {
                 int(page["page_index"]): page for page in manifest.pages}
         return self._manifests[name]
+
+    def spine_is_trusted(self, source) -> bool:
+        if source.name in self._spine_trusted:
+            return self._spine_trusted[source.name]
+        manifest = self.manifest_for(source)
+        bad = [f["kind"] for f in manifest.flags
+               if f["kind"] in SPINE_UNTRUSTED_FLAGS]
+        if bad:
+            logger.warning(
+                f"[{source.name}] spine Bài có flag {sorted(set(bad))} -> "
+                f"KHÔNG ghi bai_so vào metadata chunk cho quyển này")
+        self._spine_trusted[source.name] = not bad
+        return not bad
 
     def page_meta(self, source, page_number: int) -> dict:
         self.manifest_for(source)
@@ -79,14 +101,14 @@ class LayoutOCRLoader:
         img = source.load(page_number)
         regions = segment_page(img, variant)
         units = extract_text_units(img, regions, variant)
-        # `bai_so` CÓ trong manifest nhưng KHÔNG đi vào metadata chunk: đo trên
-        # corpus thật, spine Bài hiện còn sai nặng (sách 6 dựng được 4 Bài cho
-        # ~55 Bài; MỤC LỤC OCR ra 0 entry). Ghi một số Bài chưa chứng minh được
-        # vào index là nói điều mình không chứng minh được (nguyên tắc 1) — nên
-        # nó ở lại manifest như một giả thuyết có flag, cho người xem.
+        # `bai_so` đi vào metadata chunk CHỈ KHI spine của quyển này sạch flag
+        # (xem SPINE_UNTRUSTED_FLAGS). Trước D-43 spine sai nặng nên chỗ này bị
+        # chặn cứng; giờ nó là điều kiện đo được, không phải một hằng số niềm tin.
+        bai_so = meta.get("bai_so") if self.spine_is_trusted(source) else None
         return chunk_units(units, source=source.name,
                            page=int(meta["printed_page"]), variant=variant,
-                           page_index=int(page_number))
+                           page_index=int(page_number),
+                           bai_so=int(bai_so) if bai_so is not None else None)
 
     def load_book(self, source):
         out = []

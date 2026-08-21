@@ -69,8 +69,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 8,
@@ -78,8 +78,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 9,
@@ -87,8 +87,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 10,
@@ -96,8 +96,8 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 11,
@@ -105,8 +105,8 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": null,
-   "role": "front_matter"
+   "bai_so": 1,
+   "role": "content"
   },
   {
    "page_index": 12,
@@ -114,7 +114,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": 25,
+   "bai_so": 1,
    "role": "content"
   },
   {
@@ -123,7 +123,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 1,
    "role": "content"
   },
   {
@@ -132,7 +132,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 1,
    "role": "content"
   },
   {
@@ -141,7 +141,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 2,
    "role": "content"
   },
   {
@@ -150,7 +150,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 2,
    "role": "content"
   },
   {
@@ -159,7 +159,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 2,
    "role": "content"
   },
   {
@@ -168,7 +168,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 2,
    "role": "content"
   },
   {
@@ -177,7 +177,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 2,
    "role": "content"
   },
   {
@@ -186,7 +186,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 3,
    "role": "content"
   },
   {
@@ -195,7 +195,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 97.0,
-   "bai_so": 25,
+   "bai_so": 3,
    "role": "content"
   },
   {
@@ -204,7 +204,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 3,
    "role": "content"
   },
   {
@@ -213,7 +213,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 3,
    "role": "content"
   },
   {
@@ -222,7 +222,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -231,7 +231,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -240,7 +240,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -249,7 +249,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -258,7 +258,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -267,7 +267,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -276,7 +276,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -285,7 +285,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -294,7 +294,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 4,
    "role": "content"
   },
   {
@@ -303,7 +303,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 5,
    "role": "content"
   },
   {
@@ -312,7 +312,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 5,
    "role": "content"
   },
   {
@@ -321,7 +321,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 5,
    "role": "content"
   },
   {
@@ -330,7 +330,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 5,
    "role": "content"
   },
   {
@@ -339,7 +339,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 6,
    "role": "content"
   },
   {
@@ -348,7 +348,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 6,
    "role": "content"
   },
   {
@@ -357,7 +357,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 6,
    "role": "content"
   },
   {
@@ -366,7 +366,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 6,
    "role": "content"
   },
   {
@@ -375,7 +375,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 7,
    "role": "content"
   },
   {
@@ -384,7 +384,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 7,
    "role": "content"
   },
   {
@@ -393,7 +393,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 97.0,
-   "bai_so": 25,
+   "bai_so": 7,
    "role": "content"
   },
   {
@@ -402,7 +402,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 7,
    "role": "content"
   },
   {
@@ -411,7 +411,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 7,
    "role": "content"
   },
   {
@@ -420,7 +420,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 8,
    "role": "content"
   },
   {
@@ -429,7 +429,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 8,
    "role": "content"
   },
   {
@@ -438,7 +438,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 8,
    "role": "content"
   },
   {
@@ -447,7 +447,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 8,
    "role": "content"
   },
   {
@@ -456,7 +456,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 9,
    "role": "content"
   },
   {
@@ -465,7 +465,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 9,
    "role": "content"
   },
   {
@@ -474,7 +474,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": 25,
+   "bai_so": 9,
    "role": "content"
   },
   {
@@ -483,7 +483,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 9,
    "role": "content"
   },
   {
@@ -492,7 +492,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 10,
    "role": "content"
   },
   {
@@ -501,7 +501,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 10,
    "role": "content"
   },
   {
@@ -510,7 +510,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 10,
    "role": "content"
   },
   {
@@ -519,7 +519,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 11,
    "role": "content"
   },
   {
@@ -528,7 +528,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 11,
    "role": "content"
   },
   {
@@ -537,7 +537,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 11,
    "role": "content"
   },
   {
@@ -546,7 +546,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 11,
    "role": "content"
   },
   {
@@ -555,7 +555,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 12,
    "role": "content"
   },
   {
@@ -564,7 +564,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 12,
    "role": "content"
   },
   {
@@ -573,7 +573,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 12,
    "role": "content"
   },
   {
@@ -582,7 +582,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 12,
    "role": "content"
   },
   {
@@ -591,7 +591,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 13,
    "role": "content"
   },
   {
@@ -600,7 +600,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 13,
    "role": "content"
   },
   {
@@ -609,7 +609,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 13,
    "role": "content"
   },
   {
@@ -618,7 +618,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 13,
    "role": "content"
   },
   {
@@ -627,7 +627,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 14,
    "role": "content"
   },
   {
@@ -636,7 +636,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 14,
    "role": "content"
   },
   {
@@ -645,7 +645,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 14,
    "role": "content"
   },
   {
@@ -654,7 +654,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 14,
    "role": "content"
   },
   {
@@ -663,7 +663,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 95.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -672,7 +672,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -681,7 +681,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -690,7 +690,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -699,7 +699,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 95.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -708,7 +708,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 93.0,
-   "bai_so": 25,
+   "bai_so": 15,
    "role": "content"
   },
   {
@@ -717,7 +717,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 16,
    "role": "content"
   },
   {
@@ -726,7 +726,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 16,
    "role": "content"
   },
   {
@@ -735,7 +735,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 16,
    "role": "content"
   },
   {
@@ -744,7 +744,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 94.0,
-   "bai_so": 25,
+   "bai_so": 16,
    "role": "content"
   },
   {
@@ -753,7 +753,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 17,
    "role": "content"
   },
   {
@@ -762,7 +762,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 17,
    "role": "content"
   },
   {
@@ -771,7 +771,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 17,
    "role": "content"
   },
   {
@@ -780,7 +780,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 17,
    "role": "content"
   },
   {
@@ -789,7 +789,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 18,
    "role": "content"
   },
   {
@@ -798,7 +798,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 18,
    "role": "content"
   },
   {
@@ -807,7 +807,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 18,
    "role": "content"
   },
   {
@@ -816,7 +816,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 25,
+   "bai_so": 18,
    "role": "content"
   },
   {
@@ -1014,7 +1014,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 95.0,
-   "bai_so": 24,
+   "bai_so": 25,
    "role": "content"
   },
   {
@@ -1023,7 +1023,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 24,
+   "bai_so": 25,
    "role": "content"
   },
   {
@@ -1536,7 +1536,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 40,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1545,7 +1545,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 40,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1554,7 +1554,7 @@
    "source": "ocr_confirmed",
    "side": "R",
    "conf": 96.0,
-   "bai_so": 40,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1563,7 +1563,7 @@
    "source": "ocr_confirmed",
    "side": "L",
    "conf": 96.0,
-   "bai_so": 40,
+   "bai_so": 41,
    "role": "content"
   },
   {
@@ -1632,15 +1632,134 @@
  ],
  "bai": [
   {
-   "bai_so": 25,
-   "title": "Hô hấp tế bào.",
-   "start": 12,
+   "bai_so": 1,
+   "title": "Phương pháp và kĩ năng học tập môn Khoa học tự nhiên",
+   "start": 7,
+   "end": 14,
+   "source": "toc"
+  },
+  {
+   "bai_so": 2,
+   "title": "Nguyên tử",
+   "start": 15,
+   "end": 19,
+   "source": "toc"
+  },
+  {
+   "bai_so": 3,
+   "title": "Nguyên tố hoá học",
+   "start": 20,
+   "end": 23,
+   "source": "toc"
+  },
+  {
+   "bai_so": 4,
+   "title": "Sơ lược về bảng tuần hoàn các nguyên Lố hoá học",
+   "start": 24,
+   "end": 32,
+   "source": "toc"
+  },
+  {
+   "bai_so": 5,
+   "title": "Phân tử - Đơn chất - Hợp chất",
+   "start": 33,
+   "end": 36,
+   "source": "toc"
+  },
+  {
+   "bai_so": 6,
+   "title": "Giới thiệu về liên kết hoá học",
+   "start": 37,
+   "end": 40,
+   "source": "toc"
+  },
+  {
+   "bai_so": 7,
+   "title": "1Ioá trị và công thức hoá học",
+   "start": 41,
+   "end": 45,
+   "source": "toc"
+  },
+  {
+   "bai_so": 8,
+   "title": "Tốc độ chuyển động",
+   "start": 46,
+   "end": 49,
+   "source": "toc"
+  },
+  {
+   "bai_so": 9,
+   "title": "Đo tốc độ",
+   "start": 50,
+   "end": 53,
+   "source": "toc"
+  },
+  {
+   "bai_so": 10,
+   "title": "Đổ thị quãng đường - thời gian",
+   "start": 54,
+   "end": 56,
+   "source": "toc"
+  },
+  {
+   "bai_so": 11,
+   "title": "\"thảo luận về ảnh hưởng của tốc độ trong an toàn giao thông",
+   "start": 57,
+   "end": 60,
+   "source": "toc"
+  },
+  {
+   "bai_so": 12,
+   "title": "Sóng âm",
+   "start": 61,
+   "end": 64,
+   "source": "toc"
+  },
+  {
+   "bai_so": 13,
+   "title": "Độ to và độ cao của âm",
+   "start": 65,
+   "end": 68,
+   "source": "toc"
+  },
+  {
+   "bai_so": 14,
+   "title": "Phản xạ âm, chống ô nhiễm tiếng ồn",
+   "start": 69,
+   "end": 72,
+   "source": "toc"
+  },
+  {
+   "bai_so": 15,
+   "title": "Năng lượng ánh sáng. Tĩa sáng, vùng tối",
+   "start": 73,
+   "end": 78,
+   "source": "toc"
+  },
+  {
+   "bai_so": 16,
+   "title": "Sự phản xạ ánh sáng",
+   "start": 79,
+   "end": 82,
+   "source": "toc"
+  },
+  {
+   "bai_so": 17,
+   "title": "Ảnh của vật qua gương phẳng",
+   "start": 83,
+   "end": 86,
+   "source": "toc"
+  },
+  {
+   "bai_so": 18,
+   "title": "Nam châm",
+   "start": 87,
    "end": 90,
    "source": "toc"
   },
   {
    "bai_so": 19,
-   "title": "Từ trường",
+   "title": "| Từ trường |",
    "start": 91,
    "end": 96,
    "source": "toc"
@@ -1675,8 +1794,15 @@
   },
   {
    "bai_so": 24,
-   "title": "'Thực hành: Chứng minh quang hợp ở cây xanh",
+   "title": "'Ihực hành: Chứng minh quang hợp ở cây xanh",
    "start": 109,
+   "end": 111,
+   "source": "toc"
+  },
+  {
+   "bai_so": 25,
+   "title": "Hô hấp tế bào",
+   "start": 112,
    "end": 113,
    "source": "toc"
   },
@@ -1689,7 +1815,7 @@
   },
   {
    "bai_so": 27,
-   "title": "“thực hành: Hô hấp ở thực vật",
+   "title": "'thực hành: Hô hấp ở thực vật",
    "start": 117,
    "end": 118,
    "source": "toc"
@@ -1766,7 +1892,7 @@
   },
   {
    "bai_so": 38,
-   "title": "bang Quan sát, mô tả sự sinh trưởng và phát triển ở một số",
+   "title": "'Thực hành: Quan sát, mô tả sự sinh trưởng và phát triển ở một số sinh vật",
    "start": 157,
    "end": 158,
    "source": "toc"
@@ -1782,6 +1908,13 @@
    "bai_so": 40,
    "title": "Sinh sản hữu tính ở sinh vật",
    "start": 165,
+   "end": 169,
+   "source": "toc"
+  },
+  {
+   "bai_so": 41,
+   "title": "Một số yếu tố ảnh hưởng và điểu hoà, điều khiển sinh sản ở sinh vật",
+   "start": 170,
    "end": 173,
    "source": "toc"
   },
@@ -1793,25 +1926,59 @@
    "source": "toc"
   }
  ],
+ "banner_votes": [
+  0,
+  42
+ ],
  "chuong": [
   {
-   "label": "VII",
-   "title": "TRAO ĐỔI CHẤT VÀ CHUYỂN HOÁ NĂNG LƯỢNG Ở S",
-   "after_bai": 20
+   "label": "I",
+   "title": "NGUYÊN TỬ SƠ LƯỢC VỀ BẢNG TUẦN HOÀN CÁC NGUYÊN TỔ HOÁ HỌC",
+   "after_bai": 1
+  },
+  {
+   "label": "II",
+   "title": "PHÂN TỬ s LIÊN KẾT HOÁ HỌC",
+   "after_bai": 4
+  },
+  {
+   "label": "II",
+   "title": "TỐC ĐỘ",
+   "after_bai": 7
+  },
+  {
+   "label": "IV",
+   "title": "ÂM THANH",
+   "after_bai": 11
+  },
+  {
+   "label": "V",
+   "title": "ÁNH SÁNG",
+   "after_bai": 14
+  },
+  {
+   "label": "VI",
+   "title": "TỪ",
+   "after_bai": 17
   },
   {
    "label": "VII",
-   "title": "CẢM ỨNG Ở SINH VẬT 138",
+   "title": "TRAO ĐỔI CHẤT VÀ CHUYỂN HOÁ NĂNG LƯỢNG Ở SINH VẬT",
+   "after_bai": 20
+  },
+  {
+   "label": "VI",
+   "title": "NH - CẢM ỨNG Ở SINH VẬT",
    "after_bai": 32
   },
   {
    "label": "IX",
-   "title": "SINH TRƯỞNG VÀ PHÁT TRIỂN Ở SINH VẬT 148",
+   "title": "SINH TRƯỞNG VÀ PHÁT TRIỂN Ở SINH VẬT",
    "after_bai": 35
   },
   {
    "label": "X",
-   "title": "SINH SẢN Ở SINH VẬT 158",
+   "title": "SINH SẢN Ở SINH VẬT",
    "after_bai": 38
   }
  ],
@@ -1823,107 +1990,7 @@
   {
    "kind": "page_number_not_read",
    "detail": "trang 2: không đọc được số trang, suy ra 1 từ offset -1"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 19: không thấy banner, dùng trang TOC 91"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 20: không thấy banner, dùng trang TOC 97"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 21: không thấy banner, dùng trang TOC 100"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 22: không thấy banner, dùng trang TOC 102"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 23: không thấy banner, dùng trang TOC 105"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 24: không thấy banner, dùng trang TOC 109"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 25: không thấy banner, dùng trang TOC 12"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 26: không thấy banner, dùng trang TOC 114"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 27: không thấy banner, dùng trang TOC 117"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 28: không thấy banner, dùng trang TOC 119"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 29: không thấy banner, dùng trang TOC 123"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 30: không thấy banner, dùng trang TOC 128"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 31: không thấy banner, dùng trang TOC 132"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 32: không thấy banner, dùng trang TOC 137"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 33: không thấy banner, dùng trang TOC 139"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 34: không thấy banner, dùng trang TOC 142"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 35: không thấy banner, dùng trang TOC 146"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 36: không thấy banner, dùng trang TOC 149"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 37: không thấy banner, dùng trang TOC 152"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 38: không thấy banner, dùng trang TOC 157"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 39: không thấy banner, dùng trang TOC 159"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 40: không thấy banner, dùng trang TOC 165"
-  },
-  {
-   "kind": "toc_without_banner",
-   "detail": "Bài 42: không thấy banner, dùng trang TOC 174"
-  },
-  {
-   "kind": "spine_out_of_order",
-   "detail": "Bài 25 (trang 12) không tăng trước Bài 19 (trang 91)"
-  },
-  {
-   "kind": "bai_numbers_not_contiguous",
-   "detail": "23 Bài dựng được, cao nhất 42; thiếu [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 41]"
   }
  ],
- "manifest_version": 2
+ "manifest_version": 3
 }

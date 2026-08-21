@@ -24,13 +24,13 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Callable
 
-from .bai_spine import BannerHit, build_bai_spine
+from .bai_spine import banner_agreement, build_bai_spine
 from .page_map import build_page_map, fit_offset, missing_page_indices
-from .toc import TOC_PAGE_NUMBERS, parse_toc_lines
+from .toc import TocResult
 from ..page_source import source_hash
 from ...config import MANIFEST_DIR
 
-MANIFEST_VERSION = 2
+MANIFEST_VERSION = 3
 
 # Trang in 0 và 1 = bìa trước + trang tên sách. Đã xem bằng mắt trên sách 6:
 # không in số trang (nên `model_inferred` ở đó là ĐÚNG, không phải lỗi OCR) và
@@ -51,6 +51,7 @@ class BookManifest:
     offset_votes: list
     pages: list
     bai: list
+    banner_votes: list        # [số Bài được huy hiệu xác nhận, tổng số Bài]
     chuong: list
     flags: list
     manifest_version: int = MANIFEST_VERSION
@@ -71,37 +72,42 @@ def build_manifest(source, *,
     if not page_numbers:
         raise ValueError(f"{source.name}: nguồn không có trang nào")
 
+    # MỤC LỤC đọc TRƯỚC: nó cho biết trang nào là MỤC LỤC, và những trang đó
+    # phải được loại khỏi vòng dò banner. Trang MỤC LỤC nhiều màu và đầy chữ
+    # "Bài N" nên detector từng khớp và sinh ra một Bài giả ở ngay đầu quyển
+    # (đo được: "Bài 20 ở trang 6" cho sách 6). Trước đây dải trang này là hằng
+    # số `TOC_PAGE_NUMBERS = (5, 6)`; đo lại thì sách 6 dùng BA trang (5–7) nên
+    # hằng số đó vừa chặn sai vừa **làm mất 16 Bài cuối** — nay tự phát hiện.
+    toc: TocResult = read_toc(source)
+    toc_pages = set(toc.page_indices)
+
     reads: dict[int, list] = {}
-    banners: list[BannerHit] = []
+    banners: dict[int, frozenset] = {}
     for page_index in page_numbers:
         image = source.load(page_index)
         reads[page_index] = list(read_candidates(image))
-        # KHÔNG dò banner trên trang MỤC LỤC: nó nhiều màu và đầy chữ "Bài N",
-        # nên detector khớp và sinh ra một Bài giả ở ngay đầu quyển (đo được:
-        # "Bài 20 ở trang 6" cho sách 6, "Bài 19 ở trang 6" cho sách 7 — cả hai
-        # trang 6 đều là MỤC LỤC). Trang MỤC LỤC đã được xác nhận bằng mắt, nên
-        # loại nó ra là dùng tri thức đã kiểm chứng, không phải đoán.
-        if page_index in TOC_PAGE_NUMBERS:
+        if page_index in toc_pages:
             continue
-        bai_so = detect_banner(image)
-        if bai_so is not None:
-            banners.append(BannerHit(page_index=page_index, bai_so=int(bai_so)))
+        candidates = detect_banner(image)
+        if candidates:
+            banners[page_index] = frozenset(int(c) for c in candidates)
 
     fit = fit_offset(reads)
     page_records = build_page_map(page_numbers, reads, fit)
 
-    toc_printed, toc_chuongs = parse_toc_lines(read_toc(source))
     # MỤC LỤC ghi SỐ TRANG IN; spine và banner làm việc trên page_index. Đổi hệ
     # toạ độ đúng một lần, ngay tại biên — dựa vào chuyện hai hệ "gần trùng"
     # chính là loại lỗi lệch hệ chỉ số mà spec §2 cấm.
     toc_entries = [replace(entry, start_page=entry.start_page - fit.offset)
-                   for entry in toc_printed]
+                   for entry in toc.entries]
+    toc_chuongs = toc.chuongs
     spine, spine_flags = build_bai_spine(toc_entries, banners, page_numbers[-1])
 
-    flags = [{"kind": "page_number_not_read",
-              "detail": f"trang {record.page_index}: không đọc được số trang, "
-                        f"suy ra {record.printed_page} từ offset {fit.offset}"}
-             for record in page_records if record.source == "model_inferred"]
+    flags = list(toc.flags)
+    flags += [{"kind": "page_number_not_read",
+               "detail": f"trang {record.page_index}: không đọc được số trang, "
+                         f"suy ra {record.printed_page} từ offset {fit.offset}"}
+              for record in page_records if record.source == "model_inferred"]
     flags += [{"kind": flag.kind, "detail": flag.detail} for flag in spine_flags]
 
     gaps = missing_page_indices(page_numbers)
@@ -173,6 +179,7 @@ def build_manifest(source, *,
         page_offset=fit.offset,
         offset_votes=[fit.votes, fit.total],
         pages=pages,
+        banner_votes=list(banner_agreement(spine)),
         bai=[{"bai_so": r.bai_so, "title": r.title, "start": r.start,
               "end": r.end, "source": r.source} for r in spine],
         chuong=[{"label": c.label, "title": c.title, "after_bai": c.after_bai}

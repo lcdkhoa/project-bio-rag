@@ -7,15 +7,19 @@ from src.etl.book.manifest import (
     printed_page_lookup, save_manifest,
 )
 from src.etl.book.page_map import NumberCandidate
+from src.etl.book.toc import TocChuong, TocEntry, TocResult
 
 from .conftest import page_of
 
 
-def _build(source, *, numbers=None, toc=(), banners=None):
+def _build(source, *, numbers=None, toc=(), chuongs=(), toc_pages=(),
+           banners=None):
     """Ba adapter giả, tra theo SỐ TRANG đọc từ pixel — không đếm lượt gọi.
 
     `numbers`: {page_index: printed_value}; side suy theo luật parity.
-    `banners`: {page_index: bai_so}.
+    `toc`: [(bai_so, title, SỐ TRANG IN)]. `toc_pages`: page_index của MỤC LỤC.
+    `banners`: {page_index: bai_so hoặc tập bai_so} — huy hiệu trả về TẬP ứng
+    viên, nên một `int` ở đây được bọc thành tập một phần tử.
     """
     numbers = numbers or {}
 
@@ -26,11 +30,21 @@ def _build(source, *, numbers=None, toc=(), banners=None):
         return [NumberCandidate(value=value, conf=88.0,
                                 side="L" if value % 2 == 0 else "R")]
 
+    result = TocResult(
+        entries=[TocEntry(bai_so, title, printed) for bai_so, title, printed in toc],
+        chuongs=[TocChuong(*c) for c in chuongs],
+        page_indices=list(toc_pages))
+
+    def banner(image_bgr):
+        found = (banners or {}).get(page_of(image_bgr))
+        if found is None:
+            return frozenset()
+        return frozenset(found if isinstance(found, (set, frozenset)) else {found})
+
     return build_manifest(source,
                           read_candidates=read,
-                          read_toc=lambda src: list(toc),
-                          detect_banner=lambda image: (banners or {}).get(
-                              page_of(image)))
+                          read_toc=lambda src: result,
+                          detect_banner=banner)
 
 
 def test_book_id_maps_the_folder_name_to_a_book_id():
@@ -48,7 +62,7 @@ def test_build_manifest_fills_pages_bai_and_source_hash(png_book):
     # printed_page == page_index - 1 (đo được trên cả 4 quyển) -> offset -1
     manifest = _build(source,
                       numbers={i: i - 1 for i in range(1, 9)},
-                      toc=["Bài 1. Mở đầu 4", "CHƯƠNG I - A"])
+                      toc=[(1, "Mở đầu", 4)], chuongs=[("I", "A", 1)])
     assert manifest.book_id == "KHTN6-KNTT"
     assert manifest.source_name == "SGK_KHTN_6_KNTT"
     assert manifest.n_pages == 8
@@ -93,7 +107,7 @@ def test_build_manifest_marks_the_two_cover_pages_and_skips_nothing_else(png_boo
     source = png_book(range(1, 9))
     manifest = _build(source,
                       numbers={i: i - 1 for i in range(3, 9)},
-                      toc=["Bài 1. Mở đầu 4"])
+                      toc=[(1, "Mở đầu", 4)])
     roles = {p["page_index"]: p["role"] for p in manifest.pages}
     assert roles[1] == "cover" and roles[2] == "cover"
     assert roles[3] == "front_matter" and roles[4] == "front_matter"
@@ -104,20 +118,35 @@ def test_build_manifest_tags_pages_with_their_bai(png_book):
     source = png_book(range(1, 9))
     manifest = _build(source,
                       numbers={i: i - 1 for i in range(1, 9)},
-                      toc=["Bài 1. Mở đầu 4"])
+                      toc=[(1, "Mở đầu", 4)])
     pages = {p["page_index"]: p for p in manifest.pages}
     assert pages[6]["bai_so"] == 1
     assert pages[1]["bai_so"] is None
 
 
-def test_build_manifest_uses_the_banner_page_over_the_toc_page(png_book):
+def test_the_toc_page_wins_and_a_badge_elsewhere_is_only_flagged(png_book):
+    """Vai đã đảo (D-43): MỤC LỤC đọc gần đủ và tự nhất quán, huy hiệu đọc ~2/3
+    kèm ca mâu thuẫn — nên huy hiệu KHÔNG được dời trang bắt đầu của Bài."""
     source = png_book(range(1, 12))
     manifest = _build(source,
                       numbers={i: i - 1 for i in range(1, 12)},
-                      toc=["Bài 1. Mở đầu 4"],
+                      toc=[(1, "Mở đầu", 4)],
                       banners={9: 1})
-    assert manifest.bai[0]["start"] == 9
-    assert "toc_page_mismatch" in [f["kind"] for f in manifest.flags]
+    assert manifest.bai[0]["start"] == 5          # trang IN 4 -> page_index 5
+    # Huy hiệu Bài 1 ở trang 9 là trang TIẾP của Bài 1 (KNTT in lại nhãn), nên
+    # không phải Bài lạ -> không kêu. Cái phải giữ là: nó không dời `start`.
+    assert manifest.flags == []
+    assert manifest.banner_votes == [0, 1]
+
+
+def test_a_badge_on_the_bai_start_page_confirms_it(png_book):
+    source = png_book(range(1, 12))
+    manifest = _build(source,
+                      numbers={i: i - 1 for i in range(1, 12)},
+                      toc=[(1, "Mở đầu", 4)],
+                      banners={5: 1})
+    assert manifest.bai[0]["source"] == "toc+banner"
+    assert manifest.banner_votes == [1, 1]
 
 
 def test_banner_detection_skips_the_toc_pages(png_book):
@@ -127,6 +156,7 @@ def test_banner_detection_skips_the_toc_pages(png_book):
     source = png_book(range(1, 12))
     manifest = _build(source,
                       numbers={i: i - 1 for i in range(1, 12)},
+                      toc_pages=(5, 6),
                       banners={5: 20, 6: 20, 9: 1})
     assert [b["bai_so"] for b in manifest.bai] == [1]
     assert manifest.bai[0]["start"] == 9
@@ -149,7 +179,7 @@ def test_toc_pages_are_converted_from_printed_to_page_index(png_book):
     # Dòng TOC "Bài 1 … 1" là SỐ TRANG IN và phải rơi vào page_index 6.
     source = png_book(range(1, 9))
     manifest = _build(source, numbers={6: 1, 7: 2, 8: 3},
-                      toc=["Bài 1. Mở đầu 1"])
+                      toc=[(1, "Mở đầu", 1)])
     assert manifest.page_offset == -5
     assert manifest.bai[0]["start"] == 6
     pages = {p["page_index"]: p for p in manifest.pages}

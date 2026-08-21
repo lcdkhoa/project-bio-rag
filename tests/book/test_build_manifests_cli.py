@@ -2,8 +2,15 @@ import pytest
 
 import main as main_module
 from src.etl.book.page_map import NumberCandidate
+from src.etl.book.toc import TocEntry, TocResult
 
 from .conftest import make_png_book, page_of
+
+
+def _fake_toc(*entries):
+    """`read_toc` giả: [(bai_so, title, SỐ TRANG IN)] -> TocResult."""
+    return lambda source: TocResult(
+        entries=[TocEntry(b, t, p) for b, t, p in entries])
 
 PAGES = 6
 
@@ -28,8 +35,8 @@ def _fake_reader():
 def test_build_manifests_writes_one_json_per_book(two_books, tmp_path, capsys):
     code = main_module.run_build_manifests(
         read_candidates=_fake_reader(),
-        read_toc=lambda source: ["Bài 1. A 2"],
-        detect_banner=lambda img: None,
+        read_toc=_fake_toc((1, "A", 2)),
+        detect_banner=lambda img: frozenset(),
         manifest_dir=tmp_path / "manifests",
         data_dir=two_books,
     )
@@ -44,8 +51,8 @@ def test_build_manifests_can_target_one_book(two_books, tmp_path):
     main_module.run_build_manifests(
         "SGK_KHTN_7_KNTT",
         read_candidates=_fake_reader(),
-        read_toc=lambda source: [],
-        detect_banner=lambda img: None,
+        read_toc=_fake_toc(),
+        detect_banner=lambda img: frozenset(),
         manifest_dir=tmp_path / "manifests",
         data_dir=two_books,
     )
@@ -59,8 +66,8 @@ def test_build_manifests_returns_nonzero_when_g1_fails(two_books, tmp_path):
     # must exit nonzero instead of quietly writing a guessed page map.
     code = main_module.run_build_manifests(
         read_candidates=lambda image_bgr: [],
-        read_toc=lambda source: [],
-        detect_banner=lambda img: None,
+        read_toc=_fake_toc(),
+        detect_banner=lambda img: frozenset(),
         manifest_dir=tmp_path / "manifests",
         data_dir=two_books,
     )
@@ -81,8 +88,8 @@ def test_build_manifests_returns_nonzero_when_confirmation_is_too_low(two_books,
 
     code = main_module.run_build_manifests(
         read_candidates=read,
-        read_toc=lambda source: [],
-        detect_banner=lambda img: None,
+        read_toc=_fake_toc(),
+        detect_banner=lambda img: frozenset(),
         manifest_dir=tmp_path / "manifests",
         data_dir=two_books,
     )

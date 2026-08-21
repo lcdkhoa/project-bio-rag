@@ -387,11 +387,11 @@ def run_build_manifests(book_name: str = "", *,
     from src.etl.book.page_map import PageMapError
     from src.etl.book.page_number_ocr import read_page_number_candidates
     from src.etl.book.report import g1_check, g1_report
-    from src.etl.book.toc import read_toc_lines
+    from src.etl.book.toc import read_toc as read_toc_default
     from src.etl.page_source import discover_page_sources
 
     read_candidates = read_candidates or read_page_number_candidates
-    read_toc = read_toc or read_toc_lines
+    read_toc = read_toc or read_toc_default
     detect_banner = detect_banner or detect_bai_banner
     target_dir = Path(manifest_dir) if manifest_dir else MANIFEST_DIR
 

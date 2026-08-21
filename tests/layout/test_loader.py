@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from src.etl.layout import loader as L
+from src.etl.book.manifest import MANIFEST_VERSION
 from src.etl.layout.loader import LayoutOCRLoader, ManifestMissing
 from src.etl.layout.regions import Region, RegionType, TextUnit
 
@@ -27,15 +28,17 @@ class FakeSource:
         return f"hash{page_number}"
 
 
-def _write_manifest(tmp_path, pages):
+def _write_manifest(tmp_path, pages, flags=()):
     directory = tmp_path / "manifests"
     directory.mkdir(parents=True, exist_ok=True)
     (directory / "KHTN6-KNTT.json").write_text(
         json.dumps({
             "book_id": "KHTN6-KNTT", "source_name": "SGK_KHTN_6_KNTT",
             "source_hash": "x" * 32, "n_pages": len(pages), "page_offset": -1,
-            "offset_votes": [1, 1], "pages": pages, "bai": [], "chuong": [],
-            "flags": [], "manifest_version": 2,
+            "offset_votes": [1, 1], "pages": pages, "bai": [],
+            "banner_votes": [0, 0], "chuong": [],
+            "flags": [{"kind": k, "detail": ""} for k in flags],
+            "manifest_version": MANIFEST_VERSION,
         }, ensure_ascii=False), encoding="utf-8")
     return directory
 
@@ -63,9 +66,9 @@ def test_load_page_wires_pipeline_and_takes_the_printed_page_from_the_manifest(
     # SỐ TRANG IN từ manifest (9), không phải page_index 10 và không phải 11
     assert meta["page"] == 9
     assert meta["page_index"] == 10
-    # `bai_so` CỐ TÌNH không có trong metadata chunk: spine Bài đo được là còn
-    # sai nặng, nên nó ở lại manifest như giả thuyết có flag (nguyên tắc 1).
-    assert "bai_so" not in meta
+    # `bai_so` ĐI VÀO metadata chunk từ D-43: spine của cả 4 quyển đã liền mạch
+    # 1..k, nên số Bài là thứ chứng minh được chứ không còn là giả thuyết.
+    assert meta["bai_so"] == 3
     assert meta["variant"] == "kntt"
     assert meta["region_type"] == "body"
     assert meta["source"] == "SGK_KHTN_6_KNTT"
@@ -114,3 +117,14 @@ def test_load_book_walks_the_real_page_numbers_and_survives_one_bad_page(
     docs = LayoutOCRLoader(manifest_dir=directory).load_book(source)
     # hai trang bìa -> rỗng; trang 10 -> một chunk
     assert [d.metadata["page_index"] for d in docs] == [10]
+
+
+def test_bai_so_is_withheld_when_the_manifest_says_the_spine_is_broken(
+        tmp_path, stubbed_pipeline):
+    """Gỡ chặn D-39 là gỡ CÓ ĐIỀU KIỆN: quyển nào spine hỏng thì thôi ghi bai_so,
+    vì ghi một số Bài chưa chứng minh được vào index là nói điều mình không
+    chứng minh được (nguyên tắc 1)."""
+    directory = _write_manifest(tmp_path, [_page(10, 9, bai_so=3)],
+                                flags=("bai_numbers_not_contiguous",))
+    docs = LayoutOCRLoader(manifest_dir=directory).load_page(FakeSource(), 10)
+    assert docs[0].metadata.get("bai_so") is None

@@ -35,6 +35,11 @@ UNRESOLVED_FLAG_KINDS = (
     "banner_out_of_order", "spine_out_of_order", "no_bai_detected",
     "missing_source_pages")
 
+# `banner_toc_mismatch` KHÔNG chặn: đo được huy hiệu chỉ đọc đúng ~2/3 số trang
+# mở Bài và có ca đọc ra hai số mâu thuẫn, nên một lần lệch là *nguồn yếu nói
+# sai*, không phải hai nguồn ngang nhau đánh nhau. Nó vẫn được in ra để người
+# xem — chỉ là không rớt cổng vì một điều kiện đã biết trước là thường xảy ra.
+
 MAX_LISTED = 10
 
 
@@ -89,7 +94,9 @@ def g1_report(manifests: Sequence) -> str:
             f"({covers} bìa không in số) | offset {manifest.page_offset} "
             f"(phiếu {manifest.offset_votes[0]}/{manifest.offset_votes[1]}) | "
             f"ocr_confirmed {confirmed}/{numbered} ({ratio:.1%}) | "
-            f"Bài {len(manifest.bai)} | flag {len(manifest.flags)} | "
+            f"Bài {len(manifest.bai)} "
+            f"(huy hiệu xác nhận {manifest.banner_votes[0]}/"
+            f"{manifest.banner_votes[1]}) | flag {len(manifest.flags)} | "
             f"{'PASS' if ok else 'FAIL'}")
         if unconfirmed:
             lines.append(
