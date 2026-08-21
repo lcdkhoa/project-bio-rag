@@ -1,67 +1,116 @@
-import fitz
+import json
+
 import numpy as np
+import pytest
+
 from src.etl.layout import loader as L
-from src.etl.layout.regions import Region, RegionType
+from src.etl.layout.loader import LayoutOCRLoader, ManifestMissing
+from src.etl.layout.regions import Region, RegionType, TextUnit
 
-def test_load_page_wires_pipeline(monkeypatch):
-    img = np.full((200, 200, 3), 255, np.uint8)
-    monkeypatch.setattr(L, "_render_page", lambda pdf, i, dpi: img)
-    monkeypatch.setattr(L, "preprocess_page", lambda im, v: im)
-    monkeypatch.setattr(L, "segment_page", lambda im, v: [Region(RegionType.BODY, (0,0,200,200), 0, {})])
-    monkeypatch.setattr(L, "detect_printed_page_number", lambda im, v, idx: 88)
-    from src.etl.layout import text_extract as TE
+
+class FakeSource:
+    """PageSource tối giản: trả cùng một trang trắng cho mọi số trang."""
+
+    name = "SGK_KHTN_6_KNTT"
+
+    def __init__(self, page_numbers=(1, 2, 10)):
+        self._pages = list(page_numbers)
+
+    def page_numbers(self):
+        return list(self._pages)
+
+    def load(self, page_number):
+        assert page_number in self._pages
+        return np.full((200, 200, 3), 255, np.uint8)
+
+    def content_hash(self, page_number):
+        return f"hash{page_number}"
+
+
+def _write_manifest(tmp_path, pages):
+    directory = tmp_path / "manifests"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "KHTN6-KNTT.json").write_text(
+        json.dumps({
+            "book_id": "KHTN6-KNTT", "source_name": "SGK_KHTN_6_KNTT",
+            "source_hash": "x" * 32, "n_pages": len(pages), "page_offset": -1,
+            "offset_votes": [1, 1], "pages": pages, "bai": [], "chuong": [],
+            "flags": [], "manifest_version": 2,
+        }, ensure_ascii=False), encoding="utf-8")
+    return directory
+
+
+def _page(page_index, printed_page, role="content", bai_so=None):
+    return {"page_index": page_index, "printed_page": printed_page,
+            "source": "ocr_confirmed", "side": "L", "conf": 90.0,
+            "bai_so": bai_so, "role": role}
+
+
+@pytest.fixture
+def stubbed_pipeline(monkeypatch):
+    monkeypatch.setattr(L, "segment_page",
+                        lambda im, v: [Region(RegionType.BODY, (0, 0, 200, 200), 0, {})])
     monkeypatch.setattr(L, "extract_text_units", lambda im, regs, v: [
-        __import__("src.etl.layout.regions", fromlist=["TextUnit"]).TextUnit(RegionType.BODY, "quang hợp là gì", 0, (0,0,1,1))])
-    docs = L.LayoutOCRLoader().load_page("SGK KHTN 7 CTST.pdf", 90)
+        TextUnit(RegionType.BODY, "quang hợp là gì", 0, (0, 0, 1, 1))])
+
+
+def test_load_page_wires_pipeline_and_takes_the_printed_page_from_the_manifest(
+        tmp_path, stubbed_pipeline):
+    directory = _write_manifest(tmp_path, [_page(10, 9, bai_so=3)])
+    docs = LayoutOCRLoader(manifest_dir=directory).load_page(FakeSource(), 10)
     assert len(docs) == 1
-    assert docs[0].metadata["page"] == 88          # printed number, not pdf index 90
-    assert docs[0].metadata["variant"] == "ctst"
-    assert docs[0].metadata["region_type"] == "body"
+    meta = docs[0].metadata
+    # SỐ TRANG IN từ manifest (9), không phải page_index 10 và không phải 11
+    assert meta["page"] == 9
+    assert meta["page_index"] == 10
+    # `bai_so` CỐ TÌNH không có trong metadata chunk: spine Bài đo được là còn
+    # sai nặng, nên nó ở lại manifest như giả thuyết có flag (nguyên tắc 1).
+    assert "bai_so" not in meta
+    assert meta["variant"] == "kntt"
+    assert meta["region_type"] == "body"
+    assert meta["source"] == "SGK_KHTN_6_KNTT"
 
 
-def _one_page_pdf(tmp_path, name="page.pdf"):
-    """A minimal real single-page PDF (20x10pt) fitz can open by path."""
-    path = tmp_path / name
-    doc = fitz.open()
-    doc.new_page(width=20, height=10)
-    doc.save(str(path))
-    doc.close()
-    return str(path)
+def test_load_page_skips_cover_pages_without_touching_the_source(
+        tmp_path, stubbed_pipeline):
+    directory = _write_manifest(tmp_path, [_page(1, 0, role="cover")])
+
+    class Exploding(FakeSource):
+        def load(self, page_number):
+            raise AssertionError("trang bìa không được OCR")
+
+    assert LayoutOCRLoader(manifest_dir=directory).load_page(Exploding(), 1) == []
 
 
-def test_render_page_handles_grayscale_pixmap(tmp_path, monkeypatch):
-    """pix.n == 1 (grayscale scan) must still yield HxWx3 BGR uint8."""
-    path = _one_page_pdf(tmp_path)
-    real_get_pixmap = fitz.Page.get_pixmap
-
-    def fake_get_pixmap(self, matrix=None):
-        pix = real_get_pixmap(self, matrix=matrix)
-        return fitz.Pixmap(fitz.csGRAY, pix)  # n == 1
-
-    monkeypatch.setattr(fitz.Page, "get_pixmap", fake_get_pixmap)
-    arr = L._render_page(path, 0, 72)
-    assert arr.shape == (10, 20, 3)
-    assert arr.dtype == np.uint8
+def test_load_page_refuses_to_guess_when_there_is_no_manifest(tmp_path):
+    with pytest.raises(ManifestMissing):
+        LayoutOCRLoader(manifest_dir=tmp_path / "nope").load_page(FakeSource(), 10)
 
 
-def test_render_page_handles_rgba_pixmap(tmp_path, monkeypatch):
-    """pix.n == 4 (RGBA) must drop alpha and still yield HxWx3 BGR uint8."""
-    path = _one_page_pdf(tmp_path, name="page_rgba.pdf")
-    real_get_pixmap = fitz.Page.get_pixmap
-
-    def fake_get_pixmap(self, matrix=None):
-        pix = real_get_pixmap(self, matrix=matrix)
-        return fitz.Pixmap(pix, 1)  # n == 4 (adds alpha)
-
-    monkeypatch.setattr(fitz.Page, "get_pixmap", fake_get_pixmap)
-    arr = L._render_page(path, 0, 72)
-    assert arr.shape == (10, 20, 3)
-    assert arr.dtype == np.uint8
+def test_load_page_refuses_a_page_the_manifest_does_not_know(tmp_path,
+                                                             stubbed_pipeline):
+    # Manifest cũ hơn nguồn (trang tải bù chưa dựng lại manifest): thà dừng còn
+    # hơn đoán số trang in.
+    directory = _write_manifest(tmp_path, [_page(1, 0, role="cover")])
+    with pytest.raises(ManifestMissing):
+        LayoutOCRLoader(manifest_dir=directory).load_page(FakeSource(), 10)
 
 
-def test_render_page_handles_rgb_pixmap(tmp_path):
-    """pix.n == 3 (plain RGB) is the common case and must also work."""
-    path = _one_page_pdf(tmp_path, name="page_rgb.pdf")
-    arr = L._render_page(path, 0, 72)
-    assert arr.shape == (10, 20, 3)
-    assert arr.dtype == np.uint8
+def test_load_page_refuses_a_manifest_page_without_a_printed_number(
+        tmp_path, stubbed_pipeline):
+    page = _page(10, 9)
+    page["printed_page"] = None
+    directory = _write_manifest(tmp_path, [page])
+    with pytest.raises(ManifestMissing):
+        LayoutOCRLoader(manifest_dir=directory).load_page(FakeSource(), 10)
+
+
+def test_load_book_walks_the_real_page_numbers_and_survives_one_bad_page(
+        tmp_path, stubbed_pipeline):
+    directory = _write_manifest(
+        tmp_path, [_page(1, 0, role="cover"), _page(2, 1, role="cover"),
+                   _page(10, 9)])
+    source = FakeSource((1, 2, 10))
+    docs = LayoutOCRLoader(manifest_dir=directory).load_book(source)
+    # hai trang bìa -> rỗng; trang 10 -> một chunk
+    assert [d.metadata["page_index"] for d in docs] == [10]

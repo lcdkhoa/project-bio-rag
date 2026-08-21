@@ -41,6 +41,9 @@ def _database_child_path_from_env(env_name: str, default: Path) -> Path:
 DATA_DIR = _path_from_env("RAG_DATA_DIR", PROJECT_ROOT / "datasources")
 PERSIST_DIR = _path_from_env("RAG_DATABASE_DIR", PROJECT_ROOT / "database")
 IMAGES_DIR = PERSIST_DIR / "images"
+# BookManifest. Tách khỏi PERSIST_DIR được, vì trên Colab thường DB nằm ở Google
+# Drive (`RAG_DATABASE_DIR`) trong khi manifest đi theo repo — không phải copy tay.
+MANIFEST_DIR = _path_from_env("RAG_MANIFEST_DIR", PERSIST_DIR / "manifests")
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
 PROCESSED_IMAGES_LOG = PERSIST_DIR / "processed_images.txt"
 
@@ -80,7 +83,11 @@ OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
 OWL_VIT_CONFIDENCE_THRESHOLD = float(
     os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
 IMAGE_EXTRACTION_VERSION = os.getenv(
-    "IMAGE_EXTRACTION_VERSION", "v16_layout_reconcile")
+    "IMAGE_EXTRACTION_VERSION", "v17_png_source")
+# Gate re-OCR cho ĐƯỜNG TEXT. Trước đây chỉ ảnh có version gate nên đổi logic
+# OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
+TEXT_EXTRACTION_VERSION = os.getenv(
+    "TEXT_EXTRACTION_VERSION", "v1_png_region_psm")
 IMAGE_CAPTION_ENABLED = os.getenv(
     "IMAGE_CAPTION_ENABLED", "true").lower() == "true"
 IMAGE_CAPTION_MODEL = os.getenv(
@@ -128,13 +135,17 @@ IMAGE_RELEVANCE_THRESHOLD = float(
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 # --- Layout-aware ETL (M1) ---
-RENDER_DPI = int(os.getenv("RENDER_DPI", "220"))
+# Không có RENDER_DPI: nguồn là PNG một file/trang, không có bước render nào để
+# tinh chỉnh (D-33). Đường PDF upload legacy dùng hằng số riêng trong
+# `src/etl/page_source.py`.
 # HSV saturation floor for detecting colored sidebar/info boxes (0-255).
 LAYOUT_BOX_MIN_SATURATION = int(os.getenv("LAYOUT_BOX_MIN_SATURATION", "45"))
 # Min area fraction of the page for a colored region to count as a box.
 LAYOUT_BOX_MIN_AREA_FRAC = float(os.getenv("LAYOUT_BOX_MIN_AREA_FRAC", "0.02"))
-# Diacritic fix (D-09)
-DIACRITIC_FIX_ENABLED = os.getenv("DIACRITIC_FIX_ENABLED", "true").lower() == "true"
+# Kiểm tra âm tiết tiếng Việt -> CHỈ gắn cờ `needs_review` trên chunk, không
+# sửa ký tự nào (D-34, thay cho DIACRITIC_FIX_ENABLED của D-09).
+DIACRITIC_REVIEW_ENABLED = os.getenv(
+    "DIACRITIC_REVIEW_ENABLED", "true").lower() == "true"
 
 # --- M3: figure extraction (layout reconcile) ---
 # Drop a FIGURE region only when this fraction of its area lies inside a

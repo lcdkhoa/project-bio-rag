@@ -7,7 +7,9 @@ import os
 import sys
 from pathlib import Path
 
-from src.config import LOG_LEVEL, DATA_DIR, PERSIST_DIR, IMAGES_DIR, PROCESSED_FILES_LOG, PROCESSED_IMAGES_LOG
+from src.config import (LOG_LEVEL, DATA_DIR, PERSIST_DIR, IMAGES_DIR,
+                        PROCESSED_FILES_LOG, PROCESSED_IMAGES_LOG,
+                        TEXT_EXTRACTION_VERSION)
 
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL),
@@ -44,75 +46,70 @@ def mark_image_as_processed(filename: str):
         f.write(f"{filename}\n")
 
 
-def _should_skip_file(filename, pages_needing_text):
-    """Skip only when the CONTENT (via hash-based status) has no pages left.
-    A replaced same-named file (new hash) will report pages_needing_text and
-    therefore NOT be skipped."""
-    return len(pages_needing_text) == 0
+def _index_source_pages(loader, text_db, status_tracker, source,
+                        pages_to_index):
+    """Index đúng những trang còn thiếu text (resume-safe), từng trang một.
 
+    Id chunk là `{page_key}_p{page_number}_c{chunk_index}` với `page_key` mang
+    **hash nội dung của chính trang đó** (`page_checkpoint_key`), nên:
+    - chạy lại một trang đã index = upsert, không nhân bản;
+    - thay nội dung một trang = id mới, không ghi đè bản cũ một cách mù mờ (bản
+      cũ được xoá tường minh ngay trước khi add, xem dưới).
 
-def _index_pdf_pages(loader, text_db, status_tracker, pdf_file, pdf_hash, filename, pages_to_index):
-    """Index only the pages that still need text (resume-safe).
-
-    Loads and adds one page at a time via `loader.load_page` (0-based index),
-    using a deterministic id per chunk (`{pdf_hash}_p{page_num}_c{chunk_index}`)
-    so re-adding an already-indexed page upserts instead of creating duplicate
-    rows. Marks each page as indexed even when it produced no chunks, so it
-    isn't retried forever.
-
-    A page that raises is logged and skipped, leaving it unmarked so the next
-    run retries it. Isolating the failure per page matters for --etl, where the
-    image side of the same book runs after this call and should not be lost to
-    one bad page.
+    Trang raise thì được log và **để lại chưa mark**, lần chạy sau làm lại
+    (nguyên tắc 5: không index một nửa dữ liệu, không im lặng).
     """
-    for page_num in pages_to_index:
+    from src.etl.page_source import page_checkpoint_key
+
+    for page_number in pages_to_index:
         try:
-            page_docs = loader.load_page(pdf_file, page_num - 1)
+            page_key = page_checkpoint_key(source, page_number)
+            page_docs = loader.load_page(source, page_number)
+            # Chunk cũ của ĐÚNG trang này (kể cả từ version/nội dung trước) phải
+            # đi trước khi ghi bản mới: nếu không, đổi TEXT_EXTRACTION_VERSION
+            # hoặc thay trang sẽ để lại chunk mồ côi và học sinh có thể được
+            # trích một đoạn không còn tồn tại trên trang.
+            _delete_page_chunks(text_db, source.name, page_number)
             if page_docs:
-                ids = [f"{pdf_hash}_p{page_num}_c{d.metadata['chunk_index']}" for d in page_docs]
+                ids = [f"{page_key}_p{page_number}_c{d.metadata['chunk_index']}"
+                       for d in page_docs]
                 text_db.add_documents(page_docs, ids=ids)
-            status_tracker.mark_text_indexed(pdf_hash, page_num, filename)
+            status_tracker.mark_text_indexed(
+                page_key, page_number, source.name,
+                text_extraction_version=TEXT_EXTRACTION_VERSION)
         except Exception as e:
-            logger.error(f"[{filename}] page {page_num} text indexing failed: {e}")
+            logger.error(f"[{source.name}] page {page_number} text indexing failed: {e}")
 
 
-def _pdf_page_count(pdf_file) -> int:
-    """Page count without OCR - used to size the checkpoint queries cheaply."""
-    import fitz
-
-    doc = fitz.open(pdf_file)
+def _delete_page_chunks(text_db, source_name: str, page_number: int) -> None:
+    """Xoá mọi chunk text của một trang nguồn. Lỗi thì log, không chặn ETL."""
     try:
-        return len(doc)
-    finally:
-        doc.close()
+        text_db.delete(where={"$and": [{"source": {"$eq": source_name}},
+                                       {"page_index": {"$eq": page_number}}]})
+    except Exception as e:
+        logger.warning(
+            f"[{source_name}] page {page_number}: không xoá được chunk cũ: {e}")
 
 
-def _pages_needing_images(status_tracker, image_processor, pdf_hash, num_pages):
-    """Pages whose image extraction is missing or stale for the processor's version."""
-    return [
-        page_num
-        for page_num in range(1, num_pages + 1)
-        if status_tracker.needs_image_processing_versioned(
-            pdf_hash,
-            page_num,
-            required_version=image_processor.image_extraction_version,
-        )
-    ]
+def _load_ocr_text_per_page(ocr_loader, source, pages):
+    """OCR cả trang, khoá theo SỐ TRANG NGUỒN — dùng để neo caption hình.
 
-
-def _load_ocr_text_per_page(ocr_loader, pdf_file, filename):
-    """Whole-book OCR text keyed by 1-based page, for figure-caption anchoring.
-
-    Returns None when the PDF yielded no text at all, so callers can skip it.
+    Chỉ OCR những trang phía ảnh thật sự cần (`pages`), không cả quyển. Trả None
+    khi không trang nào ra chữ, để caller bỏ qua quyển đó.
     """
-    docs = ocr_loader.load_pdf(pdf_file)
-    if not docs:
-        logger.warning(f"No text extracted from {filename}")
+    out = {}
+    for page_number in pages:
+        try:
+            text = ocr_loader.ocr_image(source.load(page_number))
+        except Exception as e:
+            logger.warning(f"[{source.name}] page {page_number} OCR failed: {e}")
+            continue
+        if text:
+            out[page_number] = text
+    if not out:
+        logger.warning(f"No text extracted from {source.name}")
         return None
-    return {
-        doc.metadata.get("page", i + 1): doc.page_content
-        for i, doc in enumerate(docs)
-    }
+    return out
 
 
 def _mark_file_done_once(filename: str):
@@ -132,13 +129,14 @@ def _mark_image_done_once(filename: str):
 
 
 def run_etl_text_only():
-    """Run ETL pipeline for text only: PDF loading, OCR, chunking, and storing to ChromaDB."""
+    """ETL text: nguồn trang -> OCR theo vùng -> chunk -> ChromaDB."""
     logger.info("Starting ETL pipeline (TEXT ONLY)...")
 
     os.makedirs(PERSIST_DIR, exist_ok=True)
 
     from tqdm import tqdm
-    from src.etl import LayoutOCRLoader, ProcessingStatus, compute_file_hash
+    from src.etl import LayoutOCRLoader, ProcessingStatus
+    from src.etl.page_source import discover_page_sources
 
     loader = LayoutOCRLoader()
     status_tracker = ProcessingStatus()
@@ -148,51 +146,41 @@ def run_etl_text_only():
     text_vdb = VectorDB()
     text_db = text_vdb.db
 
-    import glob
-    import fitz
-
-    pdf_files = glob.glob(f"{DATA_DIR}/*.pdf")
-
-    if not pdf_files:
-        logger.error(f"No PDF files found in {DATA_DIR}")
+    sources = discover_page_sources(DATA_DIR)
+    if not sources:
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
         return
 
-    logger.info(f"Total PDFs in directory: {len(pdf_files)}")
+    logger.info(f"Total books in directory: {len(sources)}")
+    logger.info(f"Previously processed files: {len(get_processed_files())}")
 
-    processed_files = get_processed_files()
-    logger.info(f"Previously processed files: {len(processed_files)}")
-
-    for pdf_file in tqdm(pdf_files, desc="Processing PDFs for text"):
-        filename = os.path.basename(pdf_file)
-
-        logger.info(f"Processing: {filename}")
+    for source in tqdm(sources, desc="Processing books for text"):
+        logger.info(f"Processing: {source.name}")
 
         try:
-            pdf_hash = compute_file_hash(pdf_file)
+            # Hỏi manifest MỘT lần cho cả quyển: không có manifest thì fail ở đây
+            # với một dòng lỗi rõ ràng, thay vì 196 dòng lỗi giống nhau ở từng
+            # trang (loud, nhưng đừng ồn vô ích).
+            loader.manifest_for(source)
+            pages_to_index = status_tracker.pages_needing_text(source)
 
-            fitz_doc = fitz.open(pdf_file)
-            num_pages = len(fitz_doc)
-            fitz_doc.close()
-
-            pages_to_index = status_tracker.get_pages_needing_text(
-                pdf_hash, num_pages)
-
-            if _should_skip_file(filename, pages_to_index):
-                logger.info(
-                    f"[{filename}] All pages already indexed, skipping")
-                _mark_file_done_once(filename)
+            if not pages_to_index:
+                logger.info(f"[{source.name}] All pages already indexed, skipping")
+                _mark_file_done_once(source.name)
                 continue
 
-            logger.info(f"[{filename}] Pages to index (1-based PDF index): {pages_to_index}")
+            logger.info(
+                f"[{source.name}] Pages to index (source page numbers): "
+                f"{_summarise(pages_to_index)}")
 
-            _index_pdf_pages(loader, text_db, status_tracker, pdf_file,
-                              pdf_hash, filename, pages_to_index)
+            _index_source_pages(loader, text_db, status_tracker, source,
+                                pages_to_index)
 
-            _mark_file_done_once(filename)
-            logger.info(f"Completed: {filename}")
+            _mark_file_done_once(source.name)
+            logger.info(f"Completed: {source.name}")
 
         except Exception as e:
-            logger.error(f"Error processing {filename}: {e}")
+            logger.error(f"Error processing {source.name}: {e}")
             import traceback
 
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -200,15 +188,23 @@ def run_etl_text_only():
     logger.info("ETL (TEXT) pipeline completed!")
 
 
+def _summarise(pages, limit=12):
+    """In gọn danh sách trang dài (801 trang thì đừng dump hết vào log)."""
+    if len(pages) <= limit:
+        return str(pages)
+    return f"{pages[:limit]} … (+{len(pages) - limit} trang)"
+
+
 def run_etl_image_only():
-    """Run ETL pipeline for images only: extract, filter, caption, and store images."""
+    """ETL ảnh: crop hình, caption, index. Cùng nguồn trang với đường text."""
     logger.info("Starting ETL pipeline (IMAGE ONLY)...")
 
     os.makedirs(IMAGES_DIR, exist_ok=True)
     os.makedirs(PERSIST_DIR, exist_ok=True)
 
     from tqdm import tqdm
-    from src.etl import RobustOCRLoader, ProcessingStatus, compute_file_hash, make_image_processor
+    from src.etl import RobustOCRLoader, ProcessingStatus, make_image_processor
+    from src.etl.page_source import discover_page_sources
 
     ocr_loader = RobustOCRLoader()
     status_tracker = ProcessingStatus()
@@ -217,71 +213,58 @@ def run_etl_image_only():
 
     image_vdb = ImageVectorDB()
 
-    import glob
-
-    pdf_files = glob.glob(f"{DATA_DIR}/*.pdf")
-
-    if not pdf_files:
-        logger.error(f"No PDF files found in {DATA_DIR}")
+    sources = discover_page_sources(DATA_DIR)
+    if not sources:
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
         return
 
-    logger.info(f"Total PDFs in directory: {len(pdf_files)}")
-
-    # processed_images.txt is advisory (progress reporting) only. The skip
-    # decision comes from ProcessingStatus, which is keyed on content hash AND
-    # extraction version, so a bumped IMAGE_EXTRACTION_VERSION or a replaced
-    # same-name PDF is acted on instead of being masked by the filename log.
+    logger.info(f"Total books in directory: {len(sources)}")
+    # processed_images.txt là log tiến độ (advisory) — quyết định skip nằm ở
+    # ProcessingStatus, khoá theo hash TỪNG TRANG + version.
     logger.info(
         f"Previously processed files for images: {len(get_processed_images())}")
 
-    for pdf_file in tqdm(pdf_files, desc="Processing PDFs for images"):
-        filename = os.path.basename(pdf_file)
+    for source in tqdm(sources, desc="Processing books for images"):
+        logger.info(f"Processing: {source.name}")
 
-        logger.info(f"Processing: {filename}")
-
-        # Per-variant processor (CTST/KNTT get their subclasses); shares the
-        # single status_tracker so the versioned checkpoint stays consistent.
-        image_processor = make_image_processor(filename, status_tracker=status_tracker)
+        image_processor = make_image_processor(source.name,
+                                              status_tracker=status_tracker)
 
         try:
-            pdf_hash = compute_file_hash(pdf_file)
-            num_pages = _pdf_page_count(pdf_file)
-
-            pages_to_process = _pages_needing_images(
-                status_tracker, image_processor, pdf_hash, num_pages)
+            pages_to_process = status_tracker.pages_needing_images(
+                source, required_version=image_processor.image_extraction_version)
 
             if not pages_to_process:
                 logger.info(
-                    f"[{filename}] All pages already processed for images, skipping")
-                _mark_image_done_once(filename)
+                    f"[{source.name}] All pages already processed for images, skipping")
+                _mark_image_done_once(source.name)
                 continue
 
             logger.info(
-                f"[{filename}] Pages to extract images: {pages_to_process}")
+                f"[{source.name}] Pages to extract images: "
+                f"{_summarise(pages_to_process)}")
 
-            # OCR runs only once there is work to do: the image processor needs
-            # whole-page text to anchor figure captions.
-            ocr_text_per_page = _load_ocr_text_per_page(ocr_loader, pdf_file, filename)
+            ocr_text_per_page = _load_ocr_text_per_page(
+                ocr_loader, source, pages_to_process)
             if ocr_text_per_page is None:
                 continue
 
-            image_docs = image_processor.extract_images_from_pdf(
-                pdf_path=pdf_file,
-                pdf_hash=pdf_hash,
-                pdf_filename=filename,
+            image_docs = image_processor.extract_images_from_source(
+                source=source,
+                pages=pages_to_process,
                 ocr_text_per_page=ocr_text_per_page,
             )
 
             if image_docs:
                 image_vdb.add_documents(image_docs)
                 logger.info(
-                    f"[{filename}] Added {len(image_docs)} images to ImageVectorDB")
+                    f"[{source.name}] Added {len(image_docs)} images to ImageVectorDB")
 
-            _mark_image_done_once(filename)
-            logger.info(f"Completed images for: {filename}")
+            _mark_image_done_once(source.name)
+            logger.info(f"Completed images for: {source.name}")
 
         except Exception as e:
-            logger.error(f"Error processing {filename}: {e}")
+            logger.error(f"Error processing {source.name}: {e}")
             import traceback
 
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -290,7 +273,7 @@ def run_etl_image_only():
 
 
 def run_etl():
-    """Run full ETL pipeline: both text and images."""
+    """ETL đầy đủ: text + ảnh, cùng một nguồn trang."""
     logger.info("Starting ETL pipeline (FULL)...")
 
     os.makedirs(IMAGES_DIR, exist_ok=True)
@@ -301,15 +284,13 @@ def run_etl():
         LayoutOCRLoader,
         RobustOCRLoader,
         ProcessingStatus,
-        compute_file_hash,
         make_image_processor,
     )
+    from src.etl.page_source import discover_page_sources
 
-    # Text goes through the layout-aware loader, exactly like --text-only, so
-    # both entrypoints produce the same index: chunks carrying
-    # variant/region_type/chunk_index, with sidebar/info-boxes kept as separate
-    # labeled chunks (citations read region_type). RobustOCRLoader is still
-    # needed for whole-page OCR text, which anchors figure captions.
+    # Text đi qua loader layout-aware, đúng như --text-only, nên hai entrypoint
+    # sinh ra cùng một index. RobustOCRLoader chỉ còn để lấy text cả trang cho
+    # việc neo caption hình.
     layout_loader = LayoutOCRLoader()
     ocr_loader = RobustOCRLoader()
     status_tracker = ProcessingStatus()
@@ -321,81 +302,66 @@ def run_etl():
     text_db = text_vdb.db
     image_vdb = ImageVectorDB()
 
-    import glob
-
-    pdf_files = glob.glob(f"{DATA_DIR}/*.pdf")
-
-    if not pdf_files:
-        logger.error(f"No PDF files found in {DATA_DIR}")
+    sources = discover_page_sources(DATA_DIR)
+    if not sources:
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
         return
 
-    logger.info(f"Total PDFs in directory: {len(pdf_files)}")
-
-    # Both logs are advisory (progress reporting) only - ProcessingStatus is the
-    # truth source, keyed on content hash and extraction version.
+    logger.info(f"Total books in directory: {len(sources)}")
     logger.info(
         f"Previously processed files: text={len(get_processed_files())}, "
         f"images={len(get_processed_images())}")
 
-    for pdf_file in tqdm(pdf_files, desc="Processing PDFs"):
-        filename = os.path.basename(pdf_file)
+    for source in tqdm(sources, desc="Processing books"):
+        logger.info(f"Processing: {source.name}")
 
-        logger.info(f"Processing: {filename}")
-
-        # Per-variant processor (CTST/KNTT get their subclasses); shares the
-        # single status_tracker so the versioned checkpoint stays consistent.
-        image_processor = make_image_processor(filename, status_tracker=status_tracker)
+        image_processor = make_image_processor(source.name,
+                                              status_tracker=status_tracker)
 
         try:
-            pdf_hash = compute_file_hash(pdf_file)
-            num_pages = _pdf_page_count(pdf_file)
-
-            pages_needing_text = status_tracker.get_pages_needing_text(
-                pdf_hash, num_pages)
-            pages_needing_images = _pages_needing_images(
-                status_tracker, image_processor, pdf_hash, num_pages)
+            pages_needing_text = status_tracker.pages_needing_text(source)
+            pages_needing_images = status_tracker.pages_needing_images(
+                source, required_version=image_processor.image_extraction_version)
 
             if not pages_needing_text and not pages_needing_images:
                 logger.info(
-                    f"[{filename}] Already processed for both text and images, skipping")
-                _mark_file_done_once(filename)
-                _mark_image_done_once(filename)
+                    f"[{source.name}] Already processed for both text and images, skipping")
+                _mark_file_done_once(source.name)
+                _mark_image_done_once(source.name)
                 continue
 
             if pages_needing_text:
                 logger.info(
-                    f"[{filename}] Indexing {len(pages_needing_text)} pages for text")
-                _index_pdf_pages(layout_loader, text_db, status_tracker, pdf_file,
-                                 pdf_hash, filename, pages_needing_text)
+                    f"[{source.name}] Indexing {len(pages_needing_text)} pages for text")
+                layout_loader.manifest_for(source)   # fail sớm, một lần/quyển
+                _index_source_pages(layout_loader, text_db, status_tracker,
+                                    source, pages_needing_text)
 
             if pages_needing_images:
                 logger.info(
-                    f"[{filename}] Extracting images from {len(pages_needing_images)} pages")
+                    f"[{source.name}] Extracting images from "
+                    f"{len(pages_needing_images)} pages")
                 ocr_text_per_page = _load_ocr_text_per_page(
-                    ocr_loader, pdf_file, filename)
+                    ocr_loader, source, pages_needing_images)
                 if ocr_text_per_page is None:
                     continue
 
-                image_docs = image_processor.extract_images_from_pdf(
-                    pdf_path=pdf_file,
-                    pdf_hash=pdf_hash,
-                    pdf_filename=filename,
+                image_docs = image_processor.extract_images_from_source(
+                    source=source,
+                    pages=pages_needing_images,
                     ocr_text_per_page=ocr_text_per_page,
                 )
                 if image_docs:
                     image_vdb.add_documents(image_docs)
                     logger.info(
-                        f"[{filename}] Added {len(image_docs)} images to ImageVectorDB")
+                        f"[{source.name}] Added {len(image_docs)} images to ImageVectorDB")
 
-            # Advisory logs are written for both sides once this book's work for
-            # the run finished, so a book that only needed one side still ends up
-            # recorded on both and the two logs don't drift apart.
-            _mark_file_done_once(filename)
-            _mark_image_done_once(filename)
-            logger.info(f"Completed: {filename}")
+            _mark_file_done_once(source.name)
+            _mark_image_done_once(source.name)
+            logger.info(f"Completed: {source.name}")
 
         except Exception as e:
-            logger.error(f"Error processing {filename}: {e}")
+            logger.error(f"Error processing {source.name}: {e}")
             import traceback
 
             logger.error(f"Traceback: {traceback.format_exc()}")
@@ -403,10 +369,11 @@ def run_etl():
     logger.info("ETL (FULL) pipeline completed!")
 
 
-def run_build_manifests(pdf_filename: str = "", *,
+def run_build_manifests(book_name: str = "", *,
                         read_candidates=None, read_toc=None,
-                        detect_banner=None, manifest_dir=None) -> int:
-    """Dựng BookManifest cho từng PDF rồi in báo cáo cổng G1.
+                        detect_banner=None, manifest_dir=None,
+                        data_dir=None) -> int:
+    """Dựng BookManifest cho từng quyển rồi in báo cáo cổng G1.
 
     Trả 0 nếu G1 PASS, 1 nếu FAIL — để script/CI dùng được mà không phải đọc log
     bằng mắt. Một quyển lỗi KHÔNG giết cả lượt chạy: nó vào phần failures của báo
@@ -421,31 +388,33 @@ def run_build_manifests(pdf_filename: str = "", *,
     from src.etl.book.page_number_ocr import read_page_number_candidates
     from src.etl.book.report import g1_check, g1_report
     from src.etl.book.toc import read_toc_lines
+    from src.etl.page_source import discover_page_sources
 
     read_candidates = read_candidates or read_page_number_candidates
     read_toc = read_toc or read_toc_lines
     detect_banner = detect_banner or detect_bai_banner
     target_dir = Path(manifest_dir) if manifest_dir else MANIFEST_DIR
 
-    pdfs = sorted(Path(DATA_DIR).glob("*.pdf"))
-    if pdf_filename:
-        pdfs = [p for p in pdfs if p.name == pdf_filename]
-    if not pdfs:
-        print(f"Không tìm thấy PDF nào trong {DATA_DIR}")
+    sources = discover_page_sources(data_dir or DATA_DIR)
+    if book_name:
+        sources = [s for s in sources
+                   if s.name == book_name or Path(s.name).stem == book_name]
+    if not sources:
+        print(f"Không tìm thấy quyển nào trong {data_dir or DATA_DIR}")
         return 1
 
     manifests, failures = [], []
-    for pdf in pdfs:
-        print(f"[manifest] {pdf.name} …")
+    for source in sources:
+        print(f"[manifest] {source.name} …")
         try:
             manifest = build_manifest(
-                str(pdf),
+                source,
                 read_candidates=read_candidates,
                 read_toc=read_toc,
                 detect_banner=detect_banner,
             )
-        except PageMapError as exc:
-            failures.append(f"{pdf.name}: {exc}")
+        except (PageMapError, ValueError) as exc:
+            failures.append(f"{source.name}: {exc}")
             continue
         path = save_manifest(manifest, target_dir)
         print(f"[manifest] -> {path}")
@@ -617,7 +586,7 @@ def main():
     etl_group.add_argument("--build-manifests", action="store_true",
                            help="Dựng BookManifest (bản đồ trang + spine Bài) rồi báo cáo G1")
     etl_group.add_argument("--book", type=str, default="",
-                           help="Chỉ xử lý một PDF theo tên file (dùng với --build-manifests)")
+                           help="Chỉ xử lý một quyển theo tên thư mục/file (dùng với --build-manifests)")
 
     parser.add_argument("--api", action="store_true",
                         help="Launch Flask API server")

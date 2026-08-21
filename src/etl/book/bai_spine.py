@@ -18,7 +18,7 @@ from .toc import TocEntry
 
 @dataclass(frozen=True)
 class BannerHit:
-    pdf_index: int
+    page_index: int    # số trong tên file trang có banner
     bai_so: int
 
 
@@ -49,7 +49,10 @@ def _repair_candidate(observed: int, lower: Optional[int], upper: Optional[int],
 
 
 def build_bai_spine(toc: Sequence[TocEntry], banners: Sequence[BannerHit],
-                    n_pages: int) -> tuple[list[BaiRecord], list[SpineFlag]]:
+                    last_page_index: int) -> tuple[list[BaiRecord], list[SpineFlag]]:
+    """`last_page_index` = SỐ TRANG NGUỒN cuối cùng (max của tên file), dùng để
+    đóng khoảng của Bài cuối. Không phải `n_pages`: dãy trang có thể có lỗ nên
+    "số lượng trang" và "chỉ số trang cuối" là hai thứ khác nhau."""
     titles = {e.bai_so: e.title for e in toc}
     toc_pages = {e.bai_so: e.start_page for e in toc}
     known = sorted(titles)
@@ -57,7 +60,7 @@ def build_bai_spine(toc: Sequence[TocEntry], banners: Sequence[BannerHit],
 
     # 1. banner hits theo thứ tự trang, sửa/loại cho đơn điệu
     accepted: list[BannerHit] = []
-    hits = sorted(banners, key=lambda h: h.pdf_index)
+    hits = sorted(banners, key=lambda h: h.page_index)
     for position, hit in enumerate(hits):
         previous = accepted[-1].bai_so if accepted else None
         following = next((h.bai_so for h in hits[position + 1:]
@@ -69,36 +72,36 @@ def build_bai_spine(toc: Sequence[TocEntry], banners: Sequence[BannerHit],
             if following is None:
                 flags.append(SpineFlag(
                     "banner_out_of_order",
-                    f"trang {hit.pdf_index}: Bài {bai_so} không tăng sau Bài "
+                    f"trang {hit.page_index}: Bài {bai_so} không tăng sau Bài "
                     f"{previous}; không có cận trên -> bỏ hit"))
                 continue
             repaired = _repair_candidate(bai_so, previous, following, known)
             if repaired is None:
                 flags.append(SpineFlag(
                     "banner_out_of_order",
-                    f"trang {hit.pdf_index}: Bài {bai_so} không tăng sau Bài "
+                    f"trang {hit.page_index}: Bài {bai_so} không tăng sau Bài "
                     f"{previous} và không sửa được -> bỏ hit"))
                 continue
             flags.append(SpineFlag(
                 "bai_so_repaired",
-                f"trang {hit.pdf_index}: {bai_so} -> {repaired} "
+                f"trang {hit.page_index}: {bai_so} -> {repaired} "
                 f"(kẹp giữa {previous} và {following})"))
             bai_so = repaired
-        accepted.append(BannerHit(hit.pdf_index, bai_so))
+        accepted.append(BannerHit(hit.page_index, bai_so))
 
     starts: dict[int, tuple[int, str]] = {}
     for hit in accepted:
-        starts[hit.bai_so] = (hit.pdf_index, "banner+toc" if hit.bai_so in titles
+        starts[hit.bai_so] = (hit.page_index, "banner+toc" if hit.bai_so in titles
                               else "banner")
-        if hit.bai_so in toc_pages and toc_pages[hit.bai_so] != hit.pdf_index:
+        if hit.bai_so in toc_pages and toc_pages[hit.bai_so] != hit.page_index:
             flags.append(SpineFlag(
                 "toc_page_mismatch",
                 f"Bài {hit.bai_so}: TOC ghi trang {toc_pages[hit.bai_so]}, "
-                f"banner ở trang {hit.pdf_index} -> lấy banner"))
+                f"banner ở trang {hit.page_index} -> lấy banner"))
         if hit.bai_so not in titles:
             flags.append(SpineFlag(
                 "banner_without_toc",
-                f"Bài {hit.bai_so} ở trang {hit.pdf_index} không có trong MỤC LỤC"))
+                f"Bài {hit.bai_so} ở trang {hit.page_index} không có trong MỤC LỤC"))
 
     # 2. bài chỉ có trong TOC -> dùng trang của TOC, ghi flag
     for entry in toc:
@@ -115,7 +118,7 @@ def build_bai_spine(toc: Sequence[TocEntry], banners: Sequence[BannerHit],
     spine: list[BaiRecord] = []
     for position, (bai_so, (start, source)) in enumerate(ordered):
         end = (ordered[position + 1][1][0] - 1) if position + 1 < len(ordered) \
-            else n_pages - 1
+            else last_page_index
         spine.append(BaiRecord(bai_so=bai_so, title=titles.get(bai_so, ""),
                                start=start, end=max(start, end), source=source))
 

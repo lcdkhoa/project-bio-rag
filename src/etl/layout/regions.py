@@ -1,7 +1,7 @@
 """Data model for layout-aware ETL: page regions and extracted text units."""
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Tuple, Dict
+from typing import Tuple, Dict, List
 
 class RegionType(str, Enum):
     BODY = "body"
@@ -26,3 +26,6 @@ class TextUnit:
     text: str
     reading_order: int
     bbox: BBox
+    # Token đáng ngờ do kiểm tra âm tiết tiếng Việt (`diacritic.py`) trả về.
+    # Chỉ để người xem lại — không có bước nào được phép sửa chữ theo nó.
+    review_flags: List[str] = field(default_factory=list)

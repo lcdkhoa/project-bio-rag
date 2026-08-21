@@ -717,8 +717,31 @@ class ImageProcessor:
                 )
                 lines.append({"text": joined, "bbox": bbox})
 
+        # Nhãn hình của KNTT là chữ TRẮNG trên pill màu -> `image_to_data` ở
+        # trên KHÔNG đọc được (đo: không ở scale nào), nên anchor `Hình N.M`
+        # biến mất và cả detector anchor-first mất neo. Bổ sung chúng từ
+        # `layout/pill.py` (crop pill -> đảo màu -> OCR -> chỉ nhận khi khớp
+        # `Hình N.M`). Chỉ THÊM dòng, không sửa dòng nào đã đọc được.
+        lines.extend(self._pill_label_lines(pil_img))
         lines.sort(key=lambda line: line["bbox"][1])
         return lines
+
+    def _pill_label_lines(self, pil_img: Image.Image) -> List[Dict[str, object]]:
+        """Nhãn hình đọc từ pill, ở toạ độ pixel của chính `pil_img`."""
+        try:
+            from .layout.pill import figure_label_lines
+
+            rgb = np.array(pil_img)
+            bgr = np.ascontiguousarray(rgb[:, :, ::-1])
+            found = figure_label_lines(bgr)
+            if found:
+                logger.info(
+                    f"[pill] {len(found)} nhãn hình đọc được từ pill: "
+                    f"{[f['text'] for f in found]}")
+            return found
+        except Exception as e:
+            logger.warning(f"Pill label OCR failed: {e}")
+            return []
 
     def _is_question_prompt_text(self, text: str) -> bool:
         normalized = self._normalize_text(text or "")
@@ -3440,40 +3463,34 @@ class ImageProcessor:
         colored_pixels = (saturation > 45) & (value > 40) & (value < 252)
         return float(np.mean(colored_pixels))
 
-    def _extract_page_image(self, pdf_path: str, page_num: int) -> Optional[Tuple[np.ndarray, Image.Image]]:
-        """Render a PDF page as image for extraction."""
+    def _load_page_image(self, source, page_number: int) -> Optional[Tuple[np.ndarray, Image.Image]]:
+        """Trang nguồn -> (mảng RGB uint8, PIL Image). Không render, không DPI.
+
+        Nguồn là PNG 1094×1536 sẵn có; `PageSource.load` trả BGR nên phải đảo về
+        **RGB** ở đây để giữ đúng quy ước cũ của cả phía ảnh (detector, CLIP,
+        caption và `reconcile_with_layout` đều giả định RGB rồi tự đổi sang BGR
+        khi cần). Kích thước trang KHÁC bản render poppler 150 DPI trước đây, nên
+        `IMAGE_EXTRACTION_VERSION` phải được bump cùng thay đổi này.
+        """
         try:
-            images = convert_from_path(
-                pdf_path,
-                first_page=page_num + 1,
-                last_page=page_num + 1,
-                dpi=150,
-                poppler_path=POPPLER_PATH,
-            )
-            if images:
-                img_array = np.array(images[0])
-                return img_array, images[0]
+            bgr = source.load(page_number)
+            rgb = np.ascontiguousarray(bgr[:, :, ::-1])
+            return rgb, Image.fromarray(rgb)
         except Exception as e:
-            logger.warning(f"Failed to render page {page_num}: {e}")
+            logger.warning(f"Failed to load page {page_number}: {e}")
         return None
 
-    def _get_context_text(self, pdf_path: str, page_num: int, bbox: Tuple[int, int, int, int], page_text: str) -> str:
+    def _get_context_text(self, source, page_number: int, bbox: Tuple[int, int, int, int], page_text: str) -> str:
         """Extract text within region around the image using OCR."""
         try:
             import pytesseract
 
             pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
-            images = convert_from_path(
-                pdf_path,
-                first_page=page_num + 1,
-                last_page=page_num + 1,
-                dpi=150,
-                poppler_path=POPPLER_PATH,
-            )
-            if not images:
+            loaded = self._load_page_image(source, page_number)
+            if not loaded:
                 return page_text[:500] if page_text else ""
 
-            img = images[0]
+            img = loaded[1]
             x0, y0, x1, y1 = bbox
 
             h, w = img.height, img.width
@@ -3694,12 +3711,12 @@ class ImageProcessor:
 
     def _build_image_id(
         self,
-        pdf_hash: str,
+        page_key: str,
         page_num: int,
         bbox: Tuple[int, int, int, int],
         image_hash: str,
     ) -> str:
-        payload = f"{pdf_hash}:{page_num}:{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}:{image_hash}"
+        payload = f"{page_key}:{page_num}:{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}:{image_hash}"
         return hashlib.md5(payload.encode("utf-8")).hexdigest()
 
     def _append_review_manifest(self, metadata: Dict[str, object]) -> None:
@@ -3731,41 +3748,45 @@ class ImageProcessor:
         ]
         return "\n".join(part.strip() for part in parts if part and part.strip())
 
-    def extract_images_from_pdf(
+    def extract_images_from_source(
         self,
-        pdf_path: str,
-        pdf_hash: str,
-        pdf_filename: str,
+        source,
         ocr_text_per_page: Dict[int, str],
+        pages: Optional[List[int]] = None,
         force: bool = False,
     ) -> List[Document]:
         """
-        Full image ETL pipeline for a single PDF.
+        Full image ETL pipeline cho một quyển (`PageSource`).
 
-        Phase 1: OWL-ViT open-vocabulary object detection for region discovery
+        `pages` là các SỐ TRANG NGUỒN (số trong tên file) cần xử lý; None = mọi
+        trang của quyển. Checkpoint khoá theo hash TỪNG TRANG
+        (`page_checkpoint_key`), không phải hash cả quyển.
+
+        Phase 1: anchor-first detection (OWL-ViT là detector phụ)
         Phase 2: Region refinement, dedupe, and caps
         Phase 3: Vietnamese OCR/context metadata + storage
         """
+        from .page_source import page_checkpoint_key
+
         extracted_docs = []
+        pdf_filename = source.name
         output_dir = IMAGES_DIR / Path(pdf_filename).stem
         os.makedirs(output_dir, exist_ok=True)
 
-        import fitz
+        page_numbers = list(pages) if pages is not None else source.page_numbers()
+        total_pages = len(page_numbers)
 
-        doc = fitz.open(pdf_path)
-        total_pages = len(doc)
-        doc.close()
-
-        for page_num in tqdm(range(1, total_pages + 1), desc=f"[{pdf_filename}] Extracting images"):
+        for page_num in tqdm(page_numbers, desc=f"[{pdf_filename}] Extracting images"):
+            page_key = page_checkpoint_key(source, page_num)
             if not force and not self.status_tracker.needs_image_processing_versioned(
-                pdf_hash,
+                page_key,
                 page_num,
                 required_version=self.image_extraction_version,
             ):
                 logger.debug(f"Page {page_num}: already processed, skipping")
                 continue
 
-            page_result = self._extract_page_image(pdf_path, page_num - 1)
+            page_result = self._load_page_image(source, page_num)
             if not page_result:
                 continue
 
@@ -3856,7 +3877,7 @@ class ImageProcessor:
                 page_seen_hashes.add(img_hash)
 
                 image_id = self._build_image_id(
-                    pdf_hash, page_num, bbox, img_hash)
+                    page_key, page_num, bbox, img_hash)
 
                 filepath = self._resolve_image_path(
                     output_dir, page_num, img_index, img_hash)
@@ -3865,7 +3886,7 @@ class ImageProcessor:
                     f.write(img_data)
 
                 context_text = self._get_context_text(
-                    pdf_path, page_num, bbox, page_text)
+                    source, page_num, bbox, page_text)
                 context_text = self._clean_text(context_text, max_chars=1200)
                 local_text = "\n".join(part for part in (
                     context_text, crop_text) if part)
@@ -3920,7 +3941,7 @@ class ImageProcessor:
                     "page_snapshot_path": page_snapshot_path,
                     "image_hash": img_hash,
                     "page_number": page_num,
-                    "pdf_hash": pdf_hash,
+                    "page_key": page_key,
                     "pdf_filename": pdf_filename,
                     "lesson_title": lesson_title,
                     "section_title": section_title,
@@ -3966,7 +3987,7 @@ class ImageProcessor:
                 img_index += 1
 
             self.status_tracker.mark_image_extracted(
-                pdf_hash,
+                page_key,
                 page_num,
                 pdf_filename,
                 image_extraction_version=self.image_extraction_version,

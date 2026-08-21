@@ -1,5 +1,5 @@
 import numpy as np, cv2
-from src.etl.layout.segmenter import segment_page, _params_for, _is_box
+from src.etl.layout.segmenter import segment_page, _params_for, _is_box_pixels
 from src.etl.layout.regions import RegionType
 
 def _synthetic_page():
@@ -76,14 +76,29 @@ def test_params_for_known_and_unknown_variant():
 
 def test_is_box_accepts_tint_rejects_figure_on_white():
     p = _params_for("ctst")
+    everything = np.ones((200, 200), bool)
     # a pale-green tinted, uniform background => a real box
     tint = np.full((200, 200, 3), (225, 243, 231), np.uint8)
-    assert _is_box(tint, p) is True
+    assert _is_box_pixels(tint, everything, p) is True
     # white background with sparse dark outlines => a figure on white, NOT a box
     fig = np.full((200, 200, 3), 255, np.uint8)
     for cx in (40, 100, 160):
         cv2.circle(fig, (cx, 100), 22, (150, 90, 40), 2)
-    assert _is_box(fig, p) is False
+    assert _is_box_pixels(fig, everything, p) is False
+
+
+def test_is_box_pixels_judges_only_the_regions_own_pixels():
+    """Đo trên bbox thay vì trên chính vùng là lý do sidebar tím ở page_010 bị
+    trượt (độ phẳng 0,42 < 0,45): bbox của nó bao cả khe trắng và đuôi bong bóng
+    thoại. Cùng một hộp, khi chỉ tính pixel của nó, phải đạt."""
+    p = _params_for("kntt")
+    image = np.full((200, 200, 3), 255, np.uint8)
+    image[0:100, 0:100] = (225, 243, 231)      # nửa trên-trái là hộp
+    box_pixels = np.zeros((200, 200), bool)
+    box_pixels[0:100, 0:100] = True
+    assert _is_box_pixels(image, box_pixels, p) is True
+    # cùng ảnh, nhưng tính cả nền trắng -> trung vị thành trắng -> loại
+    assert _is_box_pixels(image, np.ones((200, 200), bool), p) is False
 
 
 def _synthetic_page_pale_box():
@@ -102,3 +117,33 @@ def test_pale_tint_sidebar_is_detected():
     regs = segment_page(_synthetic_page_pale_box(), "ctst")
     boxes = [r for r in regs if r.type in (RegionType.SIDEBAR, RegionType.INFO_BOX)]
     assert any(b.bbox[0] > 400 for b in boxes), "pale-tint sidebar must be detected"
+
+
+def _synthetic_page_nested_boxes():
+    """Hộp con nằm trong panel lớn, khác tông màu — như panel so sánh của KNTT."""
+    img = np.full((1000, 800, 3), 255, np.uint8)
+    cv2.rectangle(img, (60, 100), (740, 600), (200, 225, 245), -1)   # panel đào
+    cv2.rectangle(img, (100, 160), (400, 400), (150, 235, 250), -1)  # ô vàng
+    cv2.rectangle(img, (420, 160), (700, 400), (150, 240, 180), -1)  # ô xanh
+    return img
+
+
+def test_nested_boxes_collapse_to_the_outermost_box():
+    # Không sinh hai chunk cho cùng một đoạn chữ: giữ hộp ngoài cùng, chữ của hộp
+    # con vẫn được OCR vì nó nằm trong vùng đó.
+    regs = segment_page(_synthetic_page_nested_boxes(), "kntt")
+    boxes = [r for r in regs if r.type in (RegionType.SIDEBAR, RegionType.INFO_BOX)]
+    assert len(boxes) == 1
+    x0, y0, x1, y1 = boxes[0].bbox
+    assert x0 <= 61 and y0 <= 101 and x1 >= 739 and y1 >= 599
+
+
+def test_a_page_sized_tint_is_not_a_box():
+    # Nền trang có tông nhạt không phải "hộp": nếu nhận, cả trang bị coi là một
+    # info_box và thân bài rỗng.
+    img = np.full((1000, 800, 3), (235, 245, 250), np.uint8)
+    for y in range(120, 700, 40):
+        cv2.putText(img, "noi dung chinh cua bai", (40, y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+    regs = segment_page(img, "kntt")
+    assert [r.type for r in regs] == [RegionType.BODY]

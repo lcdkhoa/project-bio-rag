@@ -7,5 +7,7 @@ def test_m3_config_defaults(monkeypatch):
     import src.config as cfg
     importlib.reload(cfg)
 
-    assert cfg.IMAGE_EXTRACTION_VERSION == "v16_layout_reconcile"
+    # Bump khi nguồn ảnh đổi: trang PNG 1094x1536 KHÁC bản render
+    # poppler 150 DPI trước đây, nên hình học crop đổi -> phải re-extract.
+    assert cfg.IMAGE_EXTRACTION_VERSION == "v17_png_source"
     assert cfg.FIGURE_IN_BOX_DROP_RATIO == 0.80

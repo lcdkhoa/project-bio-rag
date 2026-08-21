@@ -11,15 +11,17 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-import fitz
-import numpy as np
 import pytesseract
 
 from ...config import TESSERACT_CMD
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
-TOC_PAGE_INDICES = (4, 5)
+# SỐ TRANG NGUỒN (số trong tên file) của hai trang MỤC LỤC: `page_005.png` /
+# `page_006.png`. Bản cũ ghi (4, 5) vì đếm theo pdf_index 0-based — cùng hai
+# trang đó, đổi hệ toạ độ đúng một lần ở đây. Đã xác nhận là MỤC LỤC ở sách 6 và
+# sách 9 (spec Task 1).
+TOC_PAGE_NUMBERS = (5, 6)
 MAX_PRINTED_PAGE = 400          # không quyển nào tới 400 trang -> số lớn hơn là rác OCR
 
 _BAI = re.compile(r"^B[àa]i\s+(\d{1,2})\s*[.:]?\s+(.+?)\s+(\d{1,3})$")
@@ -66,21 +68,20 @@ def parse_toc_lines(lines: Sequence[str]) -> tuple[list[TocEntry], list[TocChuon
     return entries, chuongs
 
 
-def read_toc_lines(pdf_path: str,
-                   indices: Sequence[int] = TOC_PAGE_INDICES,
-                   dpi: int = 300) -> list[str]:
-    """OCR các trang MỤC LỤC thành danh sách dòng thô (psm 4: text nhiều cột)."""
-    doc = fitz.open(pdf_path)
-    try:
-        out: list[str] = []
-        for index in indices:
-            if index >= doc.page_count:
-                continue
-            pix = doc.load_page(index).get_pixmap(dpi=dpi)
-            arr = np.frombuffer(pix.samples, np.uint8).reshape(
-                pix.height, pix.width, pix.n)[:, :, :3]
-            text = pytesseract.image_to_string(arr, lang="vie", config="--psm 4")
-            out.extend(line for line in text.splitlines() if line.strip())
-        return out
-    finally:
-        doc.close()
+def read_toc_lines(source,
+                   page_numbers: Sequence[int] = TOC_PAGE_NUMBERS) -> list[str]:
+    """OCR các trang MỤC LỤC thành danh sách dòng thô (psm 4: text nhiều cột).
+
+    `source` là một `PageSource` (thư mục PNG hoặc PDF legacy). Trang không tồn
+    tại thì bỏ qua — MỤC LỤC thiếu là chuyện đã đo được, và `bai_spine` xử lý
+    trường hợp TOC rỗng bằng banner.
+    """
+    available = set(source.page_numbers())
+    out: list[str] = []
+    for number in page_numbers:
+        if number not in available:
+            continue
+        text = pytesseract.image_to_string(
+            source.load(number), lang="vie", config="--psm 4")
+        out.extend(line for line in text.splitlines() if line.strip())
+    return out

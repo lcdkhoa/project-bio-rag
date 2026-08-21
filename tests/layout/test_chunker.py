@@ -21,3 +21,49 @@ def test_chunk_index_is_unique_sequential():
     docs = chunk_units([body], "s.pdf", 1, "cd")
     idx = [d.metadata["chunk_index"] for d in docs]
     assert idx == list(range(len(idx)))
+
+def test_chunk_units_carries_page_index_bai_and_review_flags():
+    body = TextUnit(RegionType.BODY, "câu " * 400, 0, (0, 0, 1, 1),
+                    review_flags=["kh6ng"])
+    box = TextUnit(RegionType.SIDEBAR, "Câu hỏi 5: giải thích.", 1, (0, 0, 1, 1))
+    docs = chunk_units([body, box], source="SGK_KHTN_6_KNTT", page=9,
+                       variant="kntt", page_index=10, bai_so=3)
+    for d in docs:
+        # `page` = số trang IN, `page_index` = số trang NGUỒN. Lệch nhau 1 trên
+        # corpus này, nên gộp lại là mời off-by-one vào citation.
+        assert d.metadata["page"] == 9
+        assert d.metadata["page_index"] == 10
+        assert d.metadata["bai_so"] == 3
+    body_docs = [d for d in docs if d.metadata["region_type"] == "body"]
+    box_docs = [d for d in docs if d.metadata["region_type"] == "sidebar"]
+    assert all(d.metadata["needs_review"] for d in body_docs)
+    assert all(d.metadata["review_tokens"] == "kh6ng" for d in body_docs)
+    # cờ của vùng nào chỉ áp cho vùng đó
+    assert box_docs[0].metadata["needs_review"] is False
+    assert box_docs[0].metadata["review_tokens"] == ""
+
+
+def test_chunk_units_metadata_has_no_list_values_chroma_would_reject():
+    unit = TextUnit(RegionType.INFO_BOX, "Thông tin: abc def.", 0, (0, 0, 1, 1),
+                    review_flags=["mat", "kh6ng"])
+    docs = chunk_units([unit], "SGK_KHTN_6_KNTT", 9, "kntt", page_index=10)
+    assert docs[0].metadata["review_tokens"] == "mat,kh6ng"
+    assert all(not isinstance(v, (list, dict, set))
+               for v in docs[0].metadata.values())
+
+def test_a_very_long_box_is_split_but_keeps_its_region_label():
+    from src.etl.layout.chunker import BOX_ATOMIC_MAX_CHARS
+    long_box = TextUnit(RegionType.INFO_BOX, "Em có biết? " * 200, 0, (0, 0, 1, 1))
+    docs = chunk_units([long_box], "SGK_KHTN_6_KNTT", 9, "kntt", page_index=10)
+    assert len(docs) > 1
+    assert all(d.metadata["region_type"] == "info_box" for d in docs)
+    assert all(len(d.page_content) <= BOX_ATOMIC_MAX_CHARS for d in docs)
+    assert [d.metadata["chunk_index"] for d in docs] == list(range(len(docs)))
+
+
+def test_an_ordinary_box_stays_atomic():
+    # Một câu hỏi bị cắt giữa là câu hỏi vô nghĩa -> hộp thường KHÔNG bị cắt.
+    box = TextUnit(RegionType.SIDEBAR, "Câu hỏi 5: " + "giải thích. " * 20,
+                   0, (0, 0, 1, 1))
+    docs = chunk_units([box], "SGK_KHTN_6_KNTT", 9, "kntt", page_index=10)
+    assert len(docs) == 1
