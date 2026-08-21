@@ -10,7 +10,9 @@ def test_m3_config_defaults(monkeypatch):
     # Bump khi nguồn ảnh đổi: trang PNG 1094x1536 KHÁC bản render
     # poppler 150 DPI trước đây, nên hình học crop đổi -> phải re-extract.
     # v17_png_source -> v18_m3_g4 khi cổng G4 sửa hình học crop (D-45, D-46).
-    assert cfg.IMAGE_EXTRACTION_VERSION == "v18_m3_g4"
+    # v18_m3_g4 -> v19_pill_kernels khi pill hợp ứng viên qua nhiều kernel CLOSE
+    # (D-51): thêm 2 nhãn hình -> thêm anchor -> hình học crop đổi.
+    assert cfg.IMAGE_EXTRACTION_VERSION == "v19_pill_kernels"
     assert cfg.FIGURE_IN_BOX_DROP_RATIO == 0.80
 
 

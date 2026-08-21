@@ -50,7 +50,21 @@ MIN_W, MAX_W = 55, 460
 MIN_H, MAX_H = 18, 70
 SOLIDITY_MIN = 0.80
 HOLE_FRAC_MIN, HOLE_FRAC_MAX = 0.05, 0.55
-CLOSE_KERNEL = 9
+# MỘT kernel CLOSE là không đủ — cùng bài học với số trang góc (D-33), ô số MỤC
+# LỤC (D-43) và psm của pill (D-45): không tham số nào thắng ở mọi trang, nên hợp
+# ứng viên qua nhiều biến thể rồi để một ràng buộc TỰ KIỂM (`Hình N.M`) phán xử.
+#
+# Đo trên `SGK_KHTN_9_KNTT/page_017`, pill `Hình 2.3` (cam, nằm trong ô nền kem,
+# sát khối màu của minh hoạ):
+#   k=3 -> thành phần 113x30, solidity 0,882, đọc ra "Hình2.3"  ✓
+#   k=5,7,9,11 -> pill DÍNH vào minh hoạ thành khối 505x286 (solidity 0,50),
+#                 rộng 505 > MAX_W 460 nên bị loại -> mất hẳn nhãn hình.
+# Kernel nhỏ đứng trước để bbox khít nhất được giữ khi dedupe.
+#
+# k=0 bị loại theo CẤU TRÚC, không phải theo phép đo: khi không close thì
+# `closed == mask` nên `holes` luôn rỗng -> `hole_frac = 0` < HOLE_FRAC_MIN, mọi
+# pill đều bị loại. Đừng thêm 0 vào đây.
+CLOSE_KERNELS = (3, 5, 9)
 OCR_SCALE = 2           # crop pill quá nhỏ để OCR ở kích thước gốc
 # (scale, psm) đọc thử theo thứ tự. MỘT psm là KHÔNG đủ — đo trên `page_010`:
 # pill `Hình 1.3` đọc được ở psm 7, còn pill `Hình 1.2` NGAY TRÊN CÙNG TRANG chỉ
@@ -65,10 +79,34 @@ OCR_VARIANTS = ((2, 7), (2, 8), (2, 13), (3, 7), (3, 8))
 FIGURE_LABEL = re.compile(r"H[iìíỉĩị]nh\s*(\d{1,2})\s*[.,]\s*(\d{1,2})")
 
 
-def _pill_boxes_in_mask(mask: np.ndarray) -> list[tuple[int, int, int, int]]:
+def _iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
+    ax0, ay0, ax1, ay1 = a
+    bx0, by0, bx1, by1 = b
+    ix = max(0, min(ax1, bx1) - max(ax0, bx0))
+    iy = max(0, min(ay1, by1) - max(ay0, by0))
+    inter = ix * iy
+    if inter == 0:
+        return 0.0
+    union = (ax1 - ax0) * (ay1 - ay0) + (bx1 - bx0) * (by1 - by0) - inter
+    return inter / float(union) if union else 0.0
+
+
+def _dedupe_boxes(boxes: list[tuple[int, int, int, int]],
+                  iou_max: float = 0.5) -> list[tuple[int, int, int, int]]:
+    """Bỏ bbox trùng giữa các kernel. Giữ cái ĐẾN TRƯỚC (kernel nhỏ = khít hơn)."""
+    kept: list[tuple[int, int, int, int]] = []
+    for box in boxes:
+        if any(_iou(box, other) > iou_max for other in kept):
+            continue
+        kept.append(box)
+    return kept
+
+
+def _pill_boxes_in_mask(mask: np.ndarray,
+                        close_kernel: int) -> list[tuple[int, int, int, int]]:
     """Pill trong một mask nhị phân: lấp kín bbox, có lỗ (chữ), cỡ một nhãn."""
     closed = cv2.morphologyEx(
-        mask, cv2.MORPH_CLOSE, np.ones((CLOSE_KERNEL, CLOSE_KERNEL), np.uint8))
+        mask, cv2.MORPH_CLOSE, np.ones((close_kernel, close_kernel), np.uint8))
     count, labels, stats, _ = cv2.connectedComponentsWithStats(closed, connectivity=8)
     out = []
     for label in range(1, count):
@@ -90,19 +128,25 @@ def _pill_boxes_in_mask(mask: np.ndarray) -> list[tuple[int, int, int, int]]:
 def find_pill_boxes(image_bgr: np.ndarray) -> list[tuple[int, int, int, int]]:
     """Các bbox `(x0, y0, x1, y1)` trông như một pill có chữ bên trong.
 
-    **Giới hạn đã đo, nói ra để không ai tưởng nó bắt hết:** luật này chỉ bắt
-    được pill nằm trên nền GIẤY (nhãn `Hình N.M`). Pill nằm LỒNG trong một ô/panel
-    đã có tông màu thì dính vào ô đó rồi bị loại vì quá to — và không sửa được
-    bằng một ngưỡng saturation nào, vì pill không nhất thiết đậm hơn nền: đo trên
-    `page_010`, pill "Giao thông vận tải" có sat **82** còn dải tím nó nằm trên có
-    sat **157**. Tách theo dải hue cũng đã thử: KHÔNG khá hơn (cùng kết quả trên
-    `page_010`, thêm rác trên `page_011`). Vì vậy ba nhãn ô so sánh
-    ("Thông tin liên lạc" / "Sản xuất" / "Giao thông vận tải") **vẫn chưa đọc
-    được** — cần một thiết kế dựa trên tương phản CỤC BỘ và một phiên đo riêng.
+    Ứng viên được HỢP qua nhiều kernel CLOSE (`CLOSE_KERNELS`) rồi dedupe theo
+    IoU — xem chú thích ở `CLOSE_KERNELS` để biết vì sao một kernel là không đủ.
+
+    **Giới hạn đã đo, nói ra để không ai tưởng nó bắt hết:** pill nằm LỒNG trong
+    một ô/panel đã có tông màu **cùng hệ màu với nó** thì vẫn dính vào ô đó rồi bị
+    loại vì quá to, và không sửa được bằng một ngưỡng saturation nào, vì pill
+    không nhất thiết đậm hơn nền: đo trên `page_010`, pill "Giao thông vận tải" có
+    sat **82** còn dải tím nó nằm trên có sat **157**. Tách theo dải hue cũng đã
+    thử: KHÔNG khá hơn (cùng kết quả trên `page_010`, thêm rác trên `page_011`).
+    Vì vậy ba nhãn ô so sánh ("Thông tin liên lạc" / "Sản xuất" / "Giao thông vận
+    tải") **vẫn chưa đọc được** — cần một thiết kế dựa trên tương phản CỤC BỘ và
+    một phiên đo riêng (D-40).
     """
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     solid = ((hsv[:, :, 1] >= SAT_MIN) & (hsv[:, :, 2] <= VAL_MAX)).astype(np.uint8)
-    return _pill_boxes_in_mask(solid)
+    candidates: list[tuple[int, int, int, int]] = []
+    for kernel in CLOSE_KERNELS:
+        candidates.extend(_pill_boxes_in_mask(solid, kernel))
+    return _dedupe_boxes(candidates)
 
 
 def read_pill(image_bgr: np.ndarray, bbox: tuple[int, int, int, int],
