@@ -403,6 +403,63 @@ def run_etl():
     logger.info("ETL (FULL) pipeline completed!")
 
 
+def run_build_manifests(pdf_filename: str = "", *,
+                        read_candidates=None, read_toc=None,
+                        detect_banner=None, manifest_dir=None) -> int:
+    """Dựng BookManifest cho từng PDF rồi in báo cáo cổng G1.
+
+    Trả 0 nếu G1 PASS, 1 nếu FAIL — để script/CI dùng được mà không phải đọc log
+    bằng mắt. Một quyển lỗi KHÔNG giết cả lượt chạy: nó vào phần failures của báo
+    cáo, các quyển còn lại vẫn chạy tiếp — nhưng exit code vẫn là 1.
+
+    Ba adapter OCR nhận qua keyword để test bơm fake vào được (main.py import
+    lazy nên monkeypatch biến module không dùng được ở đây).
+    """
+    from src.etl.book.banner import detect_bai_banner
+    from src.etl.book.manifest import MANIFEST_DIR, build_manifest, save_manifest
+    from src.etl.book.page_map import PageMapError
+    from src.etl.book.page_number_ocr import read_page_number_candidates
+    from src.etl.book.report import g1_check, g1_report
+    from src.etl.book.toc import read_toc_lines
+
+    read_candidates = read_candidates or read_page_number_candidates
+    read_toc = read_toc or read_toc_lines
+    detect_banner = detect_banner or detect_bai_banner
+    target_dir = Path(manifest_dir) if manifest_dir else MANIFEST_DIR
+
+    pdfs = sorted(Path(DATA_DIR).glob("*.pdf"))
+    if pdf_filename:
+        pdfs = [p for p in pdfs if p.name == pdf_filename]
+    if not pdfs:
+        print(f"Không tìm thấy PDF nào trong {DATA_DIR}")
+        return 1
+
+    manifests, failures = [], []
+    for pdf in pdfs:
+        print(f"[manifest] {pdf.name} …")
+        try:
+            manifest = build_manifest(
+                str(pdf),
+                read_candidates=read_candidates,
+                read_toc=read_toc,
+                detect_banner=detect_banner,
+            )
+        except PageMapError as exc:
+            failures.append(f"{pdf.name}: {exc}")
+            continue
+        path = save_manifest(manifest, target_dir)
+        print(f"[manifest] -> {path}")
+        manifests.append(manifest)
+
+    print(g1_report(manifests))
+    for failure in failures:
+        print(f"    - {failure}")
+
+    all_ok = bool(manifests) and not failures and all(
+        g1_check(m)[0] for m in manifests)
+    return 0 if all_ok else 1
+
+
 def run_flask_api(port=5000):
     """Launch Flask API server."""
     logger.info(f"Starting Flask API server on port {port}...")
@@ -557,6 +614,10 @@ def main():
         action="store_true",
         help="Include approved/rejected rows when exporting review file.",
     )
+    etl_group.add_argument("--build-manifests", action="store_true",
+                           help="Dựng BookManifest (bản đồ trang + spine Bài) rồi báo cáo G1")
+    etl_group.add_argument("--book", type=str, default="",
+                           help="Chỉ xử lý một PDF theo tên file (dùng với --build-manifests)")
 
     parser.add_argument("--api", action="store_true",
                         help="Launch Flask API server")
@@ -576,9 +637,13 @@ def main():
         and not args.replace_image_db
         and not args.upsert_image_review_item
         and not args.import_images_dir
+        and not args.build_manifests
     ):
         parser.print_help()
         sys.exit(1)
+
+    if args.build_manifests:
+        sys.exit(run_build_manifests(args.book))
 
     if args.import_images_dir:
         run_import_images_dir(args.import_images_dir)
