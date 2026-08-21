@@ -1,8 +1,15 @@
-"""Anchor-first (v7) image-extraction QA on textbook PDF pages.
+"""QA thị giác cho bước cắt hình (anchor-first v7) trên NGUỒN PNG.
 
-Runs the deterministic anchor-first detector
-(`ImageProcessor.detect_regions_anchor_first`) on a single page or every page
-of a PDF and dumps:
+Chạy detector deterministic (`ImageProcessor.detect_regions_anchor_first`) trên
+một trang hoặc cả quyển và ghi ra ảnh overlay để NGƯỜI xem.
+
+**Nguồn là `PageSource` (PNG một file/trang), không phải PDF.** Bản trước gọi
+poppler `dpi=150` trong khi đường ETL thật đã đọc thẳng pixel gốc 1094x1536
+(D-41) — hai bên khác hệ toạ độ thì bbox mà QA vẽ ra không nói được gì về
+production. Nay hai bên dùng CHUNG một `PageSource`, nên `--page N` ở đây là
+`page_NNN.png`, đúng con số dùng ở mọi chỗ khác trong repo.
+
+Kết quả ghi ra:
 
   * 00_page_snapshot.png   : the rendered page.
   * 01_anchors.png         : OCR text-anchors colour-coded by category
@@ -60,10 +67,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from pdf2image import convert_from_path  # noqa: E402
-from pypdf import PdfReader  # noqa: E402
 
-from src.config import POPPLER_PATH  # noqa: E402
+from src.config import DATA_DIR  # noqa: E402
+from src.etl.page_source import discover_page_sources  # noqa: E402
 from src.etl.image_processor import ImageProcessor, make_image_processor  # noqa: E402
 
 logging.basicConfig(
@@ -72,8 +78,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger("image_etl_v7_test")
 
-DEFAULT_PDF = ROOT / "datasources" / "SGK KHTN 6 KNTT.pdf"
-DEFAULT_PAGE = 6
+DEFAULT_BOOK = "SGK_KHTN_6_KNTT"
+DEFAULT_PAGE = 10          # trang tham chiếu của QA layout (>= 4 ô màu)
 DEFAULT_OUT_DIR = ROOT / "scripts" / "_out_test_etl_full"
 
 ANCHOR_COLOURS: Dict[str, Tuple[int, int, int]] = {
@@ -219,23 +225,27 @@ def _safe_label(text: str, max_len: int = 36) -> str:
     return keep[:max_len] or "region"
 
 
-def render_page(pdf_path: Path, page_number: int, dpi: int = 150) -> Image.Image:
-    pages = convert_from_path(
-        str(pdf_path),
-        first_page=page_number,
-        last_page=page_number,
-        dpi=dpi,
-        poppler_path=POPPLER_PATH,
-    )
-    if not pages:
-        raise RuntimeError(
-            f"Could not render page {page_number} of {pdf_path}")
-    return pages[0].convert("RGB")
+def load_sources(data_dir: Path = None) -> dict:
+    """{tên quyển: PageSource}. Nguồn là thư mục PNG một file/trang."""
+    return {source.name: source
+            for source in discover_page_sources(data_dir or DATA_DIR)}
+
+
+def render_page(source, page_number: int) -> Image.Image:
+    """Trang nguồn -> PIL RGB. KHÔNG render, KHÔNG DPI: nguồn đã là PNG.
+
+    Đây là điểm QA từng lệch production nhất: bản cũ gọi poppler `dpi=150` trong
+    khi đường ETL thật đã chuyển sang đọc thẳng pixel gốc 1094x1536 qua
+    `PageSource` (D-41). Hai bên khác hệ toạ độ thì mọi bbox QA vẽ ra đều không
+    nói được gì về production. Nay dùng CHUNG một `PageSource`.
+    """
+    bgr = source.load(page_number)
+    return Image.fromarray(bgr[:, :, ::-1]).convert("RGB")
 
 
 def run_page(
     processor: ImageProcessor,
-    pdf_path: Path,
+    source,
     page_number: int,
     out_dir: Path,
     keep_old: bool = False,
@@ -247,7 +257,7 @@ def run_page(
         for stale in out_dir.glob("*.json"):
             stale.unlink()
 
-    pil_img = render_page(pdf_path, page_number)
+    pil_img = render_page(source, page_number)
     page_width, page_height = pil_img.size
     img_array = np.array(pil_img)
     pil_img.save(out_dir / "00_page_snapshot.png")
@@ -255,7 +265,7 @@ def run_page(
     font = _font(14)
 
     report = PageReport(
-        pdf_path=str(pdf_path),
+        pdf_path=source.name,
         page_number=page_number,
         page_size=(page_width, page_height),
         out_dir=str(out_dir),
@@ -295,7 +305,7 @@ def run_page(
     # 150-DPI/RGB array the production path feeds reconcile_with_layout.
     from src.etl.layout.figure_bridge import reconcile_with_layout
     from src.etl.image_processor import get_pdf_variant
-    kept = reconcile_with_layout(regions, img_array, get_pdf_variant(pdf_path.name))
+    kept = reconcile_with_layout(regions, img_array, get_pdf_variant(source.name))
     kept_bboxes = {tuple(r["bbox"]) for r in kept}
     reconciled = pil_img.convert("RGB").copy()
     rdraw = ImageDraw.Draw(reconciled)
@@ -345,11 +355,6 @@ def run_page(
     )
 
     return report
-
-
-def _page_count(pdf_path: Path) -> int:
-    reader = PdfReader(str(pdf_path))
-    return len(reader.pages)
 
 
 def _parse_pages_arg(pages_arg: Optional[str], total: int) -> List[int]:
@@ -458,17 +463,17 @@ def _write_index_html(out_dir: Path, reports: List[PageReport]) -> Path:
 
 
 def run_batch(
-    pdf_path: Path,
+    source,
     pages: List[int],
     out_dir: Path,
 ) -> List[PageReport]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    processor = make_image_processor(pdf_path.name)
+    processor = make_image_processor(source.name)
     reports: List[PageReport] = []
     for page in pages:
         page_dir = out_dir / f"page_{page:03d}"
         try:
-            report = run_page(processor, pdf_path, page,
+            report = run_page(processor, source, page,
                               page_dir, keep_old=False)
         except Exception as exc:
             logger.warning("Page %d failed: %s", page, exc)
@@ -502,23 +507,21 @@ def run_sample_all(
     out_dir: Path,
     seed: int,
 ) -> None:
-    """Sample `per_book` random pages from every PDF in `datasources`."""
+    """Sample `per_book` trang ngẫu nhiên (deterministic) từ MỌI quyển."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    pdfs = sorted(datasources.glob("*.pdf"))
     all_reports: List[PageReport] = []
-    for pdf in pdfs:
-        book = pdf.stem
-        # Use publisher-specific processor for CTST, KNTT, CD, etc.
-        processor = make_image_processor(pdf.name)
-        total = _page_count(pdf)
-        pages = _seeded_sample(total, per_book, seed)
+    for book, source in sorted(load_sources(datasources).items()):
+        processor = make_image_processor(source.name)
+        numbers = source.page_numbers()
+        picks = _seeded_sample(len(numbers), per_book, seed)
+        pages = [numbers[index - 1] for index in picks]
         logger.info(
             "Book %s (%s, %d pages) → sampling %s",
-            book, type(processor).__name__, total, pages)
+            book, type(processor).__name__, len(numbers), pages)
         for page in pages:
             page_dir = out_dir / _safe_label(book, 40) / f"page_{page:03d}"
             try:
-                report = run_page(processor, pdf, page,
+                report = run_page(processor, source, page,
                                   page_dir, keep_old=False)
             except Exception as exc:
                 logger.warning("%s page %d failed: %s", book, page, exc)
@@ -531,8 +534,8 @@ def run_sample_all(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--pdf", type=Path, default=DEFAULT_PDF,
-                        help=f"PDF path (default: {DEFAULT_PDF})")
+    parser.add_argument("--book", type=str, default=DEFAULT_BOOK,
+                        help=f"Tên thư mục quyển (mặc định: {DEFAULT_BOOK})")
     parser.add_argument("--page", type=int, default=DEFAULT_PAGE,
                         help=f"1-indexed page (default: {DEFAULT_PAGE})")
     parser.add_argument("--pages", type=str, default=None,
@@ -541,7 +544,7 @@ def main() -> int:
     parser.add_argument("--all", action="store_true",
                         help="Process every page; with --pages limit to listed pages.")
     parser.add_argument("--sample-books", type=int, default=0, metavar="N",
-                        help="Sample N random pages from EVERY pdf in --datasources.")
+                        help="Lấy mẫu N trang từ MỌI quyển trong --datasources.")
     parser.add_argument("--datasources", type=Path,
                         default=ROOT / "datasources",
                         help="Folder of PDFs for --sample-books.")
@@ -561,22 +564,25 @@ def main() -> int:
             f"\n[OK] book sample → {args.out_dir / '_sample' / '_index.html'}")
         return 0
 
-    if not args.pdf.exists():
-        print(f"[ERR] PDF not found: {args.pdf}")
+    sources = load_sources(args.datasources)
+    source = sources.get(args.book)
+    if source is None:
+        print(f"[ERR] không có quyển {args.book!r}; có: {sorted(sources)}")
         return 1
 
     if args.all or args.pages:
-        total = _page_count(args.pdf)
-        pages = _parse_pages_arg(args.pages, total)
+        numbers = source.page_numbers()
+        available = set(numbers)
+        pages = ([n for n in _parse_pages_arg(args.pages, max(numbers))
+                  if n in available] if args.pages else numbers)
         if not pages:
-            print(
-                f"[ERR] No valid pages in --pages='{args.pages}' (total {total})")
+            print(f"[ERR] không có trang hợp lệ trong --pages={args.pages!r}")
             return 1
-        run_batch(args.pdf, pages, args.out_dir)
+        run_batch(source, pages, args.out_dir)
         print(f"\n[OK] batch QA → {args.out_dir / '_index.html'}")
     else:
-        processor = make_image_processor(args.pdf.name)
-        run_page(processor, args.pdf, args.page,
+        processor = make_image_processor(source.name)
+        run_page(processor, source, args.page,
                  args.out_dir / f"page_{args.page:03d}")
         print(f"\n[OK] page {args.page} → "
               f"{args.out_dir / f'page_{args.page:03d}' / '03_final_regions.png'}")

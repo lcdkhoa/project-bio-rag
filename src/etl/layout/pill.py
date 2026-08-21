@@ -52,6 +52,12 @@ SOLIDITY_MIN = 0.80
 HOLE_FRAC_MIN, HOLE_FRAC_MAX = 0.05, 0.55
 CLOSE_KERNEL = 9
 OCR_SCALE = 2           # crop pill quá nhỏ để OCR ở kích thước gốc
+# (scale, psm) đọc thử theo thứ tự. MỘT psm là KHÔNG đủ — đo trên `page_010`:
+# pill `Hình 1.3` đọc được ở psm 7, còn pill `Hình 1.2` NGAY TRÊN CÙNG TRANG chỉ
+# ra ở psm 8/13 (psm 7 trả về rỗng), nên bản chỉ-psm-7 làm mất hẳn một nhãn hình
+# và kéo theo mất luôn anchor của cả một hình. Cùng bài học với ô số MỤC LỤC
+# (D-43): không scale/psm nào thắng ở mọi ô, phải thử rồi để regex phán xử.
+OCR_VARIANTS = ((2, 7), (2, 8), (2, 13), (3, 7), (3, 8))
 
 # `Hình 1.2`, `Hình 25.5`. Chữ "i" nhận MỌI biến thể dấu vì OCR trên pill đảo màu
 # đọc ra đủ kiểu (đo được: `Hỉnh`, `Hình`, `Hinh`) — dấu của chữ "Hình" không mang
@@ -100,8 +106,8 @@ def find_pill_boxes(image_bgr: np.ndarray) -> list[tuple[int, int, int, int]]:
 
 
 def read_pill(image_bgr: np.ndarray, bbox: tuple[int, int, int, int],
-              scale: int = OCR_SCALE) -> str:
-    """OCR một pill trên bản ĐẢO MÀU (chữ trắng -> chữ tối). `--psm 7`: một dòng."""
+              scale: int = OCR_SCALE, psm: int = 7) -> str:
+    """OCR một pill trên bản ĐẢO MÀU (chữ trắng -> chữ tối). Mặc định `--psm 7`."""
     x0, y0, x1, y1 = bbox
     crop = image_bgr[y0:y1, x0:x1]
     if crop.size == 0:
@@ -109,8 +115,25 @@ def read_pill(image_bgr: np.ndarray, bbox: tuple[int, int, int, int],
     if scale != 1:
         crop = cv2.resize(crop, None, fx=scale, fy=scale,
                           interpolation=cv2.INTER_CUBIC)
-    raw = pytesseract.image_to_string(255 - crop, lang="vie", config="--psm 7")
+    raw = pytesseract.image_to_string(255 - crop, lang="vie",
+                                      config=f"--psm {psm}")
     return " ".join(clean_vietnamese_text(raw).split())
+
+
+def read_pill_variants(image_bgr: np.ndarray,
+                       bbox: tuple[int, int, int, int]) -> list[str]:
+    """Chữ đọc được từ một pill qua mọi (scale, psm) trong `OCR_VARIANTS`.
+
+    Trả về danh sách theo thứ tự thử, đã bỏ rỗng và bỏ trùng. Người gọi chọn:
+    nhãn hình lấy biến thể ĐẦU TIÊN khớp `Hình N.M` (phép thử tự kiểm), còn
+    `text` hiển thị lấy biến thể đầu tiên đọc được gì đó.
+    """
+    seen: list[str] = []
+    for scale, psm in OCR_VARIANTS:
+        text = read_pill(image_bgr, bbox, scale=scale, psm=psm)
+        if text and text not in seen:
+            seen.append(text)
+    return seen
 
 
 def read_pill_labels(image_bgr: np.ndarray) -> list[dict]:
@@ -121,12 +144,13 @@ def read_pill_labels(image_bgr: np.ndarray) -> list[dict]:
     """
     out = []
     for bbox in find_pill_boxes(image_bgr):
-        text = read_pill(image_bgr, bbox)
-        if not text:
+        variants = read_pill_variants(image_bgr, bbox)
+        if not variants:
             continue
-        match = FIGURE_LABEL.search(text)
+        match = next((m for m in (FIGURE_LABEL.search(v) for v in variants) if m),
+                     None)
         out.append({
-            "text": text,
+            "text": variants[0],
             "bbox": bbox,
             "figure_label": (f"Hình {int(match.group(1))}.{int(match.group(2))}"
                              if match else None),

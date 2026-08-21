@@ -93,3 +93,7 @@ next-env.d.ts
 database/chroma.sqlite3
 database/*.sqlite3
 database/**/*.bin
+
+# QA output (anh overlay, report.json) — sinh ra, khong commit
+scripts/_out_test_etl_full/
+scripts/_out_g4/

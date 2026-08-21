@@ -3552,18 +3552,36 @@ class ImageProcessor:
                 return self._clean_text(combined, max_chars=140)
         return ""
 
-    def _extract_figure_label(self, context_text: str, page_text: str) -> str:
-        """Extract labels that are meaningful in Vietnamese textbooks."""
+    # SỐ HIỆU hình/bảng trước, TIÊU ĐỀ Ô sau — thứ tự này là một sửa lỗi, không
+    # phải sở thích. `Hình N.M` / `Bảng N.M` là ĐỊNH DANH của hình (duy nhất,
+    # kiểm chứng được, chính là thứ pill anchor đọc ra); còn "Em có biết" /
+    # "Quan sát" chỉ là tiêu đề một ô trên trang. Bản cũ để tiêu đề ô đứng TRƯỚC
+    # và trả về match đầu tiên, nên một crop có sẵn `Hình 21.3` vẫn bị gán
+    # `figure_label='quan sát'` vì chữ "Quan sát" tình cờ nằm trong context —
+    # đúng defect đã đo ở D-41.
+    _FIGURE_ID_PATTERNS = (
+        r"H[iì]nh\s+\d+(?:\.\d+)?",
+        r"B[aả]ng\s+\d+(?:\.\d+)?",
+    )
+    _BOX_TITLE_PATTERNS = (
+        r"Em\s+c[oó]\s+bi[eế]t",
+        r"T[iì]m\s+hi[eể]u\s+th[eê]m",
+        r"Quan\s+s[aá]t",
+        r"Th[uư]c\s+h[aà]nh",
+    )
+
+    def _extract_figure_label(self, context_text: str, page_text: str,
+                              anchor_label: str = "") -> str:
+        """Nhãn của một crop. `anchor_label` (nhãn pill đã đọc được cho chính
+        vùng này) thắng tất cả: nó đến từ pixel của cái pill, không phải từ chữ
+        loanh quanh, nên nó là bằng chứng mạnh nhất có được."""
+        for pattern in self._FIGURE_ID_PATTERNS:
+            match = re.match(r"\s*" + pattern, anchor_label or "",
+                             flags=re.IGNORECASE)
+            if match:
+                return match.group(0).strip()
         text = f"{context_text}\n{page_text}"
-        patterns = [
-            r"Em\s+c[oó]\s+bi[eế]t",
-            r"T[iì]m\s+hi[eể]u\s+th[eê]m",
-            r"Quan\s+s[aá]t",
-            r"B[aả]ng\s+\d+(?:\.\d+)?",
-            r"H[iì]nh\s+\d+(?:\.\d+)?",
-            r"Th[uư]c\s+h[aà]nh",
-        ]
-        for pattern in patterns:
+        for pattern in self._FIGURE_ID_PATTERNS + self._BOX_TITLE_PATTERNS:
             match = re.search(pattern, text, flags=re.IGNORECASE)
             if match:
                 return match.group(0)
@@ -3890,7 +3908,12 @@ class ImageProcessor:
                 context_text = self._clean_text(context_text, max_chars=1200)
                 local_text = "\n".join(part for part in (
                     context_text, crop_text) if part)
-                figure_label = self._extract_figure_label(local_text, "")
+                # Nhãn của chính vùng này (do anchor caption/pill sinh ra) là
+                # bằng chứng mạnh hơn mọi chữ loanh quanh crop — truyền vào để
+                # nó thắng, thay vì để regex bốc trúng tiêu đề ô gần đó (D-41).
+                anchor_label = str(region.get("caption_text", "") or "")
+                figure_label = self._extract_figure_label(
+                    local_text, "", anchor_label=anchor_label)
                 figure_caption = self._extract_figure_caption(local_text, "")
                 detected_bboxes = [tuple(r["bbox"]) for r in detected_regions]
                 hierarchy_type = self._classify_region_hierarchy(
@@ -4480,6 +4503,23 @@ class KnttImageProcessor(ImageProcessor):
     # backstop). The real bound is the contiguity walk in the builder; a tall
     # connected diagram (page 80) can legitimately fill most of the page.
     _KNTT_FIG_MAX_BAND_FRAC: float = 0.85
+    # Bước "bắc cầu" khi mở rộng vùng hình lên/xuống qua các ô ảnh kề nhau.
+    # Hai ngưỡng này là thứ quyết định một crop dừng ở đúng tấm ảnh hay nuốt cả
+    # nửa trang, nên để thành hằng số có tên (đo được, chỉnh được) thay vì số
+    # rời rạc nằm trong thân hàm.
+    # Quét trên 24 trang thật (4 quyển), so 5 cấu hình. Bảng đo:
+    #   gap/text 0.25/0.25 (cũ) -> 23 hình có nhãn, 20 crop nghi cắt lấn
+    #            0.25/0.15      -> 25 hình có nhãn, 19
+    #            0.15/0.25      -> 23 hình có nhãn, 19
+    #            0.15/0.15      -> 25 hình có nhãn, 18   <- chọn
+    #            0.12/0.12      -> 25 hình có nhãn, 18   (không hơn, đổi nhiều hơn)
+    # Nghĩa là hạ ngưỡng tốt hơn ở CẢ HAI chiều, không phải đánh đổi. Bằng chứng
+    # trực tiếp trên `page_132` sách 6: ô nền xanh chứa bảng + câu hỏi có
+    # text_coverage **0,215** nên lọt ngưỡng 0,25 cũ và bị bắc cầu vào, kéo crop
+    # của `Hình 36.17` (hai tấm ảnh ở đáy trang) phình ra cả trang; ảnh thật trên
+    # cùng trang đo được 0,000–0,102, nên 0,15 tách sạch hai nhóm.
+    _KNTT_BRIDGE_MAX_GAP: float = 0.15      # khe tối đa được bắc cầu (theo H)
+    _KNTT_BRIDGE_MAX_TEXT: float = 0.15     # ô nhiều chữ hơn mức này thì dừng
     # Recover full photo rectangles OWL only partially detects — a dark photo
     # on black (page 131 bat), warning triangles (page 13), the diagram cells
     # under a title (page 80).
@@ -4731,16 +4771,56 @@ class KnttImageProcessor(ImageProcessor):
     def _dedupe_kntt_captions(
         figure_caps: List[Dict[str, object]],
     ) -> List[Dict[str, object]]:
-        """Keep one caption per figure NUMBER (the longest / most complete)."""
+        """Một caption cho mỗi nhãn hình, gộp theo SỐ và theo CHỖ ĐỨNG.
+
+        Gộp theo số thôi là chưa đủ: cùng một dòng chú thích được đọc HAI lần —
+        một lần bởi pill (`Hình 1.9`, đúng) và một lần bởi OCR thường
+        (`Hình 19`, mất dấu chấm) — cho hai *số khác nhau* nên cả hai cùng sống
+        sót, rồi bản hỏng lại thắng khi dựng vùng. Đo được trên `page_009` sách
+        9: hình có crop nhưng mang nhãn `Hình 19`, không khớp `Hình N.M` nên bị
+        đếm là MẤT (D-45).
+
+        Vì vậy gộp thêm theo bbox: hai caption chồng nhau gần hết là **một**
+        caption, và bản thắng là bản đúng dạng `Hình <bài>.<số>` — dạng mà SGK
+        luôn dùng — chứ không phải bản dài hơn.
+        """
         def number_key(text: str) -> str:
             match = re.search(r"(\d+(?:[.,]\d+)?)[a-h]?", str(text))
             return match.group(1).replace(",", ".") if match else str(text)
 
-        best: Dict[str, Dict[str, object]] = {}
+        def well_formed(cap: Dict[str, object]) -> bool:
+            return bool(re.search(r"\d+\s*[.,]\s*\d+", str(cap["text"])))
+
+        def contained(a, b) -> float:
+            """Phần diện tích của `a` nằm trong `b`."""
+            ix0, iy0 = max(a[0], b[0]), max(a[1], b[1])
+            ix1, iy1 = min(a[2], b[2]), min(a[3], b[3])
+            if ix1 <= ix0 or iy1 <= iy0:
+                return 0.0
+            area = max(1, (a[2] - a[0]) * (a[3] - a[1]))
+            return (ix1 - ix0) * (iy1 - iy0) / float(area)
+
+        # 1. gộp các caption chồng chỗ nhau
+        groups: List[List[Dict[str, object]]] = []
         for cap in figure_caps:
+            bbox = tuple(int(v) for v in cap["bbox"])  # type: ignore[misc]
+            for group in groups:
+                other = tuple(int(v) for v in group[0]["bbox"])  # type: ignore[misc]
+                if max(contained(bbox, other), contained(other, bbox)) >= 0.5:
+                    group.append(cap)
+                    break
+            else:
+                groups.append([cap])
+        merged = [max(group, key=lambda c: (well_formed(c), len(str(c["text"]))))
+                  for group in groups]
+
+        # 2. rồi mới gộp theo số hình
+        best: Dict[str, Dict[str, object]] = {}
+        for cap in merged:
             key = number_key(str(cap["text"]))
-            if key not in best or \
-                    len(str(cap["text"])) > len(str(best[key]["text"])):
+            current = best.get(key)
+            if current is None or (well_formed(cap), len(str(cap["text"]))) > \
+                    (well_formed(current), len(str(current["text"]))):
                 best[key] = cap
         return sorted(best.values(),
                       key=lambda c: int(c["bbox"][1]))  # type: ignore[index]
@@ -4857,14 +4937,15 @@ class KnttImageProcessor(ImageProcessor):
             # Hình 23.1 body + surrounding circles), while a caption's band
             # stops before an unrelated illustration far away (page 109 mushroom
             # row vs the top-right photo). A hard fraction still caps runaway.
-            max_gap = int(page_height * 0.25)
+            max_gap = int(page_height * self._KNTT_BRIDGE_MAX_GAP)
             hard = int(page_height * self._KNTT_FIG_MAX_BAND_FRAC)
             # A text-heavy cell is a title bar / objectives block / paragraph,
             # not part of the photo — stop the walk before bridging into it
             # (page 80 keeps the diagram but not the "MỤC TIÊU" header), while a
             # pure-image cell far below is still reached (page 131 sheep).
             def bridgeable(c: Tuple[int, int, int, int]) -> bool:
-                return self._text_line_coverage(c, text_lines) <= 0.25
+                return (self._text_line_coverage(c, text_lines)
+                        <= self._KNTT_BRIDGE_MAX_TEXT)
             # Membership is by cell CENTRE (a KNTT pill often sits ON the photo
             # bottom edge, so a strict "whole cell above the caption" test would
             # drop the photo — page 131 bat).
