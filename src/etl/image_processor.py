@@ -4079,372 +4079,40 @@ class ImageProcessor:
 # Publisher routing
 # ===========================================================================
 
-# Filename keywords that identify each publisher variant.
-_VARIANT_CTST = "ctst"     # Chân Trời Sáng Tạo
-_VARIANT_KNTT = "kntt"     # Kết Nối Tri Thức → shares layout conventions with CD for now
-_VARIANT_CD = "cd"      # Cánh Diều
+# Corpus hiện tại có ĐÚNG MỘT nhà xuất bản: Kết Nối Tri Thức (Bộ đã hợp nhất,
+# CD và CTST bị thu hồi). Trước đây có ba nhánh xử lý theo từ khoá trong tên
+# file; `CtsstImageProcessor` (335 dòng) đã bị xoá và nhánh "cd" chỉ là lớp cơ
+# sở, nên biến thể không còn được SUY RA từ tên file nữa — nó là một hằng số.
+#
+# Vì sao không giữ lại phép suy ra "cho chắc": nó là một fallback im lặng. Đưa
+# một quyển CTST vào thì hệ thống sẽ gán nhãn 'kntt' và xử lý bằng logic KNTT mà
+# không ai biết. Thêm nhà xuất bản thứ hai là việc phải ĐO lại (caption, hộp
+# màu, pill), không phải thêm một từ khoá vào regex.
+LAYOUT_VARIANT = "kntt"     # Kết Nối Tri Thức
 
 
-def get_pdf_variant(pdf_filename: str) -> str:
-    """Return 'ctst', 'kntt', or 'cd' based on the PDF filename.
+def get_pdf_variant(pdf_filename: str = "") -> str:
+    """Biến thể layout của corpus. Một nhà xuất bản -> một hằng số.
 
-    Matches the keyword anywhere in the stem, handling both space-separated
-    (``SGK KHTN 6 CTST.pdf``) and underscore-separated filenames.
+    Giữ hàm (thay vì thay hằng số ở mọi call site) để `variant` trong metadata
+    chunk vẫn có đúng một nơi định nghĩa, và để chỗ này là nơi duy nhất phải sửa
+    nếu corpus có lại nhiều nhà xuất bản.
     """
-    stem = Path(pdf_filename).stem.lower().replace(" ", "_")
-    if "_ctst" in stem:
-        return _VARIANT_CTST
-    if "_kntt" in stem:
-        return _VARIANT_KNTT
-    return _VARIANT_CD
+    return LAYOUT_VARIANT
 
 
 def make_image_processor(
     pdf_filename: str = "",
     status_tracker=None,
 ) -> "ImageProcessor":
-    """Factory that returns the right processor for a given PDF filename."""
-    variant = get_pdf_variant(pdf_filename)
-    if variant == _VARIANT_CTST:
-        return CtsstImageProcessor(status_tracker=status_tracker)
-    if variant == _VARIANT_KNTT:
-        return KnttImageProcessor(status_tracker=status_tracker)
-    return ImageProcessor(status_tracker=status_tracker)
+    """Processor cho một quyển. Chỉ còn KNTT (xem `LAYOUT_VARIANT`).
 
-
-# ---------------------------------------------------------------------------
-# CTST — Chân Trời Sáng Tạo publisher
-# ---------------------------------------------------------------------------
-
-# CTST figures are captioned: "▲ Hình X.Y. description"
-# Tesseract reads the filled-triangle ▲ inconsistently: as À/Á/A, as a dot,
-# a pipe/bracket, TWO junk chars (".A Hình 8.1"), OR — when the marker is a
-# RIGHT-pointing ▶ (page 59 "▶ Hình 11.8") — as "}>" / "{>" / "›". Allow a short
-# leading run of any of those artefact characters before "Hình".
-_CTST_FIG_PREFIX = r"[ÀÁAa▲▶∆.,'`|()<>{}»›\[\]\s]{0,4}"
-_CTST_FIG_CAPTION_REGEX = re.compile(
-    r"^" + _CTST_FIG_PREFIX + r"H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
-    flags=re.IGNORECASE,
-)
-
-# Strip the leading triangle/OCR-artefact so the rest of the pipeline
-# receives a clean "Hình X.Y. ..." text for metadata.
-_CTST_TRIANGLE_PREFIX = re.compile(
-    r"^" + _CTST_FIG_PREFIX + r"(?=H[iì]nh)",
-    flags=re.IGNORECASE,
-)
-
-# CTST-specific info-box panel titles (different vocabulary from CD).
-_CTST_INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = [
-    # Exercise/practice boxes.
-    ("bai tap",      "activity_box"),
-    ("luyen tap",    "activity_box"),
-    ("van dung",     "activity_box"),
-    # Discovery / exploration boxes.
-    ("kham pha",     "activity_box"),
-    # NOTE: "tim hieu" intentionally NOT a key — in CTST "Tìm hiểu về …" is a
-    # section header on white (body text), not a coloured info box. It used to
-    # spawn text-only activity boxes (page 174). Real CTST boxes are coloured
-    # and matched by the keys above.
-    # Summary / overview.
-    ("tong ket",     "activity_box"),
-    ("on tap",       "activity_box"),
-    # Lab / experiment.
-    ("thuc hanh",    "activity_box"),
-    ("thi nghiem",   "activity_box"),
-    # "Em có biết" style appears occasionally.
-    ("em co biet",   "textbook_info_box"),
-    ("mo rong",      "activity_box"),
-]
-
-
-class CtsstImageProcessor(ImageProcessor):
-    """Image ETL for SGK CTST (Chân Trời Sáng Tạo) publisher.
-
-    CTST differs from CD in ways that need their OWN logic (kept here, not in
-    the shared base, so CD stays untouched):
-
-    1. Caption format ``▲ Hình X.Y`` — the filled triangle is OCR-mangled
-       (`_classify_text_anchors` override + `_CTST_FIG_CAPTION_REGEX`).
-    2. Caption is **left-aligned under a figure that often spans the full
-       content width**. CD's centred-caption assignment clips the right half of
-       such a figure (page 64 biogas, page 135 food-chain), so CTST gets its
-       own band-based builder ``_build_figure_composites`` below.
-    3. Sub-figure splitting (per-photo crops) IS wanted for CTST grids
-       (food-chain circles, stopwatch a/b) — enabled here.
+    `pdf_filename` được giữ trong chữ ký vì mọi call site đang truyền nó và nó
+    sẽ cần lại nếu có nhà xuất bản thứ hai; hiện tại nó không định tuyến gì.
+    `KnttImageProcessor` là lớp DUY NHẤT được QA trên corpus này (D-45, D-46) —
+    lớp cơ sở `ImageProcessor` chỉ còn là phần dùng chung.
     """
-
-    # Override: accept CTST caption format.
-    _INFO_BOX_TITLE_KEYS: List[Tuple[str, str]] = _CTST_INFO_BOX_TITLE_KEYS
-
-    # ── CTST-specific tuning (kept separate from CD/KNTT) ──
-    # CTST info/activity boxes are always coloured panels; a bare title on
-    # white (section header / experiment prose) must NOT become an image.
-    _INFO_REQUIRE_VISUAL: bool = True
-    _INFO_MIN_VIS: float = 0.045
-    # CTST captions are '▲ Hình X.Y' and the triangle frequently corrupts the
-    # page-level OCR of the whole line; recovering the caption by re-OCRing the
-    # strip below each detected photo is essential here.
-    _RECOVER_CAPTIONS_BELOW_PHOTOS: bool = True
-    # CTST figures are captioned grids (food-chain circles "Cỏ / Châu chấu / …",
-    # stopwatch a)/b)) — split them into per-photo sub-figures.
-    _SPLIT_SUBFIGURES_BY_TITLE: bool = True
-    # CTST titled figures are single-row photo strips; its multi-component
-    # diagrams (biogas flow chart, page 64) carry internal labels at many
-    # heights — cap title-split to one row so those diagrams stay whole.
-    _SUBFIG_TITLE_MAX_ROWS: int = 1
-    # CTST has pale building/landscape photos OWL misses entirely (page 59
-    # "Hình 11.9") — enable the texture-based photo fallback.
-    _DETECT_TEXTURED_PHOTOS: bool = True
-    # A CTST figure sits in the vertical BAND above its caption; cap that band
-    # so the first caption on a page can't reach decorative header art.
-    _CTST_FIG_MAX_BAND_FRAC: float = 0.55
-
-    def _build_figure_composites(
-        self,
-        figure_caps: List[Dict[str, object]],
-        text_lines: List[Dict[str, object]],
-        visual_regions: List[Tuple[int, int, int, int]],
-        question_prompts: List[Dict[str, object]],
-        info_titles: List[Dict[str, object]],
-        sub_labels: List[Dict[str, object]],
-        exclusion_zones: List[Tuple[int, int, int, int]],
-        page_width: int,
-        page_height: int,
-    ) -> List[Dict[str, object]]:
-        """CTST figure builder — band-based, full-width (separate from CD).
-
-        CTST's ``▲ Hình X.Y`` caption is left-aligned at the BOTTOM of a figure
-        that frequently spans the full content width. CD's centred-caption
-        assignment then clips the right half (page 64, 135). Here each caption
-        instead claims EVERY visual cell in the vertical band between it and the
-        previous caption / info title above it, and the figure bbox is the union
-        of those cells — so a full-width figure is captured whole, while a
-        half-width figure still bounds tightly to its own cells.
-
-        Question prompts are deliberately NOT used as the band ceiling: a CTST
-        right-column prompt frequently sits at the same height as a left-column
-        figure and would wrongly truncate the band (page 135 Hình 29.3).
-        """
-        outputs: List[Dict[str, object]] = []
-        if not figure_caps:
-            return outputs
-
-        caps = sorted(figure_caps, key=lambda c: int(c["bbox"][1]))  # type: ignore[index]
-        # Ceilings: bottoms of OTHER captions / info titles / exclusion zones
-        # above a caption. (Prompts excluded on purpose — see docstring.)
-        ceiling_bottoms = (
-            [int(c["bbox"][3]) for c in figure_caps]  # type: ignore[index]
-            + [int(t["bbox"][3]) for t in info_titles]  # type: ignore[index]
-            + [int(z[3]) for z in exclusion_zones]
-        )
-        max_band = int(page_height * self._CTST_FIG_MAX_BAND_FRAC)
-
-        # Each caption's vertical band [band_top, caption_top] and x-centre.
-        band_info: List[Dict[str, float]] = []
-        for cap in caps:
-            cx0, cy0, cx1, cy1 = (int(v) for v in cap["bbox"])  # type: ignore[misc]
-            ceiling = 0
-            for bottom in ceiling_bottoms:
-                if bottom < cy0 - 2:
-                    ceiling = max(ceiling, bottom)
-            band_info.append({
-                "top": float(max(ceiling, cy0 - max_band)),
-                "cap_top": float(cy0), "ccx": (cx0 + cx1) / 2.0})
-
-        # Assign each visual cell to the NEAREST caption (by x-centre) among the
-        # captions whose band contains it. Side-by-side figures sharing a y-band
-        # (page 58 Hình 11.4 ship + 11.5 gears) thus split by column, while a
-        # lone caption over a full-width figure (food chain) claims every cell.
-        assigned_by_cap: List[List[Tuple[int, int, int, int]]] = [
-            [] for _ in caps]
-        for raw in visual_regions:
-            vx0, vy0, vx1, vy1 = (int(v) for v in raw)
-            vcy = (vy0 + vy1) / 2.0
-            vcx = (vx0 + vx1) / 2.0
-            if any(self._coverage_ratio((vx0, vy0, vx1, vy1), zone) > 0.45
-                   for zone in exclusion_zones):
-                continue
-            candidates = [i for i, b in enumerate(band_info)
-                          if b["top"] <= vcy <= b["cap_top"]]
-            if not candidates:
-                continue
-            best = min(candidates,
-                       key=lambda i: abs(vcx - band_info[i]["ccx"]))
-            assigned_by_cap[best].append((vx0, vy0, vx1, vy1))
-
-        for cap_index, cap in enumerate(caps):
-            cx0, cy0, cx1, cy1 = (int(v) for v in cap["bbox"])  # type: ignore[misc]
-            assigned = assigned_by_cap[cap_index]
-            if not assigned:
-                continue
-
-            x0 = min([cx0] + [r[0] for r in assigned])
-            y0 = min(r[1] for r in assigned)
-            x1 = max([cx1] + [r[2] for r in assigned])
-            pad_x = int(page_width * 0.008)
-            pad_y = int(page_height * 0.006)
-            bbox = (
-                max(0, x0 - pad_x), max(0, y0 - pad_y),
-                min(page_width, x1 + pad_x), min(page_height, cy1 + pad_y),
-            )
-            # A prompt that slipped into the figure top is trimmed off.
-            bbox = self._trim_region_top_to_exclude_prompt(
-                bbox, text_lines, page_height)
-
-            sub_inside = sum(
-                1 for s in sub_labels
-                if bbox[0] - 5 <= int(s["bbox"][0])  # type: ignore[index]
-                and int(s["bbox"][2]) <= bbox[2] + 5  # type: ignore[index]
-                and bbox[1] - 5 <= int(s["bbox"][1]) <= bbox[3] + 12)  # type: ignore[index]
-            label = ("composite_figure"
-                     if sub_inside >= 1 and len(assigned) >= 2
-                     else "single_figure")
-            outputs.append({
-                "bbox": bbox,
-                "image_type": label,
-                "caption_text": cap["text"],
-                "caption_bbox": cap["bbox"],
-                "assigned_regions": assigned,
-            })
-        return outputs
-
-    def detect_regions_anchor_first(
-        self,
-        pil_img: Image.Image,
-        img_array: np.ndarray,
-        text_lines: Optional[List[Dict[str, object]]] = None,
-    ) -> Dict[str, object]:
-        """CTST override: recover ``▲ Hình`` captions the page OCR missed.
-
-        The filled-triangle prefix makes Tesseract drop whole caption lines on
-        some pages (page 29: only 'Hình 6.4' is read, so 'Hình 6.2/6.3' vanish
-        and the three figures collapse into one). Before building, re-OCR the
-        strip below each detected cell and inject any recovered ``Hình X.Y`` as
-        a synthetic caption line, so the band builder sees all three captions.
-        """
-        if text_lines is None:
-            text_lines = self._collect_page_text_lines(pil_img)
-        text_lines = self._inject_recovered_captions(
-            pil_img, img_array, text_lines)
-        return super().detect_regions_anchor_first(
-            pil_img, img_array, text_lines=text_lines)
-
-    def _inject_recovered_captions(
-        self,
-        pil_img: Image.Image,
-        img_array: np.ndarray,
-        text_lines: List[Dict[str, object]],
-    ) -> List[Dict[str, object]]:
-        page_width, page_height = pil_img.size
-
-        def fig_number(text: str) -> str:
-            match = re.search(r"H[iì]nh\s+(\d+(?:\.\d+)?)", text,
-                              flags=re.IGNORECASE)
-            return match.group(1) if match else ""
-
-        # Figure numbers the page OCR already produced — never re-inject one,
-        # so a caption read by both passes can't spawn a duplicate figure
-        # (page 10 "Hình 2.10").
-        seen_numbers = {fig_number(str(ln["text"]))
-                        for ln in text_lines
-                        if _CTST_FIG_CAPTION_REGEX.match(str(ln["text"]).strip())}
-        seen_numbers.discard("")
-        # Cheap CV cell candidates (no OWL): framed panels + object blobs +
-        # textured pale photos (so a building photo whose caption the page OCR
-        # dropped — page 59 "Hình 11.9" — gets its strip re-OCR'd).
-        cells = self._dedupe_visual_regions(
-            list(self._detect_framed_regions(img_array))
-            + list(self._detect_object_blobs(img_array))
-            + list(self._detect_textured_photo_regions(img_array)),
-            min_area=int(page_width * page_height * 0.004),
-            iou_threshold=0.5,
-        )
-        recovered: List[Dict[str, object]] = []
-        for cell in cells:
-            result = self._reocr_caption_below(
-                pil_img, cell, page_width, page_height)
-            if not result:
-                continue
-            caption_text, strip_bbox = result
-            number = fig_number(caption_text)
-            if not number or number in seen_numbers:
-                continue
-            seen_numbers.add(number)
-            recovered.append({"text": caption_text, "bbox": strip_bbox})
-        if recovered:
-            text_lines = list(text_lines) + recovered
-            text_lines.sort(key=lambda ln: int(ln["bbox"][1]))
-        return text_lines
-
-    def _classify_text_anchors(
-        self,
-        text_lines: List[Dict[str, object]],
-    ) -> Dict[str, List[Dict[str, object]]]:
-        """Same as parent but treats '▲/À/Á Hình X.Y' as a figure caption."""
-        figure_caps: List[Dict[str, object]] = []
-        table_caps: List[Dict[str, object]] = []
-        info_titles: List[Dict[str, object]] = []
-        sub_labels: List[Dict[str, object]] = []
-        question_prompts: List[Dict[str, object]] = []
-        tool_labels: List[Dict[str, object]] = []
-
-        for index, line in enumerate(text_lines):
-            text = str(line["text"]).strip()
-            bbox = tuple(int(v) for v in line["bbox"])  # type: ignore[misc]
-
-            # CTST figure caption (with or without triangle prefix).
-            if _CTST_FIG_CAPTION_REGEX.match(text):
-                clean = _CTST_TRIANGLE_PREFIX.sub("", text)
-                # Keep the clean text in the entry so metadata shows "Hình…"
-                entry: Dict[str, object] = {
-                    "index": index,
-                    "text": clean,
-                    "bbox": bbox,
-                }
-                split_entries = self._split_merged_figure_caption(entry)
-                # Table caption check on clean text.
-                for se in split_entries:
-                    if TABLE_CAPTION_STRICT_REGEX.match(str(se["text"])):
-                        table_caps.append(se)
-                    else:
-                        figure_caps.append(se)
-                continue
-
-            if TABLE_CAPTION_STRICT_REGEX.match(text):
-                table_caps.append({
-                    "index": index, "text": text, "bbox": bbox})
-                continue
-
-            info_label = self._match_info_box_title(text)
-            if info_label:
-                info_titles.append({
-                    "index": index, "text": text,
-                    "bbox": bbox, "label": info_label})
-                continue
-
-            if SUB_FIGURE_LABEL_REGEX.match(text):
-                sub_labels.append({
-                    "index": index, "text": text, "bbox": bbox})
-
-            if self._is_question_prompt_text(text):
-                question_prompts.append({
-                    "index": index, "text": text, "bbox": bbox})
-                continue
-
-            if TOOL_GROUP_LABEL_REGEX.match(text):
-                tool_labels.append({
-                    "index": index, "text": text, "bbox": bbox})
-                continue
-
-        return {
-            "figure_captions":   figure_caps,
-            "table_captions":    table_caps,
-            "info_titles":       info_titles,
-            "sub_labels":        sub_labels,
-            "question_prompts":  question_prompts,
-            "tool_group_labels": tool_labels,
-        }
+    return KnttImageProcessor(status_tracker=status_tracker)
 
 
 # ---------------------------------------------------------------------------

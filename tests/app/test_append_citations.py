@@ -5,13 +5,13 @@ from src.app.api import append_citations
 
 def _cits():
     return build_citations([Document(page_content="x", metadata={
-        "source": "SGK KHTN 7 CTST.pdf", "page": 40, "region_type": "body"})])
+        "source": "SGK_KHTN_7_KNTT", "page": 40, "region_type": "body"})])
 
 
 def test_appends_sources_block():
     out = append_citations("Quang hợp là quá trình.", _cits())
     assert "📚 Nguồn:" in out
-    assert "SGK KHTN 7 (CTST), tr. 40" in out
+    assert "Khoa học tự nhiên 7 (Kết nối tri thức), tr. 40" in out
 
 
 def test_suppressed_on_fallback_answer():

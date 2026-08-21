@@ -6,7 +6,6 @@ from src.etl.cleaner import clean_vietnamese_text
 from src.etl.processing_status import ProcessingStatus, compute_file_hash, compute_string_hash
 from src.etl.image_processor import (
     ImageProcessor,
-    CtsstImageProcessor,
     KnttImageProcessor,
     make_image_processor,
     get_pdf_variant,
@@ -24,7 +23,6 @@ __all__ = [
     "compute_file_hash",
     "compute_string_hash",
     "ImageProcessor",
-    "CtsstImageProcessor",
     "KnttImageProcessor",
     "make_image_processor",
     "get_pdf_variant",

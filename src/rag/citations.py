@@ -10,10 +10,15 @@ from typing import List, Optional
 
 from langchain_core.documents import Document
 
-from ..etl.image_processor import get_pdf_variant
 from .query_intent import strip_accents
 
-_PUBLISHER = {"cd": "CD", "ctst": "CTST", "kntt": "KNTT"}
+# Nhãn sách cho NGƯỜI ĐỌC. Trích dẫn hiện ra trước mắt học sinh và giáo viên, nên
+# "SGK_KHTN_6 (KNTT)" — tên thư mục lẫn viết tắt — là không đọc được. Bảng dưới
+# đây chỉ dịch phần viết tắt; không suy diễn gì thêm.
+_PUBLISHER_FULL = {"KNTT": "Kết nối tri thức"}
+# `SGK_KHTN_6_KNTT` / `SGK KHTN 6 KNTT.pdf` -> lớp 6, nhà xuất bản KNTT.
+_BOOK_ID = re.compile(
+    r"^SGK[\s_]+KHTN[\s_]+(\d{1,2})[\s_]+([A-Za-z]+)$", re.IGNORECASE)
 
 # (accent-free keyword, display label). "cau hoi" also triggers on a "?" line.
 _SECTION_KEYWORDS = [
@@ -32,17 +37,27 @@ _GENERIC_SECTION = {
 
 
 def format_book_name(source: str) -> str:
+    """Tên sách để HIỂN THỊ trong trích dẫn.
+
+    `SGK_KHTN_6_KNTT` -> `Khoa học tự nhiên 6 (Kết nối tri thức)`.
+
+    Tên nào KHÔNG khớp khuôn thì trả về nguyên văn (đã bỏ `.pdf`) — không đoán,
+    vì một nhãn sai trong trích dẫn là chỉ học sinh tới sai quyển sách. Bản cũ
+    dựa vào `get_pdf_variant`, hàm này nay là hằng số nên nó sẽ dán "(KNTT)" lên
+    mọi thứ; ở đây nhà xuất bản đọc từ CHÍNH tên quyển sách.
+    """
     stem = re.sub(r"\.pdf$", "", str(source or ""), flags=re.IGNORECASE).strip()
     if not stem:
         return "Sách giáo khoa"
-    variant = get_pdf_variant(str(source or ""))
-    label = _PUBLISHER.get(variant)
-    if label:
-        pat = re.compile(rf"[\s_\-]*{variant}\s*$", re.IGNORECASE)
-        if pat.search(stem):
-            stem = pat.sub("", stem).strip()
-            return f"{stem} ({label})"
-    return stem
+
+    match = _BOOK_ID.match(stem)
+    if not match:
+        return stem
+    grade, abbrev = match.group(1), match.group(2).upper()
+    publisher = _PUBLISHER_FULL.get(abbrev)
+    if not publisher:
+        return stem
+    return f"Khoa học tự nhiên {grade} ({publisher})"
 
 
 def _fold(text: str) -> str:

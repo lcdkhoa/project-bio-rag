@@ -56,13 +56,17 @@ _BOX_DEFAULTS = {
     "hue_bin": 10,              # độ rộng bin hue khi tách một thành phần
     "hue_split_depth": 1,       # số lần tách theo hue (1 = một cấp lồng)
 }
-_VARIANT_PARAMS = {v: dict(_BOX_DEFAULTS) for v in ("cd", "ctst", "kntt")}
-
 _HUE_MAX = 180          # OpenCV: hue 0..179
 
 
-def _params_for(variant: str) -> dict:
-    return _VARIANT_PARAMS.get(variant, _VARIANT_PARAMS["kntt"])
+def _params_for(variant: str = "") -> dict:
+    """Tham số hộp màu. Ba biến thể cd/ctst/kntt trước đây đều trỏ về CÙNG một
+    bộ số (`_BOX_DEFAULTS`) — một lớp gián tiếp không mang thông tin, và corpus
+    giờ chỉ còn KNTT. Giữ tham số `variant` để call site không phải đổi, nhưng
+    nó không còn chọn gì; muốn có bộ số riêng cho nhà xuất bản khác thì phải ĐO
+    rồi thêm tường minh, chứ không phải sao chép defaults.
+    """
+    return dict(_BOX_DEFAULTS)
 
 
 def _candidate_mask(image: np.ndarray, p: dict) -> np.ndarray:
