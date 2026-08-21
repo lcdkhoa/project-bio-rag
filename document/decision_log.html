@@ -400,6 +400,12 @@
       tags: ["ETL","Layout","OCR","Quality"],
       reverses: "D-46",
     },
+    {
+      id: "D-52", date: "2026-08-21",
+      decision: "**Đường ẢNH để lại doc MỒ CÔI — đã sửa.** `ImageVectorDB.delete_page_documents(source, pages)` xoá doc ảnh cũ của đúng những trang vừa crop lại, trên **cả hai** collection (`biology_images` + `biology_image_metadata`), và được gọi trong CẢ `run_etl_image_only` lẫn `run_etl` ngay trước `add_documents`. Phát hiện khi chạy thử notebook Colab (Task 7), không phải khi đọc code.",
+      notes: "**Vì sao upsert không cứu được:** id của doc ảnh là `image_id` = **hash của CROP**. Crop đổi thì id đổi, nên doc cũ không bị upsert đè mà **sống sót**. Đường text đã có `_delete_page_chunks` từ trước; đường ảnh thì không có gì tương ứng, và câu trong CLAUDE.md (\"a version bump never leaves orphaned chunks behind\") chỉ đúng cho **text**. ▸ **Đo trên DB scratch 12 trang:** thay nội dung `page_025.png` rồi chạy lại `--etl` -> trang đó có **3** doc ảnh (`Hình 8.1` cũ + `Hình 11.6`/`Hình 11.7` mới), tổng 17 -> **19**. Crop mồ côi vẫn tra ra được, tức học sinh có thể được trả về một hình **không còn tồn tại trên trang** — nguyên tắc 1. Sau khi sửa, cùng phép thử: log in `xoá 1 doc ảnh cũ của 1 trang trước khi ghi bản mới`, trang 25 còn đúng `['Hình 11.6', 'Hình 11.7']`, tổng **18 = 17 − 1 + 2**. ▸ **Mức độ cấp thiết:** không phải chuyện lý thuyết. `IMAGE_EXTRACTION_VERSION` vừa bump `v18_m3_g4` -> `v19_pill_kernels` (D-51), nghĩa là **mọi** trang sẽ được crop lại; nếu không có bước xoá này thì hai collection ảnh sẽ gần như nhân đôi và lẫn crop của bản trích xuất đã bị thay thế. ▸ **Thứ tự có chủ ý:** xoá **SAU** khi `extract_images_from_source` trả về (extraction raise thì không xoá gì, lần sau làm lại), và xoá **kể cả khi `image_docs` rỗng** — một trang giờ không còn hình thì doc cũ của nó cũng phải đi. ▸ Lỗi xoá được log, không raise: một lỗi xoá không được làm sập cả ETL, nhưng cũng không được im lặng. ▸ Test `tests/rag/test_image_delete_page_documents.py` dùng collection GIẢ (không nạp CLIP) để khoá hợp đồng: xoá trên cả hai collection, đúng where-clause, dedupe+sort số trang, no-op khi danh sách rỗng, lỗi thì không raise.",
+      tags: ["ETL","Quality","Retrieval"],
+    },
   ];
 
   const $ = (s) => document.querySelector(s);

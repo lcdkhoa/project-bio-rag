@@ -255,6 +255,13 @@ def run_etl_image_only():
                 ocr_text_per_page=ocr_text_per_page,
             )
 
+            # Xoá doc ảnh CŨ của đúng những trang vừa crop lại, TRƯỚC khi ghi bản
+            # mới — đối xứng với `_delete_page_chunks` của đường text. Chạy sau khi
+            # extraction đã thành công (extraction raise thì không xoá gì, lần sau
+            # làm lại). Xoá cả khi `image_docs` rỗng: một trang giờ không còn hình
+            # thì doc cũ của nó cũng phải đi, không được sống sót thành mồ côi.
+            image_vdb.delete_page_documents(source.name, pages_to_process)
+
             if image_docs:
                 image_vdb.add_documents(image_docs)
                 logger.info(
@@ -351,6 +358,9 @@ def run_etl():
                     pages=pages_needing_images,
                     ocr_text_per_page=ocr_text_per_page,
                 )
+                # Xem chú thích ở `run_etl_image_only`: doc ảnh cũ của đúng những
+                # trang này phải đi trước khi ghi bản mới, kể cả khi không còn hình.
+                image_vdb.delete_page_documents(source.name, pages_needing_images)
                 if image_docs:
                     image_vdb.add_documents(image_docs)
                     logger.info(

@@ -360,6 +360,48 @@ class ImageVectorDB:
 
         return len(ids)
 
+    def delete_page_documents(self, source_name: str,
+                              page_numbers: List[int]) -> int:
+        """Xoá MỌI doc ảnh của các trang nguồn đã cho, trên CẢ hai collection.
+
+        Đối xứng với `_delete_page_chunks` của đường text. Thiếu bước này thì mỗi
+        lần crop lại một trang (đổi nội dung trang, hoặc bump
+        `IMAGE_EXTRACTION_VERSION`) sẽ **CỘNG THÊM** doc mới cạnh doc cũ chứ không
+        thay: `image_id` là hash của crop, crop đổi thì id đổi, nên doc cũ không bị
+        upsert đè mà sống sót thành mồ côi. Đo được: thay nội dung 1 trang trong
+        một DB 12 trang làm trang đó có **3** doc ảnh (1 cũ + 2 mới), và crop mồ
+        côi vẫn tra ra được — nghĩa là học sinh có thể được trả về một hình đã
+        không còn tồn tại trên trang.
+
+        Trả về số doc đã xoá (đếm trên collection metadata).
+        """
+        pages = sorted({int(p) for p in page_numbers})
+        if not pages:
+            return 0
+
+        where = {"$and": [{"pdf_filename": {"$eq": str(source_name)}},
+                          {"page_number": {"$in": pages}}]}
+        removed = 0
+        try:
+            found = self._metadata_chroma._collection.get(where=where)
+            removed = len(found.get("ids") or [])
+        except Exception as e:
+            logger.warning(f"Không đếm được doc ảnh cũ của {source_name}: {e}")
+
+        for label, collection in (("metadata", self._metadata_chroma._collection),
+                                  ("visual", self._chroma._collection)):
+            try:
+                collection.delete(where=where)
+            except Exception as e:
+                logger.warning(
+                    f"Không xoá được doc ảnh {label} của {source_name}: {e}")
+
+        if removed:
+            logger.info(
+                f"[{source_name}] xoá {removed} doc ảnh cũ của "
+                f"{len(pages)} trang trước khi ghi bản mới")
+        return removed
+
     # Accent-free stopwords; matched against the accent-stripped form of each
     # token so accented inputs ("hình", "tôi") are still recognised.
     _STOPWORDS = {
