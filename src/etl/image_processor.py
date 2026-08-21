@@ -631,6 +631,42 @@ class ImageProcessor:
 
         return panels
 
+    # Một "từ" cao gấp hơn ngần này lần chiều cao TRUNG VỊ của chính dòng đó thì
+    # không phải chữ — nó là vệt nhiễu Tesseract quét được trên một bức ảnh.
+    _SMEAR_HEIGHT_FACTOR = 2.0
+    _SMEAR_MIN_WORDS = 3
+
+    @classmethod
+    def _drop_smear_words(cls, words: List[Dict[str, int]]) -> List[Dict[str, int]]:
+        """Bỏ "từ" nhiễu quá cao so với chính dòng của nó.
+
+        Vì sao cần: bước tách theo khe cột (`gutter_gap`) tồn tại để một dòng
+        không vắt ngang hai cột bảng. Đo trên `SGK_KHTN_9_KNTT/page_009`, nó bị
+        vô hiệu hoá đúng theo cách đó — hai vệt nhiễu Tesseract đọc trên tấm ảnh
+        bát sứ (`'`.'` cao **62 px**, `'_'` cao **54 px**, conf 57 và 27) nằm
+        vừa vặn trong khe, nối liền ô ảnh với cột chữ bên cạnh thành MỘT dòng
+        `[126, 260, 492, 322]`. Hộp dòng đó phủ **51,6%** ô ảnh, nên
+        `_filter_text_visual_regions` bỏ ô ảnh vì tưởng là khối chữ, và
+        `Hình 1.7` mất luôn vùng để gán (D-46).
+
+        Phân biệt bằng **chiều cao so với trung vị của chính dòng** chứ không
+        bằng ngưỡng tuyệt đối hay theo confidence: chữ thật trên dòng đó cao
+        18–24 px, hai vệt kia 54–62. Tự hiệu chỉnh nên một dòng tiêu đề (chữ to
+        đều) không bị đụng tới, và **không** dùng ngưỡng conf — D-38 đã đo được
+        là lọc theo conf xoá cả chữ thật ("Em có biết?" conf 56).
+        """
+        if len(words) < cls._SMEAR_MIN_WORDS:
+            return words
+        heights = sorted(w["y1"] - w["y0"] for w in words)
+        middle = len(heights) // 2
+        median = (heights[middle] if len(heights) % 2
+                  else (heights[middle - 1] + heights[middle]) / 2.0)
+        if median <= 0:
+            return words
+        kept = [w for w in words
+                if (w["y1"] - w["y0"]) <= cls._SMEAR_HEIGHT_FACTOR * median]
+        return kept or words
+
     def _collect_page_text_lines(
         self,
         pil_img: Image.Image,
@@ -696,6 +732,7 @@ class ImageProcessor:
         lines: List[Dict[str, object]] = []
         for key in order:
             words = sorted(grouped[key], key=lambda w: w["x0"])
+            words = self._drop_smear_words(words)
             # Break into segments at the column gutter.
             segments: List[List[Dict[str, int]]] = [[]]
             prev_x1: Optional[int] = None
@@ -733,7 +770,8 @@ class ImageProcessor:
 
             rgb = np.array(pil_img)
             bgr = np.ascontiguousarray(rgb[:, :, ::-1])
-            found = figure_label_lines(bgr)
+            found = [dict(item, from_pill=True)
+                     for item in figure_label_lines(bgr)]
             if found:
                 logger.info(
                     f"[pill] {len(found)} nhãn hình đọc được từ pill: "
@@ -3013,6 +3051,12 @@ class ImageProcessor:
         crop = pil_img.crop(tuple(region["bbox"]))  # type: ignore[arg-type]
         return self._visual_content_score(crop) < self._INFO_MIN_VIS
 
+    # Hình có nhãn vs Ô: hai lớp khác nhau, lồng nhau được (xem chú thích trong
+    # `_suppress_overlapping_regions`).
+    _FIGURE_TYPES = frozenset(
+        {"single_figure", "composite_figure", "sub_figure"})
+    _BOX_TYPES = frozenset({"textbook_info_box", "activity_box", "tool_group"})
+
     def _suppress_overlapping_regions(
         self,
         regions: List[Dict[str, object]],
@@ -3042,6 +3086,16 @@ class ImageProcessor:
                 ktype = keeper.get("image_type")
                 # A sub_figure legitimately nests inside its composite parent.
                 if {rtype, ktype} == {"sub_figure", "composite_figure"}:
+                    continue
+                # …và một HÌNH có nhãn nằm trong một Ô (info/activity) cũng là
+                # lồng nhau hợp lệ, không phải trùng lặp: SGK đặt ảnh thí nghiệm
+                # ngay trong ô "Thí nghiệm …" rất thường xuyên. Đo trên
+                # `SGK_KHTN_8_KNTT/page_013`: ảnh của `Hình 2.2` nằm 89% trong ô
+                # activity_box nên bị luật 0,85 nuốt mất, dù nhãn hình đã đọc
+                # đúng và vùng đã dựng đúng (D-46).
+                if (rtype in self._FIGURE_TYPES and ktype in self._BOX_TYPES) \
+                        or (ktype in self._FIGURE_TYPES
+                            and rtype in self._BOX_TYPES):
                     continue
                 if self._iou(rb, kb) > 0.60:
                     drop = True
@@ -4719,6 +4773,7 @@ class KnttImageProcessor(ImageProcessor):
                         "index": index,
                         "text": clean,
                         "bbox": bbox,
+                        "from_pill": bool(line.get("from_pill")),
                     }
                     # Table caption check on clean text.
                     if TABLE_CAPTION_STRICT_REGEX.match(clean):
@@ -4788,8 +4843,21 @@ class KnttImageProcessor(ImageProcessor):
             match = re.search(r"(\d+(?:[.,]\d+)?)[a-h]?", str(text))
             return match.group(1).replace(",", ".") if match else str(text)
 
-        def well_formed(cap: Dict[str, object]) -> bool:
-            return bool(re.search(r"\d+\s*[.,]\s*\d+", str(cap["text"])))
+        def rank(cap: Dict[str, object]) -> tuple:
+            """Ưu tiên: (1) đọc từ PILL, (2) đúng dạng `N.M`, (3) dài hơn.
+
+            Pill đứng đầu vì nó LÀ cái nhãn in trên trang. Một dòng `Hình N.M`
+            ở chỗ khác chỉ là **trích dẫn trong thân bài** — và trích dẫn có thể
+            tự đứng thành một dòng riêng khi ô câu hỏi xuống dòng, nên luật
+            "phải bắt đầu bằng marker" không loại được nó. Đo trên
+            `SGK_KHTN_8_KNTT/page_007`: câu hỏi "… hoá chất ở / Hình 1.1." xuống
+            dòng làm `Hình 1.1.` thành một dòng, dài hơn nhãn pill `Hình 1.1`
+            nên luật "dài hơn thắng" chọn nhầm nó; anchor nhảy sang bên phải
+            trang, xa ba tấm ảnh, và `Hình 1.1` không sinh được vùng nào (D-46).
+            """
+            return (bool(cap.get("from_pill")),
+                    bool(re.search(r"\d+\s*[.,]\s*\d+", str(cap["text"]))),
+                    len(str(cap["text"])))
 
         def contained(a, b) -> float:
             """Phần diện tích của `a` nằm trong `b`."""
@@ -4811,16 +4879,28 @@ class KnttImageProcessor(ImageProcessor):
                     break
             else:
                 groups.append([cap])
-        merged = [max(group, key=lambda c: (well_formed(c), len(str(c["text"]))))
-                  for group in groups]
+        # Trong một nhóm chồng chỗ: lấy SỐ HIỆU của bản tốt nhất (pill) nhưng
+        # lấy BBOX là hợp của cả nhóm. Hai thứ này đến từ hai nguồn khác nhau và
+        # mỗi nguồn giỏi một việc: pill cho **định danh** đúng, còn dòng chú
+        # thích OCR đầy đủ cho **bề ngang** thật của caption. Đo trên
+        # `SGK_KHTN_8_KNTT/page_009`: chỉ giữ pill `Hình 1.4` (rộng 96 px) thì
+        # caption quá hẹp, không ô ảnh nào giao ngang với nó nữa và `Hình 1.4`
+        # mất vùng — dù số hiệu đọc đúng. Hợp bbox với dòng
+        # `[ Hình 1.4 ] Đo huyết áp …` (rộng 433 px) thì được cả hai.
+        merged = []
+        for group in groups:
+            best = dict(max(group, key=rank))
+            boxes = [tuple(int(v) for v in c["bbox"]) for c in group]
+            best["bbox"] = (min(b[0] for b in boxes), min(b[1] for b in boxes),
+                            max(b[2] for b in boxes), max(b[3] for b in boxes))
+            merged.append(best)
 
         # 2. rồi mới gộp theo số hình
         best: Dict[str, Dict[str, object]] = {}
         for cap in merged:
             key = number_key(str(cap["text"]))
             current = best.get(key)
-            if current is None or (well_formed(cap), len(str(cap["text"]))) > \
-                    (well_formed(current), len(str(current["text"]))):
+            if current is None or rank(cap) > rank(current):
                 best[key] = cap
         return sorted(best.values(),
                       key=lambda c: int(c["bbox"][1]))  # type: ignore[index]
@@ -4860,11 +4940,32 @@ class KnttImageProcessor(ImageProcessor):
         caps = sorted(
             figure_caps,
             key=lambda c: (int(c["bbox"][1]) + int(c["bbox"][3])) / 2.0)  # type: ignore[index]
+        # Ô nằm trong vùng loại trừ (info/activity box) thì bỏ — TRỪ KHI ngay
+        # cạnh nó có một nhãn `Hình N.M`. Vùng loại trừ tồn tại để nội dung của
+        # một cái ô đừng biến thành hình; nhưng một cái ô có nhãn hình kề bên
+        # thì đã được ANCHOR chứng minh là hình thật, và luật cũ vẫn giết nó.
+        # Đo trên `SGK_KHTN_8_KNTT/page_013`: ảnh thí nghiệm (734,197,975,552)
+        # nằm **100%** trong ô "Thí nghiệm về biến đổi hoá học"
+        # (38,108,1055,567) nên bị loại, và `Hình 2.2` — nhãn đọc đúng, chỉ nằm
+        # dưới ô 12 px — không còn ô nào để gán (D-46).
+        anchor_reach = int(page_height * 0.06)
+
+        def caption_adjacent(vr: Tuple[int, int, int, int]) -> bool:
+            for cap in figure_caps:
+                cx0, cy0, cx1, cy1 = (int(v) for v in cap["bbox"])  # type: ignore[misc]
+                if min(vr[2], cx1) - max(vr[0], cx0) <= 0:
+                    continue                      # không giao ngang -> không phải của nó
+                if -anchor_reach <= cy0 - vr[3] <= anchor_reach:
+                    return True                   # nhãn ngay DƯỚI ô
+                if -anchor_reach <= vr[1] - cy1 <= anchor_reach:
+                    return True                   # nhãn ngay TRÊN ô
+            return False
+
         cells: List[Tuple[int, int, int, int]] = []
         for raw in visual_regions:
             vr = tuple(int(v) for v in raw)
             if any(self._coverage_ratio(vr, zone) > 0.45
-                   for zone in exclusion_zones):
+                   for zone in exclusion_zones) and not caption_adjacent(vr):
                 continue
             cells.append(vr)
         if not cells:

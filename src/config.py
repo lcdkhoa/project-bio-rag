@@ -83,7 +83,7 @@ OWL_VIT_MODEL = os.getenv("OWL_VIT_MODEL", "google/owlvit-base-patch32")
 OWL_VIT_CONFIDENCE_THRESHOLD = float(
     os.getenv("OWL_VIT_CONFIDENCE_THRESHOLD", "0.1"))
 IMAGE_EXTRACTION_VERSION = os.getenv(
-    "IMAGE_EXTRACTION_VERSION", "v17_png_source")
+    "IMAGE_EXTRACTION_VERSION", "v18_m3_g4")
 # Gate re-OCR cho ĐƯỜNG TEXT. Trước đây chỉ ảnh có version gate nên đổi logic
 # OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
 TEXT_EXTRACTION_VERSION = os.getenv(

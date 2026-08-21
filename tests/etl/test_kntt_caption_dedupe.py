@@ -45,3 +45,27 @@ def test_captions_are_returned_in_reading_order():
     caps = dedupe([cap("Hình 1.11", (800, 1115, 906, 1142)),
                    cap("Hình 1.7", (122, 333, 225, 362))])
     assert [c["text"] for c in caps] == ["Hình 1.7", "Hình 1.11"]
+
+
+def pill(text, bbox):
+    return {"index": 0, "text": text, "bbox": bbox, "from_pill": True}
+
+
+def test_a_pill_beats_a_body_reference_carrying_the_same_number():
+    """Ô câu hỏi xuống dòng làm `Hình 1.1.` thành một dòng riêng, trông y hệt
+    một caption. Nhãn PILL mới là cái nhãn in trên trang (D-46)."""
+    caps = dedupe([cap("Hình 1.1.", (826, 933, 914, 951)),      # trích dẫn
+                   pill("Hình 1.1", (318, 1081, 414, 1109))])   # nhãn thật
+    assert len(caps) == 1
+    assert caps[0]["bbox"] == (318, 1081, 414, 1109)
+
+
+def test_an_overlapping_pill_and_full_caption_merge_to_the_union_bbox():
+    """Pill cho SỐ HIỆU đúng, dòng chú thích đầy đủ cho BỀ NGANG thật. Giữ pill
+    mà bỏ bề ngang thì caption quá hẹp, không ô ảnh nào giao ngang -> mất hình."""
+    caps = dedupe([cap("[ Hình 1.4 ] Đo huyết áp bằng huyết áp kế",
+                       (582, 1038, 1015, 1074)),
+                   pill("Hình 1.4", (586, 1043, 682, 1070))])
+    assert len(caps) == 1
+    assert caps[0]["text"] == "Hình 1.4"          # số hiệu từ pill
+    assert caps[0]["bbox"] == (582, 1038, 1015, 1074)   # bề ngang từ caption
