@@ -28,6 +28,11 @@ from src.test.qa_citation_page import (
     tokens_of,
 )
 
+# Ngưỡng CỐ ĐỊNH của riêng test, CỐ Ý không import từ `qa_citation_page`: các test
+# dưới đây khoá HÀNH VI của `page_supports_answer` (ba nhánh: không token đặc
+# trưng / đáp án ngắn / phủ >= ngưỡng), chứ không khoá giá trị cấu hình. Nên nó
+# không đổi theo lần hiệu chỉnh nào. Giá trị production hiện là 0,50 (D-57) và
+# việc hai số này khác nhau là bình thường — đừng "sửa" cho khớp.
 COVERAGE_MIN = 0.60
 
 # Ba "trang" tí hon đủ để IDF có nghĩa: từ có ở cả ba -> trọng số ~0.

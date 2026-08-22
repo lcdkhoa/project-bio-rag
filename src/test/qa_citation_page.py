@@ -87,7 +87,19 @@ logging.basicConfig(level=logging.WARNING,
 logger = logging.getLogger(__name__)
 
 G3_THRESHOLD = 0.95
-COVERAGE_MIN = 0.60
+# HIỆU CHỈNH BẰNG SỐ (2026-08-22, D-57) — không phải con số gõ tay.
+# Quét 0,25..0,65 và so với judge trên ĐÚNG những citation mà ngưỡng này thực sự
+# quyết định (`informative_tokens > SHORT_ANSWER_TOKENS`; đáp án ngắn đi nhánh
+# khác nên ngưỡng không áp dụng): 171/231 citation thuộc nhóm đó, và cả 37 ca có
+# độ phủ < 0,60 đều đã được judge chấm — tức mẫu là ĐẦY ĐỦ cho việc HẠ ngưỡng.
+#   T=0,60 -> đồng thuận 75,7% (28/37): 9 ca judge nói CÓ mà det loại, 0 ca ngược lại
+#   T=0,50 -> đồng thuận 86,5% (32/37): 4 ca det quá chặt, 1 ca det quá dễ  <-- chọn
+#   T=0,45 -> 78,4% | T=0,40 -> 70,3%
+# Sai số ở 0,60 lệch HẲN về "quá chặt", khớp với nguyên nhân đã tìm ra ở D-56:
+# OCR mất chỉ số dưới nên đáp án có công thức không khớp token được.
+# KHÔNG nâng ngưỡng lên trên 0,60: 134 citation có độ phủ >= 0,60 CHƯA từng được
+# judge chấm, nên nâng lên là quyết định không có phép đo (nguyên tắc 3).
+COVERAGE_MIN = 0.50
 SHORT_ANSWER_TOKENS = 3
 # Token xuất hiện ở hơn nửa số trang thì không mang thông tin phân biệt. Ngưỡng
 # này là idf tương ứng với df = N/2, tính ra chứ không gõ tay.
@@ -501,8 +513,15 @@ def main() -> int:
               f"judge cũng loại {judge_agree['det_no_judge_no']}"
               f"  -> ngưỡng {args.coverage_min} "
               f"{'CÓ THỂ quá chặt' if judge_agree['det_no_judge_yes'] else 'chưa thấy quá chặt'}")
+    elif abs(args.coverage_min - COVERAGE_MIN) < 1e-9:
+        # Ngưỡng mặc định ĐÃ được hiệu chỉnh bằng số (D-57), nên câu cảnh báo cũ
+        # ("CHƯA được hiệu chỉnh") giờ là một lời nói SAI — tệ hơn im lặng.
+        print(f"\n(ngưỡng độ phủ {args.coverage_min} là giá trị ĐÃ hiệu chỉnh "
+              "theo judge — xem D-57; chạy --judge để hiệu chỉnh lại khi bộ test "
+              "hoặc index đổi)")
     else:
-        print("\n(chưa chạy --judge: ngưỡng độ phủ CHƯA được hiệu chỉnh — "
+        print(f"\n(CẢNH BÁO: --coverage-min {args.coverage_min} KHÁC giá trị đã "
+              f"hiệu chỉnh {COVERAGE_MIN} (D-57) và CHƯA được hiệu chỉnh lại — "
               "đừng báo cáo G3 như số chốt)")
 
     passed = measurable > 0 and g3 >= args.threshold
