@@ -105,3 +105,12 @@ database/manifests/*
 # QA output (anh overlay, report.json) — sinh ra, khong commit
 scripts/_out_test_etl_full/
 scripts/_out_g4/
+
+# Output QA/eval tam (overlay PNG + JSON, ~119MB): sinh lai duoc, khong phai nguon.
+# So do that thi nam trong document/decision_log.html, khong nam o day.
+scripts/
+
+# Trang PNG cua gold set G2 (~27MB): sinh lai bang
+# `python -m src.test.qa_ocr_gold --export`. gold.txt/ocr.txt thi VAN commit,
+# vi gold.txt la cong suc doi chieu cua NGUOI.
+src/test/gold_ocr/**/page.png

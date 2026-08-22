@@ -1,0 +1,56 @@
+# OUTPUT CUA MAY — KHONG SUA FILE NAY
+=== [1] body ===
+Ví dụ: Tìm hiểu mối quan hệ giữa độ lớn của lực ma sát trượt và diện tích tiếp xúc
+của vật với mặt phẳng vật chuyển động.
+Bước 1: Đề xuất vấn đề.
+"Tìm hiểu xem độ lớn của lực ma sát trượt có phụ thuộc vào diện tích tiếp xúc của vật
+với mặt phẳng vật chuyển động hay không.
+Bước 2: Đưa ra dự đoán khoa học để giải quyết vấn để.
+Các quan sát hằng ngày cho người ta cảm giác rằng độ lớn của lực ma sát trượt tăng,
+khi diện tích tiếp xúc của vật tăng. Ví dụ, đi giày đế hẹp thì đễ bị trượt ngã hơn đi
+giày đế rộng. Từ đó, người ta có thể dự đoán độ lớn của lực ma sát trượt phụ thuộc
+vào diện tích tiếp xúc của vật: diện tích tiếp xúc càng lớn thì lực ma sát càng mạnh.
+Bước 3: Lập kế hoạch kiểm tra dự đoán.
+Dùng lực kế đo độ lớn của lực ma sát trượt của cùng một vật chuyển động trên mặt
+bàn với những mặt tiếp xúc có diện tích khác nhau.
+Bước 4: Tiến hành thí nghiệm kiểm tra dự đoán và rút ra kết luận.
+Đo lực ma sát trượt của một miếng gỗ hình na
+hộp chữ nhật có kích thước (12 cm x 6 em x c& ti
+3 cm) chuyển động đều trên mặt bàn, trên Z/.
+hai mặt tiếp xúc khác nhau (Hình 1.la và em
+Hình 1.1b). 2) Đo lực ma sát trượt của miếng gỗ
+Kéo lực kế từ từ cho tới khi vật bắt đầu chuyển có diện tích tiếp xúc là 12cm x6 cm
+động đều (lực kế chỉ một giá trị ổn định), thì scm Tem
+đọc số chỉ của lực kế. Số chỉ của lực kế là độ .>
+lớn của lực ma sát trượt. ă_—-
+Thí nghiệm cho thấy khi thay đổi diện tích Z2
+mặt tiếp xúc thì độ lớn của lực ma sát trượt da miếng số
+không thay đổi: Độ lớn của lực ma sát trượt ca diện th úếp x20 vibkt-LA
+không phụ thuộc vào diện tích mặt tiếp xúc.
+Bước 5: Báo cáo kết quả và thảo luận về kết [ Hnh11 DO E Ỉ
+quả thí nghiệm. miếng gỗ có diện tích tiếp xúc khác nhau
+
+|
+
+7
+
+=== [2] info_box ===
+LÊI
+
+Sắp xếp nội dung các thông tin khi nghiên cứu sự hoà tan của một số chất rắn theo các
+
+bước của phương pháp tìm hiểu tự nhiên.
+
+— Tìm hiểu khả năng hoà tan của muối ăn, đường, đá vôi (dạng bột) trong nước.
+
+— Dự đoán trong số các chất muối ăn, đường, đá vôi (dạng bột): chất nào tan, chất nào
+không tan trong nước.
+
+— Thực hiện các bước thí nghiệm: rót cùng một thể tích nước (khoảng 5 mL) vào ba
+ống nghiệm. Thêm vào mỗi ống nghiệm khoảng 1 gam mỗi chất trên và lắc đều
+khoảng 1 - 2 phút. Quan sát và ghi lại kết quả thí nghiệm. So sánh và rút ra kết luận.
+
+— Đề xuất thí nghiệm để kiểm tra dự đoán (chuẩn bị dụng cụ, hoá chất và các bước
+thí nghiệm).
+
+— Viết báo cáo và trình bày quá trình thực nghiệm, thảo luận kết quả thí nghiệm.

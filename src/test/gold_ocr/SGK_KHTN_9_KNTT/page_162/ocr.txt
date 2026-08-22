@@ -1,0 +1,67 @@
+# OUTPUT CUA MAY — KHONG SUA FILE NAY
+=== [1] body ===
+—_ Tính trạng trội biểu hiện ra kiểu hình khi có kiểu gene đồng hợp trội hoặc dị hợp; tính
+trạng lặn chỉ được biểu hiện ra kiểu hình khi có kiểu gene đồng hợp lặn.
+— Nhân tố di truyền tồn tại thành từng cặp trong nhân tế bào, không hoà trộn vào nhau,
+quy định tính trạng của cơ thể sinh vật. Nhân tố di truyền chính là gene hay allele.
+— Kiểu hình là tổ hợp toàn bộ tính trạng của cơ thể sinh vật. Trên thực tế, khi nói đến
+kiểu hình của một cơ thể, người ta chỉ xét đến một vài tính trạng quan tâm.
+— Kiểu gene là tổ hợp toàn bộ gene trong tế bào của cơ thể sinh vật. Trên thực tế, khi nói
+đến kiểu gene của một cơ thể, người ta chỉ xét một vài cặp gene liên quan đến các tính
+trạng được quan tâm.
+—_ Allele là các trạng thái biểu hiện khác nhau của cùng một gene (mỗi allele chính là
+một gene). Một gene có thể có hai, ba hoặc nhiều allele khác nhau.
+— Cơ thể thuần chủng về một tính trạng khi cơ thể có kiểu gene quy định tính trạng đó
+đồng hợp (gồm các allele giống nhau).
+— Dòng thuần (còn gọi là giống thuần chủng) là các cơ thể đồng hợp về tất cả các cặp gene.
+Dòng thuần có đặc tính di truyền đồng nhất và ổn định, các thế hệ sau giống các thế hệ
+trước. Thực tế khi nói đến dòng thuần là chỉ nói đến sự thuần chủng ở một hoặc một
+số tính trạng được nghiên cứu.
+ŒA\
+Lấy ví dụ về tính trạng, tính trạng tương phản, kiểu hình, kiểu gene ở đậu hà lan.
+
+2. Một số kí hiệu
+
+P: cặp bố mẹ thế hệ xuất phát. $: con cái, Ÿ: con đực.
+
+x: kí hiệu phép lai. E: thế hệ con, F,: thế hệ con lai đời thứ nhất,
+
+G: giao tử. E;: thế hệ con sinh ra từ F; tự thụ phấn hoặc giao
+
+phấn giữa các cá thể F,,...
+161
+
+=== [2] info_box ===
+LÊ\
+Ở đậu hà lan, tiến hành lai giữa các cá thể thuần chủng thân cao với thân thấp. F, thu
+được 100% cây thân cao. F„ thu được cả cây thân cao và cây thân thấp với tỉ lệ 3 cây
+thân cao : 1 cây thân thấp.
+1. Hãy sử dụng các kí hiệu và thuật ngữ để mô tả thí nghiệm trên bằng sơ đồ lai.
+2. Dự đoán tính trạng trội, tính trạng lặn trong phép lai trên.
+
+=== [3] info_box ===
+m Di truyền là hiện tượng truyền đạt các tính trạng của
+bố mẹ, tổ tiên cho các thế hệ con cháu. Biến dị là hiện
+tượng con sinh ra có các đặc điểm khác nhau và khác
+bố mẹ.
+
+m Hiện tượng di truyền và biến đị do nhân tố đi truyền
+nằm trong tế bào (sau này gọi là gene) quy định, do
+đó, gene được xem là trung tâm của di truyền học.
+
+= _ Ý tưởng vềnhân tố di truyền của Mendel là cơ sở cho
+những nghiên cứu về gene sau này.
+Ƒ EMĐÃHỌC /£
+
+=== [4] sidebar ===
+EM CÓ THỂ
+
+m Nhận biết đặc điểm
+đi truyền, biến dị
+trên cơ thể em.
+
+m Sử dụng được một
+số thuật ngữ, kí hiệu.
+để xây dựng sơ đồ
+lại.
+Ả EMCÓTHỂ /

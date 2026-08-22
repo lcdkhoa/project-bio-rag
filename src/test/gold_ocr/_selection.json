@@ -1,0 +1,353 @@
+{
+  "n_pages": 24,
+  "archetypes": [
+    "body_only",
+    "with_sidebar",
+    "with_info_box",
+    "figure_heavy",
+    "text_dense",
+    "most_flagged"
+  ],
+  "human_reviewed": false,
+  "scope_note": "Chi do MOT engine (Tesseract vie). Phan consensus 2 engine cua G2 goc KHONG do duoc — PaddleOCR chua cai.",
+  "bias_note": "gold.txt duoc moi bang chinh output OCR, nen CER do duoc la CAN DUOI cua CER that.",
+  "pages": [
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 194,
+      "archetype": "body_only",
+      "chars": 2912,
+      "figures": 0,
+      "flags": 24,
+      "regions": {
+        "body": 8
+      },
+      "n_blocks": 1,
+      "n_chars_ocr": 2291
+    },
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 95,
+      "archetype": "with_sidebar",
+      "chars": 2422,
+      "figures": 3,
+      "flags": 10,
+      "regions": {
+        "body": 5,
+        "sidebar": 1,
+        "info_box": 3
+      },
+      "n_blocks": 5,
+      "n_chars_ocr": 2022
+    },
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 52,
+      "archetype": "with_info_box",
+      "chars": 2969,
+      "figures": 0,
+      "flags": 4,
+      "regions": {
+        "body": 4,
+        "info_box": 6
+      },
+      "n_blocks": 5,
+      "n_chars_ocr": 2734
+    },
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 44,
+      "archetype": "figure_heavy",
+      "chars": 2416,
+      "figures": 4,
+      "flags": 20,
+      "regions": {
+        "body": 4,
+        "info_box": 5
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 1966
+    },
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 30,
+      "archetype": "text_dense",
+      "chars": 2845,
+      "figures": 2,
+      "flags": 18,
+      "regions": {
+        "body": 3,
+        "info_box": 6
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 2284
+    },
+    {
+      "book": "SGK_KHTN_6_KNTT",
+      "page_index": 76,
+      "archetype": "most_flagged",
+      "chars": 1843,
+      "figures": 1,
+      "flags": 60,
+      "regions": {
+        "body": 5,
+        "info_box": 2
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 1479
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 118,
+      "archetype": "body_only",
+      "chars": 2111,
+      "figures": 2,
+      "flags": 18,
+      "regions": {
+        "body": 6
+      },
+      "n_blocks": 1,
+      "n_chars_ocr": 1625
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 130,
+      "archetype": "with_sidebar",
+      "chars": 2452,
+      "figures": 2,
+      "flags": 12,
+      "regions": {
+        "body": 6,
+        "sidebar": 1,
+        "info_box": 1
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 2011
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 8,
+      "archetype": "with_info_box",
+      "chars": 2929,
+      "figures": 2,
+      "flags": 63,
+      "regions": {
+        "body": 7,
+        "info_box": 3
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 2433
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 81,
+      "archetype": "figure_heavy",
+      "chars": 955,
+      "figures": 4,
+      "flags": 8,
+      "regions": {
+        "body": 2,
+        "info_box": 2
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 843
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 153,
+      "archetype": "text_dense",
+      "chars": 2579,
+      "figures": 1,
+      "flags": 0,
+      "regions": {
+        "body": 8,
+        "info_box": 3
+      },
+      "n_blocks": 4,
+      "n_chars_ocr": 2324
+    },
+    {
+      "book": "SGK_KHTN_7_KNTT",
+      "page_index": 117,
+      "archetype": "most_flagged",
+      "chars": 1694,
+      "figures": 3,
+      "flags": 50,
+      "regions": {
+        "body": 5,
+        "info_box": 1
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 1308
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 126,
+      "archetype": "body_only",
+      "chars": 2787,
+      "figures": 2,
+      "flags": 64,
+      "regions": {
+        "body": 8
+      },
+      "n_blocks": 1,
+      "n_chars_ocr": 2075
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 144,
+      "archetype": "with_sidebar",
+      "chars": 3002,
+      "figures": 2,
+      "flags": 88,
+      "regions": {
+        "body": 8,
+        "sidebar": 2
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 2427
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 141,
+      "archetype": "with_info_box",
+      "chars": 3266,
+      "figures": 1,
+      "flags": 50,
+      "regions": {
+        "body": 8,
+        "info_box": 1
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 2664
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 81,
+      "archetype": "figure_heavy",
+      "chars": 1072,
+      "figures": 4,
+      "flags": 9,
+      "regions": {
+        "body": 3,
+        "info_box": 1,
+        "sidebar": 1
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 1076
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 154,
+      "archetype": "text_dense",
+      "chars": 3079,
+      "figures": 1,
+      "flags": 9,
+      "regions": {
+        "body": 9,
+        "info_box": 1
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 2521
+    },
+    {
+      "book": "SGK_KHTN_8_KNTT",
+      "page_index": 136,
+      "archetype": "most_flagged",
+      "chars": 2721,
+      "figures": 1,
+      "flags": 70,
+      "regions": {
+        "body": 7,
+        "info_box": 2
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 2156
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 76,
+      "archetype": "body_only",
+      "chars": 2623,
+      "figures": 0,
+      "flags": 28,
+      "regions": {
+        "body": 7
+      },
+      "n_blocks": 1,
+      "n_chars_ocr": 2075
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 162,
+      "archetype": "with_sidebar",
+      "chars": 2845,
+      "figures": 0,
+      "flags": 1,
+      "regions": {
+        "body": 6,
+        "info_box": 2,
+        "sidebar": 1
+      },
+      "n_blocks": 4,
+      "n_chars_ocr": 2521
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 79,
+      "archetype": "with_info_box",
+      "chars": 3361,
+      "figures": 1,
+      "flags": 11,
+      "regions": {
+        "body": 8,
+        "info_box": 4
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 2889
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 9,
+      "archetype": "figure_heavy",
+      "chars": 1642,
+      "figures": 5,
+      "flags": 24,
+      "regions": {
+        "body": 4,
+        "sidebar": 2,
+        "info_box": 1
+      },
+      "n_blocks": 4,
+      "n_chars_ocr": 1370
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 180,
+      "archetype": "text_dense",
+      "chars": 3181,
+      "figures": 0,
+      "flags": 44,
+      "regions": {
+        "body": 11,
+        "info_box": 1
+      },
+      "n_blocks": 2,
+      "n_chars_ocr": 2662
+    },
+    {
+      "book": "SGK_KHTN_9_KNTT",
+      "page_index": 155,
+      "archetype": "most_flagged",
+      "chars": 2824,
+      "figures": 0,
+      "flags": 79,
+      "regions": {
+        "body": 7,
+        "info_box": 2
+      },
+      "n_blocks": 3,
+      "n_chars_ocr": 2577
+    }
+  ]
+}
