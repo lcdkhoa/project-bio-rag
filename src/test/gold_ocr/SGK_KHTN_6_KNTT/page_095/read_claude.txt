@@ -1,10 +1,8 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+# Block [2] sidebar: tren anh KHONG co chu that nao o vung do (chi la dai mau
+# trang tri o le trai) -> xoa het chu, GIU tieu de => dem la 'vung rac'.
 === [1] body ===
 IV Một số bệnh do vi khuẩn
 Vi khuẩn gây ra nhiều bệnh nguy hiểm cho con người, một số bệnh phổ biến như: lao,
@@ -29,7 +27,6 @@ Ngoài ra, vi khuẩn cũng là nguyên nhân khiến thức ăn, đồ uống,.
 94
 
 === [2] sidebar ===
-
 
 === [3] info_box ===
 Dựa vào các thông tin trên, em hãy nêu một số biện pháp để phòng bệnh do vi khuẩn

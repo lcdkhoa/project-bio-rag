@@ -1,10 +1,19 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# DAY LA TRANG CHUNG MINH D-56 RO NHAT TRONG CA 24 TRANG. Ca mot danh muc hoa
+# chat bi bien thanh vo nghia:
+#   I₂       -> "L„"        (chu I hoa thanh chu L, chi so duoi thanh dau phay)
+#   MnO₂     -> "MnO,,"
+#   HCl      -> "HCI"       (chu l thuong thanh chu I hoa — khong phai loi dau!)
+#   H₂SO₄    -> "H,SO,„"
+#   NH₃      -> "NH,,"
+#   C₂H₅OH   -> "C,H,OH"
+#   C₆H₁₂O₆  -> "CH,O,"     (mat luon ca chu so 6 va 12)
+# Mot hoc sinh go "H2SO4" se khong the khop voi trang nay.
+# Ngoai ra: dong tieu de bang ("Dung cu | Chuc nang | Dung cu | Chuc nang") bi
+# OCR bo han; "(100×)" bi doc thanh "(100x)".
 === [1] body ===
 3. Một số dụng cụ thí nghiệm tìm hiểu về chất và sự biến đổi chất
 Dụng cụ Chức năng Dụng cụ Chức năng

@@ -1,10 +1,11 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+# Loi chu dao o trang nay la MAT DAU CACH trong khoi MUC TIEU (chu nho, in dam
+# mau xanh): "MUCTIEU", "chucnang cua mau;neu ten", "Neuduockhainiem",
+# "Ketten duoc", "coquan the hien", "Thuchien duoc duan,bai tap".
+# "dot quy": xem ghi chu cung loai o page_141 — toi khong phan biet duoc dau
+# nang duoi chu y, nen giu nguyen dang cua ocr.txt.
 === [1] body ===
 MỤC TIÊU
 Nêu được chức năng của máu; nêu tên các thành phần của máu và chức năng của mỗi thành phần.

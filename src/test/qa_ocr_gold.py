@@ -367,6 +367,28 @@ def do_score(per_page: bool) -> int:
             gw, ow = g.split(), o.split()
             p["werr"] += _word_distance(gw, ow)
             p["gold_words"] += len(gw)
+        # Chu ky KHONG chung minh la da doi chieu ky. Nen dem thang: nguoi da
+        # sua bao nhieu cho so voi ocr.txt, va lan doc thu hai (neu co) khong
+        # dong y voi ocr.txt bao nhieu cho. Neu nguoi sua RAT IT ma lan doc thu
+        # hai lai khac RAT NHIEU thi trang do gan nhu chac chan CHUA duoc doc
+        # ky — phai in ra, khong duoc de con so CER im lang di qua.
+        import difflib as _dl
+
+        def _ndiff(a_blocks, b_blocks):
+            n = 0
+            for kk in sorted(set(a_blocks) | set(b_blocks)):
+                aa = _norm_ws(a_blocks.get(kk, "")).split()
+                bb = _norm_ws(b_blocks.get(kk, "")).split()
+                for tag, i1, i2, j1, j2 in _dl.SequenceMatcher(
+                        a=aa, b=bb, autojunk=False).get_opcodes():
+                    if tag != "equal":
+                        n += 1
+            return n
+
+        p["sua_tay"] = _ndiff(oblocks, gblocks)
+        r2 = outdir / READ2_NAME
+        p["may2"] = (_ndiff(oblocks, _parse_blocks(
+            r2.read_text(encoding="utf-8"))) if r2.exists() else -1)
         reviewed.append(item)
         rows.append((item, who, p))
         tot.update(p)
@@ -403,16 +425,33 @@ def do_score(per_page: bool) -> int:
         print(f"   vung nguoi cham la RAC (khong phai chu): {empties}")
 
     if per_page:
-        print("\n{:<8} {:>5} {:<14} {:>8} {:>8} {:>8}".format(
-            "quyen", "trang", "archetype", "CER", "WER", "dia-ER"))
+        print("\n{:<8} {:>5} {:<14} {:>8} {:>8} {:>8} {:>7} {:>6}".format(
+            "quyen", "trang", "archetype", "CER", "WER", "dia-ER",
+            "nguoi", "may2"))
         for item, _who, p in rows:
             c = p["dist"] / (p["gold_chars"] or 1)
             w = p["werr"] / (p["gold_words"] or 1)
             dd = p["sub_dau"] / (p["gold_letters"] or 1)
-            print("{:<8} {:>5} {:<14} {:>7.2f}% {:>7.2f}% {:>7.2f}%".format(
-                item["book"].replace("SGK_KHTN_", "").replace("_KNTT", ""),
-                item["page_index"], item["archetype"],
-                c * 100, w * 100, dd * 100))
+            print("{:<8} {:>5} {:<14} {:>7.2f}% {:>7.2f}% {:>7.2f}% {:>7} {:>6}"
+                  .format(
+                      item["book"].replace("SGK_KHTN_", "").replace("_KNTT", ""),
+                      item["page_index"], item["archetype"],
+                      c * 100, w * 100, dd * 100,
+                      p["sua_tay"], p["may2"] if p["may2"] >= 0 else "-"))
+        print("  'nguoi' = so cho NGUOI sua so voi ocr.txt | "
+              "'may2' = so cho lan doc thu hai khac ocr.txt")
+
+    # Canh bao trang co chu ky nhung gan nhu khong sua gi, trong khi lan doc
+    # thu hai lai khac rat nhieu -> con so CER cua trang do khong dang tin.
+    dubious = [(i, p) for i, _w, p in rows
+               if p["may2"] > 0 and p["sua_tay"] * 3 < p["may2"]]
+    if dubious:
+        print(f"\nCANH BAO — {len(dubious)} trang CO chu ky nhung gan nhu chua "
+              "duoc doi chieu (nguoi sua rat it so voi cho bat dong that):")
+        for item, p in dubious:
+            print(f"   - {item['book']} page_{item['page_index']:03d}: nguoi sua "
+                  f"{p['sua_tay']} cho, nhung lan doc thu hai khac {p['may2']} cho")
+        print("   CER/WER cua nhung trang nay KHONG dang tin. Doc lai roi ky lai.")
 
     print("\nPHAM VI: chi MOT engine (Tesseract vie). Phan 'consensus 2 engine "
           "tot hon ca hai' cua G2 goc KHONG do duoc — PaddleOCR chua cai.")
@@ -425,17 +464,190 @@ def do_score(per_page: bool) -> int:
     return 0 if ok else 1
 
 
+# ------------------------------------------------- doi chieu lan doc thu hai
+
+READ2_NAME = "read_claude.txt"
+
+
+def _iter_pages(sel):
+    for item in sel["pages"]:
+        yield item, GOLD_DIR / item["book"] / f"page_{item['page_index']:03d}"
+
+
+def do_diff() -> int:
+    """In CHO BAT DONG giua ocr.txt va lan doc thu hai, theo tung tu.
+
+    Muc dich: bien 50 000 ky tu phai doi chieu thanh vai tram cho phai phan xu.
+    Lan doc thu hai KHONG phai gold — no chi chi cho NGUOI biet nen nhin vao dau.
+    """
+    import difflib
+    sel_path = GOLD_DIR / "_selection.json"
+    if not sel_path.exists():
+        print(f"Chua co {sel_path}. Chay --export truoc.")
+        return 1
+    sel = json.loads(sel_path.read_text(encoding="utf-8"))
+
+    n_done = 0
+    tot_words = tot_diff = 0
+    rows = []
+    for item, outdir in _iter_pages(sel):
+        r2 = outdir / READ2_NAME
+        ocr = outdir / "ocr.txt"
+        if not r2.exists() or not ocr.exists():
+            continue
+        n_done += 1
+        ob = _parse_blocks(ocr.read_text(encoding="utf-8"))
+        cb = _parse_blocks(r2.read_text(encoding="utf-8"))
+        pw = pd = 0
+        chunks = []
+        for k in sorted(set(ob) | set(cb)):
+            o = _norm_ws(ob.get(k, "")).split()
+            c = _norm_ws(cb.get(k, "")).split()
+            pw += len(c)
+            sm = difflib.SequenceMatcher(a=o, b=c, autojunk=False)
+            for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                if tag == "equal":
+                    continue
+                pd += max(i2 - i1, j2 - j1)
+                chunks.append((k, tag, " ".join(o[i1:i2]), " ".join(c[j1:j2])))
+        tot_words += pw
+        tot_diff += pd
+        rows.append((item, pw, pd, chunks))
+
+    if not n_done:
+        print(f"Chua co file {READ2_NAME} nao. Khong co gi de doi chieu.")
+        return 1
+
+    print("=" * 72)
+    print(f"DOI CHIEU ocr.txt  <->  {READ2_NAME} (lan doc thu hai bang may)")
+    print("=" * 72)
+    print(f"Trang co lan doc thu hai: {n_done}/{len(sel['pages'])}\n")
+    print("{:<8} {:>5} {:<14} {:>7} {:>8} {:>9}".format(
+        "quyen", "trang", "archetype", "tu", "bat dong", "ti le"))
+    for item, pw, pd, _c in rows:
+        print("{:<8} {:>5} {:<14} {:>7} {:>8} {:>8.1%}".format(
+            item["book"].replace("SGK_KHTN_", "").replace("_KNTT", ""),
+            item["page_index"], item["archetype"], pw, pd, pd / max(pw, 1)))
+    print(f"\nTONG: {tot_diff} cho bat dong / {tot_words} tu "
+          f"= {tot_diff/max(tot_words,1):.1%}")
+    print("\nDay la CAN TREN cua so cho NGUOI phai xem: hai may cung doc sai "
+          "giong nhau thi khong hien ra o day.")
+    print(f"\nChi tiet: python -m src.test.qa_ocr_gold --diff --show <trang>")
+    return 0
+
+
+def do_diff_show(page: int) -> int:
+    import difflib
+    sel = json.loads((GOLD_DIR / "_selection.json").read_text(encoding="utf-8"))
+    hit = False
+    for item, outdir in _iter_pages(sel):
+        if item["page_index"] != page:
+            continue
+        r2, ocr = outdir / READ2_NAME, outdir / "ocr.txt"
+        if not r2.exists():
+            continue
+        hit = True
+        print("=" * 72)
+        print(f"{item['book']} page_{page:03d} [{item['archetype']}]")
+        print("=" * 72)
+        ob = _parse_blocks(ocr.read_text(encoding="utf-8"))
+        cb = _parse_blocks(r2.read_text(encoding="utf-8"))
+        for k in sorted(set(ob) | set(cb)):
+            o = _norm_ws(ob.get(k, "")).split()
+            c = _norm_ws(cb.get(k, "")).split()
+            sm = difflib.SequenceMatcher(a=o, b=c, autojunk=False)
+            first = True
+            for tag, i1, i2, j1, j2 in sm.get_opcodes():
+                if tag == "equal":
+                    continue
+                if first:
+                    print(f"\n--- block [{k}] ---")
+                    first = False
+                lhs = " ".join(o[i1:i2]) or "(khong co)"
+                rhs = " ".join(c[j1:j2]) or "(xoa)"
+                print(f"  may1: {lhs}")
+                print(f"  may2: {rhs}")
+    if not hit:
+        print(f"Khong tim thay trang {page} co {READ2_NAME}.")
+        return 1
+    return 0
+
+
+def do_promote(force: bool) -> int:
+    """Do noi dung lan doc thu hai vao gold.txt, GIU dong #REVIEWED-BY TRONG.
+
+    Muc dich: nguoi khong phai go lai tu dau. Quy trinh con lai cua nguoi la
+    (1) doc `--diff` de xem may1 vs may2 khac nhau o dau, (2) sua lai nhung cho
+    minh khong dong y, (3) dien ten vao #REVIEWED-BY.
+
+    KHONG tu dien ten: gold set nay se duoc bao cao la "NGUOI xac nhan", nen chi
+    con nguoi moi duoc ky. May tu ky vao la lam sai xuat xu cua so do.
+    """
+    sel_path = GOLD_DIR / "_selection.json"
+    if not sel_path.exists():
+        print(f"Chua co {sel_path}. Chay --export truoc.")
+        return 1
+    sel = json.loads(sel_path.read_text(encoding="utf-8"))
+    done = skipped = 0
+    for item, outdir in _iter_pages(sel):
+        r2, gold = outdir / READ2_NAME, outdir / "gold.txt"
+        if not r2.exists():
+            continue
+        if gold.exists():
+            mm = REVIEW_RE.search(gold.read_text(encoding="utf-8"))
+            who = (mm.group(1).strip() if mm else "")
+            if who and not who.startswith("#") and not force:
+                print(f"  BO QUA (da co nguoi duyet: {who}): "
+                      f"{item['book']} page_{item['page_index']:03d}")
+                skipped += 1
+                continue
+        blocks = _parse_blocks(r2.read_text(encoding="utf-8"))
+        body = []
+        for k in sorted(blocks):
+            body.append(f"=== [{k}] {_region_of(r2, k)} ===")
+            body.append(blocks[k])
+            body.append("")
+        gold.write_text(GOLD_HEADER + "\n".join(body).rstrip() + "\n",
+                        encoding="utf-8")
+        done += 1
+    print(f"\nDa do lan doc thu hai vao {done} gold.txt "
+          f"(bo qua {skipped} trang da co nguoi duyet).")
+    print("Dong #REVIEWED-BY vẫn TRONG — chi BAN moi duoc dien ten vao do.")
+    print("Buoc tiep: python -m src.test.qa_ocr_gold --diff --show <trang>")
+    return 0
+
+
+def _region_of(path, k: int) -> str:
+    """Lay lai nhan region_type cua block k tu file goc (giu nguyen tieu de)."""
+    for line in path.read_text(encoding="utf-8").splitlines():
+        mm = BLOCK_RE.match(line)
+        if mm and int(mm.group(1)) == k:
+            return mm.group(2)
+    return "body"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Cong G2 — CER/WER/loi dau OCR")
     ap.add_argument("--export", action="store_true",
                     help="dung 24 trang de nguoi sua")
     ap.add_argument("--score", action="store_true", help="do sau khi da sua")
+    ap.add_argument("--diff", action="store_true",
+                    help=f"doi chieu ocr.txt voi {READ2_NAME} (lan doc thu hai)")
+    ap.add_argument("--promote", action="store_true",
+                    help=f"do {READ2_NAME} vao gold.txt, GIU #REVIEWED-BY trong")
+    ap.add_argument("--show", type=int, default=0,
+                    help="dung voi --diff: in chi tiet mot so trang")
     ap.add_argument("--per-page", action="store_true", help="in bang tung trang")
     ap.add_argument("--overwrite", action="store_true",
                     help="ghi de gold.txt da co (MAT phan da sua tay!)")
     args = ap.parse_args()
-    if args.export == args.score:
-        ap.error("chon dung mot trong --export / --score")
+    chon = (args.export, args.score, args.diff, args.promote)
+    if sum(bool(x) for x in chon) != 1:
+        ap.error("chon dung mot trong --export / --score / --diff / --promote")
+    if args.diff:
+        return do_diff_show(args.show) if args.show else do_diff()
+    if args.promote:
+        return do_promote(args.overwrite)
     return do_export(args.overwrite) if args.export else do_score(args.per_page)
 
 

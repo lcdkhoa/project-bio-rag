@@ -1,10 +1,17 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# LOI NANG NHAT TRONG CA 24 TRANG, va no thuoc loai NGUY HIEM nhat cho mot
+# he thong tra loi hoc sinh: BANG 35.1 bi pha ca hai chieu.
+#   - Ca dong tieu de nam (1988 1992 1996 2000 2004 2008 2012 2016) bi BO HAN.
+#   - Ca 8 gia tri bi mat DAU PHAY THAP PHAN:
+#       23,7 -> "r2"    24,5 -> ";ks"   26,2 -> "262"   28,2 -> "282"
+#       30,5 -> "305"   31,8 -> "38"    33,2 -> "332"   35,4 -> "354"
+#     "26,2 ti thung" thanh "262" la sai LECH 10 LAN. Neu hoc sinh hoi san
+#     luong dau tho, he thong co the tra ve mot con so sai mot bac do lon ma
+#     van kem trich dan dung trang -> dung loai loi ma nguyen tac 1 chong lai.
+# Chi so TREN cua chu thich (1)..(5) cung bi doc thanh "©", "2!", "'®'", "#0".
 === [1] body ===
 II – Khai thác và sử dụng nhiên liệu hoá thạch
 

@@ -1,10 +1,9 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+# Trang nay OCR be rat nang o vung SO DO (cac hop nhan mau vang tren anh con
+# voi): "Qua trinh lay oxygen va thai carbon dioxide" ra "quátnlya ... lây
+# œxygen va thãi carbon dodde". Cac hop nhan do la chu THAT -> doc lai day du.
 === [1] body ===
 MỤC TIÊU
 Nhận biết được cơ thể sống.

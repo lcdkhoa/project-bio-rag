@@ -1,10 +1,9 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# DAY KHONG PHAI GOLD CUA NGUOI. Day la LAN DOC THU HAI bang may, de dung lam
+# doi chieu: cho nao lan doc nay khac ocr.txt thi la cho NGUOI can phan xu.
+# Pham vi: sua KY TU trong dung pham vi chu ma ocr.txt da bat duoc. Nhung chu
+# nam han trong vung HINH (nhan G, G1..G4 tren so do) thi khong them vao, vi
+# khong thay duoc bbox cua tung vung -> them vao se gan sai chu cho sai vung.
 === [1] body ===
 III – PHẢN XẠ VÀ PHẢN XẠ KHUẾCH TÁN
 Khi mặt phản xạ nhẵn thì các tia sáng tới

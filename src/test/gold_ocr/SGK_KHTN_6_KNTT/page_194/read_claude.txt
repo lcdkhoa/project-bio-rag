@@ -1,10 +1,9 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+# Trang nay la BANG thuat ngu. Doc theo thu tu hang: thuat ngu roi so trang cua
+# no. OCR danh roi/doc sai gan het cot "Trang" (56->58, 188->488, 62->8,
+# 103->403) va bo han dong tieu de thu hai "DUNG TRONG SACH".
 === [1] body ===
 GIẢI THÍCH MỘT SỐ THUẬT NGỮ
 DÙNG TRONG SÁCH

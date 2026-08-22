@@ -1,10 +1,8 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+# Lai la ca D-56: nhan so do O₂ / CO₂ bi OCR doc thanh "O2@œ®", "CO;", "Ô2".
+# ocr.txt con them dau nhay don la o dau hai doan ("'Viem hong", "'Virus").
 === [1] body ===
 2. Chức năng của hệ hô hấp
 Đường dẫn khí có chức năng dẫn khí ra và vào phổi, ngăn bụi, làm ẩm, làm ấm không khí

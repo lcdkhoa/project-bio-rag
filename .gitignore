@@ -114,3 +114,7 @@ scripts/
 # `python -m src.test.qa_ocr_gold --export`. gold.txt/ocr.txt thi VAN commit,
 # vi gold.txt la cong suc doi chieu cua NGUOI.
 src/test/gold_ocr/**/page.png
+
+# venv rieng cho PaddleOCR (numpy 1.26 — KHONG dung chung voi env chinh dang
+# dung numpy 2.4 + torch 2.11; cai chung se pha env ETL). Xem D-61.
+.venv_paddle/

@@ -1,10 +1,18 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# PHAT HIEN QUAN TRONG: D-56 khong chi la CHI SO DUOI — trang nay cho thay
+# CHI SO TREN cung bi pha y het:
+#   Hbβ⁺  -> "Hb*"            (mat ca chu beta lan dau cong)
+#   Hbβ   -> "HbB"            (beta thanh chu B hoa)
+#   Iᴬ Iᴮ Iᴼ -> "IÊ, IP, 19"  va o block [2] thanh "12, I5, 19"
+#   γ     -> "y"              (gamma thanh chu y thuong)
+# Cung mot allele duoc doc ra HAI kieu khac nhau o hai vung ("IÊ, IP, 19" va
+# "12, I5, 19") — tuc khong the tra cuu on dinh duoc.
+# Ngoai ra: "T – A" (gach ngang) bi doc thanh "T - A"; "tinh the" -> "tỉnh the";
+# "do dot bien" -> "đo dot bien"; "thuc tien" -> "thuc tien"/"thục tiễn";
+# "tat di truyen" -> "tat đi truyen".
 === [1] body ===
 Ở mỗi gene, đột biến có thể phát sinh theo nhiều hướng khác nhau tạo ra nhiều allele khác
 nhau của gene đó. Ví dụ: Các allele số 1, 2, 3 trong Hình 41.1 là sản phẩm đột biến theo ba

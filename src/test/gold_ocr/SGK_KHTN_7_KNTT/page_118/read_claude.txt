@@ -1,10 +1,10 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — day la LAN DOC THU HAI bang may, dung de tim cho
+# BAT DONG voi ocr.txt; NGUOI phan xu nhung cho bat dong do.
+# Quy uoc: chi so duoi ghi dung ('CO₂'); bullet trang tri bo qua; chu thich
+# anh/nhan hinh la chu THAT thi giu; rac OCR thi xoa; chu OCR bo sot han thi
+# THEM lai (de con dem duoc 'OCR thieu chu'). Thu tu trong mot block khong phai
+# thu do CER huong toi.
 === [1] body ===
 Bước 2: Tiến hành thí nghiệm.
 – Sử dụng 2 chuông thuỷ tinh (có dán

@@ -1,10 +1,14 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# CHO TOI KHONG DOC CHAC — CAN NGUOI XEM: chu "dot quy" / "dot quỵ" (dau nang
+# duoi chu y). Chinh ta thong thuong la "dot quỵ", nhung o do phan giai nay toi
+# KHONG phan biet duoc co dau nang hay khong, nen toi GIU nguyen dang cua
+# ocr.txt ("dot quy") thay vi doan. Neu tren sach in la "dot quỵ" thi day la
+# mot loi OCR that ma phep do dang bo sot -> ban kiem lai giup.
+# Tuong tu: "(*)" o cuoi "140 mmHg" va o dong nguon WHO la dau chu thich chi
+# so TREN, ocr.txt doc thanh "Ê)" va "€".
 === [1] body ===
 * Sơ cứu chảy máu động mạch cánh tay (Hình 33.8)
 Bước 1: Dùng ngón tay cái dò tìm vị trí động mạch

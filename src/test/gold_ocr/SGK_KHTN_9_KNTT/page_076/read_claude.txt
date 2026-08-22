@@ -1,10 +1,15 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# LY DO TOI CO THEM TIEU DE VAO DAY (khac voi page_126, o do toi khong them):
+# ocr.txt CO bat duoc "Chuong V" o dinh trang, va "MUC TIEU" o duoi banner —
+# nghia la vung [1] trai qua ca khoi tieu de. Nen "NANG LUONG VOI CUOC SONG"
+# va "Bai 16 VONG NANG LUONG TREN TRAI DAT. NANG LUONG HOA THACH" (chu trang
+# tren nen cam) nam TRONG vung nay va OCR da bo sot chung -> them lai.
+# Neu ban thay khong dung thi xoa hai dong tieu de do.
+# Con lai: 2 lan "khi CO₂" bi doc thanh "khi CO," (D-56), va nhieu cho mat dau
+# cach trong khoi MUC TIEU.
 === [1] body ===
 Chương V
 NĂNG LƯỢNG VỚI CUỘC SỐNG

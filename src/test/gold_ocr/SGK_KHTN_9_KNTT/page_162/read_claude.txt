@@ -1,10 +1,16 @@
-#REVIEWED-BY:
-# ^ Dien TEN cua ban vao dong tren SAU KHI da doi chieu xong voi page.png.
-# Chua co ten -> trang nay bi tinh la CHUA DUYET, nam NGOAI moi con so.
-# Sua chu trong tung block cho dung NHU TRONG ANH.
-# GIU NGUYEN cac dong '=== [k] ... ==='.
-# Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
-# duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
+#SECOND-READ-BY: claude-opus-5 (vision, doc tu page.png)
+# KHONG PHAI GOLD CUA NGUOI — lan doc thu hai bang may, de tim cho BAT DONG
+# voi ocr.txt; NGUOI phan xu nhung cho do.
+#
+# Trang nay la mo vang cho D-56, vi no toan KI HIEU:
+#   ♀ / ♂  -> OCR doc thanh "$" va "Ÿ"
+#   ×      -> OCR doc thanh "x" (chu x thuong)
+#   F₁ F₂  -> OCR doc thanh "F," / "E;" / "E:"  (mat het chi so duoi)
+#   F      -> OCR doc thanh "E"
+# Day chinh xac la loai loi lam cau hoi ve di truyen khong the khop token.
+# Block [3]/[4]: ocr.txt dat tieu de khung ("EM DA HOC" / "EM CO THE") o CUOI
+# block, con tren anh no in o DAU khung -> toi dat theo anh, nen se hien ra mot
+# bat dong ve THU TU, khong phai loi ky tu.
 === [1] body ===
 – Tính trạng trội biểu hiện ra kiểu hình khi có kiểu gene đồng hợp trội hoặc dị hợp; tính
 trạng lặn chỉ được biểu hiện ra kiểu hình khi có kiểu gene đồng hợp lặn.
