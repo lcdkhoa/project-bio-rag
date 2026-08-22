@@ -146,6 +146,13 @@ IMAGE_RELEVANCE_THRESHOLD = float(
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+# Nhịp log tiến trình của các vòng lặp ETL dài (index text/OCR/crop hình). Log
+# bắn khi TỚI ĐỦ số trang HOẶC quá số giây — cái nào đến trước — nên một pha
+# chậm bất thường vẫn có dấu hiệu sống trong <= PROGRESS_LOG_EVERY_SECONDS giây.
+PROGRESS_LOG_EVERY_PAGES = int(os.getenv("PROGRESS_LOG_EVERY_PAGES", "10"))
+PROGRESS_LOG_EVERY_SECONDS = float(
+    os.getenv("PROGRESS_LOG_EVERY_SECONDS", "30"))
+
 # --- Layout-aware ETL (M1) ---
 # Không có RENDER_DPI: nguồn là PNG một file/trang, không có bước render nào để
 # tinh chỉnh (D-33). Đường PDF upload legacy dùng hằng số riêng trong

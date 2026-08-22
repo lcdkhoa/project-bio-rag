@@ -19,6 +19,7 @@ legacy) — xem `src/etl/page_source.py`. Ba điểm phải nhớ:
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
@@ -28,7 +29,11 @@ from .bai_spine import banner_agreement, build_bai_spine
 from .page_map import build_page_map, fit_offset, missing_page_indices
 from .toc import TocResult
 from ..page_source import source_hash
-from ...config import MANIFEST_DIR
+from ...config import (MANIFEST_DIR, PROGRESS_LOG_EVERY_PAGES,
+                       PROGRESS_LOG_EVERY_SECONDS)
+from ...utils.progress import ProgressLogger
+
+logger = logging.getLogger(__name__)
 
 MANIFEST_VERSION = 3
 
@@ -83,14 +88,24 @@ def build_manifest(source, *,
 
     reads: dict[int, list] = {}
     banners: dict[int, frozenset] = {}
-    for page_index in page_numbers:
-        image = source.load(page_index)
-        reads[page_index] = list(read_candidates(image))
-        if page_index in toc_pages:
-            continue
-        candidates = detect_banner(image)
-        if candidates:
-            banners[page_index] = frozenset(int(c) for c in candidates)
+    # Vòng này đọc số trang (crop góc 1x + 3x) và dò banner Bài trên TỪNG trang
+    # của cả quyển — chậm và trước đây hoàn toàn im lặng (D-53).
+    with ProgressLogger(logger, f"[{source.name}] manifest",
+                        len(page_numbers),
+                        every_items=PROGRESS_LOG_EVERY_PAGES,
+                        every_seconds=PROGRESS_LOG_EVERY_SECONDS,
+                        unit="trang") as progress:
+        for page_index in page_numbers:
+            image = source.load(page_index)
+            reads[page_index] = list(read_candidates(image))
+            if page_index in toc_pages:
+                progress.advance(trang_muc_luc=1)
+                continue
+            candidates = detect_banner(image)
+            if candidates:
+                banners[page_index] = frozenset(int(c) for c in candidates)
+            progress.advance(so_trang_doc_duoc=1 if reads[page_index] else 0,
+                             banner=1 if candidates else 0)
 
     fit = fit_offset(reads)
     page_records = build_page_map(page_numbers, reads, fit)

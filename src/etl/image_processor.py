@@ -18,7 +18,6 @@ from PIL import Image
 from langchain_core.documents import Document
 from pdf2image import convert_from_path
 from transformers import OwlViTForObjectDetection, OwlViTProcessor
-from tqdm import tqdm
 
 from ..config import (
     HF_TOKEN,
@@ -28,9 +27,12 @@ from ..config import (
     OWL_VIT_CONFIDENCE_THRESHOLD,
     OWL_VIT_MODEL,
     POPPLER_PATH,
+    PROGRESS_LOG_EVERY_PAGES,
+    PROGRESS_LOG_EVERY_SECONDS,
     TESSERACT_CMD,
     USE_GPU,
 )
+from ..utils.progress import ProgressLogger
 from .image_captioner import ImageCaptioner
 from .processing_status import ProcessingStatus, compute_file_hash
 
@@ -3848,7 +3850,14 @@ class ImageProcessor:
         page_numbers = list(pages) if pages is not None else source.page_numbers()
         total_pages = len(page_numbers)
 
-        for page_num in tqdm(page_numbers, desc=f"[{pdf_filename}] Extracting images"):
+        # Tiến trình theo TRANG: vòng này là phần chậm nhất của ETL (~5 s/trang
+        # trên CPU) nên phải nhìn thấy nó nhích, không chỉ nhìn thấy nó im.
+        progress = ProgressLogger(
+            logger, f"[{pdf_filename}] hình", total_pages,
+            every_items=PROGRESS_LOG_EVERY_PAGES,
+            every_seconds=PROGRESS_LOG_EVERY_SECONDS, unit="trang")
+
+        for page_num in page_numbers:
             page_key = page_checkpoint_key(source, page_num)
             if not force and not self.status_tracker.needs_image_processing_versioned(
                 page_key,
@@ -3856,11 +3865,14 @@ class ImageProcessor:
                 required_version=self.image_extraction_version,
             ):
                 logger.debug(f"Page {page_num}: already processed, skipping")
+                progress.advance(bo_qua=1)
                 continue
 
             page_result = self._load_page_image(source, page_num)
             if not page_result:
+                progress.advance(loi_tai_trang=1)
                 continue
+            docs_before_page = len(extracted_docs)
 
             img_array, pil_img = page_result
             page_text = ocr_text_per_page.get(page_num, "")
@@ -4069,7 +4081,9 @@ class ImageProcessor:
                 pdf_filename,
                 image_extraction_version=self.image_extraction_version,
             )
+            progress.advance(hinh=len(extracted_docs) - docs_before_page)
 
+        progress.finish()
         logger.info(
             f"[{pdf_filename}] Extracted {len(extracted_docs)} images from {total_pages} pages")
         return extracted_docs
