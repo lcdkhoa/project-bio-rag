@@ -42,14 +42,32 @@ cứu loại bỏ thành phần **bật/tắt re-ranking và cổng lọc liên 
 
 **Hệ quả đọc kỹ, đừng đọc lướt:**
 
-1. Đường cơ sở hợp đồng là **BM25 thuần**, không phải dense thuần. Nếu chỉ báo cáo
-   "hybrid vs dense" thì **chưa làm đúng Nội dung 4(i)**. Đo thêm dense thuần là
-   tốt (ba điểm dựng được đường), nhưng cặp **hybrid vs BM25 thuần** là bắt buộc.
+1. **Ba điểm đều là hợp đồng, không phải hai.** Nội dung 4(i) chỉ viết "truy xuất
+   lai so với BM25 thuần", nhưng **bảng Kế hoạch thực hiện — Giai đoạn 3** viết rõ:
+   *"thực nghiệm so sánh cấu hình 1: **BM25 thuần túy vs. Vector Retrieval vs.
+   Hybrid Search**"*. Vậy dense thuần **cũng** nằm trong hợp đồng. (Bảng kế hoạch là
+   một **bảng LỒNG** trong ô "Kế hoạch thực hiện" nên `python-docx` không đọc tới
+   nó qua `Document.tables` — phải đọc `word/document.xml`. Lượt viết đầu của file
+   này đã bỏ sót nó và kết luận sai rằng chỉ có hai điểm.)
 2. Lý do BM25 được nêu là **"thuật ngữ khoa học đặc thù"** — tức chính chỗ mà
    D-56/D-73 đo được là hỏng nặng nhất (`CO2` không khớp `CO,`). Nên BM25 và việc
    chuẩn hoá chỉ số dưới là **cùng một bài toán**, không phải hai việc rời.
 3. "Cổng lọc liên quan **kết hợp** re-ranking" — hai thành phần, và Nội dung 4 đòi
    ablation **bật/tắt từng cái**, tức 4 tổ hợp, không phải 2.
+
+**Bảng Kế hoạch thực hiện — trích nguyên văn (bảng LỒNG, đọc từ `word/document.xml`):**
+
+| Giai đoạn | Thời gian | Nội dung (rút gọn) |
+|---|---|---|
+| 1 | 15/07 – **29/07/2026** | thu thập + chuẩn hoá dữ liệu **PDF** 12 quyển; ETL text + công thức + OwlViT; **chạy Vintern-1B sinh mô tả ảnh**; lập chỉ mục → *"Kho Vector hoàn chỉnh (Văn bản + **Hình ảnh có chú thích**)"* |
+| 2 | 30/07 – **13/08/2026** | **Hybrid Search (BM25 + Vector Dense)**; xếp hạng lại; **sinh testset có nhãn nguồn** → *"Bộ truy xuất Hybrid hoạt động ổn định"* |
+| 3 | 14/08 – **28/08/2026** | cấu hình 1: **BM25 thuần vs Vector Retrieval vs Hybrid**; cấu hình 2: **Text-only vs Multi-modal**; LLM-as-a-judge |
+| 4 | 29/08 – **12/09/2026** | **prompt engineering cho môn Lý, Hoá, Sinh**; hoàn thiện FE Next.js + hiển thị công thức |
+| 5 | 13/09 – **23/09/2026** | tổng hợp số liệu, viết báo cáo, slide + video demo |
+
+**M2 CHÍNH LÀ Giai đoạn 2, đáo hạn 13/08/2026. Hôm nay 23/08 → trễ 10 ngày**, và
+Giai đoạn 1 (đáo hạn 29/07) vẫn còn nợ phía ảnh. Khi báo cáo tiến độ phải nói theo
+mốc này, không nói theo cảm tính.
 
 ---
 
