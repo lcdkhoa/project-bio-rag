@@ -82,6 +82,24 @@ def g1_check(manifest, min_confirmed_ratio: float = 0.95):
     return (not problems), problems
 
 
+def spine_gap(manifest) -> str:
+    """`" (THIẾU 21 Bài)"` nếu spine không liền mạch `1..max`, ngược lại `""`.
+
+    Vì sao phải in ra ngay cạnh số Bài: G1 chỉ kiểm **định danh trang**, nên một
+    quyển CTST đọc được 17/38 Bài vẫn `PASS` nếu `ocr_confirmed` = 100%. Đo được
+    trên lượt 12 quyển ngày 2026-08-23: 4 quyển CTST PASS trong khi thiếu 21–33
+    Bài. Dòng báo cáo cũ chỉ ghi "Bài 17", và người đọc sẽ hiểu là quyển đó có 17
+    Bài — một con số SAI MÀ TRÔNG HỢP LÝ. `bai_numbers_not_contiguous` cố ý KHÔNG
+    làm rớt cổng (nó là việc của spine, không phải của định danh trang), nhưng nó
+    không được phép vô hình (D-73).
+    """
+    numbers = sorted(b["bai_so"] for b in manifest.bai) if manifest.bai else []
+    if not numbers:
+        return " (KHÔNG đọc được Bài nào)"
+    missing = [n for n in range(1, numbers[-1] + 1) if n not in set(numbers)]
+    return f" (spine THIẾU {len(missing)} Bài trong 1..{numbers[-1]})" if missing else ""
+
+
 def g1_report(manifests: Sequence) -> str:
     lines = ["=== G1: định danh trang ==="]
     for manifest in manifests:
@@ -94,7 +112,7 @@ def g1_report(manifests: Sequence) -> str:
             f"({covers} bìa không in số) | offset {manifest.page_offset} "
             f"(phiếu {manifest.offset_votes[0]}/{manifest.offset_votes[1]}) | "
             f"ocr_confirmed {confirmed}/{numbered} ({ratio:.1%}) | "
-            f"Bài {len(manifest.bai)} "
+            f"Bài {len(manifest.bai)}{spine_gap(manifest)} "
             f"(huy hiệu xác nhận {manifest.banner_votes[0]}/"
             f"{manifest.banner_votes[1]}) | flag {len(manifest.flags)} | "
             f"{'PASS' if ok else 'FAIL'}")

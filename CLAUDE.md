@@ -225,7 +225,7 @@ phải sở thích tổ chức công việc.
 | # | Việc | Đầu ra nghiệm thu | Chặn ai |
 |---|---|---|---|
 | **M1** | Bộ đọc MỤC LỤC cho CTST (hai cột) + CD (`style = so_thu_tu`, MỤC LỤC ở cuối sách); hợp nhất `toc._BAI` (đang phân biệt hoa/thường) với `fp_toc.ROW_PATTERNS` (đã `IGNORECASE`); cho `toc.py` đọc `entry_style`/`toc_pages` từ fingerprint thay vì hằng số | `--build-manifests` chạy hết **12/12 quyển**, G1 PASS, spine Bài liền mạch từng quyển, manifest được **commit** | **mọi thứ** — đường text `raise ManifestMissing` khi thiếu manifest |
-| **M1.5** | Phép đo **chỉ số dưới ở CD/CTST** (~10 trang Hoá/Lý mỗi NXB) + đo `s/trang` thật trên **một quyển CD** | biết `O₂`/`H₂SO₄` có sống ở 2280×3201 hay không; có số để hứa lịch | thiết kế bước xử lý công thức (MT1) và mọi lời hứa về thời lượng |
+| ~~**M1.5**~~ | **XONG 2026-08-23 (D-73)** | chỉ số dưới **không sống ở đâu cả** (CD 256:3, CTST 377:3, KNTT 408:4) → một luật chung; `s/trang` thật = **5,0** end-to-end, manifest 1,79 s/trang | — |
 | **M2** | Text ETL 12 quyển: `min_sat` per-book từ fingerprint, xử lý `SINGLE_LINE_MAX_H = 60` (hằng số KNTT; dòng CD cao ~136 px) kèm before/after, **dựng chỉ mục BM25 cùng lượt** (cùng chunk id) | index text đủ 12 quyển + BM25 song song | MT3, và mọi phép đo eval |
 | **M3** | Hình ảnh theo từng NXB: gỡ `LAYOUT_VARIANT = "kntt"`, caption chữ đen cho CD/CTST (kênh pill đọc **0** ở 8/12 quyển) | G4 theo từng NXB | MT1 phần hình, MT4 multi-modal |
 | **M4** | Bộ test 12 quyển có nhãn `phan_mon`/`khoi`/`bo_sach`/`do_kho`, phân bố đều | testset mới + gold key khớp index | MT4 |
@@ -266,12 +266,14 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 | Fingerprint được code sản xuất ĐỌC | **CHƯA** | `grep -rn fingerprint src/` chỉ trúng `image_captioner` (trùng tên biến). M0 đo xong nhưng ETL vẫn chưa dùng → `min_sat` per-book, `entry_style`, vùng số trang vẫn là hằng số KNTT |
 | Gỡ `LAYOUT_VARIANT = "kntt"` | **CHƯA** | `src/etl/image_processor.py:4105`, `make_image_processor()` vẫn luôn trả KNTT (D-64 đã đảo chiều D-50) |
 | `text_extract.SINGLE_LINE_MAX_H = 60` | **CHƯA** (cố ý) | hằng số KNTT; dòng CD cao ~136 px → việc của M2, phải kèm before/after |
-| Phép đo chỉ số dưới ở CD/CTST | **CHƯA CHẠY** | m0-report §7.5 — rẻ, và **có thể đổi thiết kế** của "bước xử lý đặc thù công thức" |
+| Phép đo chỉ số dưới ở CD/CTST | **XONG, và nó BÁC BỎ giả thuyết** | đo trên chính index (không cần OCR lại): hỏng:đúng = **CD 256:3, CTST 377:3, KNTT 408:4**, `₂` Unicode **0 lần ở cả ba**. Chỉ số dưới **không sống sót ở đâu cả**, nên D-56 KHÔNG phải artefact của KNTT 1094×1536 → bước xử lý công thức Hoá/Lý là **một luật chung**, không chia theo NXB (D-73) |
 | BM25 (MT3) | **KHÔNG TỒN TẠI** | `grep -riE "bm25|rank_bm25|sparse" src/` = 0 kết quả |
 | Hợp nhất thưa+dày (MT3) | **KHÔNG TỒN TẠI** | `HybridRetriever` hiện là lai **text+ảnh**, không phải **thưa+dày** |
 | Caption deterministic vào prompt (MT4) | **CHƯA** | `src/app/api.py` dựng ngữ cảnh chỉ từ `text_docs` → ablation "multi-modal vs text-only" hiện chênh **0 theo cấu trúc** |
 | Bảng đối chiếu MT4 | **CHƯA** | mới có baseline-vs-rerank |
-| Index `database/` | **RỖNG** | chỉ còn `database/fingerprints/`; manifest 4 quyển KNTT đã xoá |
+| Index text 12 quyển | **XONG** (D-73) | lượt chạy thật 2026-08-23: manifest 49 phút, `--text-only` **3 giờ 20**, **0/2 399 trang còn thiếu**, **16 393 chunk**, 5,0 s/trang end-to-end (cao hơn 3,56 s/trang đo trên KNTT — đúng như đã cảnh báo). Dựng với `SINGLE_LINE_MAX_H = 60` và `LAYOUT_BOX_MIN_SATURATION = 45` **chưa hiệu chỉnh**, nên M2 bump version sẽ OCR lại toàn bộ — hãy gom mọi thay đổi tham số vào MỘT lượt |
+| `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT 1 086/1 037/1 212/1 522 chunk có `bai_so`; 8 quyển CTST/CD **không chunk nào** (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế). Nghĩa là truy vấn theo Bài chỉ chạy trên 1/3 kho |
+| `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở **57–84% chunk** (9_CD 1 339/1 590 = 84%). Ở mức đó cờ này gần như không mang tin — việc của M2 (D-73) |
 | LLM đánh giá (OpenRouter) | **CHẠY ĐƯỢC**, hạn mức ngày CHƯA ĐO | `stealth/ox-alpha` qua `https://openrouter.ai/api/v1`, gọi thật 9 lần OK (D-67); không có header `x-ratelimit-*` nên chưa biết cap/ngày |
 | Bộ test 100 câu (4 quyển KNTT) | **VÔ HIỆU** | gold key trỏ vào index đã xoá; phải sinh lại 12 quyển có nhãn `phan_mon`/`khoi`/`bo_sach`/`do_kho` |
 | G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); nếu làm lại phải sửa cảnh báo `sua_tay*3 < may2` (23/24 file gold trùng từng chữ với `read_claude.txt`) |

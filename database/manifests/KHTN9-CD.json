@@ -1,0 +1,2453 @@
+{
+ "book_id": "KHTN9-CD",
+ "source_name": "SGK_KHTN_9_CD",
+ "source_hash": "9d6d1f1c8ab1c81b279e308ffc18a602",
+ "n_pages": 215,
+ "page_offset": 0,
+ "offset_votes": [
+  155,
+  248
+ ],
+ "pages": [
+  {
+   "page_index": 1,
+   "printed_page": 1,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": null,
+   "role": "cover"
+  },
+  {
+   "page_index": 2,
+   "printed_page": 2,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 61.0,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 3,
+   "printed_page": 3,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 94.0,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 4,
+   "printed_page": 4,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 5,
+   "printed_page": 5,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 6,
+   "printed_page": 6,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 57.0,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 7,
+   "printed_page": 7,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 8,
+   "printed_page": 8,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 94.0,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 9,
+   "printed_page": 9,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 83.0,
+   "bai_so": null,
+   "role": "front_matter"
+  },
+  {
+   "page_index": 10,
+   "printed_page": 10,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 1,
+   "role": "content"
+  },
+  {
+   "page_index": 11,
+   "printed_page": 11,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 1,
+   "role": "content"
+  },
+  {
+   "page_index": 12,
+   "printed_page": 12,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 1,
+   "role": "content"
+  },
+  {
+   "page_index": 13,
+   "printed_page": 13,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 50.0,
+   "bai_so": 1,
+   "role": "content"
+  },
+  {
+   "page_index": 14,
+   "printed_page": 14,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 66.0,
+   "bai_so": 2,
+   "role": "content"
+  },
+  {
+   "page_index": 15,
+   "printed_page": 15,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 2,
+   "role": "content"
+  },
+  {
+   "page_index": 16,
+   "printed_page": 16,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 74.0,
+   "bai_so": 2,
+   "role": "content"
+  },
+  {
+   "page_index": 17,
+   "printed_page": 17,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 2,
+   "role": "content"
+  },
+  {
+   "page_index": 18,
+   "printed_page": 18,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 58.0,
+   "bai_so": 2,
+   "role": "content"
+  },
+  {
+   "page_index": 19,
+   "printed_page": 19,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 60.0,
+   "bai_so": 3,
+   "role": "content"
+  },
+  {
+   "page_index": 20,
+   "printed_page": 20,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 3,
+   "role": "content"
+  },
+  {
+   "page_index": 21,
+   "printed_page": 21,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 3,
+   "role": "content"
+  },
+  {
+   "page_index": 22,
+   "printed_page": 22,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 3,
+   "role": "content"
+  },
+  {
+   "page_index": 23,
+   "printed_page": 23,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 3,
+   "role": "content"
+  },
+  {
+   "page_index": 24,
+   "printed_page": 24,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 69.0,
+   "bai_so": 4,
+   "role": "content"
+  },
+  {
+   "page_index": 25,
+   "printed_page": 25,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 52.0,
+   "bai_so": 4,
+   "role": "content"
+  },
+  {
+   "page_index": 26,
+   "printed_page": 26,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 4,
+   "role": "content"
+  },
+  {
+   "page_index": 27,
+   "printed_page": 27,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 4,
+   "role": "content"
+  },
+  {
+   "page_index": 28,
+   "printed_page": 28,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 5,
+   "role": "content"
+  },
+  {
+   "page_index": 29,
+   "printed_page": 29,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 5,
+   "role": "content"
+  },
+  {
+   "page_index": 30,
+   "printed_page": 30,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 57.0,
+   "bai_so": 5,
+   "role": "content"
+  },
+  {
+   "page_index": 31,
+   "printed_page": 31,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 5,
+   "role": "content"
+  },
+  {
+   "page_index": 32,
+   "printed_page": 32,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 54.0,
+   "bai_so": 5,
+   "role": "content"
+  },
+  {
+   "page_index": 33,
+   "printed_page": 33,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 34,
+   "printed_page": 34,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 35,
+   "printed_page": 35,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 64.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 36,
+   "printed_page": 36,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 37,
+   "printed_page": 37,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 38,
+   "printed_page": 38,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 66.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 39,
+   "printed_page": 39,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 62.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 40,
+   "printed_page": 40,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 56.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 41,
+   "printed_page": 41,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 51.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 42,
+   "printed_page": 42,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 52.0,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 43,
+   "printed_page": 43,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 44,
+   "printed_page": 44,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 6,
+   "role": "content"
+  },
+  {
+   "page_index": 45,
+   "printed_page": 45,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 63.0,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 46,
+   "printed_page": 46,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 47,
+   "printed_page": 47,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 48,
+   "printed_page": 48,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 63.0,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 49,
+   "printed_page": 49,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 93.0,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 50,
+   "printed_page": 50,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 63.0,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 51,
+   "printed_page": 51,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 8,
+   "role": "content"
+  },
+  {
+   "page_index": 52,
+   "printed_page": 52,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 61.0,
+   "bai_so": 10,
+   "role": "content"
+  },
+  {
+   "page_index": 53,
+   "printed_page": 53,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 58.0,
+   "bai_so": 10,
+   "role": "content"
+  },
+  {
+   "page_index": 54,
+   "printed_page": 54,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 10,
+   "role": "content"
+  },
+  {
+   "page_index": 55,
+   "printed_page": 55,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 66.0,
+   "bai_so": 10,
+   "role": "content"
+  },
+  {
+   "page_index": 56,
+   "printed_page": 56,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 10,
+   "role": "content"
+  },
+  {
+   "page_index": 57,
+   "printed_page": 57,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 58,
+   "printed_page": 58,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 65.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 59,
+   "printed_page": 59,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 64.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 60,
+   "printed_page": 60,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 73.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 61,
+   "printed_page": 61,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 73.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 62,
+   "printed_page": 62,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 56.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 63,
+   "printed_page": 63,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 66.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 64,
+   "printed_page": 64,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 68.0,
+   "bai_so": 11,
+   "role": "content"
+  },
+  {
+   "page_index": 65,
+   "printed_page": 65,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 61.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 66,
+   "printed_page": 66,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 50.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 67,
+   "printed_page": 67,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 70.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 68,
+   "printed_page": 68,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 61.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 69,
+   "printed_page": 69,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 63.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 70,
+   "printed_page": 70,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 71,
+   "printed_page": 71,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 73.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 72,
+   "printed_page": 72,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 59.0,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 73,
+   "printed_page": 73,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 74,
+   "printed_page": 74,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 75,
+   "printed_page": 75,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 76,
+   "printed_page": 76,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 13,
+   "role": "content"
+  },
+  {
+   "page_index": 77,
+   "printed_page": 77,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 64.0,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 78,
+   "printed_page": 78,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 79,
+   "printed_page": 79,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 95.0,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 80,
+   "printed_page": 80,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 77.0,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 81,
+   "printed_page": 81,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 89.0,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 82,
+   "printed_page": 82,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 61.0,
+   "bai_so": 15,
+   "role": "content"
+  },
+  {
+   "page_index": 83,
+   "printed_page": 83,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 16,
+   "role": "content"
+  },
+  {
+   "page_index": 84,
+   "printed_page": 84,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 16,
+   "role": "content"
+  },
+  {
+   "page_index": 85,
+   "printed_page": 85,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 16,
+   "role": "content"
+  },
+  {
+   "page_index": 86,
+   "printed_page": 86,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 83.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 87,
+   "printed_page": 87,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 88.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 88,
+   "printed_page": 88,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 68.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 89,
+   "printed_page": 89,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 90,
+   "printed_page": 90,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 68.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 91,
+   "printed_page": 91,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 75.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 92,
+   "printed_page": 92,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 59.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 93,
+   "printed_page": 93,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 69.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 94,
+   "printed_page": 94,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 66.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 95,
+   "printed_page": 95,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 71.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 96,
+   "printed_page": 96,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 59.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 97,
+   "printed_page": 97,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 89.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 98,
+   "printed_page": 98,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 72.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 99,
+   "printed_page": 99,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 100,
+   "printed_page": 100,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 94.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 101,
+   "printed_page": 101,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 87.0,
+   "bai_so": 17,
+   "role": "content"
+  },
+  {
+   "page_index": 102,
+   "printed_page": 102,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 69.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 103,
+   "printed_page": 103,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 104,
+   "printed_page": 104,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 105,
+   "printed_page": 105,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 106,
+   "printed_page": 106,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 84.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 107,
+   "printed_page": 107,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 93.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 108,
+   "printed_page": 108,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 83.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 109,
+   "printed_page": 109,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 90.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 110,
+   "printed_page": 110,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 111,
+   "printed_page": 111,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 94.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 112,
+   "printed_page": 112,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 113,
+   "printed_page": 113,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 86.0,
+   "bai_so": 20,
+   "role": "content"
+  },
+  {
+   "page_index": 114,
+   "printed_page": 114,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 85.0,
+   "bai_so": 23,
+   "role": "content"
+  },
+  {
+   "page_index": 115,
+   "printed_page": 115,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 80.0,
+   "bai_so": 23,
+   "role": "content"
+  },
+  {
+   "page_index": 116,
+   "printed_page": 116,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 87.0,
+   "bai_so": 23,
+   "role": "content"
+  },
+  {
+   "page_index": 117,
+   "printed_page": 117,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 88.0,
+   "bai_so": 23,
+   "role": "content"
+  },
+  {
+   "page_index": 118,
+   "printed_page": 118,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 86.0,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 119,
+   "printed_page": 119,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 85.0,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 120,
+   "printed_page": 120,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 121,
+   "printed_page": 121,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 122,
+   "printed_page": 122,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 54.0,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 123,
+   "printed_page": 123,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 70.0,
+   "bai_so": 24,
+   "role": "content"
+  },
+  {
+   "page_index": 124,
+   "printed_page": 124,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 84.0,
+   "bai_so": 25,
+   "role": "content"
+  },
+  {
+   "page_index": 125,
+   "printed_page": 125,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 92.0,
+   "bai_so": 25,
+   "role": "content"
+  },
+  {
+   "page_index": 126,
+   "printed_page": 126,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 25,
+   "role": "content"
+  },
+  {
+   "page_index": 127,
+   "printed_page": 127,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 26,
+   "role": "content"
+  },
+  {
+   "page_index": 128,
+   "printed_page": 128,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 76.0,
+   "bai_so": 26,
+   "role": "content"
+  },
+  {
+   "page_index": 129,
+   "printed_page": 129,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 95.0,
+   "bai_so": 26,
+   "role": "content"
+  },
+  {
+   "page_index": 130,
+   "printed_page": 130,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 26,
+   "role": "content"
+  },
+  {
+   "page_index": 131,
+   "printed_page": 131,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 90.0,
+   "bai_so": 27,
+   "role": "content"
+  },
+  {
+   "page_index": 132,
+   "printed_page": 132,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 27,
+   "role": "content"
+  },
+  {
+   "page_index": 133,
+   "printed_page": 133,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 27,
+   "role": "content"
+  },
+  {
+   "page_index": 134,
+   "printed_page": 134,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 86.0,
+   "bai_so": 27,
+   "role": "content"
+  },
+  {
+   "page_index": 135,
+   "printed_page": 135,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 66.0,
+   "bai_so": 27,
+   "role": "content"
+  },
+  {
+   "page_index": 136,
+   "printed_page": 136,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 96.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 137,
+   "printed_page": 137,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 94.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 138,
+   "printed_page": 138,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 139,
+   "printed_page": 139,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 94.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 140,
+   "printed_page": 140,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 96.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 141,
+   "printed_page": 141,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 142,
+   "printed_page": 142,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 61.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 143,
+   "printed_page": 143,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 86.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 144,
+   "printed_page": 144,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 84.0,
+   "bai_so": 28,
+   "role": "content"
+  },
+  {
+   "page_index": 145,
+   "printed_page": 145,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 30,
+   "role": "content"
+  },
+  {
+   "page_index": 146,
+   "printed_page": 146,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 74.0,
+   "bai_so": 30,
+   "role": "content"
+  },
+  {
+   "page_index": 147,
+   "printed_page": 147,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 57.0,
+   "bai_so": 30,
+   "role": "content"
+  },
+  {
+   "page_index": 148,
+   "printed_page": 148,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 78.0,
+   "bai_so": 30,
+   "role": "content"
+  },
+  {
+   "page_index": 149,
+   "printed_page": 149,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 31,
+   "role": "content"
+  },
+  {
+   "page_index": 150,
+   "printed_page": 150,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 89.0,
+   "bai_so": 31,
+   "role": "content"
+  },
+  {
+   "page_index": 151,
+   "printed_page": 151,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 58.0,
+   "bai_so": 31,
+   "role": "content"
+  },
+  {
+   "page_index": 152,
+   "printed_page": 152,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 86.0,
+   "bai_so": 31,
+   "role": "content"
+  },
+  {
+   "page_index": 153,
+   "printed_page": 153,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 78.0,
+   "bai_so": 31,
+   "role": "content"
+  },
+  {
+   "page_index": 154,
+   "printed_page": 154,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 87.0,
+   "bai_so": 32,
+   "role": "content"
+  },
+  {
+   "page_index": 155,
+   "printed_page": 155,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 74.0,
+   "bai_so": 32,
+   "role": "content"
+  },
+  {
+   "page_index": 156,
+   "printed_page": 156,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 92.0,
+   "bai_so": 32,
+   "role": "content"
+  },
+  {
+   "page_index": 157,
+   "printed_page": 157,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 71.0,
+   "bai_so": 32,
+   "role": "content"
+  },
+  {
+   "page_index": 158,
+   "printed_page": 158,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 90.0,
+   "bai_so": 32,
+   "role": "content"
+  },
+  {
+   "page_index": 159,
+   "printed_page": 159,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 86.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 160,
+   "printed_page": 160,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 95.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 161,
+   "printed_page": 161,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 162,
+   "printed_page": 162,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 83.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 163,
+   "printed_page": 163,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 164,
+   "printed_page": 164,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 53.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 165,
+   "printed_page": 165,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 91.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 166,
+   "printed_page": 166,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 91.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 167,
+   "printed_page": 167,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 90.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 168,
+   "printed_page": 168,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 73.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 169,
+   "printed_page": 169,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 85.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 170,
+   "printed_page": 170,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 88.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 171,
+   "printed_page": 171,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 69.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 172,
+   "printed_page": 172,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 173,
+   "printed_page": 173,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 94.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 174,
+   "printed_page": 174,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 92.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 175,
+   "printed_page": 175,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 59.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 176,
+   "printed_page": 176,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 71.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 177,
+   "printed_page": 177,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 85.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 178,
+   "printed_page": 178,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 91.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 179,
+   "printed_page": 179,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 86.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 180,
+   "printed_page": 180,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 89.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 181,
+   "printed_page": 181,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 95.0,
+   "bai_so": 33,
+   "role": "content"
+  },
+  {
+   "page_index": 182,
+   "printed_page": 182,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 77.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 183,
+   "printed_page": 183,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 184,
+   "printed_page": 184,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 73.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 185,
+   "printed_page": 185,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 90.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 186,
+   "printed_page": 186,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 95.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 187,
+   "printed_page": 187,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 88.0,
+   "bai_so": 40,
+   "role": "content"
+  },
+  {
+   "page_index": 188,
+   "printed_page": 188,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 80.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 189,
+   "printed_page": 189,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 190,
+   "printed_page": 190,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 77.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 191,
+   "printed_page": 191,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 88.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 192,
+   "printed_page": 192,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 95.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 193,
+   "printed_page": 193,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 90.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 194,
+   "printed_page": 194,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 81.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 195,
+   "printed_page": 195,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 85.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 196,
+   "printed_page": 196,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 94.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 197,
+   "printed_page": 197,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 198,
+   "printed_page": 198,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 84.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 199,
+   "printed_page": 199,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 91.0,
+   "bai_so": 41,
+   "role": "content"
+  },
+  {
+   "page_index": 200,
+   "printed_page": 200,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 87.0,
+   "bai_so": 42,
+   "role": "content"
+  },
+  {
+   "page_index": 201,
+   "printed_page": 201,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 96.0,
+   "bai_so": 42,
+   "role": "content"
+  },
+  {
+   "page_index": 202,
+   "printed_page": 202,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 95.0,
+   "bai_so": 42,
+   "role": "content"
+  },
+  {
+   "page_index": 203,
+   "printed_page": 203,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 80.0,
+   "bai_so": 42,
+   "role": "content"
+  },
+  {
+   "page_index": 204,
+   "printed_page": 204,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 80.0,
+   "bai_so": 43,
+   "role": "content"
+  },
+  {
+   "page_index": 205,
+   "printed_page": 205,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 95.0,
+   "bai_so": 43,
+   "role": "content"
+  },
+  {
+   "page_index": 206,
+   "printed_page": 206,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 77.0,
+   "bai_so": 43,
+   "role": "content"
+  },
+  {
+   "page_index": 207,
+   "printed_page": 207,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 89.0,
+   "bai_so": 43,
+   "role": "content"
+  },
+  {
+   "page_index": 208,
+   "printed_page": 208,
+   "source": "ocr_confirmed",
+   "side": "L",
+   "conf": 94.0,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 209,
+   "printed_page": 209,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 92.0,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 210,
+   "printed_page": 210,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 211,
+   "printed_page": 211,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 212,
+   "printed_page": 212,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 213,
+   "printed_page": 213,
+   "source": "ocr_confirmed",
+   "side": "R",
+   "conf": 87.0,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 214,
+   "printed_page": 214,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 44,
+   "role": "content"
+  },
+  {
+   "page_index": 215,
+   "printed_page": 215,
+   "source": "model_inferred",
+   "side": null,
+   "conf": null,
+   "bai_so": 44,
+   "role": "content"
+  }
+ ],
+ "bai": [
+  {
+   "bai_so": 1,
+   "title": "Công và công suất",
+   "start": 10,
+   "end": 13,
+   "source": "toc"
+  },
+  {
+   "bai_so": 2,
+   "title": "Cơ năng",
+   "start": 14,
+   "end": 18,
+   "source": "toc"
+  },
+  {
+   "bai_so": 3,
+   "title": "Khúc xạ ánh sáng và phản xạ toàn phần",
+   "start": 19,
+   "end": 23,
+   "source": "toc"
+  },
+  {
+   "bai_so": 4,
+   "title": "Hiện tượng tán sắc ánh sáng. Màu sắc ánh sáng",
+   "start": 24,
+   "end": 27,
+   "source": "toc"
+  },
+  {
+   "bai_so": 5,
+   "title": "Sự khúc xạ ánh sáng qua thấu kinh",
+   "start": 28,
+   "end": 32,
+   "source": "toc"
+  },
+  {
+   "bai_so": 6,
+   "title": "Sự tạo ảnh qua thấu kính. Kinh lúp",
+   "start": 33,
+   "end": 44,
+   "source": "toc"
+  },
+  {
+   "bai_so": 8,
+   "title": "Đoạn mạch nãi tiếp",
+   "start": 45,
+   "end": 51,
+   "source": "toc"
+  },
+  {
+   "bai_so": 10,
+   "title": "Năng lượng của dòng điện và công suất điện _",
+   "start": 52,
+   "end": 56,
+   "source": "toc"
+  },
+  {
+   "bai_so": 11,
+   "title": "Cảm ứng điện từ. Nguyên tắc tạo ra dòng điện xoay chu",
+   "start": 57,
+   "end": 64,
+   "source": "toc"
+  },
+  {
+   "bai_so": 13,
+   "title": "Sử dụng năng lượng",
+   "start": 65,
+   "end": 76,
+   "source": "toc"
+  },
+  {
+   "bai_so": 15,
+   "title": "Tỉnh chất chung của kim loại",
+   "start": 77,
+   "end": 82,
+   "source": "toc"
+  },
+  {
+   "bai_so": 16,
+   "title": "Dãy hoạt động hoá hạc",
+   "start": 83,
+   "end": 85,
+   "source": "toc"
+  },
+  {
+   "bai_so": 17,
+   "title": "Tách kim loại. Sử dụng hợp kim",
+   "start": 86,
+   "end": 101,
+   "source": "toc"
+  },
+  {
+   "bai_so": 20,
+   "title": "Hydrocarbon, alkane",
+   "start": 102,
+   "end": 113,
+   "source": "toc"
+  },
+  {
+   "bai_so": 23,
+   "title": "Ethylic alcohol",
+   "start": 114,
+   "end": 117,
+   "source": "toc"
+  },
+  {
+   "bai_so": 24,
+   "title": "Acetic acid",
+   "start": 118,
+   "end": 123,
+   "source": "toc"
+  },
+  {
+   "bai_so": 25,
+   "title": "Lipid và chất béo",
+   "start": 124,
+   "end": 126,
+   "source": "toc"
+  },
+  {
+   "bai_so": 26,
+   "title": "Glucose và saccharose",
+   "start": 127,
+   "end": 130,
+   "source": "toc"
+  },
+  {
+   "bai_so": 27,
+   "title": "Tỉnh bật và cellulose",
+   "start": 131,
+   "end": 135,
+   "source": "toc"
+  },
+  {
+   "bai_so": 28,
+   "title": "Protein",
+   "start": 136,
+   "end": 144,
+   "source": "toc"
+  },
+  {
+   "bai_so": 30,
+   "title": "Sơ lược vẽ hoả học vỏ Trải Đất và khai thác tải nguyên từ vỏ Trải Đất",
+   "start": 145,
+   "end": 148,
+   "source": "toc"
+  },
+  {
+   "bai_so": 31,
+   "title": "Ứng dụng một số tài nguyên trong vỏ Trái Đất",
+   "start": 149,
+   "end": 153,
+   "source": "toc"
+  },
+  {
+   "bai_so": 32,
+   "title": "Nguỗn carbon. Chu trình carbon. Sự ấm lên toàn cầu",
+   "start": 154,
+   "end": 158,
+   "source": "toc"
+  },
+  {
+   "bai_so": 33,
+   "title": "Gene là trung tâm của đi truyềnhọc",
+   "start": 159,
+   "end": 181,
+   "source": "toc"
+  },
+  {
+   "bai_so": 40,
+   "title": "Di truyền học người",
+   "start": 182,
+   "end": 187,
+   "source": "toc"
+  },
+  {
+   "bai_so": 41,
+   "title": "Ứng dụng công nghệ di truyền vào đời sống",
+   "start": 188,
+   "end": 199,
+   "source": "toc"
+  },
+  {
+   "bai_so": 42,
+   "title": "Giới thiệu về tiến hoá, chọn lọc nhân tạo và chọn lọc tự nhiên",
+   "start": 200,
+   "end": 203,
+   "source": "toc"
+  },
+  {
+   "bai_so": 43,
+   "title": "Cơ chế tiến hoá",
+   "start": 204,
+   "end": 207,
+   "source": "toc"
+  },
+  {
+   "bai_so": 44,
+   "title": "Sự phát sinh và phát triển sự sống trên Trái Đất",
+   "start": 208,
+   "end": 215,
+   "source": "toc"
+  }
+ ],
+ "banner_votes": [
+  0,
+  29
+ ],
+ "chuong": [
+  {
+   "label": "3",
+   "title": "Điện",
+   "after_bai": null
+  },
+  {
+   "label": "6",
+   "title": "Kim loại",
+   "after_bai": null
+  },
+  {
+   "label": "7",
+   "title": "Giới thiệu về chất hữu cơ, hydrocarbon và nguồn nhiên liệu",
+   "after_bai": null
+  }
+ ],
+ "flags": [
+  {
+   "kind": "toc_entry_duplicated",
+   "detail": "Bài 8 xuất hiện hai lần với số trang khác nhau (45 và 115) -> giữ 45"
+  },
+  {
+   "kind": "toc_page_ambiguous",
+   "detail": "Bài 18 (trang nguồn 214): đọc lại ra nhiều ứng viên [2, 92] -> bỏ mục, không chọn bừa"
+  },
+  {
+   "kind": "toc_entry_duplicated",
+   "detail": "Bài 28 xuất hiện hai lần với số trang khác nhau (136 và 138) -> giữ 136"
+  },
+  {
+   "kind": "toc_page_ambiguous",
+   "detail": "Bài 38 (trang nguồn 215): đọc lại ra nhiều ứng viên [3, 183] -> bỏ mục, không chọn bừa"
+  },
+  {
+   "kind": "toc_page_out_of_order",
+   "detail": "Bài 12: trang 82 phá thứ tự không giảm của dãy dài nhất -> bỏ mục, không đoán"
+  },
+  {
+   "kind": "toc_page_out_of_order",
+   "detail": "Bài 39: trang 189 phá thứ tự không giảm của dãy dài nhất -> bỏ mục, không đoán"
+  },
+  {
+   "kind": "toc_reader",
+   "detail": "SGK_KHTN_9_CD: đọc bằng toc_lines (style=so_thu_tu, trang=[214, 215], vị trí=cuoi_sach)"
+  },
+  {
+   "kind": "offset_weak_consensus_confirmed_by_fingerprint",
+   "detail": "SGK_KHTN_9_CD: đồng thuận yếu ở đường manifest (155/248 = 62%) nhưng fingerprint M0 đo CÙNG offset 0 với hit 95% và margin 36 -> đi tiếp bằng offset đã đo"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 1: không đọc được số trang, suy ra 1 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 4: không đọc được số trang, suy ra 4 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 5: không đọc được số trang, suy ra 5 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 7: không đọc được số trang, suy ra 7 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 10: không đọc được số trang, suy ra 10 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 11: không đọc được số trang, suy ra 11 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 12: không đọc được số trang, suy ra 12 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 15: không đọc được số trang, suy ra 15 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 17: không đọc được số trang, suy ra 17 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 20: không đọc được số trang, suy ra 20 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 21: không đọc được số trang, suy ra 21 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 22: không đọc được số trang, suy ra 22 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 23: không đọc được số trang, suy ra 23 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 26: không đọc được số trang, suy ra 26 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 27: không đọc được số trang, suy ra 27 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 28: không đọc được số trang, suy ra 28 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 29: không đọc được số trang, suy ra 29 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 31: không đọc được số trang, suy ra 31 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 33: không đọc được số trang, suy ra 33 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 34: không đọc được số trang, suy ra 34 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 36: không đọc được số trang, suy ra 36 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 37: không đọc được số trang, suy ra 37 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 43: không đọc được số trang, suy ra 43 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 44: không đọc được số trang, suy ra 44 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 46: không đọc được số trang, suy ra 46 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 47: không đọc được số trang, suy ra 47 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 51: không đọc được số trang, suy ra 51 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 54: không đọc được số trang, suy ra 54 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 56: không đọc được số trang, suy ra 56 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 57: không đọc được số trang, suy ra 57 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 70: không đọc được số trang, suy ra 70 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 73: không đọc được số trang, suy ra 73 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 74: không đọc được số trang, suy ra 74 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 75: không đọc được số trang, suy ra 75 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 76: không đọc được số trang, suy ra 76 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 78: không đọc được số trang, suy ra 78 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 83: không đọc được số trang, suy ra 83 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 84: không đọc được số trang, suy ra 84 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 85: không đọc được số trang, suy ra 85 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 89: không đọc được số trang, suy ra 89 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 99: không đọc được số trang, suy ra 99 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 104: không đọc được số trang, suy ra 104 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 110: không đọc được số trang, suy ra 110 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 112: không đọc được số trang, suy ra 112 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 120: không đọc được số trang, suy ra 120 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 121: không đọc được số trang, suy ra 121 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 126: không đọc được số trang, suy ra 126 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 130: không đọc được số trang, suy ra 130 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 132: không đọc được số trang, suy ra 132 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 138: không đọc được số trang, suy ra 138 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 145: không đọc được số trang, suy ra 145 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 149: không đọc được số trang, suy ra 149 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 161: không đọc được số trang, suy ra 161 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 163: không đọc được số trang, suy ra 163 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 172: không đọc được số trang, suy ra 172 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 210: không đọc được số trang, suy ra 210 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 211: không đọc được số trang, suy ra 211 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 212: không đọc được số trang, suy ra 212 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 214: không đọc được số trang, suy ra 214 từ offset 0"
+  },
+  {
+   "kind": "page_number_not_read",
+   "detail": "trang 215: không đọc được số trang, suy ra 215 từ offset 0"
+  },
+  {
+   "kind": "bai_numbers_not_contiguous",
+   "detail": "29 Bài dựng được, cao nhất 44; thiếu [7, 9, 12, 14, 18, 19, 21, 22, 29, 34, 35, 36, 37, 38, 39]"
+  }
+ ],
+ "manifest_version": 3
+}
