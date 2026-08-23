@@ -115,7 +115,11 @@ scripts/_out_g4/
 
 # Output QA/eval tam (overlay PNG + JSON, ~119MB): sinh lai duoc, khong phai nguon.
 # So do that thi nam trong document/decision_log.html, khong nam o day.
-scripts/
+#
+# 2026-08-23: truoc day bo ca `scripts/` vi thu muc chi chua output QA. Nay no CO
+# script that (`run_etl_local.ps1` — lenh treo may chay ETL), va mot dong ignore
+# rong am tham lam script do khong duoc commit. Chi bo dung phan output.
+scripts/_out_*/
 
 # Trang PNG cua gold set G2 (~27MB): sinh lai bang
 # `python -m src.test.qa_ocr_gold --export`. gold.txt/ocr.txt thi VAN commit,
