@@ -181,7 +181,13 @@ suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, c�
 
 A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
 - **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-65**).
-- **What to do next (updated 2026-08-23):** `document/specs/2026-08-23-m0-toc-and-layout-prompt.md` §4
+- **What to do next (updated 2026-08-23, sau khi index 12 quyển đã dựng xong):**
+  `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` — prompt M2 đầy đủ: trích nguyên văn
+  hợp đồng của `goal.docx` (Nội dung 2 và 4), mọi số đã đo (index 16 393 chunk, chỉ số dưới
+  CD 256:3 / CTST 377:3 / KNTT 408:4), **ba mâu thuẫn giữa đề cương và số đo phải HỎI chứ
+  không tự xử** (384 chiều vs bge-m3, Vintern, chunk), 6 việc M2 kèm tiêu chí nghiệm thu đo
+  được, 11 điều CẤM và 5 câu phải hỏi. Bắt đầu từ **D-74**. Nền cũ:
+  `document/specs/2026-08-23-m0-toc-and-layout-prompt.md` §4
   (thứ tự M1→M5) + `document/specs/2026-08-23-m0-report.md` §7 (5 việc còn lại của M0/M1),
   trên nền thiết kế `document/specs/2026-08-22-12books-3publishers-etl-rebuild.md`. Bảng
   tiến độ tóm tắt: mục "Trạng thái tiến độ" ngay dưới. **Stale, chỉ đọc như tư liệu:**
