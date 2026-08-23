@@ -125,3 +125,14 @@ src/test/gold_ocr/**/page.png
 # venv rieng cho PaddleOCR (numpy 1.26 — KHONG dung chung voi env chinh dang
 # dung numpy 2.4 + torch 2.11; cai chung se pha env ETL). Xem D-61.
 .venv_paddle/
+
+# --- datasources: DỮ LIỆU, KHÔNG PHẢI SOURCE (quyết định 2026-08-23, D-68) ---
+# Đo được: datasources/ = 4,1 GB (2 399 PNG, CD/CTST 2280×3201 ~3,5 MB/trang) và
+# .git đã 11 GB. Riêng lô CD/CTST ~3,4 GB vượt hạn mức 2 GB/lần push của GitHub
+# nên push nguyên trạng SẼ fail. PNG không được LFS-hoá (.gitattributes chỉ phủ
+# `datasources/*.pdf`), nên chúng sẽ vào repo dưới dạng blob thường.
+# Cách chạy: trỏ `RAG_DATA_DIR` sang nơi chứa dữ liệu (trên Colab: Google Drive).
+# LƯU Ý: bỏ theo dõi KHÔNG làm .git nhỏ lại — 801 PNG KNTT vẫn nằm trong history;
+# muốn thu hồi dung lượng thật thì phải viết lại history, chưa làm.
+datasources/*
+!datasources/README.md

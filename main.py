@@ -200,8 +200,14 @@ def run_etl_text_only():
 
     sources = discover_page_sources(DATA_DIR)
     if not sources:
-        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
-        return
+        # Thoát KHÁC 0: từ 2026-08-23 `datasources/` không nằm trong git (D-68) nên
+        # "không thấy quyển nào" là cách hỏng phổ biến nhất của một bản clone mới.
+        # `return` cho exit code 0, tức một cell Colab / CI sẽ trông như đã chạy
+        # xong mà không xử lý gì — đúng kiểu im lặng nguyên tắc 5 cấm.
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR} — "
+                     f"trỏ RAG_DATA_DIR vào thư mục chứa các folder "
+                     f"SGK_KHTN_*/page_NNN.png (xem datasources/README.md)")
+        sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
     logger.info(f"Previously processed files: {len(get_processed_files())}")
@@ -268,8 +274,14 @@ def run_etl_image_only():
 
     sources = discover_page_sources(DATA_DIR)
     if not sources:
-        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
-        return
+        # Thoát KHÁC 0: từ 2026-08-23 `datasources/` không nằm trong git (D-68) nên
+        # "không thấy quyển nào" là cách hỏng phổ biến nhất của một bản clone mới.
+        # `return` cho exit code 0, tức một cell Colab / CI sẽ trông như đã chạy
+        # xong mà không xử lý gì — đúng kiểu im lặng nguyên tắc 5 cấm.
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR} — "
+                     f"trỏ RAG_DATA_DIR vào thư mục chứa các folder "
+                     f"SGK_KHTN_*/page_NNN.png (xem datasources/README.md)")
+        sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
     # processed_images.txt là log tiến độ (advisory) — quyết định skip nằm ở
@@ -365,8 +377,14 @@ def run_etl():
 
     sources = discover_page_sources(DATA_DIR)
     if not sources:
-        logger.error(f"Không thấy quyển nào trong {DATA_DIR}")
-        return
+        # Thoát KHÁC 0: từ 2026-08-23 `datasources/` không nằm trong git (D-68) nên
+        # "không thấy quyển nào" là cách hỏng phổ biến nhất của một bản clone mới.
+        # `return` cho exit code 0, tức một cell Colab / CI sẽ trông như đã chạy
+        # xong mà không xử lý gì — đúng kiểu im lặng nguyên tắc 5 cấm.
+        logger.error(f"Không thấy quyển nào trong {DATA_DIR} — "
+                     f"trỏ RAG_DATA_DIR vào thư mục chứa các folder "
+                     f"SGK_KHTN_*/page_NNN.png (xem datasources/README.md)")
+        sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
     logger.info(
