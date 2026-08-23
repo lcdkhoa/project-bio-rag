@@ -32,5 +32,6 @@
       "Bash(git lfs *)",
       "Bash(git rm *)"
     ]
-  }
+  },
+  "outputStyle": "Concise"
 }

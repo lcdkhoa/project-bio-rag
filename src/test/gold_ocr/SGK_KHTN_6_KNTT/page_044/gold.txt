@@ -6,47 +6,47 @@
 # Neu mot block la rac hoan toan (khong phai chu that): xoa het chu ben
 # duoi nhung GIU dong tieu de -> se duoc dem rieng la 'vung rac'.
 === [1] body ===
-lI) Tính chất và ứng dụng của vật liệu
-
+II Tính chất và ứng dụng của vật liệu
 Mỗi loại vật liệu có các tính chất khác nhau. Cần dựa vào các tính chất này để lựa
 chọn vật liệu làm những vật dụng mong muốn. Ví dụ: Dây dẫn điện bằng kim loại cần
-được bọc nhựa cách điện đề tránh bị điện giật khi tiếp xúc. Nồi nâu bằng kim loại có
-quai bằng gỗ hoặc nhựa (là những vật liệu dẫn nhiệt kém) đề tránh bị bỏng khi cầm.
-Để giữ hoặc vận chuyền các vật nặng cần các giá đỡ làm bằng vật liệu cứng và chắc
+được bọc nhựa cách điện để tránh bị điện giật khi tiếp xúc. Nồi nấu bằng kim loại có
+quai bằng gỗ hoặc nhựa (là những vật liệu dẫn nhiệt kém) để tránh bị bỏng khi cầm.
+Để giữ hoặc vận chuyển các vật nặng cần các giá đỡ làm bằng vật liệu cứng và chắc
 như kim loại, gỗ,...
-
 43
 
 === [2] info_box ===
 1. Tìm hiểu khả năng dẫn điện của vật liệu
 Chuẩn bị: bộ dụng cụ như sơ đồ ở Hình 12.3,
-quản ống đề một số đồ vật làm bằng kim loại, nhựa, gỗ.
-Công tắc. Bóng đèn ° 3 ạI, ựa, gÔ,
-=. .. cao su, thuỷ tinh, gốm,...
+một số đồ vật làm bằng kim loại, nhựa, gỗ,
+Công tắc Bóng đèn
+cao su, thuỷ tinh, gốm,...
 Tiến hành:
-- Kiểm tra dụng cụ: Kẹp hai đầu kẹp trực tiếp
+Kiểm tra dụng cụ: Kẹp hai đầu kẹp trực tiếp
 vào nhau và xem đèn có sáng không. Nếu
-Pin 15V đNue đèn sáng thì bộ dụng cụ hoạt động tốt.
-- Lần lượt kẹp từng đồ vật vào hai chiếc kẹp.
+Pin 1,5 V đèn sáng thì bộ dụng cụ hoạt động tốt.
+Kẹp vật liệu
+Lần lượt kẹp từng đồ vật vào hai chiếc kẹp.
 Nếu đèn sáng thì vật liệu đó dẫn điện.
-Thí nghiệm xác định khả năng__ Nêu đèn không sáng, vật liệu đó không
+Hình 12.3 Thí nghiệm xác định khả năng Nếu đèn không sáng, vật liệu đó không
 dẫn điện của vật liệu dẫn điện (cách điện).
 Hãy quan sát hiện tượng khi thực hiện thí nghiệm và điền kết quả quan sát được theo
 mẫu bảng sau:
 Vật liệu Bóng đèn sáng hay không sáng? Vật liệu dẫn điện hay không dẫn điện?
+? ? ? ? ? ? ? ? ?
 2. Tìm hiểu khả năng dẫn nhiệt của vật liệu
-Chuẩn bị: bát sứ, các thìa bằng kim loại, sứ,
+Kim loại Sứ Kim loại Sứ Chuẩn bị: bát sứ, các thìa bằng kim loại, sứ,
 nhựa, gỗ.
 Tiến hành:
-- Đổ nước nóng già (khoảng 90 °C) vào
-2/3 bát và đặt 4 chiếc thìa vào bát. Sau
-Nước nóng Nước đá khoảng 2 - 3 phút, dùng tay cảm vào
+Đổ nước nóng già (khoảng 90 °C) vào
+Nhựa Gỗ Nhựa Gỗ 2/3 bát và đặt 4 chiếc thìa vào bát. Sau
+Nước nóng Nước đá khoảng 2 – 3 phút, dùng tay cầm vào
 cán của từng chiếc thìa.
-- Lặp lại thí nghiệm trên, nhưng thay nước
-nóng bằng nước đá.
-Lưu ý: Cần thận tránh bị bỏng nước nóng.
+Lặp lại thí nghiệm trên, nhưng thay nước
+Hình 12.4 Thí nghiệm xác định khả năng nóng bằng nước đá.
+dẫn nhiệt của vật liệu Lưu ý: Cẩn thận tránh bị bỏng nước nóng.
 Hãy nhận xét sự thay đổi nhiệt độ của các loại thìa. Điền kết quả quan sát, nhận xét
 theo mẫu bảng sau:
-Vật liệu Chiếc thìa nóng hơn/lạnh hơn/không nhận thấy sự thay đổi? _. Vật liệu dẫn nhiệt tốt
+Vật liệu Chiếc thìa nóng hơn/lạnh hơn/không nhận thấy sự thay đổi? Vật liệu dẫn nhiệt tốt
 Khi nhúng vào nước nóng Khi nhúng vào nước đá hay không?
-Hình 12.4
+? ? ? ? ? ? ? ? ? ?
