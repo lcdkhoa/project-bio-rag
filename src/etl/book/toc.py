@@ -35,6 +35,15 @@ cột riêng — nên phần hình học phải tự hiệu chỉnh, không hard
 5. Ứng viên số trang được chốt bằng **ràng buộc đơn điệu** (số trang không giảm
    khi đi xuống). Không ứng viên nào hợp lệ -> **bỏ entry + flag**, không đoán.
 
+## Ngưỡng px là theo TỈ LỆ chiều rộng trang, không phải hằng số
+
+Mọi con số px dưới đây (`COL_GUTTER` 8, `MIN_COL_WIDTH` 10, `ROW_GUTTER` 6,
+`MIN_ROW_HEIGHT` 8, pad 6/12, các eps 3/4/10/26) được **đo trên KNTT ở 1094 px
+chiều rộng**. Corpus nay có CD/CTST ở **2280-2480 px**, tức mực to hơn ~2,1-2,3
+lần: một khe 8 px trên KNTT tương ứng ~18 px trên CD, nên dùng lại số cũ sẽ gộp
+nhầm cột số vào cột tiêu đề. `geom_for_width(w)` nhân mọi ngưỡng theo
+`w / 1094`; ở đúng 1094 px nó trả lại **y nguyên** bộ số cũ (có test chốt).
+
 ## Giới hạn (nói ra, không giấu)
 
 Sách 6 in tiêu đề CHƯƠNG bằng chữ trắng trên nền màu và ô số trang của hàng đó
@@ -91,10 +100,42 @@ NUMBER_PADS_RULES_FULL = (0,)
 NUMBER_PADS_GUTTER_FULL = (0, 6, 12)
 
 
-def _pads(how: str, full: bool = False) -> tuple:
+REF_WIDTH = 1094          # chiều rộng trang mà mọi ngưỡng px được đo trên đó
+
+
+def geom_for_width(width: int) -> dict:
+    """Ngưỡng px của hình học bảng, tỉ lệ theo chiều rộng trang (xem docstring)."""
+    k = max(1.0, width / float(REF_WIDTH))
+    return {
+        "k": round(k, 4),
+        "col_gutter": max(1, round(COL_GUTTER * k)),
+        "min_col_width": max(1, round(MIN_COL_WIDTH * k)),
+        "row_gutter": max(1, round(ROW_GUTTER * k)),
+        "min_row_height": max(1, round(MIN_ROW_HEIGHT * k)),
+        "pad_gutter": max(1, round(6 * k)),
+        "pad_gutter_wide": max(1, round(12 * k)),
+        "cell_pad_y": max(1, round(3 * k)),
+        "eps": max(1, round(4 * k)),
+        "min_col_gap": max(1, round(10 * k)),
+        "row_extend": max(1, round(26 * k)),
+    }
+
+
+def _geom(geom, gray_or_width) -> dict:
+    if geom is not None:
+        return geom
+    width = (gray_or_width.shape[1] if hasattr(gray_or_width, "shape")
+             else int(gray_or_width))
+    return geom_for_width(width)
+
+
+def _pads(how: str, full: bool = False, geom=None) -> tuple:
+    g = geom or geom_for_width(REF_WIDTH)
     if how == "rules":
         return NUMBER_PADS_RULES_FULL if full else NUMBER_PADS_RULES
-    return NUMBER_PADS_GUTTER_FULL if full else NUMBER_PADS_GUTTER
+    if full:
+        return (0, g["pad_gutter"], g["pad_gutter_wide"])
+    return (g["pad_gutter"],)
 
 # "Bài 12", "Bài 12.", "Bài I" (OCR đọc chữ số 1 thành I/l/|). Chỉ nhận tối đa 2
 # chữ số: không quyển nào tới 100 Bài, và nới ra sẽ nuốt cả số trang.
@@ -170,28 +211,30 @@ def _rule_columns(gray: np.ndarray) -> np.ndarray:
     return _max_run_per_column(gray < PALE_MAX) >= RULE_RUN_FRAC * height
 
 
-def number_column(gray: np.ndarray) -> tuple:
+def number_column(gray: np.ndarray, geom=None) -> tuple:
     """`((x0, x1), "rules"|"gutter")` của cột số trang, hoặc `(None, None)`."""
     height, width = gray.shape
+    g = _geom(geom, gray)
     rules = _rule_columns(gray)
-    rule_groups = [g for g in _runs(rules, 0, width, gutter=1) if g[0] > width // 2]
+    rule_groups = [r for r in _runs(rules, 0, width, gutter=1) if r[0] > width // 2]
     if len(rule_groups) >= 2:
         left, right = rule_groups[-2], rule_groups[-1]
-        if right[0] - left[1] >= MIN_COL_WIDTH + 2:
+        if right[0] - left[1] >= g["min_col_width"] + 2:
             return (left[1] + 1, right[0] - 1), "rules"
     body = (gray < INK_MAX)[int(TOP_CLIP * height):int(BOT_CLIP * height), :]
     has_ink = (body.sum(axis=0) > 2) & (~rules)
-    groups = [g for g in _runs(has_ink, width // 2, width, gutter=COL_GUTTER)
-              if g[1] - g[0] + 1 >= MIN_COL_WIDTH]
+    groups = [r for r in _runs(has_ink, width // 2, width, gutter=g["col_gutter"])
+              if r[1] - r[0] + 1 >= g["min_col_width"]]
     return (groups[-1], "gutter") if groups else (None, None)
 
 
-def row_bands(gray: np.ndarray, x0: int, x1: int) -> list:
+def row_bands(gray: np.ndarray, x0: int, x1: int, geom=None) -> list:
     height = gray.shape[0]
+    g = _geom(geom, gray)
     has_ink = ((gray[:, x0:x1 + 1] < INK_MAX).sum(axis=1)) > 0
     bands = _runs(has_ink, int(TOP_CLIP * height), int(BOT_CLIP * height),
-                  gutter=ROW_GUTTER)
-    return [b for b in bands if b[1] - b[0] + 1 >= MIN_ROW_HEIGHT]
+                  gutter=g["row_gutter"])
+    return [b for b in bands if b[1] - b[0] + 1 >= g["min_row_height"]]
 
 
 def _left_edge(gray: np.ndarray) -> int:
@@ -212,12 +255,13 @@ def _ocr(image: np.ndarray, psm: int, whitelist: str = "") -> str:
 
 def read_number_cell(image: np.ndarray, box: tuple,
                      psms: Sequence = NUMBER_PSMS_FAST,
-                     pads: Sequence = (0,)) -> set:
+                     pads: Sequence = (0,), pad_y: int = 3) -> set:
     """Hợp các số đọc được từ một ô, qua nhiều pad x scale x psm (docstring §4)."""
     y0, y1, x0, x1 = box
     found: set = set()
     for pad in pads:
-        crop = image[max(0, y0 - 3):y1 + 4, max(0, x0 - pad):x1 + 1 + pad]
+        crop = image[max(0, y0 - pad_y):y1 + pad_y + 1,
+                     max(0, x0 - pad):x1 + 1 + pad]
         if crop.size == 0:
             continue
         for scale in NUMBER_SCALES:
@@ -249,43 +293,49 @@ def read_row_text(image: np.ndarray, box: tuple) -> str:
     return " ".join(_ocr(scaled, 4).split())
 
 
-def _table_geometry(source, page_index: int):
+def _table_geometry(source, page_index: int, geom=None, image=None):
     """(image, gray, (nx0, nx1), bands, left_x, how) hoặc None nếu không phải bảng."""
-    image = source.load(page_index)
+    if image is None:
+        image = source.load(page_index)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    column, how = number_column(gray)
+    g = _geom(geom, gray)
+    column, how = number_column(gray, g)
     if column is None:
         return None
     nx0, nx1 = column
-    bands = row_bands(gray, nx0, nx1)
+    bands = row_bands(gray, nx0, nx1, g)
     if len(bands) < MIN_ROWS:
         return None
     left_x = _left_edge(gray)
-    if nx0 - 4 <= left_x + 10:
+    if nx0 - g["eps"] <= left_x + g["min_col_gap"]:
         return None
     return image, gray, (nx0, nx1), bands, left_x, how
 
 
-def read_toc_rows(source, page_index: int) -> Optional[list]:
+def read_toc_rows(source, page_index: int, geom=None, image=None) -> Optional[list]:
     """Hàng của bảng MỤC LỤC trên một trang, hoặc None nếu trang không phải bảng."""
-    geometry = _table_geometry(source, page_index)
+    geometry = _table_geometry(source, page_index, geom, image)
     if geometry is None:
         return None
     image, gray, (nx0, nx1), bands, left_x, how = geometry
     height = gray.shape[0]
+    g = _geom(geom, gray)
     centers = [(b[0] + b[1]) // 2 for b in bands]
     rows = []
     for index, (band, center) in enumerate(zip(bands, centers)):
-        top = (centers[index - 1] + center) // 2 if index else max(0, band[0] - 26)
+        top = ((centers[index - 1] + center) // 2 if index
+               else max(0, band[0] - g["row_extend"]))
         bottom = ((centers[index + 1] + center) // 2 if index + 1 < len(centers)
-                  else min(height - 1, band[1] + 26))
-        text = read_row_text(image, (top, bottom, max(0, left_x - 4), nx0 - 4))
+                  else min(height - 1, band[1] + g["row_extend"]))
+        text = read_row_text(image, (top, bottom, max(0, left_x - g["eps"]),
+                                     nx0 - g["eps"]))
         # Ô số trang chỉ đọc khi hàng đó thực sự là một Bài/Chương — OCR số là
         # phần đắt nhất (nhiều scale x psm) và phần lớn hàng không cần tới.
         candidates = set()
         if _BAI.search(text):
             candidates = read_number_cell(image, (band[0], band[1], nx0, nx1),
-                                          pads=_pads(how))
+                                          pads=_pads(how, geom=g),
+                                          pad_y=g["cell_pad_y"])
         rows.append(TocRow(page_index=page_index,
                            candidates=frozenset(candidates), text=text))
     return rows
@@ -293,14 +343,14 @@ def read_toc_rows(source, page_index: int) -> Optional[list]:
 
 # ------------------------------------------------------------- phát hiện
 
-def find_toc_pages(source, search: Iterable = TOC_SEARCH_PAGES) -> tuple:
+def find_toc_pages(source, search: Iterable = TOC_SEARCH_PAGES, geom=None) -> tuple:
     """Các trang nguồn là MỤC LỤC (liền nhau), kèm hàng đã đọc của từng trang."""
     available = set(source.page_numbers())
     found: dict = {}
     for page_index in search:
         if page_index not in available:
             continue
-        rows = read_toc_rows(source, page_index)
+        rows = read_toc_rows(source, page_index, geom)
         if rows is None or sum(1 for r in rows if _BAI.search(r.text)) < MIN_BAI_ROWS:
             if found:
                 break          # hết dải MỤC LỤC liền mạch
@@ -365,19 +415,19 @@ def parse_toc_rows(rows: Sequence, *, rescue=None) -> TocResult:
     return result
 
 
-def read_toc(source) -> TocResult:
+def read_toc(source, geom=None, search: Iterable = TOC_SEARCH_PAGES) -> TocResult:
     """Điểm vào: đọc MỤC LỤC của một quyển thành entries + chuongs + flags."""
-    page_indices, rows_by_page = find_toc_pages(source)
+    page_indices, rows_by_page = find_toc_pages(source, search, geom)
     if not page_indices:
         return TocResult(flags=[{
             "kind": "toc_not_found",
             "detail": f"{source.name}: không tìm thấy trang MỤC LỤC nào trong "
-                      f"{list(TOC_SEARCH_PAGES)}"}])
+                      f"{list(search)}"}])
 
     rows: list = []
     boxes: list = []           # (page_index, band) song song với `rows`
     for page_index in page_indices:
-        geometry = _table_geometry(source, page_index)
+        geometry = _table_geometry(source, page_index, geom)
         page_rows = rows_by_page[page_index]
         bands = geometry[3] if geometry else [None] * len(page_rows)
         rows.extend(page_rows)
@@ -387,12 +437,15 @@ def read_toc(source) -> TocResult:
         page_index, band = boxes[position]
         if band is None:
             return set()
-        geometry = _table_geometry(source, page_index)
+        geometry = _table_geometry(source, page_index, geom)
         if geometry is None:
             return set()
-        image, _gray, (nx0, nx1), _bands, _left, how = geometry
+        image, gray_r, (nx0, nx1), _bands, _left, how = geometry
+        g = _geom(geom, gray_r)
         return read_number_cell(image, (band[0], band[1], nx0, nx1),
-                                psms=NUMBER_PSMS_FULL, pads=_pads(how, full=True))
+                                psms=NUMBER_PSMS_FULL,
+                                pads=_pads(how, full=True, geom=g),
+                                pad_y=g["cell_pad_y"])
 
     result = parse_toc_rows(rows, rescue=rescue)
     result.page_indices = page_indices

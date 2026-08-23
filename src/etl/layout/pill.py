@@ -27,6 +27,16 @@ binarize cục bộ nên vẫn đọc ra phần chữ tối). Chỉ cách này h
    được nhận khi khớp `Hình N.M`. Đây là phép thử tự kiểm — một pill giả đọc ra
    rác thì bị loại, không có chuyện đoán.
 
+## Kích thước và kernel là theo TỈ LỆ chiều rộng trang
+
+`MIN_W/MAX_W = 55/460`, `MIN_H/MAX_H = 18/70` và `CLOSE_KERNELS = (3, 5, 9)` đều
+được **đo trên KNTT ở 1094 px chiều rộng**. CD/CTST rộng 2280-2480 px, nên một
+pill `Hình N.M` ở đó rộng ~2,1-2,3 lần: `MAX_W = 460` sẽ **loại sạch mọi pill**
+của CD/CTST vì chúng vượt ngưỡng. `bounds_for_width(w)` nhân theo `w / 1094` và
+ở đúng 1094 px trả lại y nguyên bộ số cũ (có test chốt). Bộ số thực dùng phải
+được GHI RA khi đo, để một kết quả 0 pill phân biệt được "quyển này không dùng
+pill" với "ta đo bằng ngưỡng của quyển khác".
+
 Cố tình KHÔNG kiểm màu của lỗ bằng ngưỡng tuyệt đối: đo được là chữ trắng bị
 antialias xuống gray median 168 trên pill sáng và 223 trên pill đậm, nên mọi
 ngưỡng đều loại oan một trong hai (đúng cái pill `Hình 1.2` của `page_010`).
@@ -79,6 +89,29 @@ OCR_VARIANTS = ((2, 7), (2, 8), (2, 13), (3, 7), (3, 8))
 FIGURE_LABEL = re.compile(r"H[iìíỉĩị]nh\s*(\d{1,2})\s*[.,]\s*(\d{1,2})")
 
 
+REF_WIDTH = 1094          # chiều rộng trang mà mọi ngưỡng px trên đây đo trên đó
+
+
+def bounds_for_width(width: int) -> dict:
+    """Ngưỡng kích thước pill + kernel CLOSE, tỉ lệ theo chiều rộng trang."""
+    k = max(1.0, width / float(REF_WIDTH))
+    return {
+        "k": round(k, 4),
+        "min_w": max(1, round(MIN_W * k)), "max_w": max(2, round(MAX_W * k)),
+        "min_h": max(1, round(MIN_H * k)), "max_h": max(2, round(MAX_H * k)),
+        # Kernel phải là số LẺ (morphology đối xứng) và >= 3 — k=0/1 bị loại theo
+        # cấu trúc: không close thì `closed == mask`, `hole_frac = 0` và mọi pill
+        # bị loại (xem chú thích CLOSE_KERNELS).
+        #
+        # Làm tròn rồi ÉP LẺ bằng `| 1`, không phải `2*round(n/2)+1`: bản sau làm
+        # tròn 1,5 lên 2 (banker's rounding của Python) nên **k=3 biến thành 5
+        # ngay ở scale 1×** — tức mất đúng cái kernel duy nhất đọc được
+        # `Hình 2.3` (D-51). Ở 1094 px bộ này phải trả lại y nguyên (3, 5, 9).
+        "close_kernels": tuple(sorted({max(3, int(round(kk * k)) | 1)
+                                       for kk in CLOSE_KERNELS})),
+    }
+
+
 def _iou(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> float:
     ax0, ay0, ax1, ay1 = a
     bx0, by0, bx1, by1 = b
@@ -102,16 +135,19 @@ def _dedupe_boxes(boxes: list[tuple[int, int, int, int]],
     return kept
 
 
-def _pill_boxes_in_mask(mask: np.ndarray,
-                        close_kernel: int) -> list[tuple[int, int, int, int]]:
+def _pill_boxes_in_mask(mask: np.ndarray, close_kernel: int,
+                        bounds: dict | None = None
+                        ) -> list[tuple[int, int, int, int]]:
     """Pill trong một mask nhị phân: lấp kín bbox, có lỗ (chữ), cỡ một nhãn."""
+    b = bounds or bounds_for_width(REF_WIDTH)
     closed = cv2.morphologyEx(
         mask, cv2.MORPH_CLOSE, np.ones((close_kernel, close_kernel), np.uint8))
     count, labels, stats, _ = cv2.connectedComponentsWithStats(closed, connectivity=8)
     out = []
     for label in range(1, count):
         x, y, width, height, area = stats[label]
-        if not (MIN_W <= width <= MAX_W and MIN_H <= height <= MAX_H):
+        if not (b["min_w"] <= width <= b["max_w"]
+                and b["min_h"] <= height <= b["max_h"]):
             continue
         if area < SOLIDITY_MIN * width * height:
             continue
@@ -125,7 +161,9 @@ def _pill_boxes_in_mask(mask: np.ndarray,
     return out
 
 
-def find_pill_boxes(image_bgr: np.ndarray) -> list[tuple[int, int, int, int]]:
+def find_pill_boxes(image_bgr: np.ndarray,
+                    bounds: dict | None = None
+                    ) -> list[tuple[int, int, int, int]]:
     """Các bbox `(x0, y0, x1, y1)` trông như một pill có chữ bên trong.
 
     Ứng viên được HỢP qua nhiều kernel CLOSE (`CLOSE_KERNELS`) rồi dedupe theo
@@ -141,11 +179,12 @@ def find_pill_boxes(image_bgr: np.ndarray) -> list[tuple[int, int, int, int]]:
     tải") **vẫn chưa đọc được** — cần một thiết kế dựa trên tương phản CỤC BỘ và
     một phiên đo riêng (D-40).
     """
+    b = bounds or bounds_for_width(image_bgr.shape[1])
     hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
     solid = ((hsv[:, :, 1] >= SAT_MIN) & (hsv[:, :, 2] <= VAL_MAX)).astype(np.uint8)
     candidates: list[tuple[int, int, int, int]] = []
-    for kernel in CLOSE_KERNELS:
-        candidates.extend(_pill_boxes_in_mask(solid, kernel))
+    for kernel in b["close_kernels"]:
+        candidates.extend(_pill_boxes_in_mask(solid, kernel, b))
     return _dedupe_boxes(candidates)
 
 
@@ -180,14 +219,15 @@ def read_pill_variants(image_bgr: np.ndarray,
     return seen
 
 
-def read_pill_labels(image_bgr: np.ndarray) -> list[dict]:
+def read_pill_labels(image_bgr: np.ndarray,
+                     bounds: dict | None = None) -> list[dict]:
     """Mọi pill đọc được chữ, dạng `{"text", "bbox", "figure_label"}`.
 
     `figure_label` là `"Hình N.M"` đã chuẩn hoá nếu pill đó là nhãn hình, ngược
     lại là `None`. Pill đọc ra rỗng bị bỏ (không bịa).
     """
     out = []
-    for bbox in find_pill_boxes(image_bgr):
+    for bbox in find_pill_boxes(image_bgr, bounds):
         variants = read_pill_variants(image_bgr, bbox)
         if not variants:
             continue

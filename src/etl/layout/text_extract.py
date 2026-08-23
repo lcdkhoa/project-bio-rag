@@ -14,7 +14,7 @@ import unicodedata
 
 import numpy as np
 import pytesseract
-from .pill import read_pill_labels
+from .pill import bounds_for_width, read_pill_labels
 from .regions import Region, RegionType, TextUnit
 from ..cleaner import clean_vietnamese_text
 from ..diacritic import diacritic_review_flags
@@ -43,16 +43,22 @@ def _fold(text: str) -> str:
                             if unicodedata.category(c) != "Mn").split())
 
 
-def _pill_text_missing_from(crop: np.ndarray, text: str) -> list[str]:
+def _pill_text_missing_from(crop: np.ndarray, text: str,
+                            bounds: dict | None = None) -> list[str]:
     """Chữ trên các pill trong `crop` mà `text` (OCR thường) chưa có.
 
     Nhãn chữ trắng trên nền màu ("Thông tin liên lạc", "Sản xuất") là loại chữ
     bị mất trọn vẹn — thêm lại thì hơn là để trống, nhưng chỉ thêm cái CHƯA có,
     để không nhân đôi những pill mà OCR thường tình cờ đọc được.
+
+    `bounds` phải suy từ chiều rộng **TRANG**, không phải của `crop`: một pill có
+    kích thước tỉ lệ với trang, còn crop thì hẹp hơn tuỳ vùng. Để mặc định thì
+    `pill.bounds_for_width(crop_width)` sẽ tính ra ngưỡng của một trang nhỏ hơn
+    thực tế và **loại oan pill rộng của CD/CTST** (`max_w` bị co lại).
     """
     seen = _fold(text)
     out = []
-    for item in read_pill_labels(crop):
+    for item in read_pill_labels(crop, bounds):
         pill_text = item["figure_label"] or item["text"]
         folded = _fold(pill_text)
         if folded and folded not in seen:
@@ -69,6 +75,9 @@ def _mask_out(img: np.ndarray, boxes) -> np.ndarray:
 
 def extract_text_units(image: np.ndarray, regions: list[Region], variant: str) -> list[TextUnit]:
     units: list[TextUnit] = []
+    # Ngưỡng pill tính MỘT LẦN theo chiều rộng TRANG, rồi truyền xuống từng crop
+    # (xem `_pill_text_missing_from`).
+    pill_bounds = bounds_for_width(image.shape[1])
     for r in sorted(regions, key=lambda z: z.reading_order):
         if r.type in (RegionType.FIGURE, RegionType.PAGE_ARTIFACT):
             continue
@@ -79,7 +88,7 @@ def extract_text_units(image: np.ndarray, regions: list[Region], variant: str) -
         if r.type == RegionType.BODY:
             crop = _mask_out(crop, r.meta.get("excludes", []))
         text = _ocr(crop)
-        pills = _pill_text_missing_from(crop, text)
+        pills = _pill_text_missing_from(crop, text, pill_bounds)
         if pills:
             # Nối vào cuối, theo thứ tự trên->dưới. Thứ tự đọc không hoàn hảo,
             # nhưng CÓ chữ thì hơn là MẤT chữ (nguyên tắc 5).

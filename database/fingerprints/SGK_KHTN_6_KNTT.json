@@ -1,0 +1,1371 @@
+{
+  "book": "SGK_KHTN_6_KNTT",
+  "n_pages": 195,
+  "page_number": {
+    "offset": 0,
+    "votes": 39,
+    "total_pages_probed": 40,
+    "hit_rate": 0.975,
+    "margin_over_runner_up": 38,
+    "runner_up_offset": -1,
+    "scale_used": 1,
+    "zone_by_parity": {
+      "even": {
+        "n": 17,
+        "x_min": 0.1015,
+        "x_max": 0.1019,
+        "y_min": 0.9541,
+        "y_max": 0.9544,
+        "x_median": 0.1019,
+        "y_median": 0.9544,
+        "x_iqr": 0.0005,
+        "y_iqr": 0.0,
+        "strips": [
+          "bottom"
+        ]
+      },
+      "odd": {
+        "n": 19,
+        "x_min": 0.8871,
+        "x_max": 0.8995,
+        "y_min": 0.3031,
+        "y_max": 0.9544,
+        "x_median": 0.8985,
+        "y_median": 0.9544,
+        "x_iqr": 0.0009,
+        "y_iqr": 0.0003,
+        "strips": [
+          "bottom",
+          "right"
+        ]
+      }
+    },
+    "spread": {
+      "x_iqr": 0.7966,
+      "y_iqr": 0.0002
+    },
+    "zone_read": {
+      "band_even": [
+        0.9324,
+        0.9764,
+        "left"
+      ],
+      "band_odd": [
+        0.9324,
+        0.9764,
+        "right"
+      ],
+      "offset": 0,
+      "votes": 39,
+      "hit_rate": 0.975,
+      "margin": 38,
+      "trang_khong_doc_duoc": [
+        1
+      ]
+    },
+    "flags": []
+  },
+  "toc": {
+    "scan_window": [
+      1,
+      195
+    ],
+    "toc_pages": [
+      4,
+      5,
+      6
+    ],
+    "where": "dau_sach",
+    "entry_style": "bai",
+    "row_counts_total": {
+      "dot_leader": 2,
+      "toc_rows": 0,
+      "bai": 0,
+      "chu_de": 0,
+      "so_thu_tu": 0
+    },
+    "uses_dot_leader": true,
+    "marker_pages": [
+      4
+    ],
+    "how": "rules",
+    "pad_allowed": false,
+    "n_col_groups": [
+      3,
+      3,
+      5
+    ],
+    "geom_used": {
+      "k": 1.0,
+      "col_gutter": 8,
+      "min_col_width": 10,
+      "row_gutter": 6,
+      "min_row_height": 8,
+      "pad_gutter": 6,
+      "pad_gutter_wide": 12,
+      "cell_pad_y": 3,
+      "eps": 4,
+      "min_col_gap": 10,
+      "row_extend": 26
+    },
+    "per_page": [
+      {
+        "page": 2,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            1031
+          ],
+          "col_frac": [
+            0.5,
+            0.9424
+          ],
+          "col_width_px": 485,
+          "n_rows": 12,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 4,
+        "marker": "exact",
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            924,
+            990
+          ],
+          "col_frac": [
+            0.8446,
+            0.9049
+          ],
+          "col_width_px": 67,
+          "n_rows": 19,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 17
+      },
+      {
+        "page": 5,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            932,
+            999
+          ],
+          "col_frac": [
+            0.8519,
+            0.9132
+          ],
+          "col_width_px": 68,
+          "n_rows": 22,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 22
+      },
+      {
+        "page": 6,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            924,
+            990
+          ],
+          "col_frac": [
+            0.8446,
+            0.9049
+          ],
+          "col_width_px": 67,
+          "n_rows": 17,
+          "n_col_groups": 5
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 16
+      },
+      {
+        "page": 7,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            1093
+          ],
+          "col_frac": [
+            0.5,
+            0.9991
+          ],
+          "col_width_px": 547,
+          "n_rows": 19,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 188,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            979
+          ],
+          "col_frac": [
+            0.5,
+            0.8949
+          ],
+          "col_width_px": 433,
+          "n_rows": 15,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 189,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            992
+          ],
+          "col_frac": [
+            0.5,
+            0.9068
+          ],
+          "col_width_px": 446,
+          "n_rows": 15,
+          "n_col_groups": 2
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 190,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            1072
+          ],
+          "col_frac": [
+            0.5,
+            0.9799
+          ],
+          "col_width_px": 526,
+          "n_rows": 11,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 191,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            995
+          ],
+          "col_frac": [
+            0.5,
+            0.9095
+          ],
+          "col_width_px": 449,
+          "n_rows": 13,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 192,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            985
+          ],
+          "col_frac": [
+            0.5,
+            0.9004
+          ],
+          "col_width_px": 439,
+          "n_rows": 15,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 193,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            922,
+            987
+          ],
+          "col_frac": [
+            0.8428,
+            0.9022
+          ],
+          "col_width_px": 66,
+          "n_rows": 20,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 194,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            909,
+            974
+          ],
+          "col_frac": [
+            0.8309,
+            0.8903
+          ],
+          "col_width_px": 66,
+          "n_rows": 31,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 195,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            921,
+            987
+          ],
+          "col_frac": [
+            0.8419,
+            0.9022
+          ],
+          "col_width_px": 67,
+          "n_rows": 26,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 1,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      }
+    ],
+    "spine": {
+      "reader": "toc.read_toc_rows",
+      "n_entries": 55,
+      "bai_min": 1,
+      "bai_max": 55,
+      "contiguous": true,
+      "missing_bai": [],
+      "toc_flags": [
+        {
+          "kind": "toc_page_ambiguous",
+          "detail": "Bài 3: nhiều ứng viên [13, 43] -> lấy 13 (nhỏ nhất hợp đơn điệu)"
+        }
+      ],
+      "entries_head": [
+        {
+          "bai_so": 1,
+          "start_page": 7,
+          "title": "Giới thiệu về Khoa học tự nhiên"
+        },
+        {
+          "bai_so": 2,
+          "start_page": 11,
+          "title": "An toàn trong phòng thực hành"
+        },
+        {
+          "bai_so": 3,
+          "start_page": 13,
+          "title": "Sử dụng kính lúp"
+        },
+        {
+          "bai_so": 4,
+          "start_page": 15,
+          "title": "Sử dụng kính hiển vi quang học"
+        },
+        {
+          "bai_so": 5,
+          "start_page": 17,
+          "title": "Đo chiều dài"
+        }
+      ],
+      "entries_tail": [
+        {
+          "bai_so": 53,
+          "start_page": 183,
+          "title": "Mặt Trăng"
+        },
+        {
+          "bai_so": 54,
+          "start_page": 187,
+          "title": "Hệ Mặt Trời"
+        },
+        {
+          "bai_so": 55,
+          "start_page": 190,
+          "title": "Ngân Hà"
+        }
+      ]
+    },
+    "seconds": 106.7,
+    "flags": []
+  },
+  "box_palette": {
+    "pages_probed": [
+      11,
+      17,
+      23,
+      29,
+      35,
+      41,
+      48,
+      54,
+      60,
+      66,
+      72,
+      78,
+      85,
+      91,
+      97,
+      103,
+      109,
+      115,
+      122,
+      128,
+      134,
+      140,
+      146,
+      152,
+      159,
+      165,
+      171,
+      177,
+      183,
+      189
+    ],
+    "n_regions": 60,
+    "regions_per_page": 2.0,
+    "pages_with_no_region": [
+      140
+    ],
+    "hue_bands": [
+      {
+        "hue_lo": 20,
+        "hue_hi": 29,
+        "n": 34,
+        "sat_median": 58.5,
+        "val_median": 254.0,
+        "area_frac_median": 0.0554,
+        "width_frac_median": 0.653,
+        "pages": [
+          11,
+          17,
+          23,
+          29,
+          35
+        ]
+      },
+      {
+        "hue_lo": 100,
+        "hue_hi": 109,
+        "n": 11,
+        "sat_median": 29.0,
+        "val_median": 253.0,
+        "area_frac_median": 0.0972,
+        "width_frac_median": 0.856,
+        "pages": [
+          23,
+          35,
+          48,
+          54,
+          103
+        ]
+      },
+      {
+        "hue_lo": 150,
+        "hue_hi": 159,
+        "n": 5,
+        "sat_median": 192.0,
+        "val_median": 163.0,
+        "area_frac_median": 0.1046,
+        "width_frac_median": 1.0,
+        "pages": [
+          11,
+          17,
+          165,
+          171,
+          183
+        ]
+      },
+      {
+        "hue_lo": 30,
+        "hue_hi": 39,
+        "n": 5,
+        "sat_median": 43.0,
+        "val_median": 234.0,
+        "area_frac_median": 0.2056,
+        "width_frac_median": 0.838,
+        "pages": [
+          23,
+          35,
+          41,
+          66,
+          97
+        ]
+      },
+      {
+        "hue_lo": 90,
+        "hue_hi": 99,
+        "n": 2,
+        "sat_median": 147.5,
+        "val_median": 246.0,
+        "area_frac_median": 0.1464,
+        "width_frac_median": 0.923,
+        "pages": [
+          60,
+          109
+        ]
+      },
+      {
+        "hue_lo": 130,
+        "hue_hi": 139,
+        "n": 1,
+        "sat_median": 27.0,
+        "val_median": 230.0,
+        "area_frac_median": 0.1672,
+        "width_frac_median": 0.811,
+        "pages": [
+          11
+        ]
+      },
+      {
+        "hue_lo": 50,
+        "hue_hi": 59,
+        "n": 1,
+        "sat_median": 143.0,
+        "val_median": 165.0,
+        "area_frac_median": 0.0596,
+        "width_frac_median": 0.337,
+        "pages": [
+          134
+        ]
+      },
+      {
+        "hue_lo": 110,
+        "hue_hi": 119,
+        "n": 1,
+        "sat_median": 171.0,
+        "val_median": 113.0,
+        "area_frac_median": 0.1602,
+        "width_frac_median": 0.681,
+        "pages": [
+          183
+        ]
+      }
+    ],
+    "sat_percentiles": {
+      "p05": 25.9,
+      "p10": 28.9,
+      "p25": 40.2,
+      "p50": 51.0,
+      "p75": 66.0,
+      "p90": 172.9,
+      "p95": 192.0
+    },
+    "val_percentiles": {
+      "p05": 163.0,
+      "p10": 164.8,
+      "p25": 247.0,
+      "p50": 253.0,
+      "p75": 254.0,
+      "p90": 254.0,
+      "p95": 255.0
+    },
+    "area_frac_percentiles": {
+      "p05": 0.0,
+      "p10": 0.0,
+      "p25": 0.1,
+      "p50": 0.1,
+      "p75": 0.1,
+      "p90": 0.2,
+      "p95": 0.2
+    },
+    "thresholds_used": {
+      "sat_floor": 8,
+      "val_floor": 60,
+      "area_min_frac": 0.02,
+      "uniform_min": 0.45,
+      "page_width": 1094,
+      "close_kernel_px": 5
+    },
+    "examples": [
+      {
+        "bbox": [
+          0,
+          0,
+          1094,
+          220
+        ],
+        "area_frac": 0.1044,
+        "width_frac": 1.0,
+        "height_frac": 0.1432,
+        "hue": 153.0,
+        "sat": 190.0,
+        "val": 163.0,
+        "uniform": 0.882,
+        "page": 11
+      },
+      {
+        "bbox": [
+          707,
+          752,
+          1021,
+          1002
+        ],
+        "area_frac": 0.0381,
+        "width_frac": 0.287,
+        "height_frac": 0.1628,
+        "hue": 20.0,
+        "sat": 61.0,
+        "val": 254.0,
+        "uniform": 0.522,
+        "page": 11
+      },
+      {
+        "bbox": [
+          115,
+          1079,
+          1002,
+          1414
+        ],
+        "area_frac": 0.1672,
+        "width_frac": 0.8108,
+        "height_frac": 0.2181,
+        "hue": 133.0,
+        "sat": 27.0,
+        "val": 230.0,
+        "uniform": 0.466,
+        "page": 11
+      },
+      {
+        "bbox": [
+          0,
+          0,
+          1094,
+          220
+        ],
+        "area_frac": 0.1046,
+        "width_frac": 1.0,
+        "height_frac": 0.1432,
+        "hue": 154.0,
+        "sat": 192.0,
+        "val": 163.0,
+        "uniform": 0.922,
+        "page": 17
+      },
+      {
+        "bbox": [
+          683,
+          722,
+          983,
+          1048
+        ],
+        "area_frac": 0.0523,
+        "width_frac": 0.2742,
+        "height_frac": 0.2122,
+        "hue": 20.0,
+        "sat": 48.0,
+        "val": 254.0,
+        "uniform": 0.519,
+        "page": 17
+      },
+      {
+        "bbox": [
+          69,
+          98,
+          1006,
+          256
+        ],
+        "area_frac": 0.0833,
+        "width_frac": 0.8565,
+        "height_frac": 0.1029,
+        "hue": 101.0,
+        "sat": 29.0,
+        "val": 253.0,
+        "uniform": 0.829,
+        "page": 23
+      },
+      {
+        "bbox": [
+          54,
+          295,
+          1016,
+          775
+        ],
+        "area_frac": 0.1906,
+        "width_frac": 0.8793,
+        "height_frac": 0.3125,
+        "hue": 20.0,
+        "sat": 51.0,
+        "val": 252.0,
+        "uniform": 0.483,
+        "page": 23
+      },
+      {
+        "bbox": [
+          69,
+          812,
+          991,
+          883
+        ],
+        "area_frac": 0.029,
+        "width_frac": 0.8428,
+        "height_frac": 0.0462,
+        "hue": 101.0,
+        "sat": 23.0,
+        "val": 252.0,
+        "uniform": 0.805,
+        "page": 23
+      },
+      {
+        "bbox": [
+          19,
+          1130,
+          1094,
+          1475
+        ],
+        "area_frac": 0.2056,
+        "width_frac": 0.9826,
+        "height_frac": 0.2246,
+        "hue": 39.0,
+        "sat": 37.0,
+        "val": 241.0,
+        "uniform": 0.57,
+        "page": 23
+      },
+      {
+        "bbox": [
+          699,
+          1144,
+          1020,
+          1441
+        ],
+        "area_frac": 0.0519,
+        "width_frac": 0.2934,
+        "height_frac": 0.1934,
+        "hue": 20.0,
+        "sat": 66.0,
+        "val": 254.0,
+        "uniform": 0.547,
+        "page": 29
+      },
+      {
+        "bbox": [
+          76,
+          92,
+          1023,
+          556
+        ],
+        "area_frac": 0.2455,
+        "width_frac": 0.8656,
+        "height_frac": 0.3021,
+        "hue": 101.0,
+        "sat": 36.0,
+        "val": 253.0,
+        "uniform": 0.839,
+        "page": 35
+      },
+      {
+        "bbox": [
+          737,
+          622,
+          1021,
+          985
+        ],
+        "area_frac": 0.0562,
+        "width_frac": 0.2596,
+        "height_frac": 0.2363,
+        "hue": 20.0,
+        "sat": 62.0,
+        "val": 254.0,
+        "uniform": 0.502,
+        "page": 35
+      }
+    ],
+    "seconds": 1.1,
+    "flags": []
+  },
+  "pill_pattern": {
+    "pages_probed": [
+      11,
+      17,
+      23,
+      29,
+      35,
+      41,
+      48,
+      54,
+      60,
+      66,
+      72,
+      78,
+      85,
+      91,
+      97,
+      103,
+      109,
+      115,
+      122,
+      128,
+      134,
+      140,
+      146,
+      152,
+      159,
+      165,
+      171,
+      177,
+      183,
+      189
+    ],
+    "bounds_used": {
+      "k": 1.0,
+      "min_w": 55,
+      "max_w": 460,
+      "min_h": 18,
+      "max_h": 70,
+      "close_kernels": [
+        3,
+        5,
+        9
+      ]
+    },
+    "n_pill_boxes": 31,
+    "n_pill_read": 31,
+    "n_pill_figure_label": 25,
+    "pages_with_pill_label": 18,
+    "pill_label_examples": [
+      {
+        "page": 11,
+        "bbox": [
+          170,
+          959,
+          275,
+          986
+        ],
+        "label": "Hình 2.1",
+        "raw": "_ Hình2.1"
+      },
+      {
+        "page": 17,
+        "bbox": [
+          339,
+          1409,
+          444,
+          1436
+        ],
+        "label": "Hình 5.1",
+        "raw": "_ Hình 5.1 _"
+      },
+      {
+        "page": 23,
+        "bbox": [
+          605,
+          742,
+          710,
+          769
+        ],
+        "label": "Hình 7.2",
+        "raw": "_ Hình7.2 _"
+      },
+      {
+        "page": 29,
+        "bbox": [
+          806,
+          395,
+          932,
+          424
+        ],
+        "label": "Hình 9.2",
+        "raw": "_ Hình9.2 `"
+      },
+      {
+        "page": 29,
+        "bbox": [
+          820,
+          1011,
+          947,
+          1041
+        ],
+        "label": "Hình 9.3",
+        "raw": "_ Hình9.3"
+      },
+      {
+        "page": 35,
+        "bbox": [
+          786,
+          453,
+          912,
+          482
+        ],
+        "label": "Hình 10.8",
+        "raw": "_ Hình10.8 -"
+      },
+      {
+        "page": 48,
+        "bbox": [
+          562,
+          527,
+          688,
+          557
+        ],
+        "label": "Hình 13.5",
+        "raw": "Hình 13.5 ~"
+      },
+      {
+        "page": 60,
+        "bbox": [
+          286,
+          1123,
+          412,
+          1152
+        ],
+        "label": "Hình 17.1",
+        "raw": "_ Hình17.1 -"
+      },
+      {
+        "page": 66,
+        "bbox": [
+          243,
+          902,
+          356,
+          931
+        ],
+        "label": "Hình 18.3",
+        "raw": "_ Hình 18.3."
+      },
+      {
+        "page": 91,
+        "bbox": [
+          204,
+          675,
+          328,
+          704
+        ],
+        "label": "Hình 26.2",
+        "raw": "_ Hình 26.2 _"
+      },
+      {
+        "page": 103,
+        "bbox": [
+          213,
+          1156,
+          337,
+          1186
+        ],
+        "label": "Hình 30.2",
+        "raw": "Hình 30.2"
+      },
+      {
+        "page": 109,
+        "bbox": [
+          665,
+          1304,
+          788,
+          1333
+        ],
+        "label": "Hình 32.3",
+        "raw": "_ Hình32.3 -"
+      }
+    ],
+    "pill_other_text_examples": [
+      {
+        "page": 17,
+        "bbox": [
+          124,
+          1186,
+          557,
+          1232
+        ],
+        "text": "Ms."
+      },
+      {
+        "page": 159,
+        "bbox": [
+          723,
+          1053,
+          914,
+          1121
+        ],
+        "text": "Emiico thể:"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          756,
+          683,
+          940,
+          739
+        ],
+        "text": "T2, S5"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          144,
+          1018,
+          311,
+          1052
+        ],
+        "text": "Loại bóng đèn"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          314,
+          1018,
+          570,
+          1052
+        ],
+        "text": "Thời gian thắp sáng tối đa"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          573,
+          1018,
+          842,
+          1052
+        ],
+        "text": "Điện năng tiêu thụ trong 1h"
+      }
+    ],
+    "caption_counts": {
+      "hinh_n_m": 9,
+      "hinh_n": 0,
+      "h_dot_n_m": 0,
+      "bang_n_m": 3
+    },
+    "caption_examples": [
+      {
+        "page": 41,
+        "pattern": "hinh_n_m",
+        "text": "Hình 11.7",
+        "cx": 0.2601,
+        "cy": 0.1038,
+        "conf": 96.0
+      },
+      {
+        "page": 60,
+        "pattern": "hinh_n_m",
+        "text": "Hình 17.1",
+        "cx": 0.3035,
+        "cy": 0.7809,
+        "conf": 96.0
+      },
+      {
+        "page": 91,
+        "pattern": "hinh_n_m",
+        "text": "Hình 28.2",
+        "cx": 0.4534,
+        "cy": 0.0716,
+        "conf": 96.0
+      },
+      {
+        "page": 103,
+        "pattern": "hinh_n_m",
+        "text": "Hình 30.1",
+        "cx": 0.2783,
+        "cy": 0.0957,
+        "conf": 97.0
+      },
+      {
+        "page": 146,
+        "pattern": "hinh_n_m",
+        "text": "Hình 40.4",
+        "cx": 0.3378,
+        "cy": 0.3187,
+        "conf": 92.0
+      },
+      {
+        "page": 146,
+        "pattern": "hinh_n_m",
+        "text": "Hình 40.5",
+        "cx": 0.3611,
+        "cy": 0.5384,
+        "conf": 96.0
+      },
+      {
+        "page": 152,
+        "pattern": "hinh_n_m",
+        "text": "Hình 42.2",
+        "cx": 0.3213,
+        "cy": 0.1156,
+        "conf": 96.0
+      },
+      {
+        "page": 152,
+        "pattern": "hinh_n_m",
+        "text": "Hình 42.2",
+        "cx": 0.3615,
+        "cy": 0.1989,
+        "conf": 96.0
+      },
+      {
+        "page": 159,
+        "pattern": "hinh_n_m",
+        "text": "Hình 44.8",
+        "cx": 0.5484,
+        "cy": 0.2425,
+        "conf": 95.0
+      },
+      {
+        "page": 177,
+        "pattern": "bang_n_m",
+        "text": "Bảng 51.1",
+        "cx": 0.2107,
+        "cy": 0.3604,
+        "conf": 97.0
+      },
+      {
+        "page": 177,
+        "pattern": "bang_n_m",
+        "text": "Bảng 51.1",
+        "cx": 0.1549,
+        "cy": 0.4271,
+        "conf": 96.0
+      },
+      {
+        "page": 177,
+        "pattern": "bang_n_m",
+        "text": "Bảng 51.2",
+        "cx": 0.1549,
+        "cy": 0.6416,
+        "conf": 96.0
+      }
+    ],
+    "pages_with_caption_label": 7,
+    "caption_cy_median": 0.199,
+    "words_per_page": 299.7,
+    "ket_luan": "ca_hai",
+    "figure_caption_regex": "H[ìiíỉĩị]nh\\s*(\\d{1,2})\\s*[.,]\\s*(\\d{1,2})",
+    "seconds": 41.7,
+    "flags": []
+  }
+}

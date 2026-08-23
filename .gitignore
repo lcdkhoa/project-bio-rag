@@ -102,6 +102,13 @@ database/*
 database/manifests/*
 !database/manifests/*.json
 
+# Fingerprint layout M0 (D-65): cùng loại với manifest — JSON nhỏ, là KẾT QUẢ ĐO,
+# và ETL raise nếu quyển nào thiếu nó. Phải đi theo repo (kể cả sang Colab), không
+# phải thứ sinh lại được rẻ: một lượt đo lại tốn ~70 phút OCR cho 12 quyển.
+!database/fingerprints/
+database/fingerprints/*
+!database/fingerprints/*.json
+
 # QA output (anh overlay, report.json) — sinh ra, khong commit
 scripts/_out_test_etl_full/
 scripts/_out_g4/

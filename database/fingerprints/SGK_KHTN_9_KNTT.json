@@ -1,0 +1,1453 @@
+{
+  "book": "SGK_KHTN_9_KNTT",
+  "n_pages": 227,
+  "page_number": {
+    "offset": 0,
+    "votes": 39,
+    "total_pages_probed": 40,
+    "hit_rate": 0.975,
+    "margin_over_runner_up": 38,
+    "runner_up_offset": -1,
+    "scale_used": 1,
+    "zone_by_parity": {
+      "even": {
+        "n": 18,
+        "x_min": 0.0731,
+        "x_max": 0.074,
+        "y_min": 0.9512,
+        "y_max": 0.9515,
+        "x_median": 0.074,
+        "y_median": 0.9512,
+        "x_iqr": 0.0009,
+        "y_iqr": 0.0003,
+        "strips": [
+          "bottom"
+        ]
+      },
+      "odd": {
+        "n": 17,
+        "x_min": 0.926,
+        "x_max": 0.9278,
+        "y_min": 0.9512,
+        "y_max": 0.9515,
+        "x_median": 0.9273,
+        "y_median": 0.9512,
+        "x_iqr": 0.0009,
+        "y_iqr": 0.0003,
+        "strips": [
+          "bottom"
+        ]
+      }
+    },
+    "spread": {
+      "x_iqr": 0.8533,
+      "y_iqr": 0.0003
+    },
+    "zone_read": {
+      "band_even": [
+        0.9292,
+        0.9732000000000001,
+        "left"
+      ],
+      "band_odd": [
+        0.9292,
+        0.9732000000000001,
+        "right"
+      ],
+      "offset": 0,
+      "votes": 39,
+      "hit_rate": 0.975,
+      "margin": 38,
+      "trang_khong_doc_duoc": [
+        1
+      ]
+    },
+    "flags": []
+  },
+  "toc": {
+    "scan_window": [
+      1,
+      227
+    ],
+    "toc_pages": [
+      4,
+      5
+    ],
+    "where": "dau_sach",
+    "entry_style": "bai",
+    "row_counts_total": {
+      "dot_leader": 0,
+      "toc_rows": 0,
+      "bai": 0,
+      "chu_de": 0,
+      "so_thu_tu": 0
+    },
+    "uses_dot_leader": false,
+    "marker_pages": [
+      4
+    ],
+    "how": "rules",
+    "pad_allowed": false,
+    "n_col_groups": [
+      1,
+      1
+    ],
+    "geom_used": {
+      "k": 1.0,
+      "col_gutter": 8,
+      "min_col_width": 10,
+      "row_gutter": 6,
+      "min_row_height": 8,
+      "pad_gutter": 6,
+      "pad_gutter_wide": 12,
+      "cell_pad_y": 3,
+      "eps": 4,
+      "min_col_gap": 10,
+      "row_extend": 26
+    },
+    "per_page": [
+      {
+        "page": 2,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            969
+          ],
+          "col_frac": [
+            0.5,
+            0.8857
+          ],
+          "col_width_px": 423,
+          "n_rows": 15,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 2,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 3,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            934
+          ],
+          "col_frac": [
+            0.5,
+            0.8537
+          ],
+          "col_width_px": 388,
+          "n_rows": 25,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 4,
+        "marker": "exact",
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            897,
+            980
+          ],
+          "col_frac": [
+            0.8199,
+            0.8958
+          ],
+          "col_width_px": 84,
+          "n_rows": 35,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 25
+      },
+      {
+        "page": 5,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            909,
+            990
+          ],
+          "col_frac": [
+            0.8309,
+            0.9049
+          ],
+          "col_width_px": 82,
+          "n_rows": 35,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 26
+      },
+      {
+        "page": 6,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            990
+          ],
+          "col_frac": [
+            0.5,
+            0.9049
+          ],
+          "col_width_px": 444,
+          "n_rows": 9,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 220,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            980
+          ],
+          "col_frac": [
+            0.5,
+            0.8958
+          ],
+          "col_width_px": 434,
+          "n_rows": 27,
+          "n_col_groups": 2
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 221,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            991
+          ],
+          "col_frac": [
+            0.5,
+            0.9059
+          ],
+          "col_width_px": 445,
+          "n_rows": 15,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 222,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            989
+          ],
+          "col_frac": [
+            0.5,
+            0.904
+          ],
+          "col_width_px": 443,
+          "n_rows": 8,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 223,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "gutter",
+          "col_px": [
+            547,
+            911
+          ],
+          "col_frac": [
+            0.5,
+            0.8327
+          ],
+          "col_width_px": 365,
+          "n_rows": 23,
+          "n_col_groups": 1
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 224,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            886,
+            980
+          ],
+          "col_frac": [
+            0.8099,
+            0.8958
+          ],
+          "col_width_px": 95,
+          "n_rows": 16,
+          "n_col_groups": 2
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 225,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            898,
+            991
+          ],
+          "col_frac": [
+            0.8208,
+            0.9059
+          ],
+          "col_width_px": 94,
+          "n_rows": 18,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 226,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            887,
+            980
+          ],
+          "col_frac": [
+            0.8108,
+            0.8958
+          ],
+          "col_width_px": 94,
+          "n_rows": 12,
+          "n_col_groups": 2
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      },
+      {
+        "page": 227,
+        "marker": null,
+        "band_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "cv": {
+          "page_width": 1094,
+          "page_height": 1536,
+          "how": "rules",
+          "col_px": [
+            886,
+            990
+          ],
+          "col_frac": [
+            0.8099,
+            0.9049
+          ],
+          "col_width_px": 105,
+          "n_rows": 22,
+          "n_col_groups": 3
+        },
+        "page_counts": {
+          "bai": 0,
+          "chu_de": 0,
+          "so_thu_tu": 0,
+          "dot_leader": 0,
+          "toc_rows": 0
+        },
+        "n_bai_cells": 0
+      }
+    ],
+    "spine": {
+      "reader": "toc.read_toc_rows",
+      "n_entries": 51,
+      "bai_min": 1,
+      "bai_max": 51,
+      "contiguous": true,
+      "missing_bai": [],
+      "toc_flags": [],
+      "entries_head": [
+        {
+          "bai_so": 1,
+          "start_page": 6,
+          "title": "Nhận biết một số dụng cụ, hoá chất. Thuyết trình một vấn để "
+        },
+        {
+          "bai_so": 2,
+          "start_page": 15,
+          "title": "Động năng. Thế năng"
+        },
+        {
+          "bai_so": 3,
+          "start_page": 18,
+          "title": "Cơ năng"
+        },
+        {
+          "bai_so": 4,
+          "start_page": 21,
+          "title": "Công và công suất"
+        },
+        {
+          "bai_so": 5,
+          "start_page": 25,
+          "title": "Khúc xạ ánh sáng"
+        }
+      ],
+      "entries_tail": [
+        {
+          "bai_so": 49,
+          "start_page": 211,
+          "title": "Khái niệm tiến hoá và các hình thức chọn lọc"
+        },
+        {
+          "bai_so": 50,
+          "start_page": 214,
+          "title": "Cơ chế tiến hoá"
+        },
+        {
+          "bai_so": 51,
+          "start_page": 219,
+          "title": "Sự phát sinh và phát triển sự sống trên Trái Đất"
+        }
+      ]
+    },
+    "seconds": 106.1,
+    "flags": []
+  },
+  "box_palette": {
+    "pages_probed": [
+      11,
+      18,
+      25,
+      32,
+      39,
+      47,
+      54,
+      61,
+      68,
+      76,
+      83,
+      90,
+      97,
+      105,
+      112,
+      119,
+      126,
+      133,
+      141,
+      148,
+      155,
+      162,
+      170,
+      177,
+      184,
+      191,
+      199,
+      206,
+      213,
+      220
+    ],
+    "n_regions": 78,
+    "regions_per_page": 2.6,
+    "pages_with_no_region": [
+      184
+    ],
+    "hue_bands": [
+      {
+        "hue_lo": 20,
+        "hue_hi": 29,
+        "n": 43,
+        "sat_median": 16.0,
+        "val_median": 242.0,
+        "area_frac_median": 0.0773,
+        "width_frac_median": 0.808,
+        "pages": [
+          11,
+          18,
+          25,
+          32,
+          47
+        ]
+      },
+      {
+        "hue_lo": 90,
+        "hue_hi": 99,
+        "n": 15,
+        "sat_median": 21.0,
+        "val_median": 239.0,
+        "area_frac_median": 0.0997,
+        "width_frac_median": 0.804,
+        "pages": [
+          18,
+          39,
+          47,
+          61,
+          83
+        ]
+      },
+      {
+        "hue_lo": 0,
+        "hue_hi": 9,
+        "n": 4,
+        "sat_median": 221.0,
+        "val_median": 242.0,
+        "area_frac_median": 0.024,
+        "width_frac_median": 0.225,
+        "pages": [
+          18,
+          25,
+          32,
+          47
+        ]
+      },
+      {
+        "hue_lo": 10,
+        "hue_hi": 19,
+        "n": 4,
+        "sat_median": 225.0,
+        "val_median": 247.0,
+        "area_frac_median": 0.0808,
+        "width_frac_median": 0.866,
+        "pages": [
+          18,
+          25,
+          47,
+          76
+        ]
+      },
+      {
+        "hue_lo": 170,
+        "hue_hi": 179,
+        "n": 4,
+        "sat_median": 50.0,
+        "val_median": 239.0,
+        "area_frac_median": 0.1083,
+        "width_frac_median": 0.804,
+        "pages": [
+          39,
+          148,
+          177,
+          213
+        ]
+      },
+      {
+        "hue_lo": 80,
+        "hue_hi": 89,
+        "n": 3,
+        "sat_median": 253.0,
+        "val_median": 129.0,
+        "area_frac_median": 0.0234,
+        "width_frac_median": 0.225,
+        "pages": [
+          162,
+          170,
+          191
+        ]
+      },
+      {
+        "hue_lo": 70,
+        "hue_hi": 79,
+        "n": 3,
+        "sat_median": 139.0,
+        "val_median": 169.0,
+        "area_frac_median": 0.0784,
+        "width_frac_median": 0.866,
+        "pages": [
+          162,
+          170,
+          191
+        ]
+      },
+      {
+        "hue_lo": 150,
+        "hue_hi": 159,
+        "n": 1,
+        "sat_median": 125.0,
+        "val_median": 143.0,
+        "area_frac_median": 0.0234,
+        "width_frac_median": 0.223,
+        "pages": [
+          141
+        ]
+      },
+      {
+        "hue_lo": 160,
+        "hue_hi": 169,
+        "n": 1,
+        "sat_median": 144.0,
+        "val_median": 216.0,
+        "area_frac_median": 0.0795,
+        "width_frac_median": 0.866,
+        "pages": [
+          141
+        ]
+      }
+    ],
+    "sat_percentiles": {
+      "p05": 14.0,
+      "p10": 14.0,
+      "p25": 16.0,
+      "p50": 16.0,
+      "p75": 44.8,
+      "p90": 221.0,
+      "p95": 225.0
+    },
+    "val_percentiles": {
+      "p05": 140.9,
+      "p10": 169.7,
+      "p25": 234.2,
+      "p50": 242.0,
+      "p75": 242.0,
+      "p90": 242.0,
+      "p95": 242.7
+    },
+    "area_frac_percentiles": {
+      "p05": 0.0,
+      "p10": 0.0,
+      "p25": 0.0,
+      "p50": 0.1,
+      "p75": 0.1,
+      "p90": 0.2,
+      "p95": 0.3
+    },
+    "thresholds_used": {
+      "sat_floor": 8,
+      "val_floor": 60,
+      "area_min_frac": 0.02,
+      "uniform_min": 0.45,
+      "page_width": 1094,
+      "close_kernel_px": 5
+    },
+    "examples": [
+      {
+        "bbox": [
+          102,
+          102,
+          1004,
+          448
+        ],
+        "area_frac": 0.1856,
+        "width_frac": 0.8245,
+        "height_frac": 0.2253,
+        "hue": 22.0,
+        "sat": 16.0,
+        "val": 242.0,
+        "uniform": 0.889,
+        "page": 11
+      },
+      {
+        "bbox": [
+          109,
+          476,
+          993,
+          676
+        ],
+        "area_frac": 0.0944,
+        "width_frac": 0.808,
+        "height_frac": 0.1302,
+        "hue": 22.0,
+        "sat": 14.0,
+        "val": 242.0,
+        "uniform": 0.614,
+        "page": 11
+      },
+      {
+        "bbox": [
+          0,
+          0,
+          246,
+          208
+        ],
+        "area_frac": 0.024,
+        "width_frac": 0.2249,
+        "height_frac": 0.1354,
+        "hue": 8.0,
+        "sat": 221.0,
+        "val": 242.0,
+        "uniform": 0.917,
+        "page": 18
+      },
+      {
+        "bbox": [
+          146,
+          54,
+          1094,
+          217
+        ],
+        "area_frac": 0.0814,
+        "width_frac": 0.8665,
+        "height_frac": 0.1061,
+        "hue": 16.0,
+        "sat": 225.0,
+        "val": 247.0,
+        "uniform": 0.773,
+        "page": 18
+      },
+      {
+        "bbox": [
+          583,
+          468,
+          960,
+          791
+        ],
+        "area_frac": 0.0627,
+        "width_frac": 0.3446,
+        "height_frac": 0.2103,
+        "hue": 99.0,
+        "sat": 44.0,
+        "val": 233.0,
+        "uniform": 0.534,
+        "page": 18
+      },
+      {
+        "bbox": [
+          100,
+          1282,
+          981,
+          1406
+        ],
+        "area_frac": 0.0526,
+        "width_frac": 0.8053,
+        "height_frac": 0.0807,
+        "hue": 22.0,
+        "sat": 16.0,
+        "val": 242.0,
+        "uniform": 0.879,
+        "page": 18
+      },
+      {
+        "bbox": [
+          23,
+          138,
+          246,
+          353
+        ],
+        "area_frac": 0.0204,
+        "width_frac": 0.2038,
+        "height_frac": 0.14,
+        "hue": 8.0,
+        "sat": 221.0,
+        "val": 242.0,
+        "uniform": 0.88,
+        "page": 25
+      },
+      {
+        "bbox": [
+          146,
+          199,
+          1094,
+          361
+        ],
+        "area_frac": 0.0802,
+        "width_frac": 0.8665,
+        "height_frac": 0.1055,
+        "hue": 16.0,
+        "sat": 225.0,
+        "val": 247.0,
+        "uniform": 0.752,
+        "page": 25
+      },
+      {
+        "bbox": [
+          108,
+          931,
+          993,
+          1434
+        ],
+        "area_frac": 0.2205,
+        "width_frac": 0.809,
+        "height_frac": 0.3275,
+        "hue": 22.0,
+        "sat": 16.0,
+        "val": 242.0,
+        "uniform": 0.754,
+        "page": 25
+      },
+      {
+        "bbox": [
+          676,
+          165,
+          983,
+          517
+        ],
+        "area_frac": 0.051,
+        "width_frac": 0.2806,
+        "height_frac": 0.2292,
+        "hue": 3.0,
+        "sat": 20.0,
+        "val": 170.0,
+        "uniform": 0.626,
+        "page": 32
+      },
+      {
+        "bbox": [
+          100,
+          1305,
+          981,
+          1406
+        ],
+        "area_frac": 0.0437,
+        "width_frac": 0.8053,
+        "height_frac": 0.0658,
+        "hue": 22.0,
+        "sat": 16.0,
+        "val": 242.0,
+        "uniform": 0.877,
+        "page": 32
+      },
+      {
+        "bbox": [
+          113,
+          103,
+          993,
+          599
+        ],
+        "area_frac": 0.2512,
+        "width_frac": 0.8044,
+        "height_frac": 0.3229,
+        "hue": 170.0,
+        "sat": 55.0,
+        "val": 237.0,
+        "uniform": 0.846,
+        "page": 39
+      }
+    ],
+    "seconds": 1.1,
+    "flags": []
+  },
+  "pill_pattern": {
+    "pages_probed": [
+      11,
+      18,
+      25,
+      32,
+      39,
+      47,
+      54,
+      61,
+      68,
+      76,
+      83,
+      90,
+      97,
+      105,
+      112,
+      119,
+      126,
+      133,
+      141,
+      148,
+      155,
+      162,
+      170,
+      177,
+      184,
+      191,
+      199,
+      206,
+      213,
+      220
+    ],
+    "bounds_used": {
+      "k": 1.0,
+      "min_w": 55,
+      "max_w": 460,
+      "min_h": 18,
+      "max_h": 70,
+      "close_kernels": [
+        3,
+        5,
+        9
+      ]
+    },
+    "n_pill_boxes": 39,
+    "n_pill_read": 39,
+    "n_pill_figure_label": 28,
+    "pages_with_pill_label": 21,
+    "pill_label_examples": [
+      {
+        "page": 18,
+        "bbox": [
+          739,
+          1224,
+          852,
+          1253
+        ],
+        "label": "Hình 3.1",
+        "raw": "_ Hình3.1"
+      },
+      {
+        "page": 25,
+        "bbox": [
+          687,
+          1369,
+          800,
+          1398
+        ],
+        "label": "Hình 5.1",
+        "raw": "Hình 5.1 -"
+      },
+      {
+        "page": 32,
+        "bbox": [
+          702,
+          542,
+          798,
+          571
+        ],
+        "label": "Hình 6.2",
+        "raw": "Hình 6.2."
+      },
+      {
+        "page": 32,
+        "bbox": [
+          166,
+          1258,
+          262,
+          1287
+        ],
+        "label": "Hình 6.3",
+        "raw": "Hình 6.3."
+      },
+      {
+        "page": 39,
+        "bbox": [
+          676,
+          443,
+          789,
+          473
+        ],
+        "label": "Hình 7.12",
+        "raw": "_Hình7.12 -"
+      },
+      {
+        "page": 39,
+        "bbox": [
+          167,
+          1354,
+          279,
+          1384
+        ],
+        "label": "Hình 7.13",
+        "raw": "_Hình7.13-"
+      },
+      {
+        "page": 47,
+        "bbox": [
+          578,
+          1012,
+          691,
+          1041
+        ],
+        "label": "Hình 9.1",
+        "raw": "_ Hình9.1 -"
+      },
+      {
+        "page": 54,
+        "bbox": [
+          558,
+          959,
+          665,
+          986
+        ],
+        "label": "Hình 11.2",
+        "raw": "Hình 11.2."
+      },
+      {
+        "page": 61,
+        "bbox": [
+          713,
+          378,
+          826,
+          407
+        ],
+        "label": "Hình 12.2",
+        "raw": "_ Hình 12.2."
+      },
+      {
+        "page": 61,
+        "bbox": [
+          511,
+          1385,
+          617,
+          1411
+        ],
+        "label": "Hình 12.3",
+        "raw": "Hình 12.3."
+      },
+      {
+        "page": 68,
+        "bbox": [
+          120,
+          470,
+          233,
+          499
+        ],
+        "label": "Hình 14.2",
+        "raw": "_ Hình 14.2_"
+      },
+      {
+        "page": 68,
+        "bbox": [
+          624,
+          1062,
+          736,
+          1091
+        ],
+        "label": "Hình 14.3",
+        "raw": "_Hình 14.3."
+      }
+    ],
+    "pill_other_text_examples": [
+      {
+        "page": 25,
+        "bbox": [
+          321,
+          92,
+          399,
+          114
+        ],
+        "text": "l (sắt"
+      },
+      {
+        "page": 39,
+        "bbox": [
+          452,
+          106,
+          654,
+          145
+        ],
+        "text": ", EM CÓ THỂ"
+      },
+      {
+        "page": 68,
+        "bbox": [
+          376,
+          300,
+          484,
+          319
+        ],
+        "text": "Vy ,xEmmA."
+      },
+      {
+        "page": 119,
+        "bbox": [
+          453,
+          214,
+          525,
+          251
+        ],
+        "text": "Tế = Hì"
+      },
+      {
+        "page": 148,
+        "bbox": [
+          417,
+          469,
+          664,
+          508
+        ],
+        "text": "„ EM ĐÃ HỌC Á"
+      },
+      {
+        "page": 148,
+        "bbox": [
+          441,
+          820,
+          640,
+          859
+        ],
+        "text": "Ầ EM CÓ THỂ Ạ"
+      },
+      {
+        "page": 170,
+        "bbox": [
+          373,
+          560,
+          431,
+          581
+        ],
+        "text": "I)NA"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          432,
+          261,
+          673,
+          300
+        ],
+        "text": "Ï EMĐÃHỌC /"
+      },
+      {
+        "page": 177,
+        "bbox": [
+          432,
+          695,
+          672,
+          734
+        ],
+        "text": "Ï EMCÓTHỂ /"
+      },
+      {
+        "page": 213,
+        "bbox": [
+          245,
+          1008,
+          494,
+          1047
+        ],
+        "text": "Ï CFMĐÃHỌC /"
+      },
+      {
+        "page": 213,
+        "bbox": [
+          715,
+          1008,
+          917,
+          1047
+        ],
+        "text": "Ï EMCÓTHỂ /"
+      }
+    ],
+    "caption_counts": {
+      "hinh_n_m": 28,
+      "hinh_n": 0,
+      "h_dot_n_m": 0,
+      "bang_n_m": 11
+    },
+    "caption_examples": [
+      {
+        "page": 25,
+        "pattern": "hinh_n_m",
+        "text": "Hình 5.1",
+        "cx": 0.3638,
+        "cy": 0.7992,
+        "conf": 96.0
+      },
+      {
+        "page": 32,
+        "pattern": "hinh_n_m",
+        "text": "Hình 6.3",
+        "cx": 0.255,
+        "cy": 0.4437,
+        "conf": 97.0
+      },
+      {
+        "page": 39,
+        "pattern": "hinh_n_m",
+        "text": "Hình 7.12",
+        "cx": 0.271,
+        "cy": 0.2376,
+        "conf": 96.0
+      },
+      {
+        "page": 54,
+        "pattern": "hinh_n_m",
+        "text": "Hình 11.2",
+        "cx": 0.3967,
+        "cy": 0.6611,
+        "conf": 97.0
+      },
+      {
+        "page": 54,
+        "pattern": "bang_n_m",
+        "text": "Bảng 11.2",
+        "cx": 0.2468,
+        "cy": 0.722,
+        "conf": 97.0
+      },
+      {
+        "page": 54,
+        "pattern": "bang_n_m",
+        "text": "Bảng 11.2",
+        "cx": 0.4735,
+        "cy": 0.7406,
+        "conf": 96.0
+      },
+      {
+        "page": 61,
+        "pattern": "hinh_n_m",
+        "text": "Hình 12.2",
+        "cx": 0.3154,
+        "cy": 0.29,
+        "conf": 96.0
+      },
+      {
+        "page": 61,
+        "pattern": "bang_n_m",
+        "text": "Bảng 12.1",
+        "cx": 0.739,
+        "cy": 0.3132,
+        "conf": 96.0
+      },
+      {
+        "page": 61,
+        "pattern": "bang_n_m",
+        "text": "Bảng 12.1",
+        "cx": 0.3688,
+        "cy": 0.3298,
+        "conf": 96.0
+      },
+      {
+        "page": 61,
+        "pattern": "bang_n_m",
+        "text": "Bảng 12.1",
+        "cx": 0.1782,
+        "cy": 0.3861,
+        "conf": 96.0
+      },
+      {
+        "page": 61,
+        "pattern": "hinh_n_m",
+        "text": "Hình 12.3",
+        "cx": 0.293,
+        "cy": 0.821,
+        "conf": 93.0
+      },
+      {
+        "page": 68,
+        "pattern": "hinh_n_m",
+        "text": "Hình 14.2",
+        "cx": 0.2532,
+        "cy": 0.0843,
+        "conf": 96.0
+      },
+      {
+        "page": 68,
+        "pattern": "hinh_n_m",
+        "text": "Hình 14.1",
+        "cx": 0.8167,
+        "cy": 0.3161,
+        "conf": 93.0
+      },
+      {
+        "page": 68,
+        "pattern": "hinh_n_m",
+        "text": "Hình 14.1",
+        "cx": 0.463,
+        "cy": 0.3535,
+        "conf": 93.0
+      },
+      {
+        "page": 68,
+        "pattern": "hinh_n_m",
+        "text": "Hình 14.3",
+        "cx": 0.3396,
+        "cy": 0.5635,
+        "conf": 96.0
+      }
+    ],
+    "pages_with_caption_label": 16,
+    "caption_cy_median": 0.386,
+    "words_per_page": 362.0,
+    "ket_luan": "ca_hai",
+    "figure_caption_regex": "H[ìiíỉĩị]nh\\s*(\\d{1,2})\\s*[.,]\\s*(\\d{1,2})",
+    "seconds": 48.1,
+    "flags": []
+  }
+}
