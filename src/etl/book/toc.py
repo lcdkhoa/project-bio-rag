@@ -415,8 +415,25 @@ def parse_toc_rows(rows: Sequence, *, rescue=None) -> TocResult:
     return result
 
 
-def read_toc(source, geom=None, search: Iterable = TOC_SEARCH_PAGES) -> TocResult:
-    """Điểm vào: đọc MỤC LỤC của một quyển thành entries + chuongs + flags."""
+def load_fingerprint(book: str) -> Optional[dict]:
+    """Phần `toc` của fingerprint M0 (`database/fingerprints/{book}.json`).
+
+    Trả None nếu chưa đo — chỗ gọi phải tự quyết định, ở đây không đoán.
+    """
+    from ...config import FINGERPRINT_DIR
+    path = FINGERPRINT_DIR / f"{book}.json"
+    if not path.exists():
+        return None
+    try:
+        import json
+        return (json.loads(path.read_text(encoding="utf-8")) or {}).get("toc")
+    except (OSError, ValueError):
+        return None
+
+
+def read_toc_cells(source, geom=None,
+                   search: Iterable = TOC_SEARCH_PAGES) -> TocResult:
+    """Bộ đọc BẢNG (KNTT): tìm hình học bảng bằng CV rồi OCR từng ô."""
     page_indices, rows_by_page = find_toc_pages(source, search, geom)
     if not page_indices:
         return TocResult(flags=[{
@@ -449,4 +466,54 @@ def read_toc(source, geom=None, search: Iterable = TOC_SEARCH_PAGES) -> TocResul
 
     result = parse_toc_rows(rows, rescue=rescue)
     result.page_indices = page_indices
+    return result
+
+
+def read_toc(source, geom=None, search: Iterable = TOC_SEARCH_PAGES) -> TocResult:
+    """Điểm vào: chọn bộ đọc MỤC LỤC theo ĐẶC TRƯNG ĐÃ ĐO của chính quyển đó.
+
+    Hai bộ đọc, mỗi bộ cho một quy ước đã đo được (D-65, D-70):
+
+    * `toc.read_toc_cells` — bảng một cột logic, mục `Bài N`, cột số trang riêng.
+      Đúng cho **4 quyển KNTT** (195/195 Bài liền mạch).
+    * `toc_lines.read_toc_lines` — theo dòng + token, cho **CTST** (`BÀI N:` chữ
+      hoa, hai cột, dot leader) và **Cánh Diều** (`N. Tiêu đề`, MỤC LỤC ở HAI
+      TRANG CUỐI, 8_CD/9_CD lại là một cột).
+
+    Chạy bộ đọc bảng lên bố cục hai cột sinh ra **số SAI MÀ TRÔNG HỢP LÝ** (đo
+    trên 7_CTST: `Bài 1 -> trang 144`, thật là 6), nên việc chọn bộ đọc **phải
+    dựa vào phép đo**, không dựa vào tên quyển. Chưa có fingerprint thì dùng bộ
+    đọc bảng và **gắn cờ** để thấy được là đang đọc bằng mặc định.
+    """
+    fingerprint = load_fingerprint(source.name)
+    if not fingerprint:
+        result = read_toc_cells(source, geom, search)
+        result.flags.append({
+            "kind": "toc_fingerprint_missing",
+            "detail": f"{source.name}: chưa có database/fingerprints/"
+                      f"{source.name}.json -> dùng bộ đọc BẢNG mặc định "
+                      f"(chạy `python -m src.etl.book.fingerprint --book "
+                      f"{source.name}` để đo)"})
+        return result
+
+    pages = fingerprint.get("toc_pages") or []
+    style = fingerprint.get("entry_style")
+    if not pages:
+        return TocResult(flags=[{
+            "kind": "toc_not_found",
+            "detail": f"{source.name}: fingerprint không có trang MỤC LỤC nào "
+                      f"({fingerprint.get('flags')})"}])
+
+    if style == "bai" and fingerprint.get("where") == "dau_sach" and \
+            (fingerprint.get("spine") or {}).get("contiguous"):
+        # Bộ đọc bảng ĐÃ tự kiểm được trên chính quyển này (spine liền mạch) —
+        # dùng lại nó, đừng đổi thứ đang đúng.
+        return read_toc_cells(source, geom, pages)
+
+    from .toc_lines import read_toc_lines
+    result = read_toc_lines(source, pages, style or "bai")
+    result.flags.append({
+        "kind": "toc_reader",
+        "detail": f"{source.name}: đọc bằng toc_lines (style={style}, "
+                  f"trang={list(pages)}, vị trí={fingerprint.get('where')})"})
     return result

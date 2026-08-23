@@ -50,7 +50,22 @@ def _build(source, *, numbers=None, toc=(), chuongs=(), toc_pages=(),
 def test_book_id_maps_the_folder_name_to_a_book_id():
     assert book_id_from_source_name("SGK_KHTN_6_KNTT") == "KHTN6-KNTT"
     assert book_id_from_source_name("SGK_KHTN_9_KNTT") == "KHTN9-KNTT"
-    assert book_id_from_source_name("SGK-KHTN-Lop-6.pdf") == "KHTN6-KNTT"
+
+
+def test_book_id_reads_the_publisher_off_the_name():
+    """Hàm này từng nối cứng `-KNTT` (tàn dư thời một nhà xuất bản, D-50). Hậu
+    quả đã xảy ra thật khi dựng manifest 12 quyển: `SGK_KHTN_6_CTST` ra
+    `KHTN6-KNTT` và **ghi đè manifest của 6_CD** — ba nhà xuất bản cùng lớp dùng
+    chung một file (D-71)."""
+    assert book_id_from_source_name("SGK_KHTN_6_CTST") == "KHTN6-CTST"
+    assert book_id_from_source_name("SGK_KHTN_9_CD") == "KHTN9-CD"
+    assert book_id_from_source_name("KHTN_lop_8_CTST.pdf") == "KHTN8-CTST"
+
+
+def test_book_id_without_a_publisher_keeps_the_stem():
+    """Thiếu nhà xuất bản trong tên thì **không được đoán** một nhà xuất bản:
+    thà một id xấu còn hơn id của quyển khác (nguyên tắc 1)."""
+    assert book_id_from_source_name("SGK-KHTN-Lop-6.pdf") == "SGK-KHTN-Lop-6"
 
 
 def test_book_id_from_an_unexpected_name_is_the_stem():

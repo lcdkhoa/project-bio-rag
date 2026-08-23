@@ -259,7 +259,10 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 | M0 fingerprint 12/12 | **XONG** | `database/fingerprints/*.json` đủ 12 file, 5 khoá mỗi file |
 | Test suite | **XANH** | `pytest tests/ -q` → **326 pass, 7 skip, 18,45 s** (chạy 2026-08-23) |
 | Commit công việc M0 | **CHƯA** | `fingerprint.py`, `fp_*.py`, 2 file test, 12 JSON, 3 spec, `goal.docx` còn untracked; `master` **không ahead** origin → chưa có gì được ghi lại |
-| M1 manifest 12 quyển | **BỊ CHẶN** | `toc.TOC_SEARCH_PAGES = range(3, 10)` chỉ quét đầu sách → **4 quyển CD (MỤC LỤC ở 2 trang CUỐI) không thể build manifest**; `toc._BAI` phân biệt hoa/thường → `BÀI 1:` của CTST không khớp; CD không có chữ "Bài" (cần bộ đọc `so_thu_tu`) |
+| M1 manifest 12 quyển | **GỠ CHẶN**, spine chưa nghiệm thu | `book/toc_lines.py` (D-70): `read_toc` chọn bộ đọc theo fingerprint, nên `--build-manifests` **chạy được cả 12 quyển** (đo: 1,27–1,46 s/trang → ~50 phút). Nhưng spine Bài của 8 quyển CTST/CD **chưa liền mạch** — đọc được CTST 23/17/17/21 và CD 32/24/23/29 mục, gần nhất là 6_CD (thiếu Bài 3, 4, 34) → G1 vẫn FAIL cho 8 quyển và `bai_so` **không** đi vào metadata chunk (đúng thiết kế: thiếu thì im, không đoán). Cờ trội còn lại: `toc_page_unreadable` ~20/quyển ở CTST |
+| Tỉ lệ đọc số trang ở đường manifest | **CHƯA**, và nguyên nhân KHÔNG phải scale | Đo 30 trang/quyển với `(1,3)` / `(1,2,3)` / `(2,)` → **cùng một con số**: 6_CD **40%**, 9_CD 87%, 6_CTST 87%, 6_KNTT **100%**. Giả thuyết "thiếu scale 2×" **bị bác bỏ** (D-72). Khác biệt thật: fingerprint đọc trong **dải zone đo được của chính quyển** (`zone_read.band_even`), còn `page_number_ocr` dùng hằng số góc của KNTT. Hệ quả hiện tại: 6_CD có `ocr_confirmed` **37,1%**, 112 trang lấy `printed_page` suy từ offset đã đo, mỗi trang một cờ `page_number_not_read` → G1 FAIL đúng như phải fail |
+| Manifest cho quyển có đồng thuận offset yếu | **XONG** | `build_manifest` đối chứng với offset đã đo ở fingerprint: trùng → đi tiếp + gắn cờ, khác → vẫn raise, không có fingerprint → vẫn raise. `MIN_OFFSET_RATIO = 0.8` **không** bị nới (D-72). Chạy thật: `KHTN6-CD.json` 179 trang / offset 0 / 32 Bài, 1,79 s/trang |
+| `book_id` theo nhà xuất bản | **XONG** | `book_id_from_source_name` từng nối cứng `-KNTT` nên `SGK_KHTN_6_CTST` ra `KHTN6-KNTT` và **ghi đè manifest của 6_CD** — ba NXB cùng lớp dùng chung một file, im lặng hoàn toàn. Bắt được bằng cách **mở artefact đầu tiên ra đối chiếu** (`n_pages: 204` không thể là của quyển 195 trang), không bằng test: 158 test vẫn xanh khi bug còn sống (D-71) |
 | Fingerprint được code sản xuất ĐỌC | **CHƯA** | `grep -rn fingerprint src/` chỉ trúng `image_captioner` (trùng tên biến). M0 đo xong nhưng ETL vẫn chưa dùng → `min_sat` per-book, `entry_style`, vùng số trang vẫn là hằng số KNTT |
 | Gỡ `LAYOUT_VARIANT = "kntt"` | **CHƯA** | `src/etl/image_processor.py:4105`, `make_image_processor()` vẫn luôn trả KNTT (D-64 đã đảo chiều D-50) |
 | `text_extract.SINGLE_LINE_MAX_H = 60` | **CHƯA** (cố ý) | hằng số KNTT; dòng CD cao ~136 px → việc của M2, phải kèm before/after |
@@ -352,6 +355,14 @@ cp .env.example .env          # then set HF_TOKEN (required) and USE_GPU
 # Prints the G1 report and exits nonzero when G1 fails.
 python main.py --build-manifests
 python main.py --build-manifests --book SGK_KHTN_6_KNTT   # one book only
+
+# ONE COMMAND, run-unattended (Windows/PowerShell): manifests 12 books -> text
+# ETL -> "what's left" report, all into one timestamped log. It reads
+# --build-manifests' exit code, PRINTS it, and continues: G1 FAIL is EXPECTED
+# today (CTST/CD spines are not contiguous, D-70) while `save_manifest` still
+# wrote every book that built, and --text-only only needs the manifests to exist.
+# Chaining the two with `&&` would block step 2 for no reason.
+powershell -ExecutionPolicy Bypass -File scripts\run_etl_local.ps1
 
 # STEP -1 (M0) — measure each book's own layout fingerprint. Writes/merges
 # database/fingerprints/{book}.json; a failed stage never overwrites a good one.
