@@ -19,12 +19,10 @@ document/
 cache/
 
 # Tránh copy các file log
-
-\*.log
+*.log
 processed_files.txt
 processed_images.txt
 
 # Docker files
-
 Dockerfile
 .dockerignore
