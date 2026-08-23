@@ -217,6 +217,36 @@ Measured on the PNG corpus (2026-08-21). Everything marked DONE below is impleme
 - **DONE — the ETL prints progress, so "running" is distinguishable from "hung" (D-53).** `src/utils/progress.py::ProgressLogger` logs every `PROGRESS_LOG_EVERY_PAGES` pages **or** `PROGRESS_LOG_EVERY_SECONDS` seconds (10 / 30 by default) on the three slow loops — per-page text indexing, the whole-page OCR that anchors figure captions, and figure cropping — with done/total, measured s/page, elapsed, ETA and caller-supplied counters (`chunks`, `trang_rong`, `fail`, `hinh`, `bo_qua`). `tqdm` is **gone from all three ETL entrypoints**: a stderr bar with no timestamp gets shredded by the log lines it shares a terminal with. It reports only measured numbers — unknown rate prints ETA `?`, never a guess. Adding it exposed that `_load_ocr_text_per_page` OCRs **every** page needing images before the first crop (~5 min of former silence per book).
 - **Embedding model: `.env` now sets `EMBEDDING_MODEL=BAAI/bge-m3`**, matching the Colab notebook (verified 2026-08-21). The old 384-dim MiniLM/1024-dim bge-m3 split is resolved; if you ever switch back, the index must be rebuilt — the two dimensionalities cannot share a collection.
 
+## Kế hoạch tới (chốt 2026-08-23) — và CHÍNH XÁC khi nào chạy lại ETL toàn bộ
+
+Thứ tự này không đổi được, vì mỗi bước là **đầu vào bắt buộc** của bước sau, không
+phải sở thích tổ chức công việc.
+
+| # | Việc | Đầu ra nghiệm thu | Chặn ai |
+|---|---|---|---|
+| **M1** | Bộ đọc MỤC LỤC cho CTST (hai cột) + CD (`style = so_thu_tu`, MỤC LỤC ở cuối sách); hợp nhất `toc._BAI` (đang phân biệt hoa/thường) với `fp_toc.ROW_PATTERNS` (đã `IGNORECASE`); cho `toc.py` đọc `entry_style`/`toc_pages` từ fingerprint thay vì hằng số | `--build-manifests` chạy hết **12/12 quyển**, G1 PASS, spine Bài liền mạch từng quyển, manifest được **commit** | **mọi thứ** — đường text `raise ManifestMissing` khi thiếu manifest |
+| **M1.5** | Phép đo **chỉ số dưới ở CD/CTST** (~10 trang Hoá/Lý mỗi NXB) + đo `s/trang` thật trên **một quyển CD** | biết `O₂`/`H₂SO₄` có sống ở 2280×3201 hay không; có số để hứa lịch | thiết kế bước xử lý công thức (MT1) và mọi lời hứa về thời lượng |
+| **M2** | Text ETL 12 quyển: `min_sat` per-book từ fingerprint, xử lý `SINGLE_LINE_MAX_H = 60` (hằng số KNTT; dòng CD cao ~136 px) kèm before/after, **dựng chỉ mục BM25 cùng lượt** (cùng chunk id) | index text đủ 12 quyển + BM25 song song | MT3, và mọi phép đo eval |
+| **M3** | Hình ảnh theo từng NXB: gỡ `LAYOUT_VARIANT = "kntt"`, caption chữ đen cho CD/CTST (kênh pill đọc **0** ở 8/12 quyển) | G4 theo từng NXB | MT1 phần hình, MT4 multi-modal |
+| **M4** | Bộ test 12 quyển có nhãn `phan_mon`/`khoi`/`bo_sach`/`do_kho`, phân bố đều | testset mới + gold key khớp index | MT4 |
+| **M5** | Thực nghiệm đối chiếu: BM25 thuần / dense thuần / hybrid; text-only / multi-modal; bật-tắt rerank; bật-tắt cổng lọc | bảng số cho báo cáo | báo cáo |
+
+**Khi nào chạy lại ETL toàn bộ — ba mốc, không phải một.** Đừng chạy 2 399 trang
+trước khi qua mốc trước đó, vì mỗi lần chạy lại tốn nhiều giờ:
+
+1. **Ngay hôm nay chạy được:** `--build-manifests --book SGK_KHTN_{6,7,8,9}_KNTT`
+   rồi `--text-only` cho **4 quyển KNTT** (~797 trang, đo được 3,56 s/trang ≈ 47
+   phút). Mục đích **không** phải dựng DB cuối cùng, mà là (a) xác minh đường ống
+   còn chạy sau khi corpus đổi `offset −1 → 0`, (b) có một `s/trang` thật để so.
+2. **Lượt text toàn bộ 12 quyển: SAU M2** (M1 xong + `min_sat` per-book + BM25).
+   Chạy sớm hơn thì phải chạy lại, vì `TEXT_EXTRACTION_VERSION` sẽ bump ở M2 và
+   version gate sẽ OCR lại **toàn bộ** — đúng theo thiết kế.
+3. **Lượt ảnh toàn bộ: SAU M3.** Kênh pill đọc được **0 nhãn** trên 8/12 quyển nên
+   chạy phía ảnh trước M3 là ~6 giờ để lấy kết quả đã biết là sai.
+
+**Một lần chạy lại rẻ hơn ba lần:** cả hai `*_EXTRACTION_VERSION` nên bump **một
+lần** khi M2/M3 xong, không bump mỗi lần sửa một tham số.
+
 ## Trạng thái tiến độ (quét lại 2026-08-23, đối chiếu code + log + memory)
 
 Mốc đề cương: GĐ1 số hoá 12 quyển đáo hạn **29/07/2026**; GĐ3 thực nghiệm đối chiếu
@@ -302,7 +332,9 @@ một dòng CLAUDE.md sai đang chỉ đạo lượt sau.
    Mỗi file kèm đúng một dòng trong `MEMORY.md`.
 4. **Spec trong `document/specs/`** — báo cáo phép đo (`*-report.md`) và prompt bàn giao cho
    lượt sau (`*-prompt.md`), trong đó §"việc còn lại" và §"trạng thái file khi bàn giao"
-   phải khớp `git status` thật.
+   phải khớp `git status` thật. **Và nếu thay đổi chạm tới ETL thì phải vá luôn
+   `document/colab_runtime_etl.ipynb`** (D-69) — đó là thứ người dùng THỰC SỰ chạy, nên một
+   dòng sai ở đó đắt hơn một dòng sai trong spec: nó làm mất cả một phiên Colab.
 
 Rồi mới **commit** (message thuần, không `Co-Authored-By`). Chưa commit thì công việc vẫn
 là "chưa có gì được ghi lại" — xem dòng "Commit công việc M0" trong bảng tiến độ.
@@ -378,7 +410,7 @@ Two phases: **ETL (offline)** builds the indexes; **query (online)** serves via 
 
 **Checkpoint semantics (all three ETL entrypoints agree):** `processing_status` is the single truth source. Every record is keyed on **`page_key` = `{book name}#{md5 of that page's bytes}`** (`page_source.page_checkpoint_key`) plus a version — `TEXT_EXTRACTION_VERSION` for text, `IMAGE_EXTRACTION_VERSION` for images. So: replacing one page file re-processes **only that page**; bumping either version re-processes everything on that side. Chunk ids are `{page_key}_p{page_number}_c{chunk_index}`, and `_index_source_pages` deletes a page's existing text chunks before writing the new ones, so a version bump never leaves orphaned chunks behind. **The image side needed the same thing and did not have it (D-52):** an image doc's id is `image_id` = the hash of the *crop*, so a changed crop gets a new id and the old doc survives instead of being upserted over. Measured on a 12-page scratch DB: swapping one page's bytes left that page with **3** image docs (one stale). `ImageVectorDB.delete_page_documents(source, pages)` now clears both image collections for the pages about to be rewritten, called from `run_etl` and `run_etl_image_only` *after* extraction succeeds (so a crash deletes nothing) and *even when the page yields no figures* (a page that lost its figure must lose its docs too). `database/processed_files.txt` / `processed_images.txt` are **advisory progress logs only** — nothing skips work because of them. Each entrypoint queries the checkpoint *before* doing any OCR, so a book with nothing left to do costs one md5 per page.
 
-Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RAG_DATABASE_DIR` (point at Google Drive on Colab). `database/manifests/{book_id}.json` holds the per-book `BookManifest`, overridable **separately** via `RAG_MANIFEST_DIR` so manifests can travel with the repo while the index sits on Drive. `datasources/` holds the input page PNGs, one folder per book (see "What this is") — no PDFs; override with `RAG_DATA_DIR`. **The PNGs are NOT in git (D-68):** measured 4.1 GB / 2 399 pages against an already-11 GB `.git`, and the CD/CTST batch alone (~3.4 GB) exceeds GitHub's 2 GB per-push limit — PNGs were never LFS-tracked (`.gitattributes` covers only `datasources/*.pdf`). `.gitignore` now ignores `datasources/*` except `datasources/README.md`, which documents the expected layout. Untracking does **not** shrink `.git`: the 801 KNTT PNGs stay in history until someone rewrites it, which nobody has. Consequence to remember: a fresh clone has **no data**, so all four data entrypoints now **exit nonzero** instead of logging and returning 0 — measured `--text-only`/`--image-only`/`--etl` → **2**, `--build-manifests` → **1**.
+Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RAG_DATABASE_DIR` (point at Google Drive on Colab). `database/manifests/{book_id}.json` holds the per-book `BookManifest`, overridable **separately** via `RAG_MANIFEST_DIR` so manifests can travel with the repo while the index sits on Drive. `database/fingerprints/{book}.json` (the M0 layout measurement, 12/12 books) works the same way via **`RAG_FINGERPRINT_DIR`**, defaulting to `<repo>/database/fingerprints` — it is a *measurement* that cost ~70 min of OCR, so it belongs to the repo, not to the Drive index. It used to be `Path("database/fingerprints")` hard-coded in `book/fingerprint.py`, a **relative** path that silently read/wrote the wrong place from any cwd but the repo root (D-69). `datasources/` holds the input page PNGs, one folder per book (see "What this is") — no PDFs; override with `RAG_DATA_DIR`. **The PNGs are NOT in git (D-68):** measured 4.1 GB / 2 399 pages against an already-11 GB `.git`, and the CD/CTST batch alone (~3.4 GB) exceeds GitHub's 2 GB per-push limit — PNGs were never LFS-tracked (`.gitattributes` covers only `datasources/*.pdf`). `.gitignore` now ignores `datasources/*` except `datasources/README.md`, which documents the expected layout. Untracking does **not** shrink `.git`: the 801 KNTT PNGs stay in history until someone rewrites it, which nobody has. Consequence to remember: a fresh clone has **no data**, so all four data entrypoints now **exit nonzero** instead of logging and returning 0 — measured `--text-only`/`--image-only`/`--etl` → **2**, `--build-manifests` → **1**.
 
 ### Page source (`src/etl/page_source.py`)
 `PageSource` is the only way page pixels enter the system: `page_numbers()` (the numbers **in the filenames**, never `enumerate` order), `load(page_number)` → BGR uint8, `content_hash(page_number)`. `PngFolderPageSource` is the real corpus; `PdfPageSource` exists only for the legacy `/api/etl` upload. `discover_page_sources(DATA_DIR)` returns every book (PNG folders first, then any legacy PDFs). Anything that needs a page must go through this — do not re-add `fitz`/poppler calls to the ETL.
@@ -415,6 +447,16 @@ Chunks carry `source`/`page` (printed) /`page_index` (source page number) /`vari
 - **Citations are deterministic, not LLM-generated**: `src/rag/citations.py` builds them from real chunk metadata (page/section, including sidebar labels) and `src/app/api.py` attaches them to chat + stream responses — the LLM never invents page numbers. `format_book_name` renders a **reader-facing** name — `SGK_KHTN_6_KNTT` → `Khoa học tự nhiên 6 (Kết nối tri thức)` — reading the publisher off the book id itself, and returns the raw stem unchanged when the name doesn't match the pattern (a wrong label sends a student to the wrong book). The label must stay a **bijection**: the G3 gate maps display labels back to `source`.
 - **Windows is the primary dev environment.** OCR needs Tesseract (`vie`) via `TESSERACT_CMD`; Poppler (`POPPLER_PATH`) is only still needed by the legacy PDF paths. Prebuilt zips are in `windows_tools/`.
 - **Visual QA for layout**: `python -m src.test.qa_layout --book SGK_KHTN_6_KNTT --page 10` draws the segmented regions; `--pages 10,11,12 --report` prints regions-per-page (the recall metric). `SGK_KHTN_6_KNTT/page_010.png` is the reference page — a human counts ≥4 coloured boxes on it.
-- **Running the ETL on Colab**: `document/colab_runtime_etl.ipynb` is the single runbook (the user's working notebook) — mandatory `--build-manifests` step, `RAG_MANIFEST_DIR` (manifests travel with the repo while the DB lives on Drive), version-gate semantics, and which side of the pipeline is trustworthy today. Keep it in sync when the ETL CLI changes; don't start a parallel runbook doc.
+- **Running the ETL on Colab — `document/colab_runtime_etl.ipynb` IS THE RUNBOOK, and the user
+  confirmed on 2026-08-23 that it stays the one file they run.** 40 cells, Vietnamese, the user's
+  own working notebook. **Never start a parallel runbook doc, and never let it drift**: when the ETL
+  CLI, an env var, or a measured number changes, patch this notebook **in the same turn** — it is the
+  4th place in the "Định nghĩa xong" checklist for anything that touches the ETL. It carries the
+  mandatory `--build-manifests` step, the four path env vars, version-gate semantics, the caption-off
+  rationale, and which side of the pipeline is trustworthy today. Updated to lượt 3 (2026-08-23):
+  header now says 12 quyển / 2 399 trang and opens with a **⛔ blocked** banner, cell 5 points
+  `RAG_DATA_DIR` at Drive and adds `RAG_FINGERPRINT_DIR`, cell 5b lists the per-publisher page counts
+  and sizes, and §7 **reverses** lượt 2's "skip `--build-manifests`" into "bắt buộc" with a
+  per-publisher can/cannot table.
 - **Image-review JSON semantics are subtle and easy to get wrong**: `--apply-image-review` upserts per-item (removing an item from the array does NOT delete it from the DB); only `--replace-image-db` treats the file as the full source of truth. To remove a figure from retrieval, set `review_status=rejected|deleted` / `is_active=false` / `delete=true`. See README §6.
 - Detailed per-variant image-ETL runbook: `skills/etl-textbook-images/runbook.md`.

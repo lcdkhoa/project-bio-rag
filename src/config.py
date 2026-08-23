@@ -44,6 +44,13 @@ IMAGES_DIR = PERSIST_DIR / "images"
 # BookManifest. Tách khỏi PERSIST_DIR được, vì trên Colab thường DB nằm ở Google
 # Drive (`RAG_DATABASE_DIR`) trong khi manifest đi theo repo — không phải copy tay.
 MANIFEST_DIR = _path_from_env("RAG_MANIFEST_DIR", PERSIST_DIR / "manifests")
+# Layout fingerprint M0 (D-65). Mặc định đi theo REPO chứ không theo PERSIST_DIR:
+# nó là KẾT QUẢ ĐO đã commit (một lượt đo lại tốn ~70 phút OCR cho 12 quyển), cùng
+# lý do như MANIFEST_DIR. Trước đây là `Path("database/fingerprints")` viết cứng
+# trong `book/fingerprint.py` — đường dẫn TƯƠNG ĐỐI, nên chạy từ thư mục khác
+# repo root là ghi/đọc sai chỗ mà không báo gì (D-69).
+FINGERPRINT_DIR = _path_from_env("RAG_FINGERPRINT_DIR",
+                                 PROJECT_ROOT / "database" / "fingerprints")
 PROCESSED_FILES_LOG = PERSIST_DIR / "processed_files.txt"
 PROCESSED_IMAGES_LOG = PERSIST_DIR / "processed_images.txt"
 

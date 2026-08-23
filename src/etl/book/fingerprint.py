@@ -518,7 +518,6 @@ def body_sample(source, k: int, skip_front: int = SKIP_FRONT_PAGES) -> list:
 
 # ---------------------------------------------------------------------- CLI
 
-FINGERPRINT_DIR = Path("database/fingerprints")
 
 
 def _load_existing(dest: Path) -> dict:
@@ -625,7 +624,7 @@ def run(book: Optional[str], sample: int, verbose: bool,
         stages: tuple = STAGES, toc_scan: int = 15, toc_back: int = 8,
         palette_sample: int = PALETTE_SAMPLE,
         pill_sample: int = PILL_SAMPLE) -> int:
-    from src.config import DATA_DIR
+    from src.config import DATA_DIR, FINGERPRINT_DIR
     from src.etl.page_source import discover_page_sources
 
     sources = discover_page_sources(DATA_DIR)
