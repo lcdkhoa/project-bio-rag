@@ -38,6 +38,10 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 $env:PYTHONIOENCODING = "utf-8"
 $env:PYTHONUNBUFFERED = "1"
+# Script này chạy bằng `powershell` (Windows PowerShell 5.1) theo đúng quy ước
+# của `run_etl_local.ps1`. Ở đó console mặc định là code page 437/1258, nên chữ
+# tiếng Việt do python in ra sẽ thành ký tự rác nếu không ép UTF-8.
+try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch {}
 
 # Bộ test: mặc định lấy `src\test\testsets` nếu ở đó có *_testset.csv, không thì
 # rơi về bộ 4 quyển KNTT đã lưu trữ. Bộ lưu trữ VẪN DÙNG ĐƯỢC — đo được 99/100
@@ -61,13 +65,30 @@ $log = Join-Path $root "ablation_run_$stamp.log"
 function Say($msg) {
     $line = "[{0}] {1}" -f (Get-Date -Format "HH:mm:ss"), $msg
     Write-Host $line
-    Add-Content -Path $log -Value $line -Encoding UTF8
+    Add-Content -Path $log -Value $line -Encoding utf8
 }
 
 function Step($title, $cmdArgs) {
+    # HAI BẪY, cả hai chỉ lộ ra khi CHẠY THẬT script này (test đơn vị không thấy):
+    #
+    # 1. `Tee-Object -FilePath` **truyền tiếp** ra luồng output. Nếu để nguyên,
+    #    mọi dòng python in ra trở thành GIÁ TRỊ TRẢ VỀ của hàm, nên
+    #    `$code = Step ...` nhận một MẢNG chứ không phải số — và `$code -ne 0`
+    #    luôn đúng. Lần chạy đầu: bảng 12 cấu hình in ra đẹp, `mã thoát 0`, mà
+    #    script vẫn tuyên bố "Bước 4 thất bại" rồi đi dựng lại bộ nhớ đệm 51
+    #    phút một cách vô ích. `Out-Host` chặn dòng chảy đó lại.
+    # 2. `Add-Content -Encoding utf8` và `Tee-Object` mặc định ghi hai kiểu mã
+    #    hoá khác nhau vào CÙNG một file -> log mở ra là ký tự rác. Ép cùng utf8.
     Say "=== $title ==="
     Say "    python $($cmdArgs -join ' ')"
-    & python @cmdArgs 2>&1 | Tee-Object -FilePath $log -Append
+    # `ForEach-Object` vừa in ra ngay (không chờ lệnh xong — quan trọng với lượt
+    # dựng đệm 51 phút) vừa ghi log đúng mã hoá, mà KHÔNG phát gì ra luồng
+    # output, nên `return $code` trả về đúng một con số.
+    & python @cmdArgs 2>&1 | ForEach-Object {
+        $line = [string]$_
+        Write-Host $line
+        Add-Content -Path $log -Value $line -Encoding utf8
+    }
     $code = $LASTEXITCODE
     Say "    -> mã thoát $code"
     return $code

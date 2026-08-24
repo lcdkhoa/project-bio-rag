@@ -163,16 +163,36 @@ def build_cache(rows: Sequence[dict], collection, sparse, cache_path: Path,
             raise RuntimeError(f"Khoá metadata trùng: {key} — không còn là song ánh")
         id_by_meta[key] = cid
 
+    # NỐI TIẾP đệm cũ thay vì bắt đầu từ rỗng. Lý do là một lỗi đã cắn thật:
+    # `_save` ghi đè CÙNG một file sau mỗi 10 câu, nên một lượt `--build-cache`
+    # bị giết giữa chừng **thay đệm 100 câu bằng đệm 20 câu** — mất 51 phút công
+    # đã bỏ ra. Ghi từng đợt (chống mất trắng) và bắt đầu từ rỗng (huỷ cái đã có)
+    # là hai thứ mâu thuẫn nhau; nối tiếp giải quyết cả hai, và tiện thể làm
+    # `--build-cache` tự nó resume được.
+    dense: Dict[str, List[Tuple[str, float]]] = {}
+    rerank: Dict[str, Dict[str, float]] = {}
+    if cache_path.exists():
+        try:
+            cu = Cache.from_json(json.loads(cache_path.read_text(encoding="utf-8")))
+        except (ValueError, KeyError) as exc:
+            raise RuntimeError(
+                f"Đệm cũ ở {cache_path} đọc không được ({exc}). Xoá nó rồi chạy "
+                "lại — KHÔNG tự xoá hộ, vì nó có thể là hàng giờ công.") from exc
+        if cu.index_digest == digest and cu.text_version == TEXT_EXTRACTION_VERSION:
+            dense, rerank = cu.dense, cu.rerank
+            print(f"[cache] nối tiếp đệm cũ: {len(dense)} câu đã có "
+                  f"(dấu vân index khớp)")
+        else:
+            print("[cache] đệm cũ thuộc index KHÁC -> dựng lại từ đầu")
+
     print(f"[cache] nạp bge-m3 …")
     db = VectorDB().db
     reranker = get_reranker()
 
-    dense: Dict[str, List[Tuple[str, float]]] = {}
-    rerank: Dict[str, Dict[str, float]] = {}
     t0 = time.time()
     for i, row in enumerate(rows, 1):
         q = str(row["question"])
-        if q in dense:
+        if q in dense and q in rerank:
             continue
         scored = db.similarity_search_with_score(q, k=candidate_n)
         # Chroma trả Document, không trả id -> khớp lại bằng (source, page,
