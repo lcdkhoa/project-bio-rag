@@ -123,7 +123,27 @@ if ($code -ne 0 -and -not $RebuildCache) {
     $code = Step "4/4 Bảng 12 cấu hình (dựng lại đệm)" ($ablArgs + "--build-cache")
 }
 
-Say "XONG. Bảng: src\test\ablation_report.csv · log đầy đủ: $log"
+# --- KHÔNG được nói "XONG" khi bước 4 thất bại -----------------------------
+# Bẫy đã cắn thật (lượt 2026-08-24 15:05): bước 4 chết ở `20/300` với mã -1,
+# nhưng script vẫn in "XONG. Bảng: src\test\ablation_report.csv" — và người đọc
+# mở ra thấy một bảng ĐẦY ĐỦ 24 dòng nên tưởng là kết quả của lượt vừa chạy.
+# Thật ra đó là file của lượt TRƯỚC (mtime 14:11 so với lượt chạy 15:05), đo trên
+# **100 câu** của bộ test lưu trữ 4 quyển chứ không phải 300 câu của bộ 12 quyển.
+# Một con số SAI MÀ TRÔNG HỢP LÝ, đúng loại nguy hiểm nhất.
+$table = "src\test\ablation_report.csv"
+if ($code -eq 0) {
+    Say "XONG. Bảng: $table · log đầy đủ: $log"
+} else {
+    Say "!! BƯỚC 4 THẤT BẠI (mã $code) — BẢNG CHƯA ĐƯỢC DỰNG LẠI."
+    if (Test-Path $table) {
+        $info = Get-Item $table
+        Say "   File `"$table`" trên đĩa là của LƯỢT TRƯỚC"
+        Say "   (sửa lần cuối $($info.LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss')))."
+        Say "   ĐỪNG đọc nó như kết quả của lượt này. Đối chiếu cột `so_cau` với số"
+        Say "   câu thật trong $TestsetDir trước khi dùng bất kỳ con số nào."
+    }
+    Say "   log đầy đủ: $log"
+}
 if ($isFallback) {
     Say "NHẮC LẠI: số ở trên là của BỘ TEST TẠM 4/12 quyển KNTT, chưa có người duyệt."
 }

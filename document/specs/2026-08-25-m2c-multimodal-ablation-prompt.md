@@ -4,9 +4,10 @@
 > "Định nghĩa xong"); `document/specs/2026-08-24-m2-track-b-report.md` (báo cáo
 > Track B, số đã đo); `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` §2
 > (10 quyết định đã chốt) và §4 (11 điều CẤM); `document/decision_log.html`
-> **D-76…D-82**.
+> **D-76…D-83**.
 >
-> Entry mới bắt đầu từ **D-83**.
+> Entry mới bắt đầu từ **D-84**. (Prompt này ban đầu ghi D-83; số đó đã bị
+> dùng cho bản vá `run_ablation.ps1` in "XONG" khi bước 4 thất bại.)
 >
 > **Tinh thần:** phản biện chính mình. Mỗi con số phải chạy ra được và dán được
 > vào decision log. Một giả thuyết chưa đo là **câu hỏi mở**, không được lặng lẽ
