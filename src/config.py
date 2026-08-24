@@ -266,3 +266,22 @@ FUSION_DENSE_WEIGHT = float(os.getenv("FUSION_DENSE_WEIGHT", "0.5"))
 # `RERANK_SCORE_MIN` — đó mới là thành phần để bật/tắt trong ablation của đề cương.
 RELEVANCE_GATE_ENABLED = os.getenv(
     "RELEVANCE_GATE_ENABLED", "false").lower() == "true"
+
+# --- Ngữ cảnh ĐA PHƯƠNG THỨC (Mục tiêu 4, cấu hình 2) --------------------
+# Trước M2C, `src/app/api.py` dựng ngữ cảnh CHỈ từ `text_docs`, nên "đa phương
+# thức vs chỉ văn bản" chênh **0 theo cấu trúc** — bảng ablation in ra hai hàng
+# giống hệt và trông như một kết luận. Bật cờ này thì nhãn + chú thích hình
+# (đọc DETERMINISTIC từ pill/OCR, KHÔNG do model sinh — D-47) được nối vào ngữ
+# cảnh của LLM.
+# Mặc định TẮT: giữ nguyên hành vi hôm nay cho tới khi có số đo, đúng cách đã
+# làm với `RETRIEVAL_MODE` ở D-82. Nó có thể làm TỆ HƠN (thêm nhiễu vào ngữ
+# cảnh — chính điều đề cương cảnh báo), nên phải đo cả hai chiều rồi mới chốt.
+MULTIMODAL_CONTEXT_ENABLED = os.getenv(
+    "MULTIMODAL_CONTEXT_ENABLED", "false").lower() == "true"
+# Số hình tối đa được nối vào ngữ cảnh. Cửa sổ ngữ cảnh của Qwen2.5-3B là hữu
+# hạn và text chunk là bằng chứng chính; hình là bằng chứng bổ trợ.
+MULTIMODAL_MAX_FIGURES = int(os.getenv("MULTIMODAL_MAX_FIGURES", "3"))
+# `crop_text` là OCR thô trong crop nên có thể dài và lẫn rác (D-38 giữ rác lại
+# CÓ Ý THỨC ở phía chunk). Cắt để một hình không lấn chỗ của text chunk.
+MULTIMODAL_CROP_TEXT_MAX_CHARS = int(
+    os.getenv("MULTIMODAL_CROP_TEXT_MAX_CHARS", "200"))

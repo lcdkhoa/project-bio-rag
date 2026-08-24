@@ -10,10 +10,12 @@ from flask_cors import CORS
 from transformers import TextIteratorStreamer
 from werkzeug.utils import secure_filename
 
-from src.config import DATA_DIR, IMAGES_DIR, LLM_MAX_NEW_TOKENS, LLM_TEMPERATURE, LLM_TOP_P
+from src.config import (DATA_DIR, IMAGES_DIR, LLM_MAX_NEW_TOKENS, LLM_TEMPERATURE,
+                        LLM_TOP_P, MULTIMODAL_CONTEXT_ENABLED)
 from src.app.dependencies import AppServices
 from src.etl.image_review import ImageReviewManager
 from src.rag.citations import build_citations, format_citations_block, is_fallback_answer
+from src.rag.multimodal_context import build_context
 
 logger = logging.getLogger(__name__)
 
@@ -92,8 +94,14 @@ def prepare_chat_payload(question):
             "services": services,
         }
 
-    context_texts = [doc.page_content for doc in text_docs if hasattr(doc, "page_content")]
-    context_str = "\n\n".join(context_texts)
+    # Ngữ cảnh ĐA PHƯƠNG THỨC (Mục tiêu 4, cấu hình 2). Cờ TẮT -> chuỗi y hệt
+    # hành vi cũ; cờ BẬT -> nối thêm nhãn + chú thích hình đọc DETERMINISTIC từ
+    # pill/OCR. Kho ảnh rỗng thì hai nhánh cho ra cùng một chuỗi (test khoá lại),
+    # nên bảng ablation không đo lẫn một nhánh ẩn.
+    context_str = build_context(
+        [doc for doc in text_docs if hasattr(doc, "page_content")],
+        image_docs,
+        multimodal=MULTIMODAL_CONTEXT_ENABLED)
 
     return {
         "mode": "llm",
