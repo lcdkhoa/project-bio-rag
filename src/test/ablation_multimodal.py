@@ -288,8 +288,14 @@ def main() -> int:
 
     print(f"Bộ test: {len(rows)} câu (bo_sach={args.bo_sach or 'tất cả'}) — "
           f"{len(set(r['source_book'] for r in rows))} quyển")
-    print("CẢNH BÁO phải đi kèm mọi số: bộ test do LLM SINH, CHƯA người duyệt "
-          "(_generation_meta.json: human_reviewed=false).")
+    # Câu cảnh báo này phải là câu ĐÚNG với hiện trạng: bộ test do LLM sinh,
+    # nhưng từ 2026-08-25 đã có một mẫu 50 câu người duyệt tay (D-89) nên
+    # "chưa người duyệt" không còn đúng — thay bằng TỈ LỆ SAI ĐO ĐƯỢC, kèm
+    # khoảng tin cậy, vì 0/50 không có nghĩa là 0% trên 300 câu.
+    print("CẢNH BÁO phải đi kèm mọi số: bộ test do LLM SINH. Mẫu 50 câu "
+          "rải đều theo (quyển × độ khó) đã người duyệt tay: gold key sai "
+          "0/50 = 0,0% (KTC 95% Wilson: 0,0–7,1%), 0 câu không quyết được "
+          "— `python -m src.test.review_testset --score`.")
 
     if args.min_score != IMAGE_RELEVANCE_THRESHOLD:
         print(f"!! CHẨN ĐOÁN: min_score={args.min_score} KHÁC production "
