@@ -106,6 +106,41 @@ def test_ask_llm_raises_quota_stop_after_the_backoff_list():
     assert llm.calls == len(G.RATE_LIMIT_BACKOFF_SECONDS) + 1
 
 
+class EmptyThenOk:
+    """Trả chuỗi rỗng `n_empty` lần đầu rồi mới trả JSON hợp lệ."""
+
+    def __init__(self, n_empty):
+        self.calls = 0
+        self.n_empty = n_empty
+
+    def invoke(self, prompt):
+        self.calls += 1
+        if self.calls <= self.n_empty:
+            return ""
+        return json.dumps({"answerable": True, "phan_mon": "hoa", "questions": [
+            {"question": "Q", "ground_truth": "A", "do_kho": "truc_tiep"}]})
+
+
+def test_ask_llm_retries_an_empty_response():
+    """Ca ĐO ĐƯỢC trên 6_CD (2026-08-24): 2 lượt gọi chết với `Expecting value:
+    line 1 column 1` vì model trả chuỗi RỖNG. Bản trước tính đó là `llm_error` rồi
+    bỏ luôn trang -> mất một lượt gọi VÀ mất 3 câu, trong khi thử lại gần như miễn
+    phí."""
+    llm = EmptyThenOk(n_empty=1)
+    out = G._ask_llm(llm, "p", sleeper=lambda _s: None)
+    assert llm.calls == 2 and "questions" in out
+
+
+def test_empty_response_is_not_a_quota_stop():
+    """Rỗng KHÁC 429: nó không có nghĩa hết hạn mức, nên KHÔNG được dừng cả lượt
+    chạy — phải là lỗi của riêng trang đó."""
+    llm = EmptyThenOk(n_empty=99)
+    with pytest.raises(Exception) as info:
+        G._ask_llm(llm, "p", sleeper=lambda _s: None)
+    assert not isinstance(info.value, G.QuotaStop)
+    assert "RỖNG" in str(info.value)
+
+
 def test_ask_llm_does_not_swallow_a_non_quota_error():
     """Lỗi khác 429 phải nổi lên nguyên trạng, không bị coi là hết hạn mức."""
     llm = FakeLLM(script=[ValueError("json xấu")])

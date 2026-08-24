@@ -49,6 +49,7 @@ $books = @(
 )
 
 Say "log: $log"
+Say "stderr: testsets_stderr_$stamp.log"
 Say "$($books.Count) quyen x $PerBook cau, $PerCall cau/luot goi"
 Say "Uoc luong: ~$([math]::Ceiling($PerBook / $PerCall)) luot goi/quyen -> ~$([math]::Ceiling($PerBook / $PerCall) * $books.Count) luot goi tong."
 
@@ -70,8 +71,15 @@ Say "=== SINH THAT — tung quyen mot tien trinh rieng ==="
 $done = 0
 foreach ($book in $books) {
     Say "-- $book"
+    # KHONG dung `2>&1 | Tee-Object`: PowerShell bien moi dong stderr cua mot
+    # native command thanh mot error record (NativeCommandError), va do chinh la
+    # nguon cua "SGK_KHTN_6_CD thoat ma -1" trong luot chay 2026-08-24 — quyen do
+    # ghi WARNING ra stderr (spine Bai khong lien mach) va PowerShell tra ve -1
+    # trong khi tien trinh Python van chay binh thuong. Ghi stderr thang ra file
+    # rieng thi $LASTEXITCODE moi la ma thoat THAT cua Python.
+    $err = Join-Path $root "testsets_stderr_$stamp.log"
     & python src/test/generate_testsets.py --book $book `
-        --per-book $PerBook --per-call $PerCall 2>&1 | Tee-Object -Append $log
+        --per-book $PerBook --per-call $PerCall 2>>$err | Tee-Object -Append $log
     $code = $LASTEXITCODE
     if ($code -eq 2) {
         Say "!! HET HAN MUC o $book (ma thoat 2). DUNG lai, KHONG dot tiep cac quyen sau."

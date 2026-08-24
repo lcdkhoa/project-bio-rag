@@ -201,11 +201,25 @@ def _is_rate_limited(exc: Exception) -> bool:
 
 
 def _ask_llm(llm, prompt: str, *, sleeper=time.sleep) -> str:
-    """Gọi LLM, lùi rồi thử lại khi bị 429, hết dãy thì raise `QuotaStop`."""
+    """Gọi LLM, lùi rồi thử lại khi bị 429 HOẶC khi phản hồi RỖNG.
+
+    Phản hồi rỗng là ca đo được thật, không phải phòng xa: lượt sinh 6_CD ngày
+    2026-08-24 có **2 lượt gọi** chết với `Expecting value: line 1 column 1
+    (char 0)` — tức model trả chuỗi rỗng. Bản trước tính đó là `llm_error` rồi bỏ
+    luôn trang đó, nên **mất một lượt gọi và mất 3 câu** trong khi thử lại là
+    gần như miễn phí. Rỗng KHÁC 429: nó không có nghĩa là hết hạn mức, nên nó
+    KHÔNG được dẫn tới `QuotaStop`.
+    """
     for attempt, wait in enumerate((*RATE_LIMIT_BACKOFF_SECONDS, None)):
         try:
             resp = llm.invoke(prompt)
-            return getattr(resp, "content", resp)
+            text = getattr(resp, "content", resp)
+            if str(text or "").strip():
+                return text
+            if wait is None:
+                raise ValueError("model trả phản hồi RỖNG sau mọi lần thử lại")
+            print(f"    ! phản hồi rỗng — thử lại ngay ({attempt + 1})")
+            continue
         except Exception as exc:
             if not _is_rate_limited(exc):
                 raise
