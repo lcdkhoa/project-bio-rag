@@ -24,7 +24,6 @@ class AppServices:
         self.hybrid_retriever = HybridRetriever()
         self.llm = get_hf_llm()
         self.rag = BiologyRAG(self.llm)
-        self.rag_chain = self.rag.get_chain(self.vdb.get_retriever())
         
         self._initialized = True
         logger.info("AppServices initialized successfully.")

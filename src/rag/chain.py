@@ -3,7 +3,6 @@
 import re
 import logging
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,7 @@ class BiologyRAG:
         self.llm = llm
         self.prompt = PromptTemplate.from_template(
             """<|im_start|>system
-Bạn là trợ lý AI môn Sinh học THCS. Bạn PHẢI trả lời hoàn toàn bằng TIẾNG VIỆT.<|im_end|>
+Bạn là trợ lý AI môn Khoa học tự nhiên (Vật lí – Hoá học – Sinh học) bậc THCS. Bạn PHẢI trả lời hoàn toàn bằng TIẾNG VIỆT.<|im_end|>
 <|im_start|>user
 [TÀI LIỆU SÁCH GIÁO KHOA]:
 {context}
@@ -55,27 +54,14 @@ Bạn là trợ lý AI môn Sinh học THCS. Bạn PHẢI trả lời hoàn toà
         )
         self.answer_parser = FocusedAnswerParser()
 
-    def get_chain(self, retriever):
-        def format_docs(docs):
-            logger.debug(f"format_docs received {len(docs)} docs, types: {[type(d) for d in docs]}")
-            formatted = []
-            seen = set()
-            for doc in docs:
-                if isinstance(doc, dict):
-                    content = doc.get("page_content", doc.get("content", "")).strip()
-                    logger.warning(f"format_docs received dict doc, extracted content: {repr(content[:100])}")
-                else:
-                    content = doc.page_content.strip()
-                if content and len(content) > 40 and content not in seen:
-                    formatted.append(content)
-                    seen.add(content)
-            logger.debug(f"format_docs returning {len(formatted)} formatted docs")
-            return "\n\n".join(formatted)
-
-        rag_chain = (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | self.prompt
-            | self.llm
-            | self.answer_parser
-        )
-        return rag_chain
+    # ĐÃ XOÁ `get_chain` + `format_docs` (2026-08-25, D-86). Chúng là code
+    # CHẾT trong đường phục vụ: `grep -rn rag_chain src/ main.py` chỉ trúng
+    # đúng một chỗ dựng nó ở `dependencies.py` và KHÔNG chỗ nào gọi. Đường thật
+    # là `api.py::prepare_chat_payload` -> `prompt.format(...)` ->
+    # `stream_llm_text` -> `answer_parser`.
+    #
+    # Hệ quả đo được: bộ lọc "bỏ mọi đoạn <= 40 ký tự" của `format_docs` CHƯA
+    # TỪNG chạm một câu trả lời nào. Nên con số 1 090/16 393 = 6,65% chunk ngắn
+    # (đo lại 2026-08-25, khớp D-76) KHÔNG phải là mất mát ở production — và
+    # "hạ ngưỡng 40" là một bản vá cho code chết. Ngữ cảnh thật do
+    # `src/rag/multimodal_context.py::build_context` dựng, không lọc theo độ dài.
