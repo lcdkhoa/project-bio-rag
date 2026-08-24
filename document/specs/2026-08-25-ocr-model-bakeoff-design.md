@@ -1,0 +1,175 @@
+# Thiết kế — thay Tesseract bằng MODEL đọc cả trang, chọn model BẰNG PHÉP ĐO
+
+> Ngày chốt: **2026-08-25**. Người dùng đã chốt: (1) bake-off 15 trang có người
+> duyệt tay **trước**, (2) hướng đi là **model đọc CẢ TRANG** (không phải đổi từng
+> hàm OCR), (3) chạy trên **Colab GPU**, (4) phạm vi cuối là **cả 12 quyển**.
+>
+> Deadline: Giai đoạn 3 đáo hạn 28/08 (đã có bảng cấu hình 1 + 2); deadline cuối
+> **23/09**. Lượt OCR lại toàn bộ là việc của Giai đoạn 4–5.
+
+---
+
+## 1. Vì sao làm việc này, bằng số đã đo
+
+| Bệnh | Số đo | Nguồn |
+|---|---|---|
+| chỉ số dưới bị phá | **281 hỏng : 4 đúng** trên toàn index; `₂` Unicode **0 lần** | D-56, D-73 |
+| bảng mất quan hệ hàng/cột | `Bảng 12.1` trộn cột *công dụng* vào cột *tính chất*; `Bảng 35.1` mất cả hàng header **và 8 dấu phẩy thập phân** (`26,2`→`262`, sai 10×) | D-63 |
+| hệ quả cuối | **4/6 ca fail của người chấm là do chất lượng chữ trích xuất, chỉ 2 do LLM** — recall@10 = 1,00 | D-63 |
+| hằng số KNTT còn treo | `text_extract.SINGLE_LINE_MAX_H = 60` px (dòng CD cao ~136 px), `LAYOUT_BOX_MIN_SATURATION = 45` (trên p50 của 11/12 quyển) | CLAUDE.md M0 |
+| `needs_review` mất tác dụng | bật ở **57–84% chunk** (9_CD 1 339/1 590) | D-73 |
+
+Nút thắt **không** phải retrieval: hybrid đã đo được R@10 **0,977** · MRR **0,808**
+trên 300 câu (D-82). Nên đòn bẩy nằm ở chữ trích xuất.
+
+## 2. Điều PHẢI biết trước khi chọn model
+
+Đã kiểm bằng HF API, không bằng ký ức. **Không model nào trong bốn ứng viên nhắc
+tới "Vietnamese" trong model card:**
+
+| model | tham số | "Vietnamese" | công thức/LaTeX | bảng |
+|---|---|---|---|---|
+| `PaddlePaddle/PaddleOCR-VL-1.6` | 0,9 B | **0** | 8 | 7 |
+| `dots-studio/dots.ocr` | 1,7 B | **0** | 22 | 24 |
+| `opendatalab/MinerU2.5-Pro-2605-1.2B` | 1,2 B | **0** | 7 | 12 |
+| `nanonets/Nanonets-OCR2-3B` | 3 B | **0** | 12 | 12 |
+
+Cả bốn quảng cáo đúng hai bệnh của ta (công thức + bảng) nhưng **chất lượng dấu
+tiếng Việt là CHƯA ĐO**. Chọn theo danh tiếng ở đây là lặp lại D-47: Vintern-1B
+nghe rất hợp lý, chạy thật thì **bịa 4/12 crop** và tự khai số hình **sai 4/4 lần**.
+
+Vì vậy bước 0 không phải thủ tục — nó là **cổng chặn**.
+
+## 3. Bước 0 — bake-off 15 trang
+
+### 3.1 Mười lăm trang, chọn BẰNG SỐ
+
+Chọn từ chính index: đếm token công thức bị phá (`CO,` `H,SO,` `O,` …) và token số
+trên mỗi trang, rồi rải **5 trang mỗi NXB**, phủ 4 loại bệnh + **3 trang đối chứng
+chữ thường**. Trang đối chứng là phần quan trọng nhất về mặt thiết kế thí nghiệm:
+**93% corpus là chữ thường**, nên một model thắng ở công thức mà tệ ở chữ thường là
+một model TỆ HƠN, và không có trang đối chứng thì không ai thấy điều đó.
+
+| # | quyển | trang | loại | vì sao trang này |
+|---|---|---|---|---|
+| 1 | 7_KNTT | 121 | công thức Hoá | ca **đã đảo đáp án**: index ghi `hấp thụ khí 0, và thải ra khí (0,` → Qwen trả lời ngược (D-63) |
+| 2 | 9_KNTT | 21 | công thức Lý | `1 J = 1 N·m` → `1 Ñm`, `(M]` → RAG trả lời **rỗng**, không log gì (D-63) |
+| 3 | 6_KNTT | 44 | **bảng** | `Bảng 12.1` trộn cột công dụng vào cột tính chất (D-63) |
+| 4 | 9_KNTT | 155 | **bảng** | `Bảng 35.1` mất hàng header + **8 dấu phẩy thập phân** (D-63) |
+| 5 | 9_KNTT | 74 | **đối chứng** | 2 585 ký tự, **0** công thức hỏng |
+| 6 | 9_CTST | 113 | công thức Hoá | **18 token hỏng — cao nhất toàn bộ 2 387 trang** |
+| 7 | 8_CTST | 62 | công thức Hoá | 17 token hỏng |
+| 8 | 7_CTST | 49 | Lý + số | 9 token hỏng **+ 10 chuỗi số dài** (nghi mất dấu phẩy) |
+| 9 | 6_CTST | 134 | lớp 6 | 8 token hỏng, bố cục lớp 6 |
+| 10 | 7_CTST | 141 | **đối chứng** | 2 600 ký tự, 0 công thức hỏng |
+| 11 | 9_CD | 113 | công thức Hoá | 11 token hỏng |
+| 12 | 9_CD | 129 | bảng + số | 9 token hỏng + 4 chuỗi số dài |
+| 13 | 8_CD | 61 | trang dày chữ | 7 token hỏng, **2 509 ký tự** |
+| 14 | 8_CD | 60 | công thức Hoá | 7 token hỏng |
+| 15 | 7_CD | 112 | **đối chứng** | 2 587 ký tự, 0 công thức hỏng |
+
+Phân bố: NXB **5/5/5**; khối 6 (2) · 7 (4) · 8 (3) · 9 (6) — nghiêng về lớp 9 vì
+công thức Hoá tập trung ở đó, và điều đó được nói ra thay vì che.
+
+Danh sách này ghi ra file JSON và **commit**, để lượt sau chấm trên đúng 15 trang
+đó chứ không chọn lại.
+
+### 3.2 Cách chấm — ba chỉ số, không phải một
+
+| chỉ số | định nghĩa | vì sao |
+|---|---|---|
+| **CT** token công thức đúng | tỉ lệ token công thức mà engine đọc **khớp từng ký tự** với bản người duyệt | bệnh chính, hiện 281:4 |
+| **DẤU** tỉ lệ lỗi dấu | trên các từ người duyệt đã ghi, tỉ lệ sai **chỉ ở dấu** (bỏ dấu thì khớp) | chỗ model nước ngoài dễ chết; đây là **cổng loại** |
+| **BẢNG** ô đúng vị trí | với mỗi bảng: hàng header + 1 hàng dữ liệu, ô nào đúng **cả nội dung và vị trí cột** | bệnh mà cách 1 (đổi hàm OCR) không chữa được |
+
+Một engine chỉ được coi là **thắng** khi nó **không tệ hơn** Tesseract ở chỉ số DẤU
+trên 3 trang đối chứng. Thắng công thức mà thua dấu là thua.
+
+### 3.3 Chống đóng dấu cho qua — thiết kế của phiếu duyệt
+
+D-90 vừa dạy bằng tiền thật: phiếu 50 câu được điền **50/50 một nhãn `dung` trong
+38 giây**, và D-89 đã công bố con số đó. Bài học: **một phiếu có thể tick là một
+phiếu sẽ bị tick.** Nên phiếu này được thiết kế để *không tick được*:
+
+1. **Người duyệt GÕ chữ, không chọn đúng/sai.** Ô trả lời trống, không mồi sẵn chữ
+   của máy. Muốn điền thì phải đọc ảnh.
+2. **Đơn vị công việc là một DÒNG được crop ra**, không phải cả trang 2 000 ký tự.
+   Nhìn một dòng ảnh rồi gõ lại 5–15 ký tự là việc làm được; sửa 2 000 ký tự thì
+   không, và chính chỗ đó sinh ra tật đóng dấu cho qua (D-55: 23/24 file gold cũ
+   trùng **từng chữ** với output của máy).
+3. **Có ca mồi.** Phiếu chứa vài ca mà tôi **đã biết** máy đọc sai. Nếu chúng được
+   gõ y như máy, phiếu bị loại. Tôi nói trước là có mồi — vì cái cần kiểm là bạn
+   *có mở ảnh ra xem không*, không phải bắt bạn bị lừa.
+4. **Kiểm dấu thời gian.** `--score` in `mtime` của phiếu và thời gian điền trung
+   bình mỗi ô; dưới một ngưỡng thì in cảnh báo **và từ chối công bố số**, đúng theo
+   bài học D-90 (phân bố đáng nghi phải CHẶN, không phải đi kèm chú thích).
+
+### 3.4 Ước lượng công cho người: **35–50 phút**
+
+15 trang × ~6 ô × ~20 giây gõ, cộng thời gian nhìn trang. Đây là ước lượng, và
+`--score` sẽ in ra con số **thật** để lần sau khỏi phải đoán.
+
+## 4. Bước 1 — model đọc cả trang (cách 2 đã chốt)
+
+### 4.1 Chỗ đúng để cắm vào
+
+Đường text hôm nay: `LayoutOCRLoader.load_page()` → tra manifest → `source.load()`
+→ `segment_page` (CV) → `extract_text_units` (Tesseract từng vùng) → `chunk_units`.
+
+Cách 2 thay **hai bước giữa** bằng một lần gọi model trên **cả trang**, trả về các
+đơn vị `(loại vùng, bbox, chữ)`. Ba thứ **không đổi**, vì đó là cơ chế chống bịa
+đang chạy đúng:
+
+- **số trang in vẫn lấy từ `BookManifest`** — model **không bao giờ** được sinh số
+  trang (nguyên tắc 1). Thiếu manifest thì vẫn `raise ManifestMissing`.
+- **citation vẫn deterministic** (`src/rag/citations.py`), dựng từ metadata chunk.
+- **checkpoint vẫn khoá theo hash từng trang + `TEXT_EXTRACTION_VERSION`**, nên một
+  lượt bị ngắt giữa chừng chạy tiếp được — bắt buộc, vì Colab hay đứt phiên.
+
+### 4.2 Hai chỗ phải thiết kế cẩn thận
+
+**(a) `region_type` phải sống.** `citations.py` đọc trường này để in nhãn mục
+(sidebar/info-box); chunk thiếu nó **âm thầm** tụt về citation chỉ-có-thân-bài. Nên
+nhãn vùng của model phải map sang tập `region_type` hiện có, và **nhãn lạ thì gắn
+cờ chứ không đoán**.
+
+**(b) Chống bịa, đo được.** VLM có thể sinh chữ không có trên trang — đúng thứ
+nguyên tắc 1 cấm. Hàng rào: chạy **Tesseract song song trên MỘT MẪU 100 trang**,
+so độ trùng token; lệch quá ngưỡng thì gắn `needs_review`. Chỉ 100 trang, không
+phải 2 399, nên không trả giá gấp đôi. Việc này cũng làm `needs_review` **có nghĩa
+lại** — hiện nó bật ở 69% chunk nên gần như không mang tin.
+
+### 4.3 Cái giá phải nói trước
+
+Bump `TEXT_EXTRACTION_VERSION` là **OCR lại toàn bộ 2 399 trang** (version gate,
+đúng thiết kế). Kèm theo, ba thứ hạ nguồn **bắt buộc dựng lại**:
+
+| việc | chi phí đã đo |
+|---|---|
+| OCR lại 12 quyển | Tesseract/CPU **3 giờ 20**; VLM 1B trên GPU Colab: **chưa đo**, sẽ đo ở bước 0 |
+| chỉ mục BM25 | 5,5 s |
+| đệm bảng ablation | **35–50 phút** (21–31 s/câu × 300 câu) |
+| bảng k/recall mới | phát lại từ đệm, tức thì |
+
+Đường cơ sở để so là bảng đã có: hybrid **R@1 0,717 · R@3 0,887 · R@10 0,977 ·
+MRR 0,808** (300 câu / 12 quyển, bề rộng production 20 ứng viên/kênh).
+
+## 5. Bước 2 — nói về kết quả thế nào cho đúng
+
+Nếu recall tăng, **chỉ được** nói "tăng vì chữ trích xuất tốt hơn" khi bước 0 đã
+cho thấy công thức/bảng/dấu đọc đúng hơn trên 15 trang có người duyệt. Không có
+bước 0 thì một con số recall cao hơn cũng có thể đến từ chunk dài hơn, hay từ nhiễu.
+
+Và mọi bảng số vẫn phải mang câu cảnh báo hiện hành: bộ test do **LLM sinh**, mẫu
+50 câu người duyệt cho gold key sai **2/49 = 4,1%** (KTC 95% Wilson 1,1–13,7%;
+hiệu chỉnh theo trọng số cả bộ ≈ 2,7%) — D-90.
+
+## 6. Việc CỐ Ý KHÔNG làm trong lượt này
+
+- **Không sửa phía ảnh.** Người dùng đã chọn text trước. Crop hình đang có 34,9%
+  bị gắn cờ cắt lấn (D-87) — đó là lượt sau, và nó cần model phát hiện bố cục chứ
+  không phải model OCR.
+- **Không bật `IMAGE_CAPTION_ENABLED`** (Vintern đã bị loại — D-47).
+- **Không đổi `EMBEDDING_MODEL` / `CHUNK_SIZE` / `CHUNK_OVERLAP`**: đổi cùng lúc
+  với OCR thì không tách được nguyên nhân của bất kỳ thay đổi số nào.
+- **Không sửa chữ đã lưu trong `biology_text`** bằng bất kỳ luật đoán nào.

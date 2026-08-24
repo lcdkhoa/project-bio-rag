@@ -1,0 +1,98 @@
+{
+ "_doc": "15 trang cho bake-off OCR, CHỌN BẰNG SỐ trên chính index 16 393 chunk (đếm token công thức bị phá theo mẫu D-56/D-73 + token số dài). Danh sách này được COMMIT để lượt sau chấm trên ĐÚNG 15 trang này, không chọn lại. `trang` là số trang IN (offset 0 ở 12/12 quyển — D-65).",
+ "_chon_ngay": "2026-08-25",
+ "_phan_bo": "NXB 5/5/5 · khối 6:1 7:4 8:3 9:7 · loại: công thức Hoá 6, công thức Lý 2, BẢNG 3 (mỗi NXB một bảng), đối chứng 3. Khối 6 chỉ 1 trang — cố ý, vì lớp 6 có mật độ công thức thấp nhất; khác biệt độ phân giải (KNTT 1094×1536 vs CTST/CD 2280×3201) vẫn được phủ bởi 9 trang CTST/CD.",
+ "trang": [
+  {
+   "quyen": "SGK_KHTN_7_KNTT",
+   "trang": 121,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "Ca ĐÃ ĐẢO ĐÁP ÁN: index ghi 'hấp thụ khí 0, và thải ra khí (0,' nên Qwen trả lời ngược (D-63). Retrieval đúng (p.121 ×3), chữ mới là chỗ hỏng."
+  },
+  {
+   "quyen": "SGK_KHTN_9_KNTT",
+   "trang": 21,
+   "loai": "cong_thuc_ly",
+   "vi_sao": "'1 J = 1 N·m' đọc thành '1 Ñm', và '(M]' — RAG trả lời RỖNG, không log gì (D-63). Đại diện công thức/đơn vị VẬT LÍ."
+  },
+  {
+   "quyen": "SGK_KHTN_6_KNTT",
+   "trang": 44,
+   "loai": "bang",
+   "vi_sao": "Bảng 12.1 trộn cột 'công dụng' vào cột 'tính chất' -> Qwen trả lời sai cột (D-63)."
+  },
+  {
+   "quyen": "SGK_KHTN_9_KNTT",
+   "trang": 154,
+   "loai": "bang",
+   "vi_sao": "Bảng 35.1 — ca D-63 (mất hàng header + 8 dấu phẩy thập phân). SỬA từ tr.155: trang 155 KHÔNG có bảng nào; số 155 là của corpus 801 trang cũ (offset −1). Đo lại trên index hôm nay: tiêu đề 'Bảng 35.1' nằm ở tr.154, kèm 8 chuỗi 3 chữ số và 5 dấu phẩy thập phân còn sót."
+  },
+  {
+   "quyen": "SGK_KHTN_9_KNTT",
+   "trang": 74,
+   "loai": "doi_chung",
+   "vi_sao": "ĐỐI CHỨNG chữ thường: 2 585 ký tự, 0 công thức hỏng. 93% corpus là chữ thường nên model thắng công thức mà thua chữ thường là model TỆ HƠN."
+  },
+  {
+   "quyen": "SGK_KHTN_9_CTST",
+   "trang": 113,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "18 token công thức hỏng — CAO NHẤT trong cả 2 387 trang."
+  },
+  {
+   "quyen": "SGK_KHTN_8_CTST",
+   "trang": 62,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "17 token công thức hỏng, hạng 2 toàn corpus."
+  },
+  {
+   "quyen": "SGK_KHTN_7_CTST",
+   "trang": 49,
+   "loai": "cong_thuc_ly",
+   "vi_sao": "9 token hỏng + 10 chuỗi số dài (nghi mất dấu phẩy thập phân) — trang duy nhất có cả hai bệnh ở mức cao."
+  },
+  {
+   "quyen": "SGK_KHTN_9_CTST",
+   "trang": 43,
+   "loai": "bang",
+   "vi_sao": "Bảng 8.3 — bảng SỐ của bộ CTST (7 chuỗi 3 chữ số + 5 dấu phẩy thập phân). Thay 6_CTST tr.134 để mỗi NXB có đúng một bảng: bảng là hạng mục bệnh riêng (D-63) và không đo được nếu chỉ có bảng của KNTT."
+  },
+  {
+   "quyen": "SGK_KHTN_7_CTST",
+   "trang": 141,
+   "loai": "doi_chung",
+   "vi_sao": "ĐỐI CHỨNG chữ thường CTST: 2 600 ký tự, 0 công thức hỏng."
+  },
+  {
+   "quyen": "SGK_KHTN_9_CD",
+   "trang": 113,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "11 token hỏng, cao nhất trong bộ Cánh Diều."
+  },
+  {
+   "quyen": "SGK_KHTN_9_CD",
+   "trang": 134,
+   "loai": "bang",
+   "vi_sao": "Bảng 27.1 — bảng SỐ của bộ Cánh Diều: 15 chuỗi 3 chữ số và **0 dấu phẩy thập phân**, tức nghi mất sạch dấu phẩy. Thay tr.129 (trang đó thật ra là trang CÔNG THỨC, không có tiêu đề bảng nào)."
+  },
+  {
+   "quyen": "SGK_KHTN_8_CD",
+   "trang": 61,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "7 token hỏng trên trang DÀY CHỮ nhất nhóm (2 509 ký tự) — đo cả throughput."
+  },
+  {
+   "quyen": "SGK_KHTN_8_CD",
+   "trang": 60,
+   "loai": "cong_thuc_hoa",
+   "vi_sao": "7 token hỏng, trang liền kề tr.61 nên so được hai trang cùng bài."
+  },
+  {
+   "quyen": "SGK_KHTN_7_CD",
+   "trang": 112,
+   "loai": "doi_chung",
+   "vi_sao": "ĐỐI CHỨNG chữ thường Cánh Diều: 2 587 ký tự, 0 công thức hỏng."
+  }
+ ],
+ "_sua_ngay": "2026-08-25 (lượt 2): 3 trang bị thay sau khi MỞ PHIẾU ĐẦU TIÊN ra đối chiếu — xem `vi_sao` của từng trang."
+}
