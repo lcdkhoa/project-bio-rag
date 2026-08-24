@@ -181,7 +181,7 @@ def _mark_image_done_once(filename: str):
         mark_image_as_processed(filename)
 
 
-def run_etl_text_only():
+def run_etl_text_only(book_name: str = ""):
     """ETL text: nguồn trang -> OCR theo vùng -> chunk -> ChromaDB."""
     logger.info("Starting ETL pipeline (TEXT ONLY)...")
 
@@ -210,6 +210,7 @@ def run_etl_text_only():
         sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
+    sources = _select_books(sources, book_name)
     logger.info(f"Previously processed files: {len(get_processed_files())}")
 
     books = _book_progress("ETL text: tiến trình quyển", len(sources))
@@ -248,6 +249,32 @@ def run_etl_text_only():
     logger.info("ETL (TEXT) pipeline completed!")
 
 
+def _select_books(sources, book_name: str):
+    """Lọc danh sách quyển theo `--book`, hoặc THOÁT KHÁC 0 nếu tên không khớp.
+
+    Trước bản vá này `--book` chỉ nối vào `--build-manifests`, nên
+    `--image-only --book SGK_KHTN_6_KNTT` **im lặng bỏ qua cờ** và chạy cả 12
+    quyển ≈ 6 giờ, trong đó 8 quyển CD/CTST đã đo được là kênh pill đọc 0 nhãn
+    (D-65) — tức 4 giờ CPU cho kết quả biết trước là sai.
+
+    Tên không khớp thì `sys.exit(2)`, KHÔNG trả danh sách rỗng: một lượt chạy
+    xử lý 0 quyển rồi in "pipeline completed" với exit code 0 là đúng loại lỗi
+    im lặng nguyên tắc 5 cấm (và một lỗi chính tả trong tên quyển là chuyện
+    thường ngày).
+    """
+    if not book_name:
+        return sources
+    chon = [s for s in sources
+            if s.name == book_name or Path(s.name).stem == book_name]
+    if not chon:
+        logger.error(
+            f"--book {book_name!r} không khớp quyển nào trong {DATA_DIR}. "
+            f"Có: {', '.join(s.name for s in sources)}")
+        sys.exit(2)
+    logger.info(f"--book {book_name!r} -> chỉ xử lý {len(chon)}/{len(sources)} quyển")
+    return chon
+
+
 def _summarise(pages, limit=12):
     """In gọn danh sách trang dài (801 trang thì đừng dump hết vào log)."""
     if len(pages) <= limit:
@@ -255,7 +282,7 @@ def _summarise(pages, limit=12):
     return f"{pages[:limit]} … (+{len(pages) - limit} trang)"
 
 
-def run_etl_image_only():
+def run_etl_image_only(book_name: str = ""):
     """ETL ảnh: crop hình, caption, index. Cùng nguồn trang với đường text."""
     logger.info("Starting ETL pipeline (IMAGE ONLY)...")
 
@@ -284,6 +311,7 @@ def run_etl_image_only():
         sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
+    sources = _select_books(sources, book_name)
     # processed_images.txt là log tiến độ (advisory) — quyết định skip nằm ở
     # ProcessingStatus, khoá theo hash TỪNG TRANG + version.
     logger.info(
@@ -346,7 +374,7 @@ def run_etl_image_only():
     logger.info("ETL (IMAGE) pipeline completed!")
 
 
-def run_etl():
+def run_etl(book_name: str = ""):
     """ETL đầy đủ: text + ảnh, cùng một nguồn trang."""
     logger.info("Starting ETL pipeline (FULL)...")
 
@@ -387,6 +415,7 @@ def run_etl():
         sys.exit(2)
 
     logger.info(f"Total books in directory: {len(sources)}")
+    sources = _select_books(sources, book_name)
     logger.info(
         f"Previously processed files: text={len(get_processed_files())}, "
         f"images={len(get_processed_images())}")
@@ -694,7 +723,9 @@ def main():
     etl_group.add_argument("--build-manifests", action="store_true",
                            help="Dựng BookManifest (bản đồ trang + spine Bài) rồi báo cáo G1")
     etl_group.add_argument("--book", type=str, default="",
-                           help="Chỉ xử lý một quyển theo tên thư mục/file (dùng với --build-manifests)")
+                           help="Chỉ xử lý một quyển theo tên thư mục/file. Dùng được với "
+                                "--build-manifests, --text-only, --image-only, --etl. "
+                                "Tên không khớp -> thoát mã 2, không chạy 0 quyển rồi báo xong.")
 
     parser.add_argument("--api", action="store_true",
                         help="Launch Flask API server")
@@ -730,11 +761,11 @@ def main():
         run_import_images_dir(args.import_images_dir)
 
     if args.text_only:
-        run_etl_text_only()
+        run_etl_text_only(args.book)
     elif args.image_only:
-        run_etl_image_only()
+        run_etl_image_only(args.book)
     elif args.etl:
-        run_etl()
+        run_etl(args.book)
 
     if args.export_image_review:
         run_export_image_review(
