@@ -63,10 +63,6 @@ from src.config import (  # noqa: E402
     TEXT_EXTRACTION_VERSION,
 )
 from src.rag.bm25 import chunk_ids_digest  # noqa: E402
-
-
-def sparse_params_stamp() -> str:
-    return f"k1={BM25_K1} b={BM25_B} tok={BM25_TOKENIZER} n={CANDIDATE_N}"
 from src.rag.fusion import GateStats, fuse, relevance_gate  # noqa: E402
 from src.rag.sparse_store import get_sparse_index, open_text_collection  # noqa: E402
 
@@ -75,6 +71,28 @@ KS = (1, 3, 5, 10)
 # đang chạy (20) vì bảng này phải đo được cả recall@10 SAU cổng lọc.
 CANDIDATE_N = 50
 DEFAULT_CACHE = PERSIST_DIR / "ablation_cache.json"
+
+
+def sparse_params_stamp() -> str:
+    return f"k1={BM25_K1} b={BM25_B} tok={BM25_TOKENIZER} n={CANDIDATE_N}"
+
+
+def sparse_search(sparse, query: str, k: int, k1: float = None, b: float = None):
+    """MỘT chỗ duy nhất gọi kênh thưa.
+
+    Trước đây `build_cache` gọi `sparse.search(...)` mà **quên `fold_accents`**,
+    nên nó lấy ứng viên bằng bộ tách từ BỎ DẤU trong khi chỉ mục dựng bằng
+    `plain` (GIỮ dấu) — hai tập ứng viên khác nhau, và bước phát lại báo "thiếu
+    điểm cross-encoder cho 37 ứng viên". Lỗi đó chỉ lộ ra vì chỗ kia **raise**
+    thay vì lặng lẽ chấm trên phần đã có. Gom về một hàm để không tái diễn.
+    """
+    return sparse.search(
+        query,
+        k=k,
+        k1=BM25_K1 if k1 is None else k1,
+        b=BM25_B if b is None else b,
+        fold_accents=(BM25_TOKENIZER == "folded"),
+    )
 
 
 # --- Bộ test -------------------------------------------------------------
@@ -173,8 +191,7 @@ def build_cache(rows: Sequence[dict], collection, sparse, cache_path: Path,
         dense[q] = pairs
 
         cand = {c for c, _ in pairs}
-        cand |= {c for c, _ in sparse.search(q, k=candidate_n,
-                                             k1=BM25_K1, b=BM25_B)}
+        cand |= {c for c, _ in sparse_search(sparse, q, candidate_n)}
         cand_list = sorted(cand)
         scores = reranker.score(q, [text_of[c] for c in cand_list])
         if not scores or len(scores) != len(cand_list):
@@ -211,7 +228,63 @@ def _save(cache: Cache, path: Path) -> None:
     tmp.replace(path)
 
 
-def load_cache(path: Path, collection) -> Cache:
+def topup_cache(cache: Cache, rows, collection, sparse, cache_path: Path,
+                candidate_n: int = CANDIDATE_N) -> Cache:
+    """Chấm cross-encoder cho ĐÚNG những cặp còn thiếu, giữ nguyên phần đã có.
+
+    Dựng lại toàn bộ tốn ~51 phút (đo: 30,6 s/câu). Nhưng phần **dày** (nhúng
+    bge-m3) không phụ thuộc tham số kênh thưa, và phần lớn điểm cross-encoder
+    cũng đã có — chỉ những ứng viên MỚI của kênh thưa là thiếu. Nên khi đổi
+    `k1`/`b`/tokenizer, việc đúng là bù vào chứ không phải làm lại từ đầu.
+    """
+    from src.rag.reranker import get_reranker
+
+    got = collection.get(include=["documents"], limit=1_000_000)
+    text_of = dict(zip(got["ids"], got["documents"]))
+
+    thieu = {}
+    for row in rows:
+        q = str(row["question"])
+        if q not in cache.dense:
+            raise RuntimeError(
+                f"Bộ nhớ đệm chưa có phần DÀY của câu {q[:60]!r} — "
+                "phải --build-cache, không bù được.")
+        cand = {c for c, _ in cache.dense[q]}
+        cand |= {c for c, _ in sparse_search(sparse, q, candidate_n)}
+        con_thieu = sorted(c for c in cand if c not in cache.rerank.get(q, {}))
+        if con_thieu:
+            thieu[q] = con_thieu
+
+    tong = sum(len(v) for v in thieu.values())
+    if not tong:
+        print("[topup] không thiếu cặp nào — đệm đã đủ.")
+        cache.sparse_params = sparse_params_stamp()
+        _save(cache, cache_path)
+        return cache
+
+    print(f"[topup] thiếu {tong} cặp (câu, chunk) trên {len(thieu)}/{len(rows)} "
+          f"câu — chấm bù, KHÔNG dựng lại từ đầu.")
+    reranker = get_reranker()
+    t0 = time.time()
+    for i, (q, cids) in enumerate(thieu.items(), 1):
+        scores = reranker.score(q, [text_of[c] for c in cids])
+        if not scores or len(scores) != len(cids):
+            raise RuntimeError(
+                f"Cross-encoder trả {len(scores) if scores else 0} điểm cho "
+                f"{len(cids)} ứng viên — rerank KHÔNG chạy.")
+        cache.rerank.setdefault(q, {}).update(
+            {c: float(s) for c, s in zip(cids, scores)})
+        if i % 10 == 0 or i == len(thieu):
+            print(f"[topup] {i}/{len(thieu)}  {time.time() - t0:.0f}s", flush=True)
+            cache.sparse_params = sparse_params_stamp()
+            _save(cache, cache_path)
+    cache.sparse_params = sparse_params_stamp()
+    _save(cache, cache_path)
+    print(f"[topup] xong trong {time.time() - t0:.0f}s -> {cache_path}")
+    return cache
+
+
+def load_cache(path: Path, collection, check_sparse_params: bool = True) -> Cache:
     if not path.exists():
         raise FileNotFoundError(
             f"Chưa có bộ nhớ đệm ở {path}. Chạy với --build-cache.")
@@ -245,17 +318,24 @@ class Config:
     @property
     def label(self) -> str:
         return (f"{self.mode:6s} rerank={'on ' if self.rerank else 'off'} "
-                f"gate={'on ' if self.gate else 'off'}")
+                f"gate={'on ' if self.gate else 'off'} fus={self.fusion:4s}")
 
 
 def rank_for(cfg: Config, query: str, cache: Cache, sparse,
              top_n: int, gate_stats: Optional[GateStats] = None) -> List[str]:
     """Trả danh sách chunk_id đã xếp hạng cho MỘT câu hỏi dưới MỘT cấu hình."""
+    if cfg.mode in ("dense", "hybrid") and query not in cache.dense:
+        # KHÔNG được trả rỗng: một bộ nhớ đệm dựng dở (bị ngắt giữa chừng) sẽ
+        # làm mọi câu chưa đệm bị đếm là "rỗng" và recall thấp đi MỘT CÁCH ÂM
+        # THẦM — một bảng số sai mà trông hợp lý, đúng loại lỗi tệ nhất ở đây.
+        raise RuntimeError(
+            f"Bộ nhớ đệm thiếu câu hỏi ({len(cache.dense)} câu đã đệm): "
+            f"{query[:70]!r}. Đệm dựng dở thì phải dựng nốt (--build-cache), "
+            "không được chấm trên phần đã có.")
     dense = cache.dense.get(query, []) if cfg.mode in ("dense", "hybrid") else []
     sp: List[Tuple[str, float]] = []
     if cfg.mode in ("bm25", "hybrid"):
-        sp = sparse.search(query, k=CANDIDATE_N, k1=cfg.k1, b=cfg.b,
-                           fold_accents=(BM25_TOKENIZER == "folded"))
+        sp = sparse_search(sparse, query, CANDIDATE_N, k1=cfg.k1, b=cfg.b)
 
     if cfg.mode == "dense":
         items = fuse(dense, [], method=cfg.fusion, rrf_k=cfg.rrf_k,
@@ -343,10 +423,24 @@ def build_page_lookup(collection) -> Tuple[Dict[str, Tuple[str, int]], Dict[Tupl
     return page_of, per_page
 
 
+# 12 cấu hình HỢP ĐỒNG (Nội dung 4 + bảng Kế hoạch Giai đoạn 3).
 ALL_CONFIGS = [
     Config(mode=m, rerank=r, gate=g)
     for m in ("bm25", "dense", "hybrid")
     for r in (False, True)
+    for g in (False, True)
+]
+
+# Bảng phụ: CHỌN CÁCH HỢP NHẤT BẰNG SỐ (§3.3 đòi "đo cả hai rồi mới chốt").
+# Miễn phí — bộ nhớ đệm không phụ thuộc cách hợp nhất, nên đây chỉ là phát lại.
+# Nó cũng là chỗ DUY NHẤT nhìn thấy cái bẫy RRF: điểm RRF bị nén (hạng 1 = 1/61,
+# hạng 10 = 1/70, chênh 12,86%) nên cổng lọc tương đối margin=0,3 KHÔNG cắt gì —
+# tức dưới `rrf`, cột "cổng lọc bật/tắt" của bảng trên là hai hàng GIỐNG HỆT
+# nhau. Cột `gate_ti_le_truy_van_bi_cat` cho thấy điều đó thay vì để nó im lặng.
+FUSION_CONFIGS = [
+    Config(mode=m, rerank=True, gate=g, fusion=f)
+    for m in ("bm25", "dense", "hybrid")
+    for f in ("rrf", "norm")
     for g in (False, True)
 ]
 
@@ -356,6 +450,8 @@ def main() -> int:
     ap.add_argument("--testset-dir", default="src/test/testsets")
     ap.add_argument("--cache", default=str(DEFAULT_CACHE))
     ap.add_argument("--build-cache", action="store_true")
+    ap.add_argument("--topup-cache", action="store_true",
+                    help="Chấm bù các cặp còn thiếu thay vì dựng lại từ đầu")
     ap.add_argument("--out", default="src/test/ablation_report")
     args = ap.parse_args()
 
@@ -373,6 +469,10 @@ def main() -> int:
     cache_path = Path(args.cache)
     if args.build_cache:
         cache = build_cache(rows, collection, sparse, cache_path)
+    elif args.topup_cache:
+        cache = topup_cache(load_cache(cache_path, collection,
+                                       check_sparse_params=False),
+                            rows, collection, sparse, cache_path)
     else:
         cache = load_cache(cache_path, collection)
 
@@ -384,17 +484,31 @@ def main() -> int:
     print(f"Ứng viên mỗi kênh: {CANDIDATE_N}; cổng lọc margin="
           f"{RETRIEVER_DISTANCE_MARGIN}; sàn rerank={RERANK_SCORE_MIN}\n")
 
-    results = [evaluate(cfg, rows, cache, sparse, page_of) for cfg in ALL_CONFIGS]
+    def table(title, configs):
+        rows_out = [evaluate(c, rows, cache, sparse, page_of) for c in configs]
+        head = (f"{'cấu hình':38s} "
+                + " ".join(f"{'R@' + str(k):>7s}" for k in KS)
+                + f" {'MRR':>7s} {'P@5':>7s} {'trầnP@5':>8s} {'rỗng':>5s}"
+                + f" {'cắt':>6s}")
+        print(f"\n### {title}")
+        print(head)
+        print("-" * len(head))
+        for r in rows_out:
+            print(f"{r['cau_hinh']:38s} "
+                  + " ".join(f"{r['R@' + str(k)]:7.3f}" for k in KS)
+                  + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['tranP@5']:8.3f}"
+                  + f" {r['rong']:5d}"
+                  + f" {r.get('gate_ti_le_truy_van_bi_cat', 0):6.2f}")
+        return rows_out
 
-    head = f"{'cấu hình':30s} " + " ".join(f"{'R@'+str(k):>7s}" for k in KS) + \
-           f" {'MRR':>7s} {'P@5':>7s} {'trầnP@5':>8s} {'rỗng':>5s} {'cắt':>6s}"
-    print(head)
-    print("-" * len(head))
-    for r in results:
-        print(f"{r['cau_hinh']:30s} "
-              + " ".join(f"{r['R@'+str(k)]:7.3f}" for k in KS)
-              + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['tranP@5']:8.3f}"
-              + f" {r['rong']:5d} {r.get('gate_ti_le_truy_van_bi_cat', 0):6.2f}")
+    results = table(f"12 cấu hình hợp đồng (hợp nhất = {FUSION_METHOD})",
+                    ALL_CONFIGS)
+    fusion_rows = table(
+        "Chọn cách hợp nhất BẰNG SỐ, và tách riêng tác dụng của cổng lọc "
+        "(rerank BẬT ở mọi hàng)", FUSION_CONFIGS)
+    print("\n`cắt` = tỉ lệ truy vấn mà cổng lọc thực sự bỏ bớt ứng viên (tính trên")
+    print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
+    results = results + fusion_rows
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
