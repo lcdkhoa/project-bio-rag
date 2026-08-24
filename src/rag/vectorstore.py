@@ -21,6 +21,7 @@ from ..config import (
     RERANK_ENABLED,
     RERANK_FETCH_K,
     RERANK_SCORE_MIN,
+    RETRIEVAL_MODE,
     embedding_model_kwargs,
 )
 
@@ -167,6 +168,25 @@ class VectorDB:
         # chunks kept *after* relevance gating; the wider candidate sweep is
         # controlled by fetch_k.
         max_k = search_kwargs.get("k", RETRIEVER_MAX_K)
+
+        # M2: đường thưa+dày. `RETRIEVAL_MODE="dense"` giữ NGUYÊN hai lớp cũ để
+        # mặc định không đổi hành vi khi chưa có bảng số (nguyên tắc 3); hai chế
+        # độ kia đi qua `HybridTextRetriever`, nơi cổng lọc và rerank là hai
+        # công tắc RỜI NHAU.
+        if RETRIEVAL_MODE != "dense":
+            from .hybrid_text_retriever import ChunkLookup, HybridTextRetriever
+            from .sparse_store import get_sparse_index
+
+            collection = self.db._collection
+            return HybridTextRetriever(
+                vectorstore=self.db,
+                lookup=ChunkLookup(collection),
+                sparse=get_sparse_index(collection=collection),
+                mode=RETRIEVAL_MODE,
+                max_k=max_k,
+                dense_fetch_k=max(RERANK_FETCH_K, max_k),
+            )
+
         if RERANK_ENABLED:
             return RerankedRetriever(
                 vectorstore=self.db,

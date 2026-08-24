@@ -513,6 +513,28 @@ def run_build_manifests(book_name: str = "", *,
     return 0 if all_ok else 1
 
 
+def run_build_bm25() -> int:
+    """Dựng chỉ mục THƯA (BM25) trên chính `biology_text`. KHÔNG OCR lại.
+
+    Trả 0 khi dựng xong, 1 khi index dày rỗng/không mở được — để chạy trong
+    script không cần trông mà vẫn biết kết quả.
+    """
+    from src.rag.sparse_store import build_sparse_index
+
+    try:
+        index = build_sparse_index()
+    except Exception as exc:
+        print(f"[bm25] LỖI: {exc}")
+        return 1
+    fp = index.fingerprint
+    print(f"[bm25] {len(index.ids)} chunk, {len(index.vocab)} từ vựng, "
+          f"độ dài TB {index.avg_len:.1f} token")
+    print(f"[bm25] dấu vân: n_chunks={fp.n_chunks} ids_digest={fp.ids_digest[:12]}… "
+          f"text_version={fp.text_extraction_version} tokenizer={fp.tokenizer} "
+          f"normalizer={fp.normalizer_version}")
+    return 0
+
+
 def run_flask_api(port=5000):
     """Launch Flask API server."""
     logger.info(f"Starting Flask API server on port {port}...")
@@ -667,6 +689,8 @@ def main():
         action="store_true",
         help="Include approved/rejected rows when exporting review file.",
     )
+    etl_group.add_argument("--build-bm25", action="store_true",
+                           help="Dựng chỉ mục thưa BM25 từ biology_text (không OCR lại)")
     etl_group.add_argument("--build-manifests", action="store_true",
                            help="Dựng BookManifest (bản đồ trang + spine Bài) rồi báo cáo G1")
     etl_group.add_argument("--book", type=str, default="",
@@ -691,9 +715,13 @@ def main():
         and not args.upsert_image_review_item
         and not args.import_images_dir
         and not args.build_manifests
+        and not args.build_bm25
     ):
         parser.print_help()
         sys.exit(1)
+
+    if args.build_bm25:
+        sys.exit(run_build_bm25())
 
     if args.build_manifests:
         sys.exit(run_build_manifests(args.book))

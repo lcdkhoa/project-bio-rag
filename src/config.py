@@ -192,3 +192,63 @@ RERANK_SCORE_MIN = float(os.getenv("RERANK_SCORE_MIN", "0.2"))
 IMAGE_RERANK_ENABLED = os.getenv("IMAGE_RERANK_ENABLED", "true").lower() == "true"
 IMAGE_RERANK_TOP_N = int(os.getenv("IMAGE_RERANK_TOP_N", "12"))
 IMAGE_RERANK_WEIGHT = float(os.getenv("IMAGE_RERANK_WEIGHT", "0.25"))
+
+# --- M2: kênh THƯA (BM25) + hợp nhất thưa/dày (D-76..) ---------------------
+# Đề cương Nội dung 2 đòi "kết hợp tìm kiếm theo từ khóa (BM25) và tìm kiếm ngữ
+# nghĩa dày đặc"; Nội dung 4 + bảng Kế hoạch Giai đoạn 3 đòi so BA cấu hình
+# "BM25 thuần vs Vector Retrieval vs Hybrid", nhân với ablation bật/tắt
+# re-ranking và cổng lọc liên quan -> 3 x 2 x 2 = 12 cấu hình.
+#
+# Mặc định `dense` CÓ CHỦ Ý: đó ĐÚNG là hành vi đang chạy hôm nay. Đổi mặc định
+# sang `hybrid` chỉ được làm sau khi bảng 12 cấu hình có số (nguyên tắc 3).
+RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "dense").lower()
+_RETRIEVAL_MODES = ("dense", "bm25", "hybrid")
+if RETRIEVAL_MODE not in _RETRIEVAL_MODES:
+    raise ValueError(
+        f"RETRIEVAL_MODE={RETRIEVAL_MODE!r} không hợp lệ, phải là một trong "
+        f"{_RETRIEVAL_MODES}")
+
+# Chỉ mục thưa nằm cạnh index dày nhưng là artefact SINH RA ĐƯỢC (dựng lại bằng
+# `python main.py --build-bm25`), không phải nguồn dữ liệu.
+SPARSE_INDEX_DIR = _path_from_env("RAG_SPARSE_INDEX_DIR", PERSIST_DIR / "sparse")
+
+# `k1`/`b` mặc định của Okapi/Lucene. HAI SỐ NÀY PHẢI ĐƯỢC CHỌN BẰNG PHÉP QUÉT
+# (`scripts/run_ablation.ps1` / `src/test/bm25_sweep.py`), không phải bằng mặc
+# định của thư viện — BM25 rất nhạy với chúng.
+# ĐÃ QUÉT (100 câu, index 12 quyển, tokenizer=plain): lưới 5x5
+# k1 ∈ {0.5,0.7,0.9,1.2,1.5} x b ∈ {0,0.15,0.3,0.5,0.75}, cả bảng nằm trong
+# decision log. Ô thắng **k1=0.7, b=0.75** (MRR 0,820 · R@1 0,760 · R@10 0,950);
+# ô tệ nhất MRR 0,764 -> mặt tối ưu KHÁ PHẲNG, k1/b đáng chọn nhưng không phải
+# thứ quyết định. Lưới ban đầu {0.9,1.2,1.5}x{0.3,0.5,0.75} cho ô thắng nằm ĐÚNG
+# BIÊN nên phải nới ra mới biết là đỉnh hay là tường; ô thắng cuối nằm trong lòng
+# lưới. Đổi `BM25_TOKENIZER` thì PHẢI quét lại: trên "folded" ô thắng là
+# k1=0.7, b=0.30 — tối ưu của một cấu hình khác.
+BM25_K1 = float(os.getenv("BM25_K1", "0.7"))
+BM25_B = float(os.getenv("BM25_B", "0.75"))
+# "plain" = GIỮ dấu, "folded" = bỏ dấu. Mặc định "plain" vì **đã đo**, và phép
+# đo BÁC BỎ giả thuyết ban đầu: ta đoán bỏ dấu sẽ thắng (OCR làm hỏng dấu, và G3
+# phải so khớp trên dạng đã bỏ dấu vì thế). Số thật trên 100 câu / index 12
+# quyển: giữ dấu MRR **0,799** vs bỏ dấu **0,769**, R@1 0,710 vs 0,690, R@3
+# 0,870 vs 0,830 — giữ dấu thắng ở MỌI k. Dấu mang thông tin phân biệt nhiều hơn
+# phần OCR làm hỏng.
+BM25_TOKENIZER = os.getenv("BM25_TOKENIZER", "plain").lower()
+if BM25_TOKENIZER not in ("folded", "plain"):
+    raise ValueError(f"BM25_TOKENIZER={BM25_TOKENIZER!r} phải là 'folded' hoặc 'plain'")
+# Số ứng viên lấy từ kênh thưa trước khi hợp nhất.
+BM25_FETCH_K = int(os.getenv("BM25_FETCH_K", "20"))
+
+# Hợp nhất: "rrf" không cần chuẩn hoá thang điểm (điểm dày là KHOẢNG CÁCH, điểm
+# BM25 là ĐIỂM — hai thang khác bản chất), "norm" chuẩn hoá min-max rồi cộng có
+# trọng số. Phải đo CẢ HAI rồi mới chốt.
+FUSION_METHOD = os.getenv("FUSION_METHOD", "rrf").lower()
+if FUSION_METHOD not in ("rrf", "norm"):
+    raise ValueError(f"FUSION_METHOD={FUSION_METHOD!r} phải là 'rrf' hoặc 'norm'")
+FUSION_RRF_K = int(os.getenv("FUSION_RRF_K", "60"))
+FUSION_DENSE_WEIGHT = float(os.getenv("FUSION_DENSE_WEIGHT", "0.5"))
+
+# Cổng lọc liên quan, tách RIÊNG khỏi rerank vì Nội dung 4 đòi ablation từng cái.
+# TRƯỚC M2 hai thứ này bị TRỘN: `VectorDB.get_retriever` chọn MỘT trong hai —
+# `RERANK_ENABLED=true` thì `RelevanceGatedRetriever` KHÔNG bao giờ chạy, nên
+# `RETRIEVER_DISTANCE_MARGIN` là số chết trong cấu hình đang chạy.
+RELEVANCE_GATE_ENABLED = os.getenv(
+    "RELEVANCE_GATE_ENABLED", "true").lower() == "true"
