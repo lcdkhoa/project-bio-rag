@@ -20,10 +20,11 @@ index đổi thì đệm bị từ chối chứ không âm thầm dùng lại (C
 
 ## Cách đo precision — báo cáo CẢ HAI định nghĩa (§2.2 của prompt M2)
 
-`precision@k` theo một trang vàng duy nhất bị chặn trên bởi `min(k, m)/k` với `m`
-= số chunk của trang vàng lọt vào tập ứng viên. Báo cáo con số trần đó cạnh
-precision, để người đọc thấy 0,55 so với **trần của chính nó** chứ không phải so
-với 1,0.
+`precision@k` theo một trang vàng duy nhất bị chặn trên bởi `min(k, m)/k`, với
+`m` = **số chunk mà trang vàng có trong index** (không phải số lọt vào tập ứng
+viên — con số đó phụ thuộc chính bộ truy xuất đang chấm, nên dùng nó là vòng
+tròn luẩn quẩn). Báo cáo trần đó **cạnh** precision, để người đọc thấy 0,55 so
+với **trần của chính nó** chứ không phải so với 1,0.
 """
 
 from __future__ import annotations
