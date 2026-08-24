@@ -510,7 +510,26 @@ def main() -> int:
     else:
         cache = load_cache(cache_path, collection)
 
-    print(f"\nBộ test: {len(rows)} câu từ {args.testset_dir}")
+    # Bộ test là thứ ĐANG LỚN DẦN trong lúc chạy (Track A sinh theo lô). Một
+    # bảng đo trên 290 câu mà người đọc tưởng là 300 là một con số sai mà trông
+    # hợp lý — đúng loại nguy hiểm nhất. Nên: đọc LẠI thư mục ngay trước khi in
+    # bảng và ĐỐI CHIẾU với số câu thực sự được chấm.
+    tren_dia = load_testset(Path(args.testset_dir))
+    if len(tren_dia) != len(rows):
+        print(f"\n!! BỘ TEST ĐÃ ĐỔI TRONG LÚC CHẠY: {len(rows)} câu lúc bắt đầu "
+              f"-> {len(tren_dia)} câu trên đĩa bây giờ.")
+        print(f"   Bảng dưới đây đo trên {len(rows)} câu, KHÔNG phải "
+              f"{len(tren_dia)}.")
+    chua_dem = [r for r in tren_dia if str(r["question"]) not in cache.dense]
+    if chua_dem:
+        # `--topup-cache` chỉ chấm bù CROSS-ENCODER cho câu đã có phần dày; câu
+        # hoàn toàn mới thì thiếu cả phần dày nên phải `--build-cache` (nó nối
+        # tiếp đệm cũ, nên chỉ tốn đúng phần thiếu).
+        print(f"!! {len(chua_dem)}/{len(tren_dia)} câu trên đĩa CHƯA có trong bộ "
+              f"nhớ đệm -> KHÔNG nằm trong bảng.")
+        print(f"   Bù bằng: --build-cache (nối tiếp đệm cũ, chỉ chấm phần thiếu)")
+    print(f"\nBộ test: {len(rows)} câu từ {args.testset_dir} "
+          f"({len(tren_dia)} câu hiện có trên đĩa)")
     print(f"Chỉ mục thưa: {len(sparse.ids)} chunk, {len(sparse.vocab)} từ vựng")
     print(f"Hợp nhất: {FUSION_METHOD} (rrf_k={FUSION_RRF_K}, "
           f"dense_weight={FUSION_DENSE_WEIGHT}), BM25 k1={BM25_K1} b={BM25_B}, "
