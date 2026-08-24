@@ -57,6 +57,7 @@ from src.config import (  # noqa: E402
     FUSION_METHOD,
     FUSION_RRF_K,
     PERSIST_DIR,
+    RERANK_FETCH_K,
     RERANK_SCORE_MIN,
     RETRIEVER_DISTANCE_MARGIN,
     RETRIEVER_MAX_K,
@@ -342,11 +343,17 @@ class Config:
     rrf_k: int = FUSION_RRF_K
     margin: float = RETRIEVER_DISTANCE_MARGIN
     score_min: float = RERANK_SCORE_MIN
+    # Bề rộng ứng viên MỖI kênh. Mặc định `CANDIDATE_N = 50` là bề rộng để ĐO
+    # (trần chất lượng truy xuất), KHÔNG phải bề rộng production: `.env` đang
+    # chạy `RERANK_FETCH_K = 20` và `BM25_FETCH_K = 20`. Chốt mặc định dựa trên
+    # số đo ở 50 mà đem chạy ở 20 là khuyến nghị dựa trên một cấu hình KHÁC.
+    cand_n: int = CANDIDATE_N
 
     @property
     def label(self) -> str:
+        rong = "" if self.cand_n == CANDIDATE_N else f" n={self.cand_n}"
         return (f"{self.mode:6s} rerank={'on ' if self.rerank else 'off'} "
-                f"gate={'on ' if self.gate else 'off'} fus={self.fusion:4s}")
+                f"gate={'on ' if self.gate else 'off'} fus={self.fusion:4s}{rong}")
 
 
 def rank_for(cfg: Config, query: str, cache: Cache, sparse,
@@ -360,10 +367,11 @@ def rank_for(cfg: Config, query: str, cache: Cache, sparse,
             f"Bộ nhớ đệm thiếu câu hỏi ({len(cache.dense)} câu đã đệm): "
             f"{query[:70]!r}. Đệm dựng dở thì phải dựng nốt (--build-cache), "
             "không được chấm trên phần đã có.")
-    dense = cache.dense.get(query, []) if cfg.mode in ("dense", "hybrid") else []
+    dense = (cache.dense.get(query, [])[: cfg.cand_n]
+             if cfg.mode in ("dense", "hybrid") else [])
     sp: List[Tuple[str, float]] = []
     if cfg.mode in ("bm25", "hybrid"):
-        sp = sparse_search(sparse, query, CANDIDATE_N, k1=cfg.k1, b=cfg.b)
+        sp = sparse_search(sparse, query, cfg.cand_n, k1=cfg.k1, b=cfg.b)
 
     if cfg.mode == "dense":
         items = fuse(dense, [], method=cfg.fusion, rrf_k=cfg.rrf_k,
@@ -563,6 +571,18 @@ def main() -> int:
     print("\n`cắt` = tỉ lệ truy vấn mà cổng lọc thực sự bỏ bớt ứng viên (tính trên")
     print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
     results = results + fusion_rows
+
+    # Bề rộng PRODUCTION: `.env` chạy RERANK_FETCH_K = 20 và BM25_FETCH_K = 20,
+    # không phải 50. Bảng ở trên là TRẦN chất lượng truy xuất; bảng này là thứ
+    # người dùng thật sẽ nhận. Chốt mặc định phải dựa vào bảng NÀY.
+    prod_n = max(RERANK_FETCH_K, BM25_FETCH_K)
+    if prod_n != CANDIDATE_N:
+        prod_rows = table(
+            f"Bề rộng PRODUCTION ({prod_n} ứng viên/kênh, không phải "
+            f"{CANDIDATE_N}) — đây là thứ người dùng thật nhận",
+            [Config(mode=m, rerank=True, gate=g, cand_n=prod_n)
+             for m in ("bm25", "dense", "hybrid") for g in (False, True)])
+        results = results + prod_rows
 
     if args.group_by:
         key = args.group_by

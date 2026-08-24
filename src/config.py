@@ -199,9 +199,17 @@ IMAGE_RERANK_WEIGHT = float(os.getenv("IMAGE_RERANK_WEIGHT", "0.25"))
 # "BM25 thuần vs Vector Retrieval vs Hybrid", nhân với ablation bật/tắt
 # re-ranking và cổng lọc liên quan -> 3 x 2 x 2 = 12 cấu hình.
 #
-# Mặc định `dense` CÓ CHỦ Ý: đó ĐÚNG là hành vi đang chạy hôm nay. Đổi mặc định
-# sang `hybrid` chỉ được làm sau khi bảng 12 cấu hình có số (nguyên tắc 3).
-RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "dense").lower()
+# Mặc định `hybrid` — ĐỔI NGÀY 2026-08-24 SAU KHI CÓ SỐ, không phải theo đề cương
+# (D-82). Đo trên **300 câu / 12 quyển** ở ĐÚNG bề rộng production (20 ứng
+# viên/kênh, tức `RERANK_FETCH_K`/`BM25_FETCH_K`), rerank bật, cổng lọc tắt:
+#     hybrid  R@1 0,717 · R@3 0,887 · R@5 0,923 · R@10 **0,977** · MRR **0,808**
+#     bm25    R@1 0,707 · R@3 0,873 · R@5 0,920 · R@10 0,960 · MRR 0,796
+#     dense   R@1 0,710 · R@3 0,860 · R@5 0,903 · R@10 0,957 · MRR 0,794
+# Hybrid thắng ở MỌI cột. Quan trọng: ở bề rộng ĐO (50/kênh) biên độ chỉ +0,005
+# MRR — nằm trong nhiễu — nhưng ở bề rộng THẬT (20) nó là **+0,014 MRR và +0,020
+# R@10**. Cửa sổ càng hẹp thì hai kênh bù nhau càng đáng giá. Chốt mặc định dựa
+# trên bảng đo ở 50 mà đem chạy ở 20 là khuyến nghị cho một cấu hình KHÁC.
+RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "hybrid").lower()
 _RETRIEVAL_MODES = ("dense", "bm25", "hybrid")
 if RETRIEVAL_MODE not in _RETRIEVAL_MODES:
     raise ValueError(
@@ -250,5 +258,11 @@ FUSION_DENSE_WEIGHT = float(os.getenv("FUSION_DENSE_WEIGHT", "0.5"))
 # TRƯỚC M2 hai thứ này bị TRỘN: `VectorDB.get_retriever` chọn MỘT trong hai —
 # `RERANK_ENABLED=true` thì `RelevanceGatedRetriever` KHÔNG bao giờ chạy, nên
 # `RETRIEVER_DISTANCE_MARGIN` là số chết trong cấu hình đang chạy.
+# Mặc định TẮT, bằng phép đo chứ không phải bằng cảm tính (D-81, D-82). Cổng lọc
+# TƯƠNG ĐỐI không mua được gì và ở bề rộng production thì nó CÓ HẠI: trên 300 câu,
+# hybrid MRR **0,808 -> 0,781** và R@10 **0,977 -> 0,930** khi bật. Với `bm25` và
+# `dense` ở bề rộng 20 nó không cắt gì (danh sách quá ngắn) nên vô hại mà cũng vô
+# dụng. Cổng lọc liên quan THỰC SỰ đang hoạt động là sàn tuyệt đối
+# `RERANK_SCORE_MIN` — đó mới là thành phần để bật/tắt trong ablation của đề cương.
 RELEVANCE_GATE_ENABLED = os.getenv(
-    "RELEVANCE_GATE_ENABLED", "true").lower() == "true"
+    "RELEVANCE_GATE_ENABLED", "false").lower() == "true"

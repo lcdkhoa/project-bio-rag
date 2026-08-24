@@ -1,6 +1,6 @@
 # Báo cáo Track B — M2.0/M2.1/M2.2: BM25 + hợp nhất thưa/dày
 
-> Ngày 2026-08-24. Decision log: **D-76 … D-81**. Prompt sinh ra lượt này:
+> Ngày 2026-08-24. Decision log: **D-76 … D-82**. Prompt sinh ra lượt này:
 > `2026-08-24-m2-track-b-bm25-prompt.md` (và prompt M2 tổng thể
 > `2026-08-24-m2-bm25-hybrid-prompt.md`).
 >
@@ -23,8 +23,8 @@ powershell -ExecutionPolicy Bypass -File scripts\run_ablation.ps1
 | Nội dung 2 — **hợp nhất thưa + dày** | **XONG** | `src/rag/hybrid_text_retriever.py`, chạy thật trên index 12 quyển |
 | Nội dung 2 — "không bỏ sót **thuật ngữ khoa học đặc thù**" | **XONG, đo được** | chunk đúng ở top-10 cho 12 công thức: **6 → 97** |
 | Nội dung 4 — ablation **rerank × cổng lọc** | **XONG (cấu trúc)** | 12 cấu hình bật/tắt bằng `.env`, §5 |
-| Giai đoạn 3 — **BM25 vs dense vs hybrid** | **CÓ BẢNG** (bộ test tạm) | §5.5 — đề xuất **hybrid + rerank + rrf**: R@1 0,830 · R@10 **1,000** · MRR 0,898 |
-| Bộ test 12 quyển có nhãn | **của Track A**, đang chạy | — |
+| Giai đoạn 3 — **BM25 vs dense vs hybrid** | **XONG** — 300 câu / 12 quyển | §5.5 — **hybrid + rerank + rrf, cổng lọc TẮT**: R@1 0,717 · R@3 0,887 · R@10 **0,977** · MRR 0,808 ở bề rộng production. Đã đổi mặc định (D-82) |
+| Bộ test 12 quyển có nhãn | **XONG** (Track A) | 300 câu, đủ `phan_mon`/`do_kho`/`khoi`/`bo_sach`; 0 gold key trỏ vào trang không có chunk, 93,4% được trang hỗ trợ ở offset 0 |
 | M2.3 caption vào ngữ cảnh · M2.4 sửa `chain.py` | **CHƯA** | ngoài phạm vi ba mốc B1/B2/B3 |
 
 **Ba phép đo lật ngược điều đã tin trước đó** — chi tiết ở §1, §3, §4:
@@ -348,101 +348,104 @@ có dấu — nên ca này minh hoạ tốt cho "thuật ngữ đặc thù, hi�
 (`Ohm`), **không** đại diện cho câu hỏi của học sinh nói chung. Con số đại diện
 là bảng §5.5.
 
-### 5.5 Bảng 12 cấu hình
+### 5.5 Bảng 12 cấu hình — **300 câu / 12 quyển** (số hợp đồng)
 
-**Bộ test: 100 câu / 4 quyển KNTT / LLM sinh, CHƯA có người duyệt.** Mọi con số
-dưới đây phải được báo cáo kèm câu đó, và kèm §5.6.
+`src/test/ablation_report_12books.csv`. Bộ test **LLM sinh, chưa có người
+duyệt** (phiếu duyệt 50 câu: `document/review/testset_review_50.csv`).
 
-`trầnP@5 = 0,966` cho mọi hàng: trang vàng trung bình có ~6 chunk, nên
-precision@5 hoàn hảo cũng chỉ đạt 0,966. P@5 thực tế 0,23–0,32 → **precision còn
-xa trần của chính nó**, tức top-5 chủ yếu là chunk của trang khác. Đây là con số
-§2.2 đòi báo cáo cạnh precision.
+`trầnP@5 = 0,979`: trang vàng trung bình ~6 chunk nên precision@5 hoàn hảo cũng
+chỉ đạt 0,979, trong khi P@5 thực tế **0,26–0,29** → precision còn **xa trần của
+chính nó** (§2.2).
 
-| cấu hình | R@1 | R@3 | R@5 | R@10 | MRR | P@5 |
-|---|---|---|---|---|---|---|
-| bm25 · rerank off · gate off | 0,760 | 0,860 | 0,900 | 0,950 | 0,820 | 0,288 |
-| bm25 · rerank off · gate on | 0,760 | 0,860 | 0,900 | 0,950 | 0,820 | 0,288 |
-| bm25 · rerank **on** · gate off | 0,830 | 0,960 | 0,960 | **1,000** | 0,897 | 0,314 |
-| bm25 · rerank **on** · gate on | 0,830 | 0,960 | 0,960 | 0,990 | 0,896 | 0,314 |
-| dense · rerank off · gate off | 0,600 | 0,810 | 0,940 | 0,980 | 0,727 | 0,298 |
-| dense · rerank off · gate on | 0,600 | 0,810 | 0,940 | 0,980 | 0,727 | 0,298 |
-| dense · rerank **on** · gate off | 0,810 | 0,940 | 0,950 | 0,990 | 0,881 | 0,308 |
-| dense · rerank **on** · gate on | 0,810 | 0,950 | 0,950 | 0,990 | 0,882 | 0,308 |
-| hybrid · rerank off · gate off | 0,670 | 0,920 | 0,980 | **1,000** | 0,792 | 0,318 |
-| hybrid · rerank off · gate on | 0,670 | 0,920 | 0,980 | **1,000** | 0,792 | 0,318 |
-| hybrid · rerank **on** · gate off | 0,820 | 0,950 | 0,960 | **1,000** | 0,891 | 0,312 |
-| **hybrid · rerank on · gate on** | **0,830** | **0,960** | 0,960 | **1,000** | **0,898** | 0,312 |
+**Bảng đo ở bề rộng 50 ứng viên/kênh** — đây là *trần* chất lượng truy xuất:
 
-**Bốn điều bảng này nói, theo thứ tự quan trọng:**
+| cấu hình | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| bm25 · rerank off | 0,690 | 0,817 | 0,893 | 0,947 | 0,774 |
+| dense · rerank off | 0,597 | 0,793 | 0,847 | 0,923 | 0,704 |
+| hybrid · rerank off | 0,680 | 0,843 | 0,903 | 0,950 | 0,773 |
+| bm25 · rerank **on** | 0,710 | 0,887 | 0,923 | 0,970 | 0,804 |
+| dense · rerank **on** | 0,713 | 0,880 | 0,927 | 0,970 | 0,805 |
+| **hybrid · rerank on** | **0,717** | **0,893** | **0,933** | **0,973** | **0,810** |
 
-1. **BM25 thuần ĐÁNH BẠI dense thuần** ở đầu danh sách: R@1 **0,760 vs 0,600**,
-   MRR **0,820 vs 0,727**. Dense chỉ hơn ở đuôi (R@10 0,980 vs 0,950). Đây là kết
-   quả ngược với kỳ vọng thông thường và **phải đọc kèm §5.6** trước khi đưa vào
-   báo cáo.
-2. **Hybrid là cấu hình DUY NHẤT đạt R@10 = 1,000 mà KHÔNG cần rerank**
-   (bm25 0,950 · dense 0,980). Nghĩa là **tập ứng viên** của hybrid thật sự tốt
-   hơn, chứ không phải nhờ rerank cứu. Đó là lý do đề xuất hybrid chứ không phải
-   bm25, dù MRR của hai cái gần bằng nhau khi bật rerank (0,898 vs 0,897).
-3. **Rerank là thành phần có tác dụng lớn nhất**, ở cả ba chế độ:
-   MRR bm25 0,820 → 0,897 · dense 0,727 → 0,882 · hybrid 0,792 → 0,898.
-4. **Cổng lọc tương đối gần như KHÔNG có tác dụng** — xem §5.6.
+(Cột cổng lọc để **tắt**; bật cổng làm mọi hàng tệ đi — §5.6(a).)
 
-**Đề xuất: `RETRIEVAL_MODE=hybrid` + `RERANK_ENABLED=true` + `FUSION_METHOD=rrf`.**
-Lý do: nó thắng hoặc hoà ở mọi cột (R@1 0,830 · R@3 0,960 · R@10 1,000 · MRR
-0,898), và là cấu hình duy nhất **không phụ thuộc rerank để đạt R@10 = 1,000** —
-quan trọng vì rerank là thứ đắt nhất trong đường chạy và là thứ đã từng **tắt âm
-thầm** một lần. `RELEVANCE_GATE_ENABLED` để `true` cũng được (chênh +0,007 MRR,
-trong khoảng nhiễu của n = 100).
+**Bảng ở bề rộng PRODUCTION (20 ứng viên/kênh = `RERANK_FETCH_K`/`BM25_FETCH_K`)
+— đây là thứ người dùng thật nhận, và là bảng để chốt mặc định:**
+
+| cấu hình (rerank on, gate off) | R@1 | R@3 | R@5 | R@10 | MRR |
+|---|---|---|---|---|---|
+| bm25 | 0,707 | 0,873 | 0,920 | 0,960 | 0,796 |
+| dense | 0,710 | 0,860 | 0,903 | 0,957 | 0,794 |
+| **hybrid** | **0,717** | **0,887** | **0,923** | **0,977** | **0,808** |
+
+**Đã đổi mặc định (D-82): `RETRIEVAL_MODE=hybrid`, `RELEVANCE_GATE_ENABLED=false`.**
+
+Bốn điều bảng này nói:
+
+1. **Hybrid thắng ở MỌI cột, và biên độ LỚN HƠN ở bề rộng thật.** Ở 50/kênh nó
+   hơn dense **+0,005 MRR** — nằm trong nhiễu (≈1,5 câu / 300). Ở 20/kênh nó hơn
+   **+0,014 MRR và +0,020 R@10**. Cửa sổ càng hẹp thì hai kênh bù nhau càng đáng
+   giá. **Nếu chỉ đo ở 50 rồi chốt, ta đã khuyến nghị cho một cấu hình KHÁC với
+   cấu hình đang chạy** — đây là chỗ suýt sai.
+2. **Rerank là thành phần có tác dụng lớn nhất**, và lớn nhất với kênh dày:
+   MRR dense **0,704 → 0,805** (+0,101), bm25 0,774 → 0,804, hybrid 0,773 → 0,810.
+3. **Kênh dày đứng một mình là kênh YẾU NHẤT** (MRR 0,704 vs bm25 0,774). Tức
+   trên corpus này, từ khoá mang nhiều tín hiệu hơn ngữ nghĩa dày — hợp lý với
+   một kho SGK đầy thuật ngữ khoa học đặc thù, đúng lý do đề cương nêu BM25.
+4. **Cổng lọc tương đối: bỏ đi** — §5.6(a).
 
 ### 5.6 Ba điều phải nói ra, không được để bảng số tự nói
 
-**(a) Cổng lọc tương đối không mua được gì, và dưới `norm` thì có hại.** Tách
-riêng tác dụng của nó (rerank BẬT ở mọi hàng):
+**(a) Cổng lọc tương đối có HẠI, không chỉ vô dụng.** Tách riêng (rerank bật):
 
-| | R@10 (gate off → on) | MRR (gate off → on) |
+| | MRR (gate off → on) | R@10 (gate off → on) |
 |---|---|---|
-| bm25 · rrf | 1,000 → 0,990 | 0,897 → 0,896 |
-| dense · rrf | 0,990 → 0,990 | 0,881 → 0,882 |
-| hybrid · rrf | 1,000 → 1,000 | 0,891 → **0,898** |
-| bm25 · **norm** | 1,000 → **0,890** | 0,897 → **0,833** |
-| dense · **norm** | 0,990 → **0,870** | 0,881 → **0,829** |
-| hybrid · **norm** | 1,000 → **0,940** | 0,891 → **0,884** |
+| hybrid · 50/kênh · rrf | 0,810 → 0,797 | 0,973 → 0,967 |
+| **hybrid · 20/kênh · rrf** | **0,808 → 0,781** | **0,977 → 0,930** |
+| bm25 · 50/kênh · norm | 0,804 → 0,779 | 0,970 → 0,859 |
+| dense · 50/kênh · norm | 0,805 → 0,727 | 0,970 → 0,814 |
 
-Dưới `rrf` cổng lọc **trung tính** (±0,007); dưới `norm` nó **cắt mất đáp án
-thật** (R@10 rơi tới 0,890). Nên **cổng lọc liên quan thực sự đang hoạt động
-trong hệ thống là sàn tuyệt đối `RERANK_SCORE_MIN`, không phải cổng tương đối**.
-Ghi nhận này quan trọng cho báo cáo: đề cương gọi tên "cổng lọc liên quan" như
-một thành phần, và số đo nói thành phần *dạng tương đối* không đóng góp gì.
+Ở bề rộng production nó cắt mất **4,7 điểm R@10** của hybrid. Với `bm25`/`dense`
+ở bề rộng 20 nó không cắt gì (danh sách quá ngắn) nên vô hại mà cũng vô dụng.
+**Cổng lọc liên quan thực sự đang hoạt động trong hệ thống là sàn tuyệt đối
+`RERANK_SCORE_MIN`** — đó mới là thành phần đáng bật/tắt trong ablation của đề
+cương. Bảng 4 quyển trước đó nói cổng "trung tính"; trên 300 câu thì nó **có
+hại**, và bản 300 câu là bản đúng.
 
-Cũng chỉnh lại một câu ước lượng ở D-80: ở đó tính "RRF nén điểm nên cổng không
-cắt gì" **cho top-10**. Với `CANDIDATE_N = 50` thì cổng **có** cắt — `cắt = 1,00`
-ở mọi hàng, tức mọi truy vấn đều bị bỏ bớt ứng viên. Nó chỉ cắt phần **đuôi sau
-hạng ~26**, nên không thấy được ở k ≤ 10. Ước lượng cũ đúng về cơ chế, sai về
-phạm vi.
+**(b) Khi rerank BẬT và cổng lọc TẮT, cách hợp nhất không ảnh hưởng gì cả** —
+`rrf` và `norm` cho số **giống hệt**. Hợp nhất chỉ quyết định **tập** ứng viên và
+thứ tự *trước* rerank, mà rerank sắp lại toàn bộ tập đó. Vậy "chọn RRF hay chuẩn
+hoá" thực chất là "cổng lọc cư xử ra sao dưới mỗi cách" — và câu trả lời là
+`rrf`, vì dưới `norm` cổng cắt tàn bạo hơn hẳn.
 
-**(b) Khi rerank BẬT và cổng lọc TẮT, cách hợp nhất không còn ảnh hưởng gì cả** —
-`rrf` và `norm` cho **số giống hệt nhau** (hybrid: 0,820/0,950/0,960/1,000/0,891
-ở cả hai). Hiển nhiên khi nhìn ra: hợp nhất chỉ quyết định **tập** ứng viên và
-thứ tự *trước* rerank, mà rerank thì sắp lại toàn bộ tập đó. Vậy câu hỏi "chọn
-RRF hay chuẩn hoá" thực chất là câu hỏi "cổng lọc cư xử thế nào dưới mỗi cách" —
-và (a) trả lời: **rrf**.
+**(c) Phép kiểm thiên vị ĐÃ CHẠY, và nó KHÔNG xác nhận giả thuyết của tôi.**
+Bảng 4 quyển cho BM25 thắng dense rất đậm (R@1 0,760 vs 0,600; MRR 0,820 vs
+0,727) và tôi quy cho **thiên vị kênh từ khoá**: câu hỏi do LLM sinh trong lúc
+đọc chính trang vàng nên dùng lại thuật ngữ của trang đó. Dự đoán kiểm được: ưu
+thế BM25 phải **tập trung ở `truc_tiep` và biến mất ở `suy_luan`**. Tách theo
+`do_kho` trên 300 câu (rerank on, gate on):
 
-**(c) Bộ test này THIÊN VỊ kênh từ khoá, và điều đó có thể giải thích trọn vẹn
-điểm (1).** Câu hỏi do LLM sinh **trong lúc đọc chính trang vàng**, nên nó có xu
-hướng dùng lại thuật ngữ đặc trưng của trang đó nguyên văn — đúng thứ BM25 giỏi
-nhất. Học sinh thật diễn đạt bằng lời của mình. Nên **không được viết vào báo cáo
-rằng "BM25 thuần tốt hơn vector"** từ bảng này; câu đúng là *"trên bộ test sinh
-tự động, kênh từ khoá đủ mạnh để không được bỏ, và hợp nhất thắng cả hai"*. Cách
-kiểm tra rẻ: bộ test 12 quyển của Track A có nhãn `do_kho`, nên chạy lại bảng này
-**tách theo `do_kho`** — nếu ưu thế của BM25 tập trung ở nhóm `truc_tiep` và biến
-mất ở nhóm `suy_luan`, thiên vị đã được xác nhận bằng số.
+| | bm25 MRR | dense MRR | bm25 R@10 | dense R@10 |
+|---|---|---|---|---|
+| `suy_luan` (n = 96) | 0,762 | 0,766 | **0,969** | 0,938 |
+| `truc_tiep` (n = 204) | 0,818 | 0,815 | 0,966 | 0,966 |
 
----
+**Không thấy mẫu hình đã dự đoán**: ưu thế BM25 phẳng ở cả hai nhóm, và ở
+`suy_luan` thì R@10 của nó lại *cao hơn* dense. Nên cách giải thích đúng hơn cho
+bảng 4 quyển là **mẫu nhỏ** (n = 100, 4 quyển) chứ không phải thiên vị từ khoá —
+và trên 300 câu / 12 quyển thì BM25 **không** còn thắng dense (0,804 vs 0,805).
+
+Hai giới hạn của chính phép kiểm này, phải ghi ra: nhãn `do_kho` **cũng do LLM
+gán**, nên phép tách có nhiễu; và **cả hai nhóm đều sinh từ trang vàng**, nên
+nếu thiên vị là *đồng đều* thì cách tách này **không thể phát hiện được**. Muốn
+kết luận chắc thì cần câu hỏi do người viết, không sinh từ trang.
 
 ## 6. Trạng thái file khi bàn giao
 
 **Nghiệm thu B3 đã CHẠY THẬT, không phải chỉ mô tả:**
-`powershell -ExecutionPolicy Bypass -File scriptsun_ablation.ps1` chạy hết bốn
+`powershell -ExecutionPolicy Bypass -File scripts
+un_ablation.ps1` chạy hết bốn
 bước, **mã thoát 0**, số tái lập **đúng từng chữ số** so với §5.5. Lượt chạy đầu
 lộ ra **ba lỗi của chính script**, cả ba chỉ thấy được khi chạy thật: `Tee-Object`
 truyền tiếp ra luồng output nên `$code` là một MẢNG (script tuyên bố "Bước 4 thất
