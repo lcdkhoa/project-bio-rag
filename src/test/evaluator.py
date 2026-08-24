@@ -215,8 +215,14 @@ def run_evaluation(testsets_dir: str, report_csv: str, report_md: str):
 
     csv_files = sorted(glob.glob(os.path.join(testsets_dir, "*_testset.csv")))
     if not csv_files:
+        # Thoát KHÁC 0: từ 2026-08-24 bộ test 4 quyển cũ đã bị chuyển vào
+        # `_archive_4books_kntt_offset_minus1/` (gold key theo offset −1, vô
+        # hiệu trên index mới), nên "không có bộ test" là trạng thái BÌNH
+        # THƯỜNG của một bản clone. Trả None ở đây cho exit code 0, tức một
+        # script nối lệnh sẽ tưởng là đã đo xong — cùng loại im lặng đã vá ở
+        # `main.py` (D-68).
         print("Không tìm thấy bộ test. Chạy generate_testsets.py trước.")
-        return
+        return 2
 
     summaries = []
     for csv_path in csv_files:
@@ -302,7 +308,9 @@ if __name__ == "__main__":
     REPORT_CSV = os.path.join(base, "evaluation_report.csv")
     REPORT_MD = os.path.join(base, "evaluation_report.md")
 
+    # Thiếu cấu hình LLM cũng phải thoát khác 0: nó là "chưa đo được", không
+    # phải "đo xong".
     if not is_configured():
         print(config_help())
-    else:
-        run_evaluation(TESTSETS_DIR, REPORT_CSV, REPORT_MD)
+        raise SystemExit(1)
+    raise SystemExit(run_evaluation(TESTSETS_DIR, REPORT_CSV, REPORT_MD) or 0)

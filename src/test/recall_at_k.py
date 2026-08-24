@@ -52,8 +52,14 @@ def main():
     base = os.path.dirname(__file__)
     testsets = sorted(glob.glob(os.path.join(base, "testsets", "*_testset.csv")))
     if not testsets:
+        # Thoát KHÁC 0: từ 2026-08-24 bộ test 4 quyển cũ đã bị chuyển vào
+        # `_archive_4books_kntt_offset_minus1/` (gold key theo offset −1, vô
+        # hiệu trên index mới), nên "không có bộ test" là trạng thái BÌNH
+        # THƯỜNG của một bản clone. Trả None ở đây cho exit code 0, tức một
+        # script nối lệnh sẽ tưởng là đã đo xong — cùng loại im lặng đã vá ở
+        # `main.py` (D-68).
         print("Không tìm thấy bộ test trong testsets/. Chạy generate_testsets.py trước.")
-        return
+        return 2
 
     print("Đang nạp text vector DB (bge-m3)...")
     db = VectorDB().db
@@ -129,4 +135,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main() or 0)
