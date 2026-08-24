@@ -63,6 +63,11 @@ from src.config import (  # noqa: E402
 from src.rag.bm25 import chunk_ids_digest  # noqa: E402
 from src.rag.multimodal_context import build_context, selected_figures  # noqa: E402
 from src.test.ablation import load_testset  # noqa: E402
+from src.test.qa_citation_page import (  # noqa: E402
+    PageTextIndex,
+    build_idf,
+    coverage,
+)
 
 DEFAULT_CACHE = PERSIST_DIR / "mm_retrieval_cache.json"
 
@@ -108,6 +113,9 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
         "text_digest": text_digest,
         "image_digest": image_digest,
         "text_version": TEXT_EXTRACTION_VERSION,
+        # Đổi schema của bản ghi thì đệm cũ THIẾU cột mới; không đóng dấu thì
+        # nó lộ ra dưới dạng KeyError ở tận lúc chấm điểm.
+        "schema": "v2_cov",
         "widths": f"text_k={text_k} image_k={image_k} "
                   f"fetch_k={IMAGE_RETRIEVER_FETCH_K} "
                   f"min_score={min_score} "
@@ -126,6 +134,13 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
         else:
             print("[đệm] dấu vân KHÁC (index hoặc bề rộng đã đổi) -> chạy lại")
 
+    # Độ phủ token có trọng số IDF của `ground_truth` — dùng lại đúng bộ đo
+    # của cổng G3 (`qa_citation_page`), IDF đo trên CHÍNH các trang của index
+    # (không dùng stopword: phép bỏ dấu làm từ chức năng đụng từ nội dung).
+    trang = PageTextIndex(text_db.db._collection)
+    idf = build_idf(trang.page_texts())
+    print(f"[idf] {trang.n_pages()} trang, {len(idf)} token")
+
     text_retriever = text_db.get_retriever({"k": text_k})
     image_retriever = image_db.get_retriever({"k": image_k,
                                               "min_score": min_score})
@@ -139,6 +154,11 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
         text_docs = text_retriever.invoke(q)
         image_docs = image_retriever.invoke(q, related_text_docs=text_docs)
         keep = selected_figures(image_docs)
+        ngu_canh_text = build_context(text_docs, image_docs, multimodal=False)
+        ngu_canh_mm = build_context(text_docs, image_docs, multimodal=True)
+        gt = str(row.get("ground_truth", ""))
+        cov_text, n_inf = coverage(gt, ngu_canh_text, idf)
+        cov_mm, _ = coverage(gt, ngu_canh_mm, idf)
         data[q] = {
             "image_only_route": bool(is_image_only_query(q)),
             "text_pages": [list(_page_key(d.metadata)) for d in text_docs],
@@ -147,10 +167,11 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
             "context_pages": [list(_page_key(d.metadata)) for d in keep],
             "figure_labels": [str(d.metadata.get("figure_label", ""))
                               for d in keep],
-            "ctx_text_only": len(build_context(text_docs, image_docs,
-                                               multimodal=False)),
-            "ctx_multimodal": len(build_context(text_docs, image_docs,
-                                               multimodal=True)),
+            "ctx_text_only": len(ngu_canh_text),
+            "ctx_multimodal": len(ngu_canh_mm),
+            "cov_text": round(cov_text, 4),
+            "cov_mm": round(cov_mm, 4),
+            "n_informative": n_inf,
         }
         if i % 10 == 0 or i == len(rows):
             el = time.time() - t0
@@ -173,7 +194,8 @@ def score(rows: Sequence[dict], data: Dict[str, dict],
           pages_with_figures: set) -> dict:
     n = len(rows)
     acc = {"text_R": 0, "mm_R": 0, "hinh_vang": 0, "hinh_khac": 0,
-           "co_hinh": 0, "gold_co_hinh": 0, "them": 0.0, "chi_anh": 0}
+           "co_hinh": 0, "gold_co_hinh": 0, "them": 0.0, "chi_anh": 0,
+           "cov_text": 0.0, "cov_mm": 0.0, "cov_tang": 0, "cov_giam": 0}
     for row in rows:
         q = str(row["question"])
         rec = data.get(q)
@@ -192,6 +214,14 @@ def score(rows: Sequence[dict], data: Dict[str, dict],
         acc["gold_co_hinh"] += int(gold in pages_with_figures)
         acc["them"] += rec["ctx_multimodal"] - rec["ctx_text_only"]
         acc["chi_anh"] += int(rec["image_only_route"])
+        ct, cm = float(rec["cov_text"]), float(rec["cov_mm"])
+        acc["cov_text"] += ct
+        acc["cov_mm"] += cm
+        acc["cov_tang"] += int(cm > ct)
+        # Ngữ cảnh mm là TẬP CHA của ngữ cảnh text nên độ phủ không thể giảm.
+        # Đếm riêng thay vì bỏ qua: một con số khác 0 ở đây là bằng chứng có
+        # nhánh ẩn, không phải một kết quả.
+        acc["cov_giam"] += int(cm < ct)
     return {
         "so_cau": n,
         "text_only_R": round(acc["text_R"] / n, 4),
@@ -201,6 +231,10 @@ def score(rows: Sequence[dict], data: Dict[str, dict],
         "hinh_dung_trang_vang": acc["hinh_vang"],
         "hinh_trang_khac": acc["hinh_khac"],
         "gold_co_hinh_trong_kho": round(acc["gold_co_hinh"] / n, 4),
+        "cov_text_TB": round(acc["cov_text"] / n, 4),
+        "cov_mm_TB": round(acc["cov_mm"] / n, 4),
+        "so_cau_cov_tang": acc["cov_tang"],
+        "so_cau_cov_giam": acc["cov_giam"],
         "ky_tu_them_TB": round(acc["them"] / n, 1),
         "dinh_tuyen_chi_anh": acc["chi_anh"],
     }
@@ -285,8 +319,9 @@ def main() -> int:
         nhom["nhom"] = f"trang vàng KHÔNG có hình (n={len(khong)})"
         ket_qua.append(nhom)
 
-    head = (f"{'nhóm':44s} {'text_R':>7s} {'mm_R':>7s} {'delta':>7s} "
-            f"{'có hình':>8s} {'h.đúng':>7s} {'h.khác':>7s} {'+ký tự':>8s}")
+    head = (f"{'nhóm':40s} {'text_R':>7s} {'mm_R':>7s} {'delta':>7s} "
+            f"{'h.đúng':>7s} {'h.khác':>7s} "
+            f"{'cov_txt':>8s} {'cov_mm':>7s} {'cov+':>5s} {'cov-':>5s} {'+ký tự':>8s}")
     print(f"\n### Cấu hình 2 — text_k={RETRIEVER_K}, image_k="
           f"{IMAGE_RETRIEVER_K}, min_score={args.min_score}, hình vào ngữ "
           f"cảnh <= {MULTIMODAL_MAX_FIGURES}"
@@ -296,11 +331,16 @@ def main() -> int:
     print(head)
     print("-" * len(head))
     for r in ket_qua:
-        print(f"{r['nhom']:44s} {r['text_only_R']:7.3f} {r['multimodal_R']:7.3f} "
-              f"{r['delta_R']:7.3f} {r['cau_co_hinh_trong_ngu_canh']:8.3f} "
+        print(f"{r['nhom']:40s} {r['text_only_R']:7.3f} {r['multimodal_R']:7.3f} "
+              f"{r['delta_R']:7.3f} "
               f"{r['hinh_dung_trang_vang']:7d} {r['hinh_trang_khac']:7d} "
+              f"{r['cov_text_TB']:8.3f} {r['cov_mm_TB']:7.3f} "
+              f"{r['so_cau_cov_tang']:5d} {r['so_cau_cov_giam']:5d} "
               f"{r['ky_tu_them_TB']:8.1f}")
 
+    print("\ncov_txt/cov_mm = độ phủ token đáp án (trọng số IDF, cùng bộ đo với cổng G3)")
+    print("của ngữ cảnh chỉ-văn-bản so với ngữ cảnh đa-phương-thức. `cov+` = số câu nó")
+    print("TĂNG thật; `cov-` phải bằng 0 vì ngữ cảnh mm là tập cha — khác 0 là có nhánh ẩn.")
     print(f"\nTrang có hình trong kho: {len(co_hinh)} (quyển, trang).")
     print(f"Trang vàng của bộ test nằm trong đó: "
           f"{tong['gold_co_hinh_trong_kho'] * 100:.1f}% — đây là TRẦN của phía "
