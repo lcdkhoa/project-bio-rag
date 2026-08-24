@@ -1,5 +1,5 @@
 ﻿stt,ket_luan,ghi_chu,cau_hoi,dap_an_LLM_sinh,quyen,trang,phan_mon,do_kho,van_ban_da_index_cua_trang_vang
-1,,,"Trong các phát biểu sau: (a) Nước sôi ở 100 °C; (b) Xăng cháy trong động cơ xe máy; (c) Lưu huỳnh là chất rắn, có màu vàng — phát biểu nào mô tả tính chất hoá học?",Phát biểu (b) Xăng cháy trong động cơ xe máy.,SGK_KHTN_6_CD,43,khac,suy_luan,"1. Trong các phát biểu sau, từ (cụm từ) in nghiêng nào chỉ vật thể hoặc chỉ chất? Chỉ ra vật
+1,dung,,"Trong các phát biểu sau: (a) Nước sôi ở 100 °C; (b) Xăng cháy trong động cơ xe máy; (c) Lưu huỳnh là chất rắn, có màu vàng — phát biểu nào mô tả tính chất hoá học?",Phát biểu (b) Xăng cháy trong động cơ xe máy.,SGK_KHTN_6_CD,43,khac,suy_luan,"1. Trong các phát biểu sau, từ (cụm từ) in nghiêng nào chỉ vật thể hoặc chỉ chất? Chỉ ra vật
 
 thể tự nhiên, vật thể nhân tạo, vật sống và vật không sống.
 
@@ -51,7 +51,7 @@ Theo em, phải có những biện pháp nào để phòng cháy trong gia đìn
 KHOA HỌC TỰ NHIÊN 6 4g
 Bài tập (Chủ đề 3 và4) `
 _ Bài tập (Chủ để 3 và4)"
-2,,,Lương thực - thực phẩm cung cấp những chất thiết yếu nào cho con người?,"Tinh bột, đường, chất béo, chất đạm, vitamin, chất khoáng.",SGK_KHTN_6_CD,54,sinh,truc_tiep,"Fe `
+2,dung,,Lương thực - thực phẩm cung cấp những chất thiết yếu nào cho con người?,"Tinh bột, đường, chất béo, chất đạm, vitamin, chất khoáng.",SGK_KHTN_6_CD,54,sinh,truc_tiep,"Fe `
 Nêu một số cách bảo quản `. gi. |
 lương thực - thực phẩm ở “ A2 CÁ,
 ”.._.
@@ -88,7 +88,7 @@ e Lương thực - thực phẩm rất đa dạng.
 
 e Lương thực - thực phẩm dễ bị hỏng nên cần có phương pháp
 bảo quản thích hợp."
-3,,,"Khi để yên, bột sắn dây trộn với nước thấy bột lắng xuống đáy tạo một lớp cặn. Dựa vào đặc điểm này, bột sắn dây trong nước thuộc dạng hỗn hợp nào? Vì sao?","Thuộc huyền phù, vì khi để yên một huyền phù thì các hạt chất rắn sẽ lắng xuống đáy tạo một lớp cặn.",SGK_KHTN_6_CTST,79,hoa,suy_luan,"@) PHÂN BIỆT DUNG DỊCH, HUYỀN PHÙ
+3,dung,,"Khi để yên, bột sắn dây trộn với nước thấy bột lắng xuống đáy tạo một lớp cặn. Dựa vào đặc điểm này, bột sắn dây trong nước thuộc dạng hỗn hợp nào? Vì sao?","Thuộc huyền phù, vì khi để yên một huyền phù thì các hạt chất rắn sẽ lắng xuống đáy tạo một lớp cặn.",SGK_KHTN_6_CTST,79,hoa,suy_luan,"@) PHÂN BIỆT DUNG DỊCH, HUYỀN PHÙ
 VÀ NHŨ TƯƠNG
 3 Quan sát một số hỗn hợp é)
 
@@ -150,7 +150,7 @@ Ngược lại với du
 chất rắn sẽ lắng
 nhũ tương thì cá
 không đồng nhấ"
-4,,,"Trong thí nghiệm hoà tan muối ăn vào nước và trộn dầu ăn với nước, sau khi cho một thìa muối ăn vào cốc thứ nhất và một thìa dầu ăn vào cốc thứ hai, cần làm gì tiếp theo trước khi quan sát hiện tượng?","Khuấy đều, để yên một lúc rồi quan sát hiện tượng",SGK_KHTN_6_CTST,38,hoa,truc_tiep,"3 Tìm hiểu một số tính chất của chất
+4,dung,,"Trong thí nghiệm hoà tan muối ăn vào nước và trộn dầu ăn với nước, sau khi cho một thìa muối ăn vào cốc thứ nhất và một thìa dầu ăn vào cốc thứ hai, cần làm gì tiếp theo trước khi quan sát hiện tượng?","Khuấy đều, để yên một lúc rồi quan sát hiện tượng",SGK_KHTN_6_CTST,38,hoa,truc_tiep,"3 Tìm hiểu một số tính chất của chất
 Thí nghiệm 1: Đo nhiệt độ sôi của nước
 Bước I: Lấy bình cầu chứa 150 mL nước cất có cắm nhiệt kế
 (Hình 8.7).
@@ -201,7 +201,7 @@ lì k vn"" kst&
 tSc.0
 tên —
 z"
-5,,,"Một chiếc thìa kim loại và một chiếc thìa gỗ cùng được nhúng vào bát nước nóng khoảng 90°C. Sau 2 - 3 phút, chạm vào cán thìa nào sẽ cảm thấy nóng hơn? Giải thích dựa trên tính chất dẫn nhiệt của vật liệu.","Cán thìa kim loại nóng hơn, vì kim loại là vật liệu dẫn nhiệt tốt còn gỗ là vật liệu dẫn nhiệt kém nên nhiệt khó truyền đến cán thìa gỗ.",SGK_KHTN_6_KNTT,43,ly,suy_luan,"lì) Tính chất và ứng dụng của vật liệu
+5,dung,,"Một chiếc thìa kim loại và một chiếc thìa gỗ cùng được nhúng vào bát nước nóng khoảng 90°C. Sau 2 - 3 phút, chạm vào cán thìa nào sẽ cảm thấy nóng hơn? Giải thích dựa trên tính chất dẫn nhiệt của vật liệu.","Cán thìa kim loại nóng hơn, vì kim loại là vật liệu dẫn nhiệt tốt còn gỗ là vật liệu dẫn nhiệt kém nên nhiệt khó truyền đến cán thìa gỗ.",SGK_KHTN_6_KNTT,43,ly,suy_luan,"lì) Tính chất và ứng dụng của vật liệu
 Mỗi loại vật liệu có các tính chát khác nhau. Cần dựa vào các tính chất này để lựa
 chọn vật liệu làm những vật dụng mong muốn. Ví dụ: Dây dẫn điện bằng kim loại cần
 được bọc nhựa cách điện đề tránh bị điện giật khi tiếp xúc. Nồi nâu bằng kim loại có
@@ -251,7 +251,7 @@ theo mẫu bảng sau:
 Vật liệu Chiếc thìa nóng hơn/lạnh hơn/không nhận thấy sự thay đổi? _. Vật liệu dẫn nhiệt tốt
 Khi nhúng vào nước nóng Khi nhúng vào nước đá hay không?
 Hình 12.4"
-6,,,"Trong thí nghiệm tìm hiểu khả năng dẫn nhiệt của vật liệu bằng các chiếc thìa đặt trong bát, nước nóng đổ vào bát có nhiệt độ khoảng bao nhiêu độ C?",Khoảng 90 °C.,SGK_KHTN_6_KNTT,43,ly,truc_tiep,"lì) Tính chất và ứng dụng của vật liệu
+6,dung,,"Trong thí nghiệm tìm hiểu khả năng dẫn nhiệt của vật liệu bằng các chiếc thìa đặt trong bát, nước nóng đổ vào bát có nhiệt độ khoảng bao nhiêu độ C?",Khoảng 90 °C.,SGK_KHTN_6_KNTT,43,ly,truc_tiep,"lì) Tính chất và ứng dụng của vật liệu
 Mỗi loại vật liệu có các tính chát khác nhau. Cần dựa vào các tính chất này để lựa
 chọn vật liệu làm những vật dụng mong muốn. Ví dụ: Dây dẫn điện bằng kim loại cần
 được bọc nhựa cách điện đề tránh bị điện giật khi tiếp xúc. Nồi nâu bằng kim loại có
@@ -301,7 +301,7 @@ theo mẫu bảng sau:
 Vật liệu Chiếc thìa nóng hơn/lạnh hơn/không nhận thấy sự thay đổi? _. Vật liệu dẫn nhiệt tốt
 Khi nhúng vào nước nóng Khi nhúng vào nước đá hay không?
 Hình 12.4"
-7,,,"Cho biết số đơn vị điện tích hạt nhân của các nguyên tử C, Si, O, P, N, S lần lượt là 6, 14, 8, 15, 7, 16. Hãy sắp xếp các nguyên tố này theo chiều điện tích hạt nhân tăng dần từ trái sang phải và từ trên xuống dưới.","C, N, O, Si, P, S (tương ứng với điện tích hạt nhân 6, 7, 8, 14, 15, 16).",SGK_KHTN_7_CD,20,hoa,suy_luan,"I. NGUYÊN TẮC SẮP XẾP CÁC NGUYÊN TỔ H0Á HỌC
+7,dung,,"Cho biết số đơn vị điện tích hạt nhân của các nguyên tử C, Si, O, P, N, S lần lượt là 6, 14, 8, 15, 7, 16. Hãy sắp xếp các nguyên tố này theo chiều điện tích hạt nhân tăng dần từ trái sang phải và từ trên xuống dưới.","C, N, O, Si, P, S (tương ứng với điện tích hạt nhân 6, 7, 8, 14, 15, 16).",SGK_KHTN_7_CD,20,hoa,suy_luan,"I. NGUYÊN TẮC SẮP XẾP CÁC NGUYÊN TỔ H0Á HỌC
 TR0NG BẰNG TUẦN H0ÀN
 Các nguyên tô hoá học được xÉp theo quy luật trong một
 bảng, gọi là bảng tuân hoàn các nguyên tô hoá học (gọi tắt là
@@ -374,7 +374,7 @@ khối lượng nguyên tử của chúng và sắp xếp 63 nguyên tổ hoá h
 đã biết vào bảng theo chiều tăng cẩn của khối lượng nguyên tử.
 2. Hình 3.1 cho biết các thông
 tin gi về nguyên tổ carbon?"
-8,,,"Theo nguyên tắc sắp xếp bảng tuần hoàn, các nguyên tố hoá học được xếp theo chiều tăng dần của đại lượng nào?",Điện tích hạt nhân nguyên tử.,SGK_KHTN_7_CD,20,hoa,truc_tiep,"I. NGUYÊN TẮC SẮP XẾP CÁC NGUYÊN TỔ H0Á HỌC
+8,dung,,"Theo nguyên tắc sắp xếp bảng tuần hoàn, các nguyên tố hoá học được xếp theo chiều tăng dần của đại lượng nào?",Điện tích hạt nhân nguyên tử.,SGK_KHTN_7_CD,20,hoa,truc_tiep,"I. NGUYÊN TẮC SẮP XẾP CÁC NGUYÊN TỔ H0Á HỌC
 TR0NG BẰNG TUẦN H0ÀN
 Các nguyên tô hoá học được xÉp theo quy luật trong một
 bảng, gọi là bảng tuân hoàn các nguyên tô hoá học (gọi tắt là
@@ -447,7 +447,7 @@ khối lượng nguyên tử của chúng và sắp xếp 63 nguyên tổ hoá h
 đã biết vào bảng theo chiều tăng cẩn của khối lượng nguyên tử.
 2. Hình 3.1 cho biết các thông
 tin gi về nguyên tổ carbon?"
-9,,,So sánh hai thuật ngữ phản xạ và phản xạ khuếch tán trong sách giáo khoa Khoa học tự nhiên THCS: hai hiện tượng này khác nhau ở đặc điểm nào của bề mặt mà ánh sáng chiếu tới?,"Phản xạ xảy ra khi ánh sáng chiếu tới bề mặt phẳng, nhẵn bóng; còn phản xạ khuếch tán xảy ra khi ánh sáng chiếu tới bề mặt phẳng thô ráp, gồ ghề.",SGK_KHTN_7_CTST,185,khac,suy_luan,"Từ khoá Giải thích Trang
+9,dung,,So sánh hai thuật ngữ phản xạ và phản xạ khuếch tán trong sách giáo khoa Khoa học tự nhiên THCS: hai hiện tượng này khác nhau ở đặc điểm nào của bề mặt mà ánh sáng chiếu tới?,"Phản xạ xảy ra khi ánh sáng chiếu tới bề mặt phẳng, nhẵn bóng; còn phản xạ khuếch tán xảy ra khi ánh sáng chiếu tới bề mặt phẳng thô ráp, gồ ghề.",SGK_KHTN_7_CTST,185,khac,suy_luan,"Từ khoá Giải thích Trang
 Phản xạ (hay phản Sự phản xạ xảy ra khi ánh sáng chiếu tới bề mặt phẳng, nhắn bóng 85
 Phản xạ Sự phản xạ xảy ra khi ánh sáng chiếu tới bề mặt phẳng thô ráp, gồ
 00 TC Ạ 85
@@ -481,7 +481,7 @@ Tiếng vang Ẩm phản xạ nghe được chậm hơn âm truyền trực ti�
 Từ cực Các vị trí trên nam châm mà từ trường mạnh hơn so với các phần 93
 : khác. Một nam châm luôn có hai từ cực.
 Hình ảnh của mạt sắt sắp xếp trong từ trường. 8%"
-10,,,"Tại sao ở điều kiện thường, các nguyên tử của nguyên tố khí hiếm luôn tồn tại độc lập?","Vì các nguyên tử khí hiếm thường trơ, bền (hoạt động hoá học kém).",SGK_KHTN_7_CTST,37,hoa,truc_tiep,"BÀI
+10,dung,,"Tại sao ở điều kiện thường, các nguyên tử của nguyên tố khí hiếm luôn tồn tại độc lập?","Vì các nguyên tử khí hiếm thường trơ, bền (hoạt động hoá học kém).",SGK_KHTN_7_CTST,37,hoa,truc_tiep,"BÀI
 Giới thiệu về liên kết hoá học
 
 l Tại sa0 ác nguyên tử khác
@@ -529,7 +529,7 @@ của các nguyên tố còn lại
 giống và khác nhau dì?
 Vỏ nguyên tử của các nguyên tế khí hiếm ‹
 lớp ngoài cùng, riêng helium ở lớp ngoài cùi"
-11,,,"Trên đồ thị quãng đường - thời gian, nếu đoạn đồ thị song song với trục hoành thì xe ô tô đang ở trạng thái chuyển động hay đứng yên?","Xe không chuyển động (đứng yên), vì trục hoành chính là trục biểu diễn thời gian và đoạn thẳng song song với trục thời gian cho biết xe không chuyển động.",SGK_KHTN_7_KNTT,54,ly,suy_luan,"Sau đây là cách vẽ đồ thị dựa trên các số
+11,dung,,"Trên đồ thị quãng đường - thời gian, nếu đoạn đồ thị song song với trục hoành thì xe ô tô đang ở trạng thái chuyển động hay đứng yên?","Xe không chuyển động (đứng yên), vì trục hoành chính là trục biểu diễn thời gian và đoạn thẳng song song với trục thời gian cho biết xe không chuyển động.",SGK_KHTN_7_KNTT,54,ly,suy_luan,"Sau đây là cách vẽ đồ thị dựa trên các số
 
 liệu trong Bảng 10.1:
 
@@ -590,7 +590,7 @@ thuận với thời gian đi.
 Xác định các điểm E và G lần lượt tương ứng với quãng đường xe ô tô đi được sau 5 h
 và 6 h và vẽ các đoạn thẳng nối hai điểm D và E, hai điểm E và G trong Hình 10.2. Nhận
 xét về các đoạn thẳng vừa nối."
-12,,,"Khi vẽ đồ thị quãng đường - thời gian, trục thẳng đứng (trục tung) Os được dùng để biểu diễn đại lượng nào?",Biểu diễn các độ lớn của quãng đường đi được theo một tỉ xích thích hợp.,SGK_KHTN_7_KNTT,54,ly,truc_tiep,"Sau đây là cách vẽ đồ thị dựa trên các số
+12,dung,,"Khi vẽ đồ thị quãng đường - thời gian, trục thẳng đứng (trục tung) Os được dùng để biểu diễn đại lượng nào?",Biểu diễn các độ lớn của quãng đường đi được theo một tỉ xích thích hợp.,SGK_KHTN_7_KNTT,54,ly,truc_tiep,"Sau đây là cách vẽ đồ thị dựa trên các số
 
 liệu trong Bảng 10.1:
 
@@ -651,7 +651,7 @@ thuận với thời gian đi.
 Xác định các điểm E và G lần lượt tương ứng với quãng đường xe ô tô đi được sau 5 h
 và 6 h và vẽ các đoạn thẳng nối hai điểm D và E, hai điểm E và G trong Hình 10.2. Nhận
 xét về các đoạn thẳng vừa nối."
-13,,,"Quần áo mùa đông được may từ len, dạ có tác dụng giữ nhiệt cho cơ thể vì những nguyên nhân nào?","Vì len, dạ là vật liệu dẫn nhiệt kém, đồng thời quần áo may từ len, dạ tạo ra nhiều lớp khí mà không khí dẫn nhiệt kém nên giúp giữ nhiệt cho cơ thể.",SGK_KHTN_8_CD,122,ly,suy_luan,"Tính chất đẫn nhiệt kém của không khí hay tính chất không dẫn
+13,dung,,"Quần áo mùa đông được may từ len, dạ có tác dụng giữ nhiệt cho cơ thể vì những nguyên nhân nào?","Vì len, dạ là vật liệu dẫn nhiệt kém, đồng thời quần áo may từ len, dạ tạo ra nhiều lớp khí mà không khí dẫn nhiệt kém nên giúp giữ nhiệt cho cơ thể.",SGK_KHTN_8_CD,122,ly,suy_luan,"Tính chất đẫn nhiệt kém của không khí hay tính chất không dẫn
 nhiệt của chân không được ứng dụng chê tạo phích nước đề giữ
 nước nóng hoặc giữ nước đả lâu tan. Hình 25. Ú mồ tả một số
 bộ phận chính ở một phích nước.
@@ -698,7 +698,7 @@ các tia nhiệt từ bên trong nhà kính truyền ra ngoài.
 các tia nhiệt từ bên trong nhà kính truyền ra ngoài.
 se Chất rắn dẫn nhiệt tốt, chất lỏng và chất khí dẫn nhiệt kém hơn.
 122. KHÓA HỌC TỰ NHIÊN8"
-14,,,"Để tiến hành thí nghiệm tìm hiểu phản ứng giữa dung dịch NaOH và dung dịch HCl có sử dụng chất chỉ thị màu, cần chuẩn bị những hoá chất nào?","Dung dịch NaOH loãng, dung dịch HCl loãng và dung dịch phenolphthalein.",SGK_KHTN_8_CD,53,hoa,truc_tiep,"2. Tác dụng với acid
+14,dung,,"Để tiến hành thí nghiệm tìm hiểu phản ứng giữa dung dịch NaOH và dung dịch HCl có sử dụng chất chỉ thị màu, cần chuẩn bị những hoá chất nào?","Dung dịch NaOH loãng, dung dịch HCl loãng và dung dịch phenolphthalein.",SGK_KHTN_8_CD,53,hoa,truc_tiep,"2. Tác dụng với acid
 Tiên hành các thí nghiệm sau để tìm hiểu phản ứng của base với dung dịch acid.
 
 Thí nghiệm 2
@@ -766,7 +766,7 @@ s Mỏ tả các hiện tượng xảy ra.
 « Giải thích các hiện tượng diễn ra trong quá trình thí nghiệm.
 
 KHñA HỌC TỰ NHIÊN§ _ 53"
-15,,,"Khi di chuyển xuống tử cung, hợp tử phát triển thành gì và bám vào cấu trúc nào của tử cung để làm tổ và phát triển thành thai?",Hợp tử phân chia tạo thành phôi; phôi bám vào lớp niêm mạc tử cung để làm tổ.,SGK_KHTN_8_CTST,186,sinh,suy_luan,"này được gọi là thụ tinh (Hình 44.3). Quá trình thụ tinh thường
+15,dung,,"Khi di chuyển xuống tử cung, hợp tử phát triển thành gì và bám vào cấu trúc nào của tử cung để làm tổ và phát triển thành thai?",Hợp tử phân chia tạo thành phôi; phôi bám vào lớp niêm mạc tử cung để làm tổ.,SGK_KHTN_8_CTST,186,sinh,suy_luan,"này được gọi là thụ tinh (Hình 44.3). Quá trình thụ tinh thường
 xảy ra ở vị trí khoảng 1/3 ống dẫn trứng (tính từ phễu dẫn trứng).
 Mặc dù số lượng tinh trùng được giải phóng trong một lần
 phóng tinh rất lớn, nhưng trứng chỉ thụ tỉnh với một tinh trùng
@@ -825,7 +825,7 @@ và phát triển thành thai.
 44.4, cho biết những điều
 kiện cân cho sự thụ tỉnh và
 thụ thai."
-16,,,"Trong bài học về tốc độ phản ứng và chất xúc tác, hãy nêu một ví dụ về phản ứng hoá học xảy ra rất nhanh trong thực tế.",Phản ứng nổ của pháo hoa (hoặc phản ứng của xăng với oxygen trong xi lanh của động cơ xe hơi).,SGK_KHTN_8_CTST,37,hoa,truc_tiep,"BÀI
+16,dung,,"Trong bài học về tốc độ phản ứng và chất xúc tác, hãy nêu một ví dụ về phản ứng hoá học xảy ra rất nhanh trong thực tế.",Phản ứng nổ của pháo hoa (hoặc phản ứng của xăng với oxygen trong xi lanh của động cơ xe hơi).,SGK_KHTN_8_CTST,37,hoa,truc_tiep,"BÀI
 v4 ˆ 2 z ` L.vi z z
 Tốc độ phản ứng và chất xúc tác
 Ó) trong thực tế, có những phản
@@ -875,7 +875,7 @@ gian phản ứng có giống
 nhau không.
 Tốc độ phản ứng là đại lượng chỉ mức độ nhanh hay ‹
 hoá học."
-17,,,"Khi than (thành phần chính là carbon) cháy trong không khí tạo thành khí carbon dioxide, hãy viết phương trình phản ứng dạng chữ và cho biết chất nào là chất phản ứng, chất nào là sản phẩm?",Phương trình dạng chữ: than + oxygen → carbon dioxide. Chất phản ứng: than (carbon) và oxygen; sản phẩm: khí carbon dioxide.,SGK_KHTN_8_KNTT,13,hoa,suy_luan,"2. Diễn biến phản ứng hoá học
+17,dung,,"Khi than (thành phần chính là carbon) cháy trong không khí tạo thành khí carbon dioxide, hãy viết phương trình phản ứng dạng chữ và cho biết chất nào là chất phản ứng, chất nào là sản phẩm?",Phương trình dạng chữ: than + oxygen → carbon dioxide. Chất phản ứng: than (carbon) và oxygen; sản phẩm: khí carbon dioxide.,SGK_KHTN_8_KNTT,13,hoa,suy_luan,"2. Diễn biến phản ứng hoá học
 Trong phản ứng hoá học, xảy ra sự phá vỡ các liên kết trong phân tử chất đầu, hình thành
 các liên kết mới, tạo ra các phân tử mới. Kết quả là chất này biến đổi thành chất khác.
 Ví dụ: Phản ứng giữa hydrogen và oxygen tạo thành nước được mô tả như sau:
@@ -912,7 +912,7 @@ Quan sát Hình 2.3 và trả lời các câu hỏi sau:
 2. Trong quá trình phản ứng, số nguyên tử H và số nguyên tử O có thay đổi không?
 (ác phản ứng hoá học chỉ xảy ra khi các chất phản ứng tiếp xúc với nhau. Nhiều phản ứng để xảy ra được cần phải
 có thêm điều kiện là đun nóng. Một số phản ứng muốn xảy ra nhanh hơn cần có thêm chất xúc tác,.."
-18,,,"Những dấu hiệu nào cho thấy đã có chất mới tạo thành, tức phản ứng hoá học đã xảy ra?","Sự thay đổi về màu sắc, xuất hiện chất khí hoặc xuất hiện chất kết tủa; ngoài ra sự toả nhiệt và phát sáng cũng có thể là dấu hiệu phản ứng hoá học đã xảy ra.",SGK_KHTN_8_KNTT,13,hoa,truc_tiep,"2. Diễn biến phản ứng hoá học
+18,dung,,"Những dấu hiệu nào cho thấy đã có chất mới tạo thành, tức phản ứng hoá học đã xảy ra?","Sự thay đổi về màu sắc, xuất hiện chất khí hoặc xuất hiện chất kết tủa; ngoài ra sự toả nhiệt và phát sáng cũng có thể là dấu hiệu phản ứng hoá học đã xảy ra.",SGK_KHTN_8_KNTT,13,hoa,truc_tiep,"2. Diễn biến phản ứng hoá học
 Trong phản ứng hoá học, xảy ra sự phá vỡ các liên kết trong phân tử chất đầu, hình thành
 các liên kết mới, tạo ra các phân tử mới. Kết quả là chất này biến đổi thành chất khác.
 Ví dụ: Phản ứng giữa hydrogen và oxygen tạo thành nước được mô tả như sau:
@@ -949,7 +949,7 @@ Quan sát Hình 2.3 và trả lời các câu hỏi sau:
 2. Trong quá trình phản ứng, số nguyên tử H và số nguyên tử O có thay đổi không?
 (ác phản ứng hoá học chỉ xảy ra khi các chất phản ứng tiếp xúc với nhau. Nhiều phản ứng để xảy ra được cần phải
 có thêm điều kiện là đun nóng. Một số phản ứng muốn xảy ra nhanh hơn cần có thêm chất xúc tác,.."
-19,,,Vì sao dân số tăng lên và mức sống ngày càng cao lại dẫn đến tác động tiêu cực đến môi trường sinh thái?,"Vì dân số tăng và mức sống cao làm nhu cầu sử dụng năng lượng ngày càng lớn, dẫn đến việc gia tăng khai thác và sử dụng các nguồn năng lượng, mà điều này gây tác động tiêu cực đến môi trường sinh thái.",SGK_KHTN_9_CD,74,ly,suy_luan,"Em hãy tìm hiểu và nêu những khó khăn có thể gặp phải khi lắp đặt hệ thống chuyển đổi năng lượng
+19,dung,,Vì sao dân số tăng lên và mức sống ngày càng cao lại dẫn đến tác động tiêu cực đến môi trường sinh thái?,"Vì dân số tăng và mức sống cao làm nhu cầu sử dụng năng lượng ngày càng lớn, dẫn đến việc gia tăng khai thác và sử dụng các nguồn năng lượng, mà điều này gây tác động tiêu cực đến môi trường sinh thái.",SGK_KHTN_9_CD,74,ly,suy_luan,"Em hãy tìm hiểu và nêu những khó khăn có thể gặp phải khi lắp đặt hệ thống chuyển đổi năng lượng
 tử sóng biển thành năng lượng điện và hệ thống truyền tải điện đó vào bở.
 4. Năng lượng từ dòng sông
 Vòng tuần hoàn của nước đã tạo ra những
@@ -1008,7 +1008,7 @@ TẢ. KHñAH0CTỰ NHIÊN5
 KG. Tho... — ——=—== rà BH
 —- Nh.
 wdr äãš..ằẶằộ|ẽ.E.”=-—......, - --,"
-20,,,"Ở nhiệt độ cao, sắt (iron - Fe) tác dụng với lưu huỳnh (sulfur - S) tạo ra muối gì?",Muối iron(II) sulfide (FeS),SGK_KHTN_9_CD,80,hoa,truc_tiep,"II. TÍNH CHẤT H0Á HọC
+20,dung,,"Ở nhiệt độ cao, sắt (iron - Fe) tác dụng với lưu huỳnh (sulfur - S) tạo ra muối gì?",Muối iron(II) sulfide (FeS),SGK_KHTN_9_CD,80,hoa,truc_tiep,"II. TÍNH CHẤT H0Á HọC
 1. Phản ứng của kim loại với phi kim
 Tác dụng với oxyeen
 Magnestum(Mg) tác dụng với oxygen (O›) tạo thành magnesium
@@ -1051,7 +1051,7 @@ kim loại mà em đã biết.
 cho biết khả nắng phản
 ứng của natri với khi
 chlorine (b] như thể nào."
-21,,,Vì sao không nên dùng xà phòng có tính kiềm mạnh để giặt áo quần may bằng vải tơ tằm?,"Vì tơ tằm chứa protein, mà protein bị đông tụ bởi acid hoặc base (kiềm) hay đun nóng, nên xà phòng kiềm mạnh sẽ làm đông tụ, hư hỏng protein trong tơ tằm.",SGK_KHTN_9_CTST,127,hoa,suy_luan,"ay môi trường base hoặc
+21,dung,,Vì sao không nên dùng xà phòng có tính kiềm mạnh để giặt áo quần may bằng vải tơ tằm?,"Vì tơ tằm chứa protein, mà protein bị đông tụ bởi acid hoặc base (kiềm) hay đun nóng, nên xà phòng kiềm mạnh sẽ làm đông tụ, hư hỏng protein trong tơ tằm.",SGK_KHTN_9_CTST,127,hoa,suy_luan,"ay môi trường base hoặc
 ¡ nóng.
 ó mùi khét đặc trưng.
 PHÂN BIỆT PROTEIN VỚI CHẤT KHÁC
@@ -1093,7 +1093,7 @@ Em hãy cho biết:
 a) Thành phần hoá học chủ yếu của tơ tằm.
 b) Vì sao không dùng xà phòng có tính kiểr
 mạnh để giặt áo quần may bằng vải tơ tằm."
-22,,,Viết phương trình hoá học của phản ứng giữa kẽm (Zn) và dung dịch hydrochloric acid.,Zn + 2HCl -> ZnCl2 + H2 (khí hydrogen bay ra),SGK_KHTN_9_CTST,74,hoa,truc_tiep,"3 Tìm hiểu phản ứng của một số kim loại với nước
+22,dung,,Viết phương trình hoá học của phản ứng giữa kẽm (Zn) và dung dịch hydrochloric acid.,Zn + 2HCl -> ZnCl2 + H2 (khí hydrogen bay ra),SGK_KHTN_9_CTST,74,hoa,truc_tiep,"3 Tìm hiểu phản ứng của một số kim loại với nước
 
 Các kim loại nhóm IA và IIA trong Bảng tuần hoàn các
 
@@ -1154,7 +1154,7 @@ dung dịch hydrochloric
 add. Viết phương trình
 hoá học của phản ứng
 Xây fa."
-23,,,Khi đặt vật trong khoảng tiêu cự của thấu kính hội tụ thì ảnh tạo ra là ảnh thật hay ảnh ảo? Ảnh đó có hứng được trên màn chắn không?,Cho ảnh ảo (lớn hơn vật và cùng chiều với vật); vì ảnh ảo là ảnh không hứng được trên màn chắn nên không hứng được trên màn chắn.,SGK_KHTN_9_KNTT,46,ly,suy_luan,"Trả lời các câu hỏi sau: :
+23,dung,,Khi đặt vật trong khoảng tiêu cự của thấu kính hội tụ thì ảnh tạo ra là ảnh thật hay ảnh ảo? Ảnh đó có hứng được trên màn chắn không?,Cho ảnh ảo (lớn hơn vật và cùng chiều với vật); vì ảnh ảo là ảnh không hứng được trên màn chắn nên không hứng được trên màn chắn.,SGK_KHTN_9_KNTT,46,ly,suy_luan,"Trả lời các câu hỏi sau: :
 
 1. Đặt vật trong khoảng nào thì hứng được ảnh rõ nét trên màn chắn. Ảnh đó là ảnh
 thật hay ảnh ảo? .
@@ -1206,7 +1206,7 @@ m Vẽ được ảnh của vật qua thấu kính.
 
 m Chế tạo được thấu kính hội tụ từ chai nhựa và nước.
 ( EM CÓ THỂ y"
-24,,,Hydrocarbon là loại hợp chất hữu cơ như thế nào về thành phần nguyên tố trong phân tử?,Hydrocarbon là hợp chất hữu cơ mà thành phần phân tử chỉ chứa các nguyên tố carbon và hydrogen.,SGK_KHTN_9_KNTT,107,hoa,truc_tiep,"MỤC TIÊU
+24,dung,,Hydrocarbon là loại hợp chất hữu cơ như thế nào về thành phần nguyên tố trong phân tử?,Hydrocarbon là hợp chất hữu cơ mà thành phần phân tử chỉ chứa các nguyên tố carbon và hydrogen.,SGK_KHTN_9_KNTT,107,hoa,truc_tiep,"MỤC TIÊU
 w _ Nêu được khái niệm hydrocarbon, alkane.
 w . Viết được công thúc cấu tạo và gọi tên được một số alkane đơn giản và thông dụng (C1 — (4).
 wm_. Viết được phương trình hoá học phản ứng đốt cháy của butane.
@@ -1243,7 +1243,7 @@ Quan sát Hình 23.1 và thực hiện các yêu cầu sau:
 1. Nhận xét đặc điểm chung về thành phần nguyên tố của ba chất trên.
 2. So sánh đặc điểm cấu tạo (loại liên kết cộng hoá trị) giữa các nguyên tử trong
 phân tử của ba chất trên."
-25,,,"Trong thí nghiệm đo thể tích nước bốc hơi, vì sao phải đổ nước vào cả hai ống đong với mức nước bằng nhau và để cả hai ngoài ánh sáng trong cùng điều kiện môi trường?",Để hai ống đong chỉ khác nhau ở việc có cắm cành cây tươi (ống a) hay không (ống b); nhờ vậy khi so sánh lượng nước còn lại sau một ngày mới biết được lượng nước thay đổi do cành cây tươi gây ra.,SGK_KHTN_6_CD,14,khac,suy_luan,"3. Quan sát mẫu vật bằng kính lúp cầm tay và kính hiển vi quang học
+25,dung,,"Trong thí nghiệm đo thể tích nước bốc hơi, vì sao phải đổ nước vào cả hai ống đong với mức nước bằng nhau và để cả hai ngoài ánh sáng trong cùng điều kiện môi trường?",Để hai ống đong chỉ khác nhau ở việc có cắm cành cây tươi (ống a) hay không (ống b); nhờ vậy khi so sánh lượng nước còn lại sau một ngày mới biết được lượng nước thay đổi do cành cây tươi gây ra.,SGK_KHTN_6_CD,14,khac,suy_luan,"3. Quan sát mẫu vật bằng kính lúp cầm tay và kính hiển vi quang học
 
 Kính lúp và kính hiên vi là những dụng cụ dùng đề quan sát những vật có kích thước nhỏ
 trong nghiên cứu khoa học tự nhiên.
@@ -1302,7 +1302,7 @@ kiện môi trường. Sau một ngày, quan sát và ghi lại lượng nước
 hiểu vì sao lại có kết quả như vậy. mu |
 =5 c—Ùb)
 Hình 2.5"
-26,,,"Theo kiến thức về các dạng năng lượng, một vật chuyển động càng nhanh thì động năng của vật thay đổi như thế nào?",Vật chuyển động càng nhanh thì động năng của vật càng lớn (và ngược lại).,SGK_KHTN_6_CD,153,ly,truc_tiep,"e Từ tranh ảnh (hình vẽ, hoặc học liệu điện tử) hiện tượng trong khoa học
+26,dung,,"Theo kiến thức về các dạng năng lượng, một vật chuyển động càng nhanh thì động năng của vật thay đổi như thế nào?",Vật chuyển động càng nhanh thì động năng của vật càng lớn (và ngược lại).,SGK_KHTN_6_CD,153,ly,truc_tiep,"e Từ tranh ảnh (hình vẽ, hoặc học liệu điện tử) hiện tượng trong khoa học
 hoặc thực tế, lấy được ví dụ để chứng tỏ năng lượng đặc trưng cho khả
 năng tác dụng lực.
 e Phân loại được năng lượng theo tiêu chí.
@@ -1334,7 +1334,7 @@ Năng lượng điện được sử dụng rộng rãi trong sản xuât —_ `
 
 và đời sông. li `
 = TT"
-27,,,"Biết mỗi giọt chuẩn từ pipette nhỏ giọt có thể tích khoảng 50 µL và 20 giọt tương đương 1 mL, nếu muốn lấy 1,5 mL chất lỏng bằng pipette nhỏ giọt thì cần thả khoảng bao nhiêu giọt?","Khoảng 30 giọt (vì 20 giọt = 1 mL nên 1,5 mL cần 30 giọt).",SGK_KHTN_6_CTST,14,khac,suy_luan,"Khi cần đo thể tích của chất lỏng bằng bình chia độ hoặc
+27,dung,,"Biết mỗi giọt chuẩn từ pipette nhỏ giọt có thể tích khoảng 50 µL và 20 giọt tương đương 1 mL, nếu muốn lấy 1,5 mL chất lỏng bằng pipette nhỏ giọt thì cần thả khoảng bao nhiêu giọt?","Khoảng 30 giọt (vì 20 giọt = 1 mL nên 1,5 mL cần 30 giọt).",SGK_KHTN_6_CTST,14,khac,suy_luan,"Khi cần đo thể tích của chất lỏng bằng bình chia độ hoặc
 F.d ñ ^ ~ .Â F4 : <==——>
 cốc chia độ, em cần thực hiện các bước: ""=
 - Ước lượng thể tích chất lỏng cần đo. =
@@ -1401,7 +1401,7 @@ CHỦ Ý
 điện tử, GHĐ và ĐCNN
 thường được nhà sản xuất
 ghi trên dụng cụ."
-28,,,"Trong các loại thức ăn sau đây: rau xanh, gạo, thịt, ngô — loại nào chứa nhiều chất đạm?",Thịt.,SGK_KHTN_6_CTST,70,sinh,truc_tiep,"6 /ố 8 ""
+28,dung,,"Trong các loại thức ăn sau đây: rau xanh, gạo, thịt, ngô — loại nào chứa nhiều chất đạm?",Thịt.,SGK_KHTN_6_CTST,70,sinh,truc_tiep,"6 /ố 8 ""
 x x' ®
 đi -l 4 Tạisao trên bao bì và
 SS J5 _e là vỏ hộp các loại thực phẩm
@@ -1452,7 +1452,7 @@ không đúi
 thực phẩm an toàn, em
 thường phải chú ý những
 điều qì?"
-29,,,"Một mẫu thực vật thu được có cơ quan sinh sản là hoa và hạt nằm bên trong quả. Theo các tiêu chí phân loại thực vật bằng đặc điểm hình thái, hai tiêu chí 'Cơ quan sinh sản' và 'Hạt' của mẫu này được trả lời như thế nào?",Cơ quan sinh sản: hoa; Hạt: hạt ở trong quả.,SGK_KHTN_6_KNTT,141,sinh,suy_luan,"2. Tìm hiểu về thực vật và động vật
+29,dung,,"Một mẫu thực vật thu được có cơ quan sinh sản là hoa và hạt nằm bên trong quả. Theo các tiêu chí phân loại thực vật bằng đặc điểm hình thái, hai tiêu chí 'Cơ quan sinh sản' và 'Hạt' của mẫu này được trả lời như thế nào?",Cơ quan sinh sản: hoa; Hạt: hạt ở trong quả.,SGK_KHTN_6_KNTT,141,sinh,suy_luan,"2. Tìm hiểu về thực vật và động vật
 
 a) Quan sát môi trường sống, vai trò của thục vật và động vật
 
@@ -1497,7 +1497,7 @@ bộ sưu tập ảnh.
 Một số hoạt động ngoài thiên nhiên
 141
 Hình 39.2"
-30,,,Kính lúp là dụng cụ có thể phóng to ảnh của vật được quan sát khoảng bao nhiêu lần?,Khoảng từ 3 đến 20 lần.,SGK_KHTN_6_KNTT,14,khac,truc_tiep,"@)sử dụng và bảo quản kính lúp
+30,dung,,Kính lúp là dụng cụ có thể phóng to ảnh của vật được quan sát khoảng bao nhiêu lần?,Khoảng từ 3 đến 20 lần.,SGK_KHTN_6_KNTT,14,khac,truc_tiep,"@)sử dụng và bảo quản kính lúp
 1. Sử dụng
 e_ Đặt kính lúp gần sát vật mẫu, mắt nhìn vào mặt kính.
 e_ Từ từ dịch kính ra xa vật, cho đến khi nhìn thấy vật rõ nét.
@@ -1533,7 +1533,7 @@ có phần mềm kính lúp điện tử, có thể
 phóng to ảnh lên đến 10 lần.
 Phần mềm kính lúp trên điện thoại thông minh
 Hình 3.2"
-31,,,Nếu rễ cây không hút được nước thì hoạt động quang hợp ở lá và các hoạt động sống khác của cây sẽ bị ảnh hưởng như thế nào? Giải thích dựa trên mối quan hệ giữa các hoạt động sống ở thực vật.,"Quang hợp sẽ bị ảnh hưởng vì quang hợp chịu ảnh hưởng của quá trình hút nước ở rễ; khi quang hợp giảm, lá không tổng hợp đủ chất hữu cơ nên cây thiếu nguyên liệu và năng lượng cho các hoạt động sống khác (sinh trưởng và phát triển, cảm ứng, sinh sản).",SGK_KHTN_7_CD,162,sinh,suy_luan,"Ví dụ, đỗi với cơ thể thực vật, quá trình quang hợp chịu
+31,dung,,Nếu rễ cây không hút được nước thì hoạt động quang hợp ở lá và các hoạt động sống khác của cây sẽ bị ảnh hưởng như thế nào? Giải thích dựa trên mối quan hệ giữa các hoạt động sống ở thực vật.,"Quang hợp sẽ bị ảnh hưởng vì quang hợp chịu ảnh hưởng của quá trình hút nước ở rễ; khi quang hợp giảm, lá không tổng hợp đủ chất hữu cơ nên cây thiếu nguyên liệu và năng lượng cho các hoạt động sống khác (sinh trưởng và phát triển, cảm ứng, sinh sản).",SGK_KHTN_7_CD,162,sinh,suy_luan,"Ví dụ, đỗi với cơ thể thực vật, quá trình quang hợp chịu
 ảnh hưởng của quá trình hút nước ở rễ, vận chuyền nước
 ở thân, thoát hơi nước ở lá,... Ngược lại, lá quang hợp
 tông hợp chảt hữu cơ, cung cầp nguyên liệu và năng
@@ -1579,7 +1579,7 @@ Kưi © ra
 Lơ Chất hữu cữ
 Carhan dioxide ẳ
 Nước và"
-32,,,Phương pháp nuôi cây mô được thực hiện như thế nào để tạo ra nhiều cây con mới?,"Từ một cây ban đầu, tách mô để nuôi cấy trong môi trường nhân tạo, vô trùng, có đủ chất dinh dưỡng và các chất cần thiết (ví dụ: chất kích thích ra rễ) sẽ tạo nhiều cây con mới.",SGK_KHTN_7_CD,149,sinh,truc_tiep,"a) Sinh sản nảy chỗi ở thuỷ tức
+32,dung,,Phương pháp nuôi cây mô được thực hiện như thế nào để tạo ra nhiều cây con mới?,"Từ một cây ban đầu, tách mô để nuôi cấy trong môi trường nhân tạo, vô trùng, có đủ chất dinh dưỡng và các chất cần thiết (ví dụ: chất kích thích ra rễ) sẽ tạo nhiều cây con mới.",SGK_KHTN_7_CD,149,sinh,truc_tiep,"a) Sinh sản nảy chỗi ở thuỷ tức
 Ong chủa Ụ \
 Hm
 @” -”@ Phát triển bụi
@@ -1668,7 +1668,7 @@ trọng trong việc duy trì các
 giống vỗ tính ở thực vật.
 Mỗi biện pháp lấy ví dụ
 1- 2 loài cây."
-33,,,Vỏ nguyên tử của nguyên tố neon (Ne) có bao nhiêu electron ở lớp ngoài cùng?,"8 electron, vì neon là nguyên tố khí hiếm (không phải helium) mà vỏ nguyên tử của các nguyên tố khí hiếm trừ helium đều có 8 electron ở lớp ngoài cùng.",SGK_KHTN_7_CTST,37,hoa,suy_luan,"BÀI
+33,dung,,Vỏ nguyên tử của nguyên tố neon (Ne) có bao nhiêu electron ở lớp ngoài cùng?,"8 electron, vì neon là nguyên tố khí hiếm (không phải helium) mà vỏ nguyên tử của các nguyên tố khí hiếm trừ helium đều có 8 electron ở lớp ngoài cùng.",SGK_KHTN_7_CTST,37,hoa,suy_luan,"BÀI
 Giới thiệu về liên kết hoá học
 
 l Tại sa0 ác nguyên tử khác
@@ -1716,7 +1716,7 @@ của các nguyên tố còn lại
 giống và khác nhau dì?
 Vỏ nguyên tử của các nguyên tế khí hiếm ‹
 lớp ngoài cùng, riêng helium ở lớp ngoài cùi"
-34,,,Cổng quang điện (mắt thần) là thiết bị cảm biến gồm hai bộ phận nào?,Gồm hai bộ phận phát và thu tia hồng ngoại.,SGK_KHTN_7_CTST,13,khac,truc_tiep,"Cổng quang điện (hay còn gọi là mắt thần): Một thiết bị cảm biến
+34,dung,,Cổng quang điện (mắt thần) là thiết bị cảm biến gồm hai bộ phận nào?,Gồm hai bộ phận phát và thu tia hồng ngoại.,SGK_KHTN_7_CTST,13,khac,truc_tiep,"Cổng quang điện (hay còn gọi là mắt thần): Một thiết bị cảm biến
 gồm hai bộ phận phát và thu tia hồng ngoại. Khi tia hồng ngoại
 chiếu đến bộ phận thu bị chặn lại thì cổng quang sẽ phát ra một
 tín hiệu điều khiển thiết bị được nối với nó. Khi nối cổng quang
@@ -1766,7 +1766,7 @@ trên nguyên tắc nào?
 (giúp chúng ta biết được dạng đồ thị của tín hiệt
 se Đồng hồ đo thời gian hiện số dùng cổng qu
 thời gian."
-35,,,"Quan sát sơ đồ sự hình thành liên kết ion trong phân tử magnesium oxide (MgO), cho biết nguyên tử magnesium (Mg) đã nhường hay nhận bao nhiêu electron để tạo thành ion Mg2+?",Nguyên tử Mg đã nhường 2 electron (vì ion tạo thành là Mg2+ mang điện tích dương 2+).,SGK_KHTN_7_KNTT,37,hoa,suy_luan,"II - Liên kết ion
+35,dung,,"Quan sát sơ đồ sự hình thành liên kết ion trong phân tử magnesium oxide (MgO), cho biết nguyên tử magnesium (Mg) đã nhường hay nhận bao nhiêu electron để tạo thành ion Mg2+?",Nguyên tử Mg đã nhường 2 electron (vì ion tạo thành là Mg2+ mang điện tích dương 2+).,SGK_KHTN_7_KNTT,37,hoa,suy_luan,"II - Liên kết ion
 Sự hình thành liên kết ion trong phân tử muối ăn
 Khi hình thành phân tử sodium chloride (NaC]), các
 nguyên tử đã có sự nhường và nhận electron như sau:
@@ -1811,7 +1811,7 @@ ion Na', CI-.
 (CŒŒI sơ đồ mô tả sự hình thành liên kết ion trong phân tử MgO.
 Hãy cho biết nguyên tử Mg đã nhường hay nhận bao nhiêu electron.
 Hình 6.3"
-36,,,Các chất kích thích sinh trưởng nhân tạo được sử dụng trong trồng trọt với những mục đích gì?,"Kích thích cây ra rễ, ra hoa, thúc hạt và củ nảy mầm, kích thích tăng chiều cao cây, phát triển lá, tạo quả.",SGK_KHTN_7_KNTT,153,sinh,truc_tiep,"II - Ứng dụng sinh B2 =x X
+36,dung,,Các chất kích thích sinh trưởng nhân tạo được sử dụng trong trồng trọt với những mục đích gì?,"Kích thích cây ra rễ, ra hoa, thúc hạt và củ nảy mầm, kích thích tăng chiều cao cây, phát triển lá, tạo quả.",SGK_KHTN_7_KNTT,153,sinh,truc_tiep,"II - Ứng dụng sinh B2 =x X
 trưởng và pháttriển c^” v }
 trong thực tiễn Tuy 7 ==— Sẽ =
 
@@ -1864,7 +1864,7 @@ tác dụng của từng biện pháp. Kể thêm các biện pháp khác mà em
 2. Người trồng rừng đã điều khiển quá trình sinh trưởng của cây lấy gỗ bằng cách để
 mật độ dày khi cây còn non và khi cây đã đạt đến chiều cao mong muốn thì tỉa bớt.
 Giải thích ý nghĩa của việc làm này."
-37,,,"Áp dụng quy luật ""muối tác dụng với dung dịch base tạo thành muối mới và base mới"" (tương tự phản ứng giữa CuSO4 và NaOH), hãy viết phương trình hoá học của phản ứng giữa dung dịch CuCl2 và dung dịch KOH.",CuCl2 + 2KOH -> Cu(OH)2↓ + 2KCl.,SGK_KHTN_8_CD,65,hoa,suy_luan,"Dung dịch BaC]; nhản ứng với dung dịch H;SO, tạo ra BaSO, à X
+37,dung,,"Áp dụng quy luật ""muối tác dụng với dung dịch base tạo thành muối mới và base mới"" (tương tự phản ứng giữa CuSO4 và NaOH), hãy viết phương trình hoá học của phản ứng giữa dung dịch CuCl2 và dung dịch KOH.",CuCl2 + 2KOH -> Cu(OH)2↓ + 2KCl.,SGK_KHTN_8_CD,65,hoa,suy_luan,"Dung dịch BaC]; nhản ứng với dung dịch H;SO, tạo ra BaSO, à X
 không tan, mảu trăng theo phương trình hoá học sau: 5, Dự đoán các hiện
 BaClL, + H,SO, -> BaSO¿k + 2HCI tượng xảy ra trong các
 Barium chlaride Barium sulfate thí nghiệm sau;
@@ -1913,7 +1913,7 @@ ta base mỚI.
 a) MqO +? ---+ MqSO, + H;O
 b) KOH +? ----> Cu(OH);} + ?
 KHñA HỌC TỰ NHIÊN§ _ 65"
-38,,,Đối lưu là gì và là hình thức truyền nhiệt chủ yếu của những chất nào?,Đối lưu là sự truyền nhiệt bằng các dòng chất lỏng hay chất khí; nó là hình thức truyền nhiệt chủ yếu của chất lỏng và chất khí.,SGK_KHTN_8_CD,122,ly,truc_tiep,"Tính chất đẫn nhiệt kém của không khí hay tính chất không dẫn
+38,dung,,Đối lưu là gì và là hình thức truyền nhiệt chủ yếu của những chất nào?,Đối lưu là sự truyền nhiệt bằng các dòng chất lỏng hay chất khí; nó là hình thức truyền nhiệt chủ yếu của chất lỏng và chất khí.,SGK_KHTN_8_CD,122,ly,truc_tiep,"Tính chất đẫn nhiệt kém của không khí hay tính chất không dẫn
 nhiệt của chân không được ứng dụng chê tạo phích nước đề giữ
 nước nóng hoặc giữ nước đả lâu tan. Hình 25. Ú mồ tả một số
 bộ phận chính ở một phích nước.
@@ -1960,7 +1960,7 @@ các tia nhiệt từ bên trong nhà kính truyền ra ngoài.
 các tia nhiệt từ bên trong nhà kính truyền ra ngoài.
 se Chất rắn dẫn nhiệt tốt, chất lỏng và chất khí dẫn nhiệt kém hơn.
 122. KHÓA HỌC TỰ NHIÊN8"
-39,,,"Một người phụ nữ có kết quả xét nghiệm nồng độ uric acid trong máu là 6,5 mg/dL. Dựa vào ngưỡng chỉ số uric acid theo giới tính, người này có nguy cơ mắc bệnh gì?","Có nguy cơ mắc bệnh Gout, vì nồng độ uric acid 6,5 mg/dL đã vượt ngưỡng 6,0 mg/dL dành cho nữ giới",SGK_KHTN_8_CTST,169,sinh,suy_luan,"“53 Tìm hiểu thông tin kết quả xét nghiệm nồng độ uric acid trong máu
+39,dung,,"Một người phụ nữ có kết quả xét nghiệm nồng độ uric acid trong máu là 6,5 mg/dL. Dựa vào ngưỡng chỉ số uric acid theo giới tính, người này có nguy cơ mắc bệnh gì?","Có nguy cơ mắc bệnh Gout, vì nồng độ uric acid 6,5 mg/dL đã vượt ngưỡng 6,0 mg/dL dành cho nữ giới",SGK_KHTN_8_CTST,169,sinh,suy_luan,"“53 Tìm hiểu thông tin kết quả xét nghiệm nồng độ uric acid trong máu
 Chỉ số uric acid thể hiện nồng độ uric acid trong 1 lít máu, chỉ số này khác nhau
 ở nam và nữ giới. Khi nồng độ uric acid trong máu tăng trên 7,0 mg/dL đối với
 nam và trên 6,0 mg/dL đối với nữ thì được xem là có nguy cơ mắc bệnh Gout”.
@@ -1986,7 +1986,7 @@ Chỉ số glucose trong máu cho biết nồng độ hoặc tỉ lệ
 1 lít máu. Chỉ số uric acid cho biết nồng độ tric :
 Người ta thường dựa vào tỉ lệ đường glucose hoặc ch
 để đánh giá mức độ mắc bệnh của một người."
-40,,,Chỉ số uric acid trong xét nghiệm máu cho biết điều gì?,Nồng độ uric acid có trong 1 lít máu,SGK_KHTN_8_CTST,169,sinh,truc_tiep,"“53 Tìm hiểu thông tin kết quả xét nghiệm nồng độ uric acid trong máu
+40,dung,,Chỉ số uric acid trong xét nghiệm máu cho biết điều gì?,Nồng độ uric acid có trong 1 lít máu,SGK_KHTN_8_CTST,169,sinh,truc_tiep,"“53 Tìm hiểu thông tin kết quả xét nghiệm nồng độ uric acid trong máu
 Chỉ số uric acid thể hiện nồng độ uric acid trong 1 lít máu, chỉ số này khác nhau
 ở nam và nữ giới. Khi nồng độ uric acid trong máu tăng trên 7,0 mg/dL đối với
 nam và trên 6,0 mg/dL đối với nữ thì được xem là có nguy cơ mắc bệnh Gout”.
@@ -2012,7 +2012,7 @@ Chỉ số glucose trong máu cho biết nồng độ hoặc tỉ lệ
 1 lít máu. Chỉ số uric acid cho biết nồng độ tric :
 Người ta thường dựa vào tỉ lệ đường glucose hoặc ch
 để đánh giá mức độ mắc bệnh của một người."
-41,,,"Muốn sử dụng đòn bẩy cho lợi về lực, lực tác dụng lên đòn bẩy cần nằm xa hay gần điểm tựa hơn so với lực còn lại? Đây là đặc điểm của loại đòn bẩy nào?",Lực tác dụng F1 phải nằm xa điểm tựa O hơn vị trí của lực F2; đây là đòn bẩy loại 2 (đòn bẩy loại 2 cho lợi về lực).,SGK_KHTN_8_KNTT,80,ly,suy_luan,"II - Các loại đòn bẩy
+41,dung,,"Muốn sử dụng đòn bẩy cho lợi về lực, lực tác dụng lên đòn bẩy cần nằm xa hay gần điểm tựa hơn so với lực còn lại? Đây là đặc điểm của loại đòn bẩy nào?",Lực tác dụng F1 phải nằm xa điểm tựa O hơn vị trí của lực F2; đây là đòn bẩy loại 2 (đòn bẩy loại 2 cho lợi về lực).,SGK_KHTN_8_KNTT,80,ly,suy_luan,"II - Các loại đòn bẩy
 Trong thực tiễn, tuỳ theo vị trí của điểm tựa O và điểm đặt của các lực tác dụng F,; F, mà ta
 có hai loại đòn bẩy. Để dễ hình dung, ta mô tả đòn bẩy là một thanh cứng thẳng.
 o o,
@@ -2043,7 +2043,7 @@ a) b) 9
 2. Sử dụng đòn bẩy như Hình 19.2 có thể làm đổi hướng tác dụng lực như thế nào?
 o O,
 \ ì"
-42,,,Sinh quyển được định nghĩa là gì?,Sinh quyển là toàn bộ sinh vật sống trên Trái Đất cùng với các nhân tố vô sinh của môi trường.,SGK_KHTN_8_KNTT,185,sinh,truc_tiep,"MỤC TIÊU
+42,dung,,Sinh quyển được định nghĩa là gì?,Sinh quyển là toàn bộ sinh vật sống trên Trái Đất cùng với các nhân tố vô sinh của môi trường.,SGK_KHTN_8_KNTT,185,sinh,truc_tiep,"MỤC TIÊU
 Nêu được khái niệm sinh quyển.
 w- Nhận biết được các khusinh học trên Trái Đất.
 ẹ
@@ -2084,7 +2084,7 @@ Mô hình về sinh quyển
 4 5j SINH QUYỂN
 Số,
 Nêu khái niệm và các thành phần cấu tạo chính của sinh quyển."
-43,,,Cát trắng ngoài việc được sử dụng làm vật liệu cho ngành xây dựng thì còn được dùng làm nguyên liệu chính để sản xuất sản phẩm nào?,Thuỷ tinh.,SGK_KHTN_9_CD,147,khac,suy_luan,"Tài nguyên trong vỏ Trái Đất là nguồn cung cấp vật liệu,
+43,dung,,Cát trắng ngoài việc được sử dụng làm vật liệu cho ngành xây dựng thì còn được dùng làm nguyên liệu chính để sản xuất sản phẩm nào?,Thuỷ tinh.,SGK_KHTN_9_CD,147,khac,suy_luan,"Tài nguyên trong vỏ Trái Đất là nguồn cung cấp vật liệu,
 nguyên liệu và nhiên liệu chủ yêu cho con người (hình 30.4).
 » Cung cấp vật liệu cho øgành xáy dựng. Tài nguyên thường
 được sử dụng làm vật liệu là cát, đá,...
@@ -2136,7 +2136,7 @@ KHÓA HỌC TỰ NHIÊN9 147
 chất rắn nào từ khoáng
 vật chính tạo nên
 cát trắng?"
-44,,,"Theo nội dung về lợi ích của tài nguyên trong vỏ Trái Đất, hãy kể tên các nhiên liệu được khai thác từ vỏ Trái Đất để tạo ra năng lượng phục vụ cho quá trình sản xuất và sinh hoạt của con người.","Than mỏ, dầu mỏ, khí thiên nhiên.",SGK_KHTN_9_CD,147,khac,truc_tiep,"Tài nguyên trong vỏ Trái Đất là nguồn cung cấp vật liệu,
+44,dung,,"Theo nội dung về lợi ích của tài nguyên trong vỏ Trái Đất, hãy kể tên các nhiên liệu được khai thác từ vỏ Trái Đất để tạo ra năng lượng phục vụ cho quá trình sản xuất và sinh hoạt của con người.","Than mỏ, dầu mỏ, khí thiên nhiên.",SGK_KHTN_9_CD,147,khac,truc_tiep,"Tài nguyên trong vỏ Trái Đất là nguồn cung cấp vật liệu,
 nguyên liệu và nhiên liệu chủ yêu cho con người (hình 30.4).
 » Cung cấp vật liệu cho øgành xáy dựng. Tài nguyên thường
 được sử dụng làm vật liệu là cát, đá,...
@@ -2188,7 +2188,7 @@ KHÓA HỌC TỰ NHIÊN9 147
 chất rắn nào từ khoáng
 vật chính tạo nên
 cát trắng?"
-45,,,"Vì sao theo dự đoán của các nhà khoa học, nếu nhiệt độ trên Trái Đất tiếp tục tăng thì các quốc gia, thành phố ven biển sẽ có nguy cơ bị ngập, lụt?","Vì nhiệt độ tăng làm những khối băng ở các cực Trái Đất tan chảy nhanh hơn, làm cho mực nước biển dâng cao, nên các quốc gia, thành phố ven biển có nguy cơ bị ngập, lụt.",SGK_KHTN_9_CTST,147,khac,suy_luan,"3 Giới thiệu một số bằng chứng biến đổi khí hậu, thời tiết
+45,dung,,"Vì sao theo dự đoán của các nhà khoa học, nếu nhiệt độ trên Trái Đất tiếp tục tăng thì các quốc gia, thành phố ven biển sẽ có nguy cơ bị ngập, lụt?","Vì nhiệt độ tăng làm những khối băng ở các cực Trái Đất tan chảy nhanh hơn, làm cho mực nước biển dâng cao, nên các quốc gia, thành phố ven biển có nguy cơ bị ngập, lụt.",SGK_KHTN_9_CTST,147,khac,suy_luan,"3 Giới thiệu một số bằng chứng biến đổi khí hậu, thời tiết
 
 Một số bằng chứng biến đổi khí hậu và thời tiết cực đoan:
 
@@ -2272,7 +2272,7 @@ Một số bằng chứng của biến đổi khí hậu như sự ất
 tượng thời tiết cực đoan đang ngày càng trở nên pÌ
 thấy biến đổi khí hậu đang là mối đe doạ nghiêm
 Trái Đất."
-46,,,Thành phần hoá học chủ yếu của tơ tằm và len lông cừu là gì?,Protein.,SGK_KHTN_9_CTST,127,hoa,truc_tiep,"ay môi trường base hoặc
+46,dung,,Thành phần hoá học chủ yếu của tơ tằm và len lông cừu là gì?,Protein.,SGK_KHTN_9_CTST,127,hoa,truc_tiep,"ay môi trường base hoặc
 ¡ nóng.
 ó mùi khét đặc trưng.
 PHÂN BIỆT PROTEIN VỚI CHẤT KHÁC
@@ -2314,7 +2314,7 @@ Em hãy cho biết:
 a) Thành phần hoá học chủ yếu của tơ tằm.
 b) Vì sao không dùng xà phòng có tính kiểr
 mạnh để giặt áo quần may bằng vải tơ tằm."
-47,,,"Khi dịch chuyển một thấu kính hội tụ giữa vật và màn, ta quan sát được vị trí của thấu kính cho ảnh của vật rõ nét trên màn và ngược chiều với vật. Dựa vào định nghĩa về loại ảnh hứng được trên màn, hãy cho biết ảnh đó là ảnh thật hay ảnh ảo?","Là ảnh thật, vì ảnh hứng được trên màn được gọi là ảnh thật.",SGK_KHTN_9_KNTT,43,ly,suy_luan,"b) Sự truyền ánh sáng qua thấu kính phân kì
+47,dung,,"Khi dịch chuyển một thấu kính hội tụ giữa vật và màn, ta quan sát được vị trí của thấu kính cho ảnh của vật rõ nét trên màn và ngược chiều với vật. Dựa vào định nghĩa về loại ảnh hứng được trên màn, hãy cho biết ảnh đó là ảnh thật hay ảnh ảo?","Là ảnh thật, vì ảnh hứng được trên màn được gọi là ảnh thật.",SGK_KHTN_9_KNTT,43,ly,suy_luan,"b) Sự truyền ánh sáng qua thấu kính phân kì
 IV - Sự tạo ảnh của một vật qua thấu kính
 Quan sát ảnh của vật tạo bởi thấu kính hội tụ (Hình 8.9a) và thấu kính phân kì (Hình 8.9b)
 ð Ngọn nến
@@ -2350,7 +2350,7 @@ Mô hình thấu kính phân kì được
 tạo thành bởi các lăng kính nhỏ
 So sánh độ lệch của tia sáng ở gần rìa thấu kính với tia sáng ở gần trục chính của thấu
 kính sau khi đi qua thấu kính."
-48,,,"Tuỳ theo cấu trúc và chức năng, RNA trong tế bào được chia thành những loại nào?","RNA thông tin (mRNA), RNA vận chuyển (tRNA) và RNA ribosome (rRNA).",SGK_KHTN_9_KNTT,168,sinh,truc_tiep,"4. Tính đa dạng và đặc trưng của phân tử DNA.
+48,dung,,"Tuỳ theo cấu trúc và chức năng, RNA trong tế bào được chia thành những loại nào?","RNA thông tin (mRNA), RNA vận chuyển (tRNA) và RNA ribosome (rRNA).",SGK_KHTN_9_KNTT,168,sinh,truc_tiep,"4. Tính đa dạng và đặc trưng của phân tử DNA.
 Bốn loại nucleotide (A, T, G, C) liên kết theo chiều dọc và sắp xếp theo nhiều cách đã tạo
 nên tính đa dạng và đặc trưng cho phân tử DNA. Trong hệ gene, các phân tử DNA khác
 nhau bởi số lượng, thành phần và trình tự sắp xếp các nucleotide. Trình tự sắp xếp các
@@ -2394,7 +2394,7 @@ thực hiện các yêu cầu sau:
 1. Mô tả cấu trúc của phân tử RNA.
 2. Dự đoán trong tế bào, RNA được tổng hợp từ cấu
 trúc nào."
-49,,,"Trong hai ngành động vật Thân mềm và Chân khớp được trình bày trong bài, ngành nào có đặc điểm là bộ xương ngoài bằng chất kitin?",Ngành Chân khớp,SGK_KHTN_6_CD,123,sinh,suy_luan,": tuý” — “âu
+49,dung,,"Trong hai ngành động vật Thân mềm và Chân khớp được trình bày trong bài, ngành nào có đặc điểm là bộ xương ngoài bằng chất kitin?",Ngành Chân khớp,SGK_KHTN_6_CD,123,sinh,suy_luan,": tuý” — “âu
 St —
 đ) e) ỗ
 hà Kể tên một số động
@@ -2430,7 +2430,7 @@ Gọi tên các động vật
 trong hình 22.6, mô tả đặc
 điểm hình thái, nêu ích lợi
 và tác hại của chúng."
-50,,,"Oxygen là thành phần quan trọng nhất đối với hoạt động nào của con người, động vật và thực vật?",Hoạt động hô hấp.,SGK_KHTN_6_CD,37,hoa,truc_tiep,"mÊ) „ ` WbWiliii ãWW
+50,dung,,"Oxygen là thành phần quan trọng nhất đối với hoạt động nào của con người, động vật và thực vật?",Hoạt động hô hấp.,SGK_KHTN_6_CD,37,hoa,truc_tiep,"mÊ) „ ` WbWiliii ãWW
 Em đã biết những gì về oxygen? :
 1. Tính chất vật lí của oxygen
 Oxygen là chất khí không màu, không mùi, không vị và ít tan

@@ -1,0 +1,4 @@
+﻿nhom,so_cau,text_only_R,multimodal_R,delta_R,cau_co_hinh_trong_ngu_canh,hinh_dung_trang_vang,hinh_trang_khac,gold_co_hinh_trong_kho,cov_text_TB,cov_mm_TB,so_cau_cov_tang,so_cau_cov_giam,ky_tu_them_TB,dinh_tuyen_chi_anh
+tất cả (n=100),100,0.93,0.94,0.01,0.93,42,93,0.81,0.8961,0.8997,14,0,492.4,2
+trang vàng CÓ hình trong kho (n=81),81,0.9136,0.9259,0.0123,0.9383,42,59,1.0,0.9057,0.909,11,0,446.5,2
+trang vàng KHÔNG có hình (n=19),19,1.0,1.0,0.0,0.8947,0,34,0.0,0.8552,0.8598,3,0,688.1,0
