@@ -205,3 +205,255 @@ class TestTableItemsAskTwoConcreteRows:
         assert question_for(ItemKind.CONG_THUC)
         assert question_for(ItemKind.SO)
         assert question_for(ItemKind.DOI_CHUNG)
+
+
+class TestChuanHoaCongThuc:
+    """So công thức phải bỏ qua CÁCH GÕ, không bỏ qua NỘI DUNG.
+
+    Người duyệt gõ `O2` hay `O₂` đều là cùng một câu trả lời đúng. Nhưng `O,`
+    (chỉ số dưới bị phá thành dấu phẩy — D-56) là một câu trả lời KHÁC, và
+    chuẩn hoá nó thành `O₂` sẽ là tự bịa ra điều mình không đọc được.
+    """
+
+    def test_ascii_digits_normalise_to_subscripts(self):
+        from src.test.ocr_bakeoff import normalize_formula
+
+        assert normalize_formula("H2SO4") == normalize_formula("H₂SO₄")
+        assert normalize_formula("CO2") == normalize_formula("CO₂")
+
+    def test_a_comma_is_NOT_normalised_into_a_subscript(self):
+        """Đoán lại một chỉ số đã mất là BỊA (CẤM #5 của prompt M2)."""
+        from src.test.ocr_bakeoff import normalize_formula
+
+        assert normalize_formula("CO,") != normalize_formula("CO₂")
+
+    def test_spacing_around_the_formula_does_not_matter(self):
+        from src.test.ocr_bakeoff import normalize_formula
+
+        assert normalize_formula("2 H₂O") == normalize_formula("2  H₂O ")
+
+
+class TestTyLeLoiDau:
+    """Chỉ số DẤU là cổng loại: model đọc giỏi công thức mà sai dấu thì bị loại."""
+
+    def test_a_word_wrong_only_in_its_tone_mark_counts_as_a_diacritic_error(self):
+        from src.test.ocr_bakeoff import diacritic_error_rate
+
+        # "chế" -> "ché": bỏ dấu thì hai từ TRÙNG nhau => lỗi DẤU.
+        assert diacritic_error_rate("cơ chế quang hợp", "cơ ché quang hợp") == \
+            pytest.approx(1 / 4)
+
+    def test_a_word_wrong_in_its_letters_is_NOT_a_diacritic_error(self):
+        """`quang` -> `quaug` sai CHỮ, không phải sai dấu. Gộp hai loại lỗi vào
+        một con số thì không biết model hỏng ở đâu."""
+        from src.test.ocr_bakeoff import diacritic_error_rate
+
+        assert diacritic_error_rate("cơ chế quang hợp", "cơ chế quaug hợp") == 0.0
+
+    def test_a_perfect_read_has_no_diacritic_error(self):
+        from src.test.ocr_bakeoff import diacritic_error_rate
+
+        assert diacritic_error_rate("cơ chế quang hợp", "cơ chế quang hợp") == 0.0
+
+    def test_empty_gold_gives_zero_not_a_crash(self):
+        from src.test.ocr_bakeoff import diacritic_error_rate
+
+        assert diacritic_error_rate("", "gì đó") == 0.0
+
+
+class TestOBang:
+    def test_cells_split_on_the_pipe_and_are_trimmed(self):
+        from src.test.ocr_bakeoff import table_cells
+
+        assert table_cells(" Năm | 1988 |1992 ") == ["Năm", "1988", "1992"]
+
+    def test_cell_accuracy_is_position_sensitive(self):
+        """`Bảng 12.1` hỏng vì TRỘN CỘT (D-63) — ô đúng nội dung mà sai vị trí
+        vẫn là sai, nếu không thì phép đo không thấy được bệnh đó."""
+        from src.test.ocr_bakeoff import table_cell_accuracy
+
+        assert table_cell_accuracy("A | B | C", "A | B | C") == 1.0
+        assert table_cell_accuracy("A | B | C", "A | C | B") == pytest.approx(1 / 3)
+
+    def test_a_missing_cell_counts_against_the_engine(self):
+        from src.test.ocr_bakeoff import table_cell_accuracy
+
+        assert table_cell_accuracy("A | B | C", "A | B") == pytest.approx(2 / 3)
+
+
+class TestSoEngine:
+    """Bảng so engine phải trả lời được câu hỏi CHỌN CÁI NÀO, và phải từ chối
+    trả lời khi chưa đủ dữ kiện."""
+
+    GOLD_ITEMS = [
+        {"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0, và (0,"},
+        {"id": "d1", "kind": "doi_chung", "may_doc": "Tế bào nhân thực"},
+        {"id": "b1_1", "kind": "bang", "may_doc": "Bảng 35.1"},
+    ]
+    GOLD = {"f1": "khí O₂ và CO₂", "d1": "Tế bào nhân thực",
+            "b1_1": "Năm | 1988 | 1992"}
+
+    def test_a_perfect_engine_scores_one_on_every_axis(self):
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, self.GOLD, dict(self.GOLD))
+
+        assert got["cong_thuc"] == 1.0
+        assert got["loi_dau"] == 0.0
+        assert got["bang"] == 1.0
+
+    def test_engine_losing_subscripts_scores_zero_on_formulas(self):
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, self.GOLD,
+                           {**self.GOLD, "f1": "khí 0, và (0,"})
+
+        assert got["cong_thuc"] == 0.0
+
+    def test_ascii_subscripts_from_an_engine_still_count_as_correct(self):
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, self.GOLD,
+                           {**self.GOLD, "f1": "khí O2 và CO2"})
+
+        assert got["cong_thuc"] == 1.0
+
+    def test_diacritic_damage_shows_up_on_the_control_axis(self):
+        """Ô đối chứng là chỗ đo chữ thường — 93% corpus là chữ thường."""
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, self.GOLD,
+                           {**self.GOLD, "d1": "Te bào nhân thực"})
+
+        assert got["loi_dau"] > 0
+
+    def test_an_item_the_engine_did_not_answer_counts_as_wrong_not_skipped(self):
+        """Bỏ qua ô không đọc được sẽ thưởng cho engine im lặng — đúng loại
+        'số cao mà sai' mà repo này sợ nhất."""
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, self.GOLD, {"d1": "Tế bào nhân thực"})
+
+        assert got["cong_thuc"] == 0.0
+        assert got["bang"] == 0.0
+
+    def test_items_the_human_left_blank_are_excluded_from_every_axis(self):
+        """Không có bản người thì không có chuẩn để so — chấm bừa là bịa."""
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, {"d1": "Tế bào nhân thực"},
+                           dict(self.GOLD))
+
+        assert got["n_cong_thuc"] == 0
+        assert got["n_doi_chung"] == 1
+        assert got["cong_thuc"] is None
+
+    def test_human_marked_unreadable_items_are_excluded_too(self):
+        """`???` nghĩa là NGƯỜI cũng không đọc được — không dùng làm chuẩn."""
+        from src.test.ocr_bakeoff import score_engine
+
+        got = score_engine(self.GOLD_ITEMS, {**self.GOLD, "f1": "???"},
+                           dict(self.GOLD))
+
+        assert got["n_cong_thuc"] == 0
+        assert got["n_khong_doc_duoc"] == 1
+
+
+class TestDumpCrops:
+    """Engine chạy trên COLAB, mà PNG nguồn là 4,1 GB không nằm trong git
+    (D-68). Nên phải xuất đúng 97 crop (vài MB) để mang lên."""
+
+    def test_each_item_becomes_one_png_named_by_its_id(self, tmp_path):
+        import base64
+
+        from src.test.ocr_bakeoff import dump_crops
+
+        # PNG 1×1 hợp lệ, đủ để kiểm đường ghi file.
+        px = base64.b64encode(bytes.fromhex(
+            "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+            "890000000a49444154789c6300010000050001"
+            "0d0a2db40000000049454e44ae426082")).decode()
+        items = [{"id": "A_p1_01", "anh_b64": px, "kind": "cong_thuc",
+                  "quyen": "A", "trang": 1, "cau_hoi": "gõ lại"},
+                 {"id": "A_p1_02", "anh_b64": px, "kind": "doi_chung",
+                  "quyen": "A", "trang": 1, "cau_hoi": "gõ lại"}]
+
+        n = dump_crops(items, tmp_path)
+
+        assert n == 2
+        assert (tmp_path / "A_p1_01.png").exists()
+        assert (tmp_path / "A_p1_02.png").exists()
+
+    def test_a_manifest_lists_every_crop_so_colab_needs_no_source_pngs(self,
+                                                                       tmp_path):
+        import base64
+        import json
+
+        from src.test.ocr_bakeoff import dump_crops
+
+        px = base64.b64encode(bytes.fromhex(
+            "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+            "890000000a49444154789c6300010000050001"
+            "0d0a2db40000000049454e44ae426082")).decode()
+        items = [{"id": "A_p1_01", "anh_b64": px, "kind": "bang", "quyen": "A",
+                  "trang": 1, "cau_hoi": "hàng đầu"}]
+
+        dump_crops(items, tmp_path)
+        man = json.loads((tmp_path / "crops.json").read_text(encoding="utf-8"))
+
+        assert man[0]["id"] == "A_p1_01"
+        assert man[0]["file"] == "A_p1_01.png"
+        assert man[0]["kind"] == "bang"
+        assert "anh_b64" not in man[0]
+
+    def test_an_item_with_no_crop_is_reported_not_silently_skipped(self,
+                                                                  tmp_path):
+        from src.test.ocr_bakeoff import dump_crops
+
+        items = [{"id": "A_p1_01", "anh_b64": "", "kind": "so", "quyen": "A",
+                  "trang": 1, "cau_hoi": "gõ"}]
+
+        with pytest.raises(RuntimeError, match="không có ảnh"):
+            dump_crops(items, tmp_path)
+
+
+class TestLuuCongNguoi:
+    """`database/` bị gitignore (D-68). Phiếu người duyệt là **công người,
+    không dựng lại được** — để nó nằm trong `database/` là hẹn ngày mất nó.
+    Tiền lệ đã có: `document/review/testset_review_50.csv` nằm trong git."""
+
+    def test_a_usable_sheet_is_copied_into_the_versioned_review_dir(self,
+                                                                    tmp_path):
+        import json
+
+        from src.test.ocr_bakeoff import archive_human_sheet
+
+        src = tmp_path / "db" / "phieu_nguoi.json"
+        src.parent.mkdir(parents=True)
+        src.write_text(json.dumps({"traloi": {"a": "x"}}), encoding="utf-8")
+        kho = tmp_path / "document" / "review" / "ocr_gold"
+
+        dest = archive_human_sheet(src, kho)
+
+        assert dest == kho / "phieu_nguoi.json"
+        assert json.loads(dest.read_text(encoding="utf-8"))["traloi"] == {"a": "x"}
+
+    def test_an_existing_archive_is_never_silently_overwritten(self, tmp_path):
+        """Ghi đè im lặng một phiếu cũ = xoá công người mà không ai biết."""
+        import json
+
+        from src.test.ocr_bakeoff import archive_human_sheet
+
+        src = tmp_path / "phieu_nguoi.json"
+        src.write_text(json.dumps({"traloi": {"a": "moi"}}), encoding="utf-8")
+        kho = tmp_path / "kho"
+        kho.mkdir()
+        (kho / "phieu_nguoi.json").write_text(
+            json.dumps({"traloi": {"a": "cu"}}), encoding="utf-8")
+
+        dest = archive_human_sheet(src, kho)
+
+        assert dest.name.startswith("phieu_nguoi")
+        assert dest != kho / "phieu_nguoi.json"
+        assert json.loads((kho / "phieu_nguoi.json").read_text(
+            encoding="utf-8"))["traloi"] == {"a": "cu"}

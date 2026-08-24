@@ -104,6 +104,42 @@ phiếu sẽ bị tick.** Nên phiếu này được thiết kế để *không 
    bình mỗi ô; dưới một ngưỡng thì in cảnh báo **và từ chối công bố số**, đúng theo
    bài học D-90 (phân bố đáng nghi phải CHẶN, không phải đi kèm chú thích).
 
+### 3.4 Engine chấm trên CROP, không trên cả trang — và vì sao
+
+Bake-off phải **công bằng**, không phải giống production. Engine và người duyệt
+chấm trên **cùng một mẩu pixel**. Nếu để engine đọc cả trang rồi ta đi tìm dòng
+nào khớp nhất với đáp án của người, đó là **tự chọn kết quả tốt nhất cho engine**
+— một phép đo thiên vị mà không ai nhìn thấy trong con số cuối.
+
+Ô loại BẢNG có crop là cả **dải bảng**, nên engine vẫn phải làm đúng việc khó
+(giữ quan hệ hàng/cột), chỉ là không phải tự đi tìm bảng nằm ở đâu trên trang.
+
+Sau khi **chọn được** model, production mới cho nó đọc **cả trang** — đó là bước
+1, và nó cần phép đo này trước.
+
+Hệ quả vận hành: `--export` xuất luôn `crops/` (**8,2 MB**, 97 PNG + `crops.json`)
+để mang lên Colab, thay vì chép corpus **4,1 GB** không nằm trong git (D-68).
+
+### 3.5 Ba luật khiến bảng so trung thực
+
+1. **Ô engine không trả lời được tính là SAI, không phải bỏ qua.** Bỏ qua sẽ
+   thưởng cho engine im lặng — đúng loại "một bước thất bại mà lớp gọi nó vẫn
+   báo thành công" đã cắn ở D-68/D-75/D-83/D-84.
+2. **Ô người để trống, hoặc người ghi `???`, bị loại khỏi MỌI trục.** Không có
+   bản người thì không có chuẩn để so. `???` là câu trả lời hợp lệ và có giá
+   trị: nó nói rằng chỗ đó không ai đọc được, kể cả người.
+3. **`O2` và `O₂` là một; `O,` thì KHÔNG.** Người duyệt không bị phạt vì cách gõ,
+   nhưng đoán lại một chỉ số đã mất là bịa (nguyên tắc 1) — mà chính `O,` là thứ
+   đang đo.
+
+### 3.6 Phiếu người duyệt phải nằm trong git
+
+`database/` bị `.gitignore` bỏ qua (D-68), nên một phiếu chỉ sống ở đó là một
+phiếu sẽ mất — mà đây là 35–50 phút công người, không dựng lại được. `--score`
+tự chép nó sang `document/review/ocr_gold/` và nhắc commit. Phiếu thứ hai
+**không ghi đè** phiếu thứ nhất: hai phiếu độc lập chính là cách phân giải nghi
+ngờ mà D-90 đã chỉ ra.
+
 ### 3.4 Ước lượng công cho người: **35–50 phút**
 
 15 trang × ~6 ô × ~20 giây gõ, cộng thời gian nhìn trang. Đây là ước lượng, và

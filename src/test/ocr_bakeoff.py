@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import csv
 import html
 import io
 import json
@@ -164,6 +165,121 @@ def _fold(text: str) -> str:
     s = unicodedata.normalize("NFD", s)
     s = "".join(c for c in s if not unicodedata.combining(c))
     return " ".join(s.lower().split())
+
+
+# --- 3b. Ba chỉ số chấm engine ------------------------------------------
+
+_SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+# Chỉ số dưới đứng SAU một chữ cái hoá học và trước một chữ cái/ngoặc/kết thúc.
+# Ràng buộc đó giữ `2 H₂O` (hệ số 2 đứng trước) và `tr.154` không bị đổi.
+_CHI_SO_ASCII = re.compile(r"(?<=[A-Za-z\)\]])(\d+)")
+
+
+def normalize_formula(text: str) -> str:
+    """Chuẩn hoá CÁCH GÕ công thức, không chuẩn hoá nội dung.
+
+    `O2` và `O₂` là cùng một câu trả lời đúng — người duyệt không nên bị phạt vì
+    cách gõ. Nhưng `O,` **không** được chuẩn hoá thành `O₂`: đoán lại một chỉ số
+    đã mất là bịa (nguyên tắc 1), và chính `O,` là thứ ta đang đo.
+    """
+    s = " ".join(str(text or "").split())
+    return _CHI_SO_ASCII.sub(lambda m: m.group(1).translate(_SUB), s)
+
+
+def diacritic_error_rate(gold: str, hyp: str) -> float:
+    """Tỉ lệ từ sai **chỉ ở dấu** — cổng loại của bake-off.
+
+    Đếm riêng khỏi lỗi CHỮ: `chế`→`ché` là lỗi dấu (bỏ dấu thì hai từ trùng),
+    còn `quang`→`quaug` là lỗi chữ. Gộp hai loại vào một con số thì không biết
+    model hỏng ở đâu — mà chỗ model nước ngoài dễ chết nhất chính là dấu.
+    """
+    g = str(gold or "").split()
+    h = str(hyp or "").split()
+    if not g:
+        return 0.0
+    loi = 0
+    for i, tu in enumerate(g):
+        khac = h[i] if i < len(h) else ""
+        if tu != khac and _fold(tu) == _fold(khac):
+            loi += 1
+    return loi / len(g)
+
+
+def table_cells(row: str) -> List[str]:
+    """Tách một hàng bảng do người/engine gõ, phân cách bằng `|`."""
+    return [c.strip() for c in str(row or "").split("|") if c.strip()]
+
+
+KHONG_DOC_DUOC = "???"
+
+
+def score_engine(items: Sequence[dict], gold: Dict[str, str],
+                 hyp: Dict[str, str]) -> dict:
+    """Ba chỉ số của MỘT engine trên gold set người duyệt.
+
+    Hai luật khiến con số này trung thực:
+
+    1. **Ô engine không trả lời được tính là SAI, không phải bỏ qua.** Bỏ qua sẽ
+       thưởng cho engine im lặng — đúng loại "số cao mà sai" repo này sợ nhất
+       (D-83: một bước thất bại mà lớp gọi vẫn báo thành công).
+    2. **Ô người để trống, hoặc người ghi `???`, bị loại khỏi MỌI trục.** Không
+       có bản người thì không có chuẩn để so; chấm bừa là bịa (nguyên tắc 1).
+       `???` là câu trả lời hợp lệ và có giá trị: nó nói rằng chỗ đó không ai
+       đọc được, kể cả người.
+    """
+    n_ct = n_dc = n_bang = 0
+    dung_ct = 0.0
+    tong_dau = 0.0
+    dung_bang = 0.0
+    khong_doc_duoc = 0
+
+    for it in items:
+        chuan = gold.get(it["id"])
+        if chuan is None or not str(chuan).strip():
+            continue
+        if str(chuan).strip() == KHONG_DOC_DUOC:
+            khong_doc_duoc += 1
+            continue
+        doc = str(hyp.get(it["id"], ""))          # thiếu -> "" -> sai, không bỏ
+        kind = it.get("kind")
+        if kind == ItemKind.BANG.value:
+            n_bang += 1
+            dung_bang += table_cell_accuracy(chuan, doc)
+        elif kind == ItemKind.DOI_CHUNG.value:
+            n_dc += 1
+            tong_dau += diacritic_error_rate(chuan, doc)
+        else:                                     # cong_thuc, so
+            n_ct += 1
+            dung_ct += float(
+                normalize_formula(chuan) == normalize_formula(doc))
+            tong_dau += diacritic_error_rate(chuan, doc)
+
+    n_dau = n_ct + n_dc
+    return {
+        "cong_thuc": round(dung_ct / n_ct, 4) if n_ct else None,
+        "loi_dau": round(tong_dau / n_dau, 4) if n_dau else None,
+        "bang": round(dung_bang / n_bang, 4) if n_bang else None,
+        "n_cong_thuc": n_ct,
+        "n_doi_chung": n_dc,
+        "n_bang": n_bang,
+        "n_khong_doc_duoc": khong_doc_duoc,
+    }
+
+
+def table_cell_accuracy(gold_row: str, hyp_row: str) -> float:
+    """Tỉ lệ ô đúng **cả nội dung và VỊ TRÍ cột**.
+
+    Vị trí là bắt buộc: `Bảng 12.1` hỏng vì **trộn cột** (cột *công dụng* chảy
+    vào cột *tính chất* — D-63), nên một phép đo bỏ qua vị trí sẽ không thấy
+    được đúng cái bệnh mình đi tìm.
+    """
+    g = table_cells(gold_row)
+    h = table_cells(hyp_row)
+    if not g:
+        return 0.0
+    dung = sum(1 for i, o in enumerate(g)
+               if i < len(h) and normalize_formula(o) == normalize_formula(h[i]))
+    return dung / len(g)
 
 
 def _giong_nhau(a: str, b: str) -> bool:
@@ -492,9 +608,12 @@ def cmd_export(out_dir: Path, max_per_page: int) -> int:
               f"{pm['loai']:10s} -> {len(items):2d} ô", flush=True)
         tat_ca.extend(items)
     p_html, p_items = export_html(tat_ca, out_dir)
+    n_crop = dump_crops(tat_ca, out_dir / "crops")
     print(f"\n{len(tat_ca)} ô / {len(trang)} trang trong {time.time() - t0:.0f}s")
-    print(f"Mở phiếu:  {p_html}")
-    print(f"Danh sách ô: {p_items}")
+    print(f"Mở phiếu:       {p_html}")
+    print(f"Danh sách ô:    {p_items}")
+    print(f"Crop cho Colab: {out_dir / 'crops'} ({n_crop} PNG + crops.json) — "
+          f"mang ĐÚNG thư mục này lên Drive, không cần chép corpus 4,1 GB")
     return 0
 
 
@@ -542,11 +661,141 @@ def cmd_score(out_dir: Path) -> int:
                 print(f"    {it['id']}  {it['may_doc'][:70]!r}")
 
     if kq["cong_bo_duoc"]:
-        print("\n  => Phiếu DÙNG ĐƯỢC làm gold set. Bước tiếp: chạy các engine "
-              "trên 15 trang này rồi `--compare`.")
+        dest = archive_human_sheet(p_ans)
+        print("\n  => Phiếu DÙNG ĐƯỢC làm gold set.")
+        print(f"  Đã chép vào {dest} (thư mục NẰM TRONG GIT) — "
+              "`database/` bị gitignore nên phiếu chỉ sống ở đó là phiếu sẽ mất.")
+        print("  HÃY COMMIT file đó: nó là công người, không dựng lại được.")
+        print("  Bước tiếp: chạy các engine trên 97 crop rồi `--compare`.")
     else:
         print(f"\n  => CHƯA công bố được: {kq['ly_do']}")
     return 0 if kq["cong_bo_duoc"] else 2
+
+
+ARCHIVE_DIR = Path("document/review/ocr_gold")
+
+
+def archive_human_sheet(src: Path, kho: Path = ARCHIVE_DIR) -> Path:
+    """Chép phiếu người duyệt vào thư mục NẰM TRONG GIT.
+
+    `database/` bị `.gitignore` bỏ qua (D-68), nên một phiếu chỉ sống ở đó là
+    một phiếu sẽ mất — mà đây là **công người, không dựng lại được** (ước lượng
+    35–50 phút). Tiền lệ: `document/review/testset_review_50.csv` nằm trong git.
+
+    **Không bao giờ ghi đè im lặng** một phiếu đã có: ghi đè là xoá công người
+    mà không ai biết. Phiếu thứ hai được lưu thành tên khác, và hai phiếu độc
+    lập chính là cách phân giải nghi ngờ ở D-90.
+    """
+    kho.mkdir(parents=True, exist_ok=True)
+    dest = kho / "phieu_nguoi.json"
+    if dest.exists():
+        i = 2
+        while (kho / f"phieu_nguoi_{i}.json").exists():
+            i += 1
+        dest = kho / f"phieu_nguoi_{i}.json"
+    dest.write_bytes(Path(src).read_bytes())
+    return dest
+
+
+def dump_crops(items: Sequence[dict], out_dir: Path) -> int:
+    """Xuất crop PNG + `crops.json` để mang lên Colab.
+
+    Engine chạy trên GPU Colab, mà PNG nguồn là **4,1 GB không nằm trong git**
+    (D-68) — chép cả corpus lên Drive cho 15 trang là lãng phí. 97 crop chỉ vài
+    MB, và **đó cũng chính là thứ người duyệt nhìn**, nên engine và người chấm
+    trên cùng một mẩu pixel. Không có điều đó thì không so được: engine đọc cả
+    trang rồi ta đi tìm dòng nào khớp nhất với đáp án người là **tự chọn kết quả
+    tốt nhất cho engine**, một phép đo thiên vị.
+
+    Ô loại BẢNG có crop là cả DẢI bảng, nên engine vẫn phải làm đúng việc khó
+    (giữ quan hệ hàng/cột) chứ không được đọc từng dòng rời.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    man = []
+    for it in items:
+        b64 = it.get("anh_b64") or ""
+        if not b64:
+            raise RuntimeError(
+                f"Ô {it['id']} không có ảnh — engine sẽ không có gì để đọc và ô "
+                "đó sẽ bị chấm là SAI oan. Dựng lại phiếu bằng --export.")
+        (out_dir / f"{it['id']}.png").write_bytes(base64.b64decode(b64))
+        man.append({k: v for k, v in it.items() if k != "anh_b64"}
+                   | {"file": f"{it['id']}.png"})
+    (out_dir / "crops.json").write_text(
+        json.dumps(man, ensure_ascii=False, indent=1), encoding="utf-8")
+    return len(man)
+
+
+def cmd_compare(out_dir: Path) -> int:
+    """Bảng so các engine trên gold set người duyệt.
+
+    Đọc `engine_*.json` — mỗi file là `{"<id ô>": "<chữ engine đọc được>"}` do
+    lượt chạy trên Colab sinh ra.
+    """
+    p_items = out_dir / "items.json"
+    p_gold = out_dir / "phieu_nguoi.json"
+    if not (p_items.exists() and p_gold.exists()):
+        print(f"Cần cả {p_items} và {p_gold}. Chạy --export rồi --score trước.")
+        return 1
+    items = json.loads(p_items.read_text(encoding="utf-8"))
+    raw = json.loads(p_gold.read_text(encoding="utf-8"))
+    gold = raw.get("traloi", raw)
+
+    kq_phieu = score_answers(items, gold)
+    if not kq_phieu["cong_bo_duoc"]:
+        # Bài học D-90: phiếu đáng nghi phải CHẶN việc công bố, không phải đi
+        # kèm nó dưới dạng chú thích.
+        print(f"!! Phiếu người CHƯA dùng được làm gold set: {kq_phieu['ly_do']}")
+        print("   Chạy `--score` để xem chi tiết. KHÔNG in bảng so engine.")
+        return 2
+
+    files = sorted(out_dir.glob("engine_*.json"))
+    if not files:
+        print(f"Chưa có file engine_*.json nào trong {out_dir}.\n"
+              "Chạy các engine trên 15 trang rồi lưu mỗi engine một file "
+              '{"<id ô>": "<chữ đọc được>"}.')
+        return 1
+
+    print(f"Gold set: {kq_phieu['da_dien']}/{kq_phieu['tong_o']} ô người duyệt")
+    tesseract = {it["id"]: it.get("may_doc", "") for it in items}
+    bang = [("tesseract (hiện tại)", score_engine(items, gold, tesseract))]
+    for f in files:
+        ten = f.stem.replace("engine_", "")
+        bang.append((ten, score_engine(items, gold,
+                                       json.loads(f.read_text(encoding="utf-8")))))
+
+    def o(v):
+        return "  —  " if v is None else f"{v:5.3f}"
+
+    head = f"{'engine':28s} {'CT↑':>6s} {'DẤU↓':>6s} {'BẢNG↑':>6s}   n"
+    print(f"\n{head}\n{'-' * len(head)}")
+    for ten, s in bang:
+        print(f"{ten:28s} {o(s['cong_thuc'])} {o(s['loi_dau'])} {o(s['bang'])}"
+              f"   ct={s['n_cong_thuc']} dc={s['n_doi_chung']} b={s['n_bang']}")
+
+    goc = bang[0][1]
+    print("\nLuật chốt (thiết kế §3.2): một engine chỉ THẮNG khi nó **không tệ "
+          "hơn**\nTesseract ở cột DẤU. Thắng công thức mà thua dấu là THUA — "
+          "93% corpus\nlà chữ thường.")
+    if goc["loi_dau"] is not None:
+        for ten, s in bang[1:]:
+            if s["loi_dau"] is None:
+                continue
+            if s["loi_dau"] > goc["loi_dau"]:
+                print(f"  ✗ {ten}: lỗi dấu {s['loi_dau']:.3f} > tesseract "
+                      f"{goc['loi_dau']:.3f} -> LOẠI")
+    if goc["n_khong_doc_duoc"]:
+        print(f"\n{goc['n_khong_doc_duoc']} ô người ghi `???` (không ai đọc "
+              "được) -> loại khỏi mọi trục, không tính cho ai cả.")
+
+    p_csv = out_dir / "bakeoff.csv"
+    with io.open(p_csv, "w", encoding="utf-8-sig", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=["engine"] + list(bang[0][1].keys()))
+        w.writeheader()
+        for ten, s in bang:
+            w.writerow({"engine": ten, **s})
+    print(f"\nĐã lưu: {p_csv}")
+    return 0
 
 
 def main() -> int:
@@ -556,6 +805,9 @@ def main() -> int:
                          "ocr_bakeoff_pages.json")
     ap.add_argument("--score", action="store_true",
                     help="Đọc phiếu người đã điền, kiểm dấu hiệu đóng dấu cho qua")
+    ap.add_argument("--compare", action="store_true",
+                    help="Bảng so các engine (engine_*.json) trên gold set người "
+                         "duyệt. Từ chối in bảng nếu phiếu chưa dùng được.")
     ap.add_argument("--out-dir", default="database/review/ocr_gold")
     ap.add_argument("--max-per-page", type=int, default=8)
     args = ap.parse_args()
@@ -565,6 +817,8 @@ def main() -> int:
         return cmd_export(out_dir, args.max_per_page)
     if args.score:
         return cmd_score(out_dir)
+    if args.compare:
+        return cmd_compare(out_dir)
     ap.print_help()
     return 1
 
