@@ -55,21 +55,25 @@ một model TỆ HƠN, và không có trang đối chứng thì không ai thấy
 | 1 | 7_KNTT | 121 | công thức Hoá | ca **đã đảo đáp án**: index ghi `hấp thụ khí 0, và thải ra khí (0,` → Qwen trả lời ngược (D-63) |
 | 2 | 9_KNTT | 21 | công thức Lý | `1 J = 1 N·m` → `1 Ñm`, `(M]` → RAG trả lời **rỗng**, không log gì (D-63) |
 | 3 | 6_KNTT | 44 | **bảng** | `Bảng 12.1` trộn cột công dụng vào cột tính chất (D-63) |
-| 4 | 9_KNTT | 155 | **bảng** | `Bảng 35.1` mất hàng header + **8 dấu phẩy thập phân** (D-63) |
+| 4 | 9_KNTT | **154** | **bảng** | `Bảng 35.1` mất hàng header + **8 dấu phẩy thập phân** (D-63). **SỬA từ 155:** tr.155 không có tiêu đề bảng nào; 155 là số của corpus 801 trang cũ (offset −1) |
 | 5 | 9_KNTT | 74 | **đối chứng** | 2 585 ký tự, **0** công thức hỏng |
 | 6 | 9_CTST | 113 | công thức Hoá | **18 token hỏng — cao nhất toàn bộ 2 387 trang** |
 | 7 | 8_CTST | 62 | công thức Hoá | 17 token hỏng |
 | 8 | 7_CTST | 49 | Lý + số | 9 token hỏng **+ 10 chuỗi số dài** (nghi mất dấu phẩy) |
-| 9 | 6_CTST | 134 | lớp 6 | 8 token hỏng, bố cục lớp 6 |
+| 9 | **9_CTST** | **43** | **bảng** | `Bảng 8.3` — bảng SỐ của CTST (7 chuỗi 3 chữ số + 5 dấu phẩy). **THAY 6_CTST tr.134** để mỗi NXB có đúng một bảng |
 | 10 | 7_CTST | 141 | **đối chứng** | 2 600 ký tự, 0 công thức hỏng |
 | 11 | 9_CD | 113 | công thức Hoá | 11 token hỏng |
-| 12 | 9_CD | 129 | bảng + số | 9 token hỏng + 4 chuỗi số dài |
+| 12 | 9_CD | **134** | **bảng** | `Bảng 27.1` — 15 chuỗi 3 chữ số, **0** dấu phẩy thập phân còn sót. **THAY tr.129:** trang đó thật ra là trang CÔNG THỨC, không có tiêu đề bảng nào |
 | 13 | 8_CD | 61 | trang dày chữ | 7 token hỏng, **2 509 ký tự** |
 | 14 | 8_CD | 60 | công thức Hoá | 7 token hỏng |
 | 15 | 7_CD | 112 | **đối chứng** | 2 587 ký tự, 0 công thức hỏng |
 
-Phân bố: NXB **5/5/5**; khối 6 (2) · 7 (4) · 8 (3) · 9 (6) — nghiêng về lớp 9 vì
+Phân bố: NXB **5/5/5**; khối 6 (1) · 7 (4) · 8 (3) · 9 (7) — nghiêng về lớp 9 vì
 công thức Hoá tập trung ở đó, và điều đó được nói ra thay vì che.
+
+**Ba dòng in đậm ở trên là số ĐÃ BỊ LẬT trong chính lượt này**, tìm ra bằng cách
+mở phiếu đầu tiên ra đối chiếu chứ không bằng test (nguyên tắc 4). Chúng được
+ghi lại thay vì im lặng thay số (nguyên tắc 2).
 
 Danh sách này ghi ra file JSON và **commit**, để lượt sau chấm trên đúng 15 trang
 đó chứ không chọn lại.
@@ -97,12 +101,18 @@ phiếu sẽ bị tick.** Nên phiếu này được thiết kế để *không 
    Nhìn một dòng ảnh rồi gõ lại 5–15 ký tự là việc làm được; sửa 2 000 ký tự thì
    không, và chính chỗ đó sinh ra tật đóng dấu cho qua (D-55: 23/24 file gold cũ
    trùng **từng chữ** với output của máy).
-3. **Có ca mồi.** Phiếu chứa vài ca mà tôi **đã biết** máy đọc sai. Nếu chúng được
-   gõ y như máy, phiếu bị loại. Tôi nói trước là có mồi — vì cái cần kiểm là bạn
-   *có mở ảnh ra xem không*, không phải bắt bạn bị lừa.
-4. **Kiểm dấu thời gian.** `--score` in `mtime` của phiếu và thời gian điền trung
-   bình mỗi ô; dưới một ngưỡng thì in cảnh báo **và từ chối công bố số**, đúng theo
-   bài học D-90 (phân bố đáng nghi phải CHẶN, không phải đi kèm chú thích).
+3. **Mọi ô CÔNG THỨC/SỐ đều là "ca mồi", và tôi nói trước.** Chúng có mặt trong
+   phiếu **vì máy đã đọc sai chúng** — đó là tiêu chí chọn ô. Nên một câu trả lời
+   trùng y nguyên chữ máy là dấu hiệu không mở ảnh ra xem, và `--score` đếm nó
+   rồi **từ chối công bố** khi tỉ lệ đó ≥ 50%. Không cần cài ca mồi giả: tiêu chí
+   chọn ô đã làm sẵn việc đó, và nói trước thì công bằng hơn — cái cần kiểm là
+   bạn *có nhìn ảnh không*, không phải bẫy bạn. (Ô ĐỐI CHỨNG thì ngược lại: trùng
+   với máy là bình thường và **không** bị tính.)
+4. **Kiểm dấu thời gian.** Phiếu HTML tự ghi `_bat_dau`/`_ket_thuc` vào file
+   JSON khi tải xuống, nên `--score` tính được **giây/ô** thật. Dưới **5 s/ô** thì
+   nó in cảnh báo **và từ chối công bố số** — đúng bài học D-90 (phân bố đáng nghi
+   phải CHẶN, không phải đi kèm chú thích). Đo trên một phiếu giả: 24,7 s/ô là
+   nhịp bình thường.
 
 ### 3.4 Engine chấm trên CROP, không trên cả trang — và vì sao
 
