@@ -85,7 +85,7 @@ def _page_key(meta: dict) -> Tuple[str, int]:
 
 
 def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
-            image_k: int) -> Dict[str, dict]:
+            image_k: int, min_score: float) -> Dict[str, dict]:
     """Chạy hai retriever production cho từng câu, lưu kết quả thô.
 
     Lưu lại vì phần đắt là bge-m3 + cross-encoder + CLIP; in lại bảng thì không
@@ -110,7 +110,7 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
         "text_version": TEXT_EXTRACTION_VERSION,
         "widths": f"text_k={text_k} image_k={image_k} "
                   f"fetch_k={IMAGE_RETRIEVER_FETCH_K} "
-                  f"min_score={IMAGE_RELEVANCE_THRESHOLD} "
+                  f"min_score={min_score} "
                   f"mode={RETRIEVAL_MODE} rerank={RERANK_ENABLED} "
                   f"img_rerank={IMAGE_RERANK_ENABLED}",
     }
@@ -127,7 +127,8 @@ def collect(rows: Sequence[dict], cache_path: Path, text_k: int,
             print("[đệm] dấu vân KHÁC (index hoặc bề rộng đã đổi) -> chạy lại")
 
     text_retriever = text_db.get_retriever({"k": text_k})
-    image_retriever = image_db.get_retriever({"k": image_k})
+    image_retriever = image_db.get_retriever({"k": image_k,
+                                              "min_score": min_score})
 
     t0 = time.time()
     for i, row in enumerate(rows, 1):
@@ -229,6 +230,12 @@ def main() -> int:
     ap.add_argument("--cache", default=str(DEFAULT_CACHE))
     ap.add_argument("--out", default="src/test/ablation_mm_report")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument(
+        "--min-score", type=float, default=IMAGE_RELEVANCE_THRESHOLD,
+        help="Ngưỡng liên quan của kênh ảnh. Mặc định = production. Đặt 0 "
+             "để CHẨN ĐOÁN: tách chuyện kênh ảnh không tìm ra hình khỏi "
+             "chuyện ngưỡng cắt hết. Kết quả ở ngưỡng khác production KHÔNG "
+             "được dùng để chốt mặc định (CẤM #12), chỉ để chẩn đoán.")
     args = ap.parse_args()
 
     rows = load_testset(Path(args.testset_dir))
@@ -250,7 +257,12 @@ def main() -> int:
     print("CẢNH BÁO phải đi kèm mọi số: bộ test do LLM SINH, CHƯA người duyệt "
           "(_generation_meta.json: human_reviewed=false).")
 
-    data = collect(rows, Path(args.cache), RETRIEVER_K, IMAGE_RETRIEVER_K)
+    if args.min_score != IMAGE_RELEVANCE_THRESHOLD:
+        print(f"!! CHẨN ĐOÁN: min_score={args.min_score} KHÁC production "
+              f"({IMAGE_RELEVANCE_THRESHOLD}). Bảng này KHÔNG phải thứ người "
+              "dùng thật nhận, và KHÔNG được dùng để chốt mặc định.")
+    data = collect(rows, Path(args.cache), RETRIEVER_K, IMAGE_RETRIEVER_K,
+                   args.min_score)
     co_hinh = pages_having_figures()
 
     ket_qua = []
@@ -275,9 +287,12 @@ def main() -> int:
 
     head = (f"{'nhóm':44s} {'text_R':>7s} {'mm_R':>7s} {'delta':>7s} "
             f"{'có hình':>8s} {'h.đúng':>7s} {'h.khác':>7s} {'+ký tự':>8s}")
-    print(f"\n### Cấu hình 2 — bề rộng PRODUCTION "
-          f"(text_k={RETRIEVER_K}, image_k={IMAGE_RETRIEVER_K}, "
-          f"hình vào ngữ cảnh <= {MULTIMODAL_MAX_FIGURES})")
+    print(f"\n### Cấu hình 2 — text_k={RETRIEVER_K}, image_k="
+          f"{IMAGE_RETRIEVER_K}, min_score={args.min_score}, hình vào ngữ "
+          f"cảnh <= {MULTIMODAL_MAX_FIGURES}"
+          + ("  [BỀ RỘNG PRODUCTION]"
+             if args.min_score == IMAGE_RELEVANCE_THRESHOLD
+             else "  [CHẨN ĐOÁN, không phải production]"))
     print(head)
     print("-" * len(head))
     for r in ket_qua:
