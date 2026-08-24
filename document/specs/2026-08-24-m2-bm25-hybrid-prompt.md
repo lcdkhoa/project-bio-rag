@@ -152,25 +152,108 @@ trong môi trường (`import rank_bm25` → ImportError); `underthesea` và `py
 
 ---
 
-## 2. MÂU THUẪN giữa đề cương và số đo — PHẢI NÊU, KHÔNG ĐƯỢC TỰ XỬ
+## 2. MƯỜI QUYẾT ĐỊNH ĐÃ CHỐT (D-74, 2026-08-24) — không mở lại
 
-RULE #0 nói `goal.docx` thắng về **mục tiêu / nghiệm thu**; phần **đo lường** của
-repo vẫn có giá trị. Ba chỗ dưới đây đề cương nêu một *phương pháp* mà phép đo của
-repo đã bác bỏ. Không được lặng lẽ làm theo đề cương, cũng không được lặng lẽ bỏ —
-**phải ghi vào báo cáo và hỏi CBHD**:
+Người dùng đã quyết mọi chỗ đề cương cấn với số đo. **Không được tự ý làm khác;
+nếu một phép đo mới lật một quyết định thì HỎI LẠI, đừng tự đổi.**
 
-| Đề cương viết | Số đo của repo | Phải làm gì |
+| # | Chốt | Việc phải làm trong báo cáo / code |
 |---|---|---|
-| "nhúng vào cơ sở dữ liệu bằng mô hình **đa ngữ 384 chiều** [15]" (Nội dung 1) | repo đang dùng **`bge-m3` 1024 chiều**; hai số chiều **không dùng chung collection**, đổi là **dựng lại index** (3 giờ 20) | Giữ bge-m3, **ghi rõ trong báo cáo là thay đổi có chủ ý kèm lý do**. Nếu CBHD đòi đúng 384 chiều thì đó là một lượt dựng lại toàn bộ + đo lại mọi số — phải hỏi trước, không tự đổi |
-| "tự sinh chú thích tiếng Việt cho hình ảnh bằng **Vintern-1B**" (Nội dung 1) | D-47: đo trên 12 crop thật — **17,6 s/crop**, **4/12 caption BỊA** chi tiết không có trong ảnh, **0/4** lần tự nêu số hiệu hình là đúng. Đang `IMAGE_CAPTION_ENABLED=false` | **Không bật lại chỉ vì đề cương nêu tên nó.** Caption cho ngữ cảnh multi-modal phải là **caption deterministic** (pill/OCR) — xem §3.4. Ghi vào báo cáo: đã thử, đã đo, đã loại, kèm số |
-| "phân mảnh Recursive-Character với chunk 400 / chồng lấn 120" | đang đúng như vậy | Không đổi trong M2. Đổi chunk là dựng lại index → nếu muốn thử, đó là một thí nghiệm riêng có before/after |
+| 1 | **Bỏ Vintern-1B** | Xem §2.1 — chẩn đoán lại đúng bệnh, và bốn đường thay thế |
+| 2 | **Giữ `bge-m3` 1024 chiều** | Báo cáo ghi rõ đã đổi khỏi "384 chiều" của đề cương **kèm lý do** (bge-m3 mạnh hơn trên tiếng Việt; đổi lại = dựng lại index 3 giờ 20, hai số chiều không dùng chung collection). Đổi số chiều là hệ quả hiển nhiên của đổi model |
+| 3 | **Nguồn là PNG một trang/file**, không phải PDF | Sửa mọi câu "dữ liệu PDF" trong báo cáo. Ưu điểm thật: lossless, không có bước render, không mất chi tiết |
+| 4 | **Báo cáo recall theo NHÓM CÂU HỎI** | Ngoài recall tổng, thêm recall trên nhóm **có công thức / thuật ngữ đặc thù** — đúng lý do đề cương nêu BM25. Nếu recall tổng đã sát trần thì bảng "hybrid vs BM25" sẽ chênh rất nhỏ và **đóng góp thật bị che** |
+| 5 | **Sửa cách đo precision** | Xem §2.2 |
+| 6 | **Người duyệt tay ~50 câu** của bộ test | Công bố tỉ lệ gold key sai kèm **mọi** bảng số. Biến một điểm yếu thành một con số |
+| 7 | "Chứng minh sự vượt trội" là **định hướng** | Phải có cải tiến thật, nhưng **báo cáo đúng số đo** — kể cả khi một phân môn không thắng. Không nắn số cho khớp đề cương |
+| 8 | **Chạy liên tục**, ưu tiên việc không cần trông | Xem §2.3 |
+| 9 | **Thu hẹp phía ảnh** (ảnh là mục đích kèm thêm) | Ablation multi-modal chạy trên **4 quyển KNTT** và **NÓI RÕ là 4 quyển**, không pha loãng bằng 8 quyển không có caption |
+| 10 | **Chấp nhận nợ spine Bài** của 8 quyển CTST/CD | Làm BM25 (Giai đoạn 2) trước; quay lại spine sau |
 
-**Không được** viện dẫn đề cương để bật lại một thứ đã bị phép đo loại (nguyên tắc
-1 và 3 thắng ở tầng *thực hiện*); và **không được** viện dẫn phép đo để bỏ một hạng
-mục hợp đồng (RULE #0 thắng ở tầng *phạm vi*). Chỗ nào hai điều đó cấn nhau thì
-**ghi ra và hỏi**.
+### 2.1 Vintern: chẩn đoán lại — bệnh KHÔNG phải "thiếu caption"
 
----
+Ca người dùng nêu: chú thích SGK ghi *"đại dương"* nhưng ảnh là **con cá mập**; học
+sinh hỏi *"cho tôi hình cá mập trong bài học"*.
+
+**Đọc code ra bệnh thật:** `src/config.py:88` đặt
+`CLIP_MODEL = openai/clip-vit-base-patch16` — tháp text của nó **chỉ tiếng Anh**, mà
+`image_vectorstore._encode_text` đưa **thẳng truy vấn tiếng Việt** vào tokenizer đó.
+Cây cầu Việt–Anh duy nhất là `VIETNAMESE_TO_ENGLISH_VISUAL_HINTS`: **14 mục viết
+cứng** (`ca`→fish, `trau`→buffalo, `hoa`→flower, `re`→root…). "cá mập" không có
+trong đó, và một từ điển 14 mục **không bao giờ** phủ nổi 12 quyển KHTN.
+
+Vậy **Vintern là cách đi đường vòng quanh một CLIP tiếng-Anh**: biến pixel thành
+chữ tiếng Việt bằng một model **SINH** — và sinh là chỗ ảo giác chui vào (D-47: bịa
+4/12 crop). Sửa đúng bệnh thì **không cần sinh**.
+
+**Phép đo rẻ đã chạy, và nó đổi thứ tự ưu tiên** (đếm trên 16 393 chunk đã index):
+
+| thuật ngữ | số lần trong chữ đã index |
+|---|---|
+| `cá mập` | **5** |
+| `san hô` | 29 |
+| `cá voi` | 8 |
+| `đại dương` | 28 |
+| `ròng rọc` | 4 |
+| `nam châm` | 605 |
+| `tế bào` | 1 794 |
+
+**Vốn từ CÓ trong sách** — chỉ không nằm trong *chú thích hình*. Nên cách rẻ nhất
+có thể giải quyết phần lớn ca này **mà không cần model nào**.
+
+**Bốn đường, xếp theo giá và rủi ro. Không đường nào là "sinh mở":**
+
+| | cách | vì sao an toàn | giá |
+|---|---|---|---|
+| **(a)** | đánh chỉ mục hình **kèm chữ của TRANG/BÀI** chứa nó | không có model, không sinh gì | rẻ nhất, đi kèm M3 |
+| **(b)** | **CLIP đa ngữ** (tháp text hiểu tiếng Việt) → truy vấn tiếng Việt đập thẳng vào pixel | là model **truy xuất**: có thể xếp hạng sai nhưng **không thể bịa** | đổi model + dựng lại index ảnh (chỉ phía ảnh) |
+| **(c)** | gán nhãn **zero-shot trên VỐN TỪ ĐÓNG lấy từ chính quyển sách**: *"trong N thuật ngữ của Bài này, cái nào khớp ảnh?"* thay vì *"hãy mô tả ảnh"* | đầu ra **thuộc vốn từ của sách** → bịa là **bất khả về cấu trúc**; và kiểm được vì đưa được danh sách ứng viên cho giáo viên xem | công việc mới |
+| **(d)** | **human-in-the-loop** | chính đề cương Nội dung 1 đòi nó, và repo **ĐÃ CÓ** (`--export-image-review` / `--apply-image-review`) | công của người |
+
+**Khuyến nghị:** (a) + (d) làm nền → (b) là phép đo để viết vào báo cáo (thay một
+model sinh bằng một encoder truy xuất đa ngữ, có số trước/sau) → (c) **chỉ khi** (b)
+chưa đủ. **Đừng làm cả bốn một lượt.**
+
+**Phải đo trước khi đổi model:** dựng ~20 câu hỏi dạng *"cho tôi hình X"* trong đó
+X là **vật được vẽ nhưng KHÔNG có trong chú thích**, rồi đo recall theo từng kênh
+(caption deterministic / chữ trang-Bài / CLIP hiện tại / CLIP đa ngữ). Nếu (a) đã
+giải quyết hết thì **không đổi model** — code ít hơn = ít chỗ sai hơn.
+
+**Một điểm đúng đắn phải ghi vào báo cáo:** nếu một thuật ngữ **không xuất hiện ở
+đâu trong sách**, thì *"không có trong sách giáo khoa"* là câu trả lời **ĐÚNG**,
+không phải thất bại. Hệ thống không được dạy quá sách.
+
+### 2.2 Cách đo precision — đề xuất tốt hơn "giải thích 0,55"
+
+`precision_page` = 0,55 thấp **theo thiết kế**: cổng lọc giữ ~3 chunk, chunk của
+trang lân cận vẫn hữu ích nhưng không phải trang vàng. Chỉ giải thích bằng lời thì
+người đọc vẫn thấy 0,55. Hai việc **đo được**, làm cả hai:
+
+1. **Tập trang liên quan thay vì một trang vàng duy nhất** — dựng bằng **chính bộ
+   so khớp IDF của G3** (`src/test/qa_citation_page.py`, IDF đo trên chính index,
+   `COVERAGE_MIN = 0.50` đã hiệu chỉnh bằng phép đo — D-57): một trang được coi là
+   liên quan nếu chữ đã index của nó **phủ được đáp án** ở mức đó. **Deterministic,
+   không cần LLM**, và tái dùng code đã có phép đo đứng sau.
+2. **Trần đạt được của từng câu** — với một trang vàng có `m` chunk và top-`k`,
+   precision không thể vượt `min(k, m)/k`. Báo cáo precision **cạnh trần của chính
+   nó**, để người đọc thấy 0,55 so với trần 0,6 chứ không phải so với 1,0.
+
+Nói rõ trong báo cáo: cách (1) làm precision **cao lên** so với định nghĩa cũ, nên
+**phải báo cáo cả hai định nghĩa** — đổi thước đo rồi chỉ báo con số đẹp là tự lừa.
+
+### 2.3 "Chạy liên tục" nghĩa là gì trong thực tế
+
+Người dùng muốn tận dụng máy 24/24. Việc chia thành hai loại, đừng lẫn:
+
+- **Chạy được không cần trông** (đưa vào máy chạy đêm): dựng chỉ mục BM25 (phút),
+  quét `k1 × b`, chạy bảng **12 cấu hình** ablation (CPU, nhiều giờ), và **một
+  lượt** OCR lại khi đã gom đủ thay đổi tham số (3 giờ 20).
+- **Bị chặn bởi hạn mức ngoài**: sinh bộ test (OpenRouter — hạn mức/ngày **chưa đo
+  được**) và LLM-as-a-judge. Việc này **không** chạy 24/24 được; phải chia lô theo
+  quyển và kiểm sau mỗi lô.
+
+Thứ tự đề xuất để máy không bao giờ rỗi: dựng BM25 → **trong lúc đó** người duyệt
+50 câu (§2, #6) → quét tham số → sinh bộ test theo lô → chạy ablation.
 
 ## 3. VIỆC CỦA M2 — theo thứ tự, mỗi việc một tiêu chí nghiệm thu ĐO ĐƯỢC
 
@@ -310,7 +393,8 @@ bảng so sánh đều vô nghĩa.
 
 1. **Không sửa chữ đã lưu trong `biology_text`.** Chuẩn hoá chỉ số dưới chỉ ở phía
    truy vấn/chỉ mục thưa. Đoán lại một chỉ số dưới là bịa (CẤM #5).
-2. **Không bật `IMAGE_CAPTION_ENABLED`** chỉ vì đề cương nêu Vintern (D-47: bịa 4/12).
+2. **Không bật `IMAGE_CAPTION_ENABLED`.** Đã chốt bỏ Vintern (D-74); thay bằng bốn
+   đường ở §2.1, không đường nào là sinh mở.
 3. **Không đổi `EMBEDDING_MODEL`, `CHUNK_SIZE`, `CHUNK_OVERLAP`** trong M2 — mỗi cái
    là một lượt dựng lại 3 giờ 20 và làm mọi số trước đó không so được.
 4. **Không bump `TEXT_EXTRACTION_VERSION`** trong M2. Các tham số OCR còn nợ
@@ -334,30 +418,27 @@ bảng so sánh đều vô nghĩa.
 
 ---
 
-## 5. PHẢI HỎI, KHÔNG ĐƯỢC ĐOÁN
+## 5. Năm câu hỏi cũ — BỐN ĐÃ CÓ TRẢ LỜI (D-74), một còn mở
 
-1. **384 chiều vs bge-m3 1024 chiều** (§2) — có phải xin CBHD chấp nhận thay đổi, hay
-   phải dựng lại index theo đúng đề cương?
-2. **Ablation multi-modal chạy trên 4 quyển KNTT hay 12 quyển?** (§3.4 — caption pill
-   chỉ có ở KNTT). Hai lựa chọn cho hai con số khác nhau về ý nghĩa.
-3. **Hạn mức/ngày của OpenRouter** — cần chạy thử một lượt nhỏ để xác minh trước khi
-   sinh bộ test lớn, hoặc dùng key/nhà cung cấp khác?
-4. **Có làm lại G2 không**, và nếu có thì theo hướng **gold set CÔNG THỨC theo NXB**
-   (khuyến nghị đã ghi trong CLAUDE.md) hay 24 trang tổng quát?
-5. **M1 còn nợ spine của 8 quyển CTST/CD** (thiếu 3–33 Bài mỗi quyển). Làm tiếp M1
-   trước M2, hay chấp nhận `bai_so` chỉ có ở 1/3 kho và đi tiếp? Ảnh hưởng trực tiếp
-   tới việc bộ test có gắn được nhãn `bai` hay không.
+1. ~~384 chiều vs bge-m3~~ → **giữ bge-m3**, giải thích trong báo cáo (§2, #2).
+2. ~~Ablation multi-modal 4 quyển hay 12~~ → **4 quyển KNTT**, nói rõ là 4 (§2, #9).
+3. ~~Làm lại G2 hay không~~ → không làm lại bộ 24 trang tổng quát; thay bằng
+   **người duyệt ~50 câu của bộ test** (§2, #6). Nếu cần số OCR cho MT1 thì làm
+   **gold set CÔNG THỨC** như CLAUDE.md khuyến nghị.
+4. ~~Spine Bài của 8 quyển CTST/CD~~ → **chấp nhận nợ**, làm BM25 trước (§2, #10).
+5. **CÒN MỞ: hạn mức/ngày của OpenRouter free tier.** API **không trả header
+   `x-ratelimit-*`** và `/api/v1/key` trả `limit: null` (D-67) → **chưa đo được**.
+   Phải xác minh bằng một lô nhỏ **trước** khi sinh 300 câu, và phải có resume theo
+   câu (hiện chỉ resume theo quyển → một lần 429 giữa quyển là mất cả quyển).
 
----
-
-## 6. Trạng thái file khi bàn giao (khớp `git status` thật, commit `4effc19`)
+## 6. Trạng thái file khi bàn giao (khớp `git status` thật, commit `fa16181`)
 
 - `master` **đã push**, sạch. Chuỗi commit của lượt trước: `8f076f3` (M0 fingerprint)
   → `cf41c8e` (bảng tiến độ + định nghĩa xong) → `3f0b1eb` (bỏ `datasources/` khỏi
   git) → `7525461` (notebook + `RAG_FINGERPRINT_DIR`) → `8d8897b` (M1 `toc_lines` +
   D-70..D-72) → `0c1807d` (script treo máy) → `9c94a46` (index 12 quyển + D-73) →
   `4effc19` (`.dockerignore`).
-- `document/decision_log.html`: **D-01…D-73**. M2 bắt đầu từ **D-74**.
+- `document/decision_log.html`: **D-01…D-74** (D-74 = 10 quyết định ở §2). M2 bắt đầu từ **D-75**.
 - Index text 12 quyển **có thật** trong `database/` (16 393 chunk) — **đừng xoá**;
   M2 dựng chỉ mục thưa **trên nó**, không OCR lại.
 - `database/manifests/*.json` 12/12 và `database/fingerprints/*.json` 12/12, đều đã
