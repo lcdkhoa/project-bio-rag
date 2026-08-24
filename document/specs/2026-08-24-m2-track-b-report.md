@@ -441,7 +441,17 @@ mất ở nhóm `suy_luan`, thiên vị đã được xác nhận bằng số.
 
 ## 6. Trạng thái file khi bàn giao
 
-**Đã commit và push** (`47ced14`, `bc90863`):
+**Nghiệm thu B3 đã CHẠY THẬT, không phải chỉ mô tả:**
+`powershell -ExecutionPolicy Bypass -File scriptsun_ablation.ps1` chạy hết bốn
+bước, **mã thoát 0**, số tái lập **đúng từng chữ số** so với §5.5. Lượt chạy đầu
+lộ ra **ba lỗi của chính script**, cả ba chỉ thấy được khi chạy thật: `Tee-Object`
+truyền tiếp ra luồng output nên `$code` là một MẢNG (script tuyên bố "Bước 4 thất
+bại" trong khi bảng đã in ra và mã thoát là 0, rồi đi dựng lại đệm 51 phút một
+cách vô ích); `Tee-Object -Encoding` **không tồn tại** trong Windows PowerShell
+5.1; và console PS 5.1 mặc định code page 437/1258 nên chữ tiếng Việt thành ký tự
+rác.
+
+**Đã commit và push** (`47ced14` … `58c6656`):
 
 ```
 src/rag/bm25.py                  chỉ mục thưa Okapi BM25 (scipy)
@@ -454,14 +464,22 @@ src/config.py                    9 công tắc mới (§7)
 main.py                          --build-bm25
 src/test/{ablation,bm25_sweep,formula_probe}.py
 scripts/run_ablation.ps1
-tests/rag/{test_bm25,test_fusion,test_hybrid_text_retriever,test_sparse_store}.py
+tests/rag/{test_bm25,test_fusion,test_hybrid_text_retriever,
+           test_sparse_store,test_ablation_cache}.py
+document/colab_runtime_etl.ipynb  4 cell mới cho --build-bm25 (D-69)
 ```
 
-`pytest tests/rag/ -q` → **102 passed, 1 skipped**.
+`pytest tests/rag/ -q` → **107 passed, 1 skipped**; `pytest tests/ -q` → **442 passed, 3 skipped**.
 
 **Không commit (đúng thiết kế):** `database/sparse/` và `database/ablation_cache.json`
 — `.gitignore` bỏ qua `database/*`, và cả hai là **artefact sinh lại được** bằng
-`scripts\run_ablation.ps1`.
+`scripts\run_ablation.ps1`. `ablation_run_*.log` cũng bị bỏ qua (`*.log`).
+
+**Giá để dựng lại từ số 0, nếu ai đó xoá `database/`:** chỉ mục thưa **5,5 s**;
+bộ nhớ đệm ablation **~22–31 s/câu** (≈ 40–51 phút cho 100 câu; CPU 16 lõi,
+không GPU). Đổi `k1`/`b`/tokenizer thì dùng **`--topup-cache`** (đo thật:
+**2 692 cặp / 748 s**) chứ đừng dựng lại. `--build-cache` nay **nối tiếp** đệm cũ
+khi dấu vân index khớp — vừa resume được, vừa không huỷ công đã bỏ ra.
 
 **Không đụng tới (của Track A):** `src/test/generate_testsets.py`,
 `src/test/testsets/`, `scripts/run_testsets.ps1`, `tests/test_eval_gold_keys.py`.

@@ -481,6 +481,12 @@ def main() -> int:
     ap.add_argument("--topup-cache", action="store_true",
                     help="Chấm bù các cặp còn thiếu thay vì dựng lại từ đầu")
     ap.add_argument("--out", default="src/test/ablation_report")
+    ap.add_argument(
+        "--group-by", default="",
+        help="Tách bảng theo một cột nhãn của bộ test, ví dụ do_kho / phan_mon / "
+             "bo_sach. Dùng để KIỂM THIÊN VỊ: nếu ưu thế của BM25 tập trung ở "
+             "`truc_tiep` và biến mất ở `suy_luan` thì bộ test đang thiên vị kênh "
+             "từ khoá, vì câu hỏi do LLM sinh trong lúc đọc chính trang vàng.")
     args = ap.parse_args()
 
     rows = load_testset(Path(args.testset_dir))
@@ -512,8 +518,9 @@ def main() -> int:
     print(f"Ứng viên mỗi kênh: {CANDIDATE_N}; cổng lọc margin="
           f"{RETRIEVER_DISTANCE_MARGIN}; sàn rerank={RERANK_SCORE_MIN}\n")
 
-    def table(title, configs):
-        rows_out = [evaluate(c, rows, cache, sparse, page_of) for c in configs]
+    def table(title, configs, subset=None):
+        data = rows if subset is None else subset
+        rows_out = [evaluate(c, data, cache, sparse, page_of) for c in configs]
         head = (f"{'cấu hình':38s} "
                 + " ".join(f"{'R@' + str(k):>7s}" for k in KS)
                 + f" {'MRR':>7s} {'P@5':>7s} {'trầnP@5':>8s} {'rỗng':>5s}"
@@ -538,10 +545,35 @@ def main() -> int:
     print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
     results = results + fusion_rows
 
+    if args.group_by:
+        key = args.group_by
+        thieu = [r for r in rows if not r.get(key)]
+        if thieu:
+            raise RuntimeError(
+                f"{len(thieu)}/{len(rows)} câu thiếu nhãn {key!r} — tách theo nó "
+                "sẽ cho một bảng bỏ sót mà trông đầy đủ.")
+        groups: Dict[str, List[dict]] = {}
+        for r in rows:
+            groups.setdefault(str(r[key]), []).append(r)
+        # Ba chế độ, rerank BẬT: đúng ba điểm so sánh của Giai đoạn 3.
+        cfgs = [Config(mode=m, rerank=True, gate=True)
+                for m in ("bm25", "dense", "hybrid")]
+        for name in sorted(groups):
+            sub = groups[name]
+            rows_out = table(f"{key} = {name}  (n = {len(sub)})", cfgs, subset=sub)
+            for r in rows_out:
+                r["nhom"] = f"{key}={name}"
+            results = results + rows_out
+
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
+    fields = []
+    for r in results:
+        for k in r:
+            if k not in fields:
+                fields.append(k)
     with io.open(out.with_suffix(".csv"), "w", encoding="utf-8-sig", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(results[0].keys()))
+        w = csv.DictWriter(fh, fieldnames=fields, restval="")
         w.writeheader()
         w.writerows(results)
     print(f"\nĐã lưu: {out.with_suffix('.csv')}")
