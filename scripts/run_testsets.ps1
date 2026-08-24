@@ -22,7 +22,11 @@
 param(
     [int]$PerBook = 25,
     [int]$PerCall = 3,
-    [switch]$DryRunOnly
+    [switch]$DryRunOnly,
+    # Bo qua buoc dry-run. Dry-run KHONG ton luot goi nao, nhung no OCR dung
+    # nhung trang ma luot that se OCR lai -> ~10-20 phut cho 12 quyen, khong
+    # tiet kiem luot goi. Dung khi dang gap.
+    [switch]$SkipDryRun
 )
 
 $ErrorActionPreference = "Continue"
@@ -49,11 +53,15 @@ Say "$($books.Count) quyen x $PerBook cau, $PerCall cau/luot goi"
 Say "Uoc luong: ~$([math]::Ceiling($PerBook / $PerCall)) luot goi/quyen -> ~$([math]::Ceiling($PerBook / $PerCall) * $books.Count) luot goi tong."
 
 # --- BƯỚC 0: dry-run, 0 lượt gọi LLM ---------------------------------------
+if ($SkipDryRun) {
+    Say "=== BO QUA DRY RUN (-SkipDryRun) ==="
+} else {
 Say "=== DRY RUN (0 luot goi LLM) — xem no chon duoc du trang khong ==="
 foreach ($book in $books) {
     & python src/test/generate_testsets.py --dry-run --book $book `
         --per-book $PerBook --per-call $PerCall 2>&1 |
         Select-String -Pattern "^==|xet .* trang" | Tee-Object -Append $log
+}
 }
 if ($DryRunOnly) { Say "DryRunOnly -> dung o day."; exit 0 }
 
