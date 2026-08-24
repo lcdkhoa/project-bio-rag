@@ -190,7 +190,10 @@ A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-dr
   Vintern-1B và chẩn đoán lại đúng bệnh: vấn đề không phải thiếu caption mà là **kênh ảnh
   không truy vấn được bằng tiếng Việt** (`CLIP_MODEL` là CLIP tiếng Anh, cầu Việt–Anh chỉ là
   từ điển **14 mục** viết cứng; đo được `cá mập` có **5 lần** trong chữ đã index). Bắt đầu
-  từ **D-75**. Nền cũ:
+  từ **D-76** (D-75 = kế hoạch M2 hai track). **Đang chạy HAI SESSION song song** —
+  prompt của Track B (BM25 + hợp nhất) ở
+  `document/specs/2026-08-24-m2-track-b-bm25-prompt.md`, kèm **bảng quyền sở hữu file**
+  để hai session không đụng nhau. Nền cũ:
   `document/specs/2026-08-23-m0-toc-and-layout-prompt.md` §4
   (thứ tự M1→M5) + `document/specs/2026-08-23-m0-report.md` §7 (5 việc còn lại của M0/M1),
   trên nền thiết kế `document/specs/2026-08-22-12books-3publishers-etl-rebuild.md`. Bảng
