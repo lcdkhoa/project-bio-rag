@@ -142,7 +142,20 @@ class VectorDB:
             model_kwargs=embedding_model_kwargs(),
         )
         self.db = self._build_db(documents)
+        self._chunk_lookup = None
         logger.info(f"VectorDB initialized with {self.db._collection.count()} existing chunks")
+
+    def chunk_lookup(self):
+        """`ChunkLookup` dùng chung, dựng MỘT lần.
+
+        `get_retriever()` được gọi hai chỗ (`AppServices` và
+        `HybridRetriever.__init__`), mà mỗi `ChunkLookup` phải đọc trọn 16 393
+        chunk. Dựng hai lần là đọc hai lần và giữ hai bản trong RAM.
+        """
+        if self._chunk_lookup is None:
+            from .hybrid_text_retriever import ChunkLookup
+            self._chunk_lookup = ChunkLookup(self.db._collection)
+        return self._chunk_lookup
 
     def _build_db(self, documents):
         if documents is None or len(documents) == 0:
@@ -174,13 +187,13 @@ class VectorDB:
         # độ kia đi qua `HybridTextRetriever`, nơi cổng lọc và rerank là hai
         # công tắc RỜI NHAU.
         if RETRIEVAL_MODE != "dense":
-            from .hybrid_text_retriever import ChunkLookup, HybridTextRetriever
+            from .hybrid_text_retriever import HybridTextRetriever
             from .sparse_store import get_sparse_index
 
             collection = self.db._collection
             return HybridTextRetriever(
                 vectorstore=self.db,
-                lookup=ChunkLookup(collection),
+                lookup=self.chunk_lookup(),
                 sparse=get_sparse_index(collection=collection),
                 mode=RETRIEVAL_MODE,
                 max_k=max_k,
