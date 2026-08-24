@@ -311,12 +311,20 @@ def load_cache(path: Path, collection, check_sparse_params: bool = True) -> Cach
     cache = Cache.from_json(json.loads(path.read_text(encoding="utf-8")))
     got = collection.get(include=[], limit=1_000_000)
     live = chunk_ids_digest(got["ids"])
-    if cache.index_digest != live or cache.text_version != TEXT_EXTRACTION_VERSION:
+    stamp = sparse_params_stamp()
+    # Ba điều kiện, không phải hai. Thiếu điều kiện thứ ba thì đổi `k1`/`b`/
+    # tokenizer sẽ không bị chặn ở đây mà lộ ra tận lúc phát lại, dưới dạng
+    # "thiếu điểm cross-encoder cho 37 ứng viên" — một thông báo đúng nhưng chỉ
+    # nói triệu chứng, không nói nguyên nhân. (Đúng là chuyện đã xảy ra thật.)
+    if (cache.index_digest != live
+            or cache.text_version != TEXT_EXTRACTION_VERSION
+            or (check_sparse_params and cache.sparse_params != stamp)):
         raise RuntimeError(
-            "Bộ nhớ đệm CŨ HƠN index — từ chối dùng.\n"
+            "Bộ nhớ đệm KHÔNG khớp cấu hình hiện tại — từ chối dùng.\n"
             f"  digest: đệm={cache.index_digest[:12]}… index={live[:12]}…\n"
             f"  version: đệm={cache.text_version} index={TEXT_EXTRACTION_VERSION}\n"
-            "Dựng lại: --build-cache")
+            f"  tham số thưa: đệm={cache.sparse_params!r} hiện tại={stamp!r}\n"
+            "Dựng lại: --build-cache · chấm bù phần thiếu: --topup-cache")
     return cache
 
 
