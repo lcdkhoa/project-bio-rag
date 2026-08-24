@@ -56,6 +56,15 @@ IMAGE_QUERY_ACTIONS = {
 IMAGE_QUERY_FILLERS = {"minh", "toi", "tui", "em", "anh", "chi", "ve", "cua"}
 IMAGE_QUERY_NOUNS = {"anh", "hinh", "photo", "picture", "tranh"}
 
+# Từ hỏi NỘI DUNG: có mặt là câu này cần CHỮ, dù nó nói về một hình.
+# So trên dạng CÒN DẤU (`normalize_accented_text`), không phải dạng bỏ dấu —
+# bỏ dấu thì "nào" đụng "não" (bộ não) và mọi yêu cầu hình về bộ não sẽ mất
+# đường ảnh. Đúng loại đụng độ đã cắn ở D-49: "khí"→"khi", "đo"/"độ"→"do".
+# Đo được (bộ test 300 câu, mọi câu đều cần chữ): 3/300 câu bị định tuyến thành
+# chỉ-ảnh trước luật này, 0/300 sau nó.
+TEXT_QUESTION_TOKENS = {"gì", "nào"}
+TEXT_QUESTION_PHRASES = {"vì sao", "tại sao", "ra sao", "bao nhiêu"}
+
 TEXT_ANSWER_HINTS = {
     "cho biet",
     "dinh nghia",
@@ -127,6 +136,21 @@ def has_image_intent(query: str) -> bool:
     return False
 
 
+def asks_for_information(query: str) -> bool:
+    """Câu có từ hỏi nội dung ("gì", "nào", "vì sao", …) -> cần CHỮ.
+
+    Chú ý: so trên dạng CÒN DẤU. Nếu người gọi đã bỏ dấu trước khi truyền vào thì
+    hàm này không thấy dấu hiệu nào và trả False — tức lùi về hành vi cũ, chứ
+    không đoán. Mọi đường gọi thật (`HybridRetriever.search`) truyền câu gốc.
+    """
+    accented = normalize_accented_text(query)
+    if not accented:
+        return False
+    if any(phrase in accented for phrase in TEXT_QUESTION_PHRASES):
+        return True
+    return bool(set(accented.split()) & TEXT_QUESTION_TOKENS)
+
+
 def is_image_only_query(query: str) -> bool:
     """Return True when the user appears to request only image results."""
     normalized_query = normalize_query_text(query)
@@ -134,6 +158,9 @@ def is_image_only_query(query: str) -> bool:
         return False
     if any(term in normalized_query for term in IMAGE_ONLY_HINTS):
         return True
+    # Ý muốn NÓI RÕ ("chỉ cần hình") thắng luật từ hỏi, nên khối trên đứng trước.
+    if asks_for_information(query):
+        return False
     if any(term in normalized_query for term in TEXT_ANSWER_HINTS):
         return False
 
