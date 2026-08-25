@@ -4,7 +4,7 @@
 Chương này trình bày toàn bộ quá trình thực nghiệm và đánh giá định lượng hệ thống trợ lý ảo. Nội dung bao gồm: thiết lập môi trường và bộ công cụ thực nghiệm; quy trình xây dựng 12 bộ dữ liệu kiểm thử (mỗi cuốn sách giáo khoa một bộ) có gắn nhãn nguồn (ground truth) để đo lường khách quan; hệ thống độ đo đánh giá tách thành hai pha (truy xuất và sinh ngôn ngữ); kết quả thực nghiệm thực tế trên 120 câu hỏi cùng các bảng biểu, biểu đồ minh họa; và cuối cùng là phần thảo luận chuyên sâu về ưu điểm, hạn chế cũng như các phát hiện quan trọng rút ra từ số liệu.
 
 \section{Môi trường và công cụ thực nghiệm}
-Quá trình tiền xử lý dữ liệu (OCR, phát hiện và cắt ảnh, sinh chú thích) cùng với suy luận của mô hình ngôn ngữ lớn đòi hỏi tài nguyên tính toán lớn, đặc biệt là bộ nhớ GPU. Hệ thống được phát triển và thực nghiệm trên nền tảng điện toán đám mây với cấu hình trình bày trong Bảng~\ref{tab:env}.
+Quá trình tiền xử lý dữ liệu (nhận dạng ký tự, phát hiện và cắt hình) cùng với suy luận của mô hình ngôn ngữ lớn đòi hỏi tài nguyên tính toán đáng kể. Cấu hình thực tế dùng cho các phép đo trong chương này được trình bày ở Bảng~\ref{tab:env}.
 
 \begin{table}[H]
 \centering
@@ -14,20 +14,27 @@ Quá trình tiền xử lý dữ liệu (OCR, phát hiện và cắt ảnh, sinh
 \toprule
 \textbf{Thành phần} & \textbf{Chi tiết} \\
 \midrule
-Nền tảng tính toán & Google Colab Pro (High-RAM $\approx$ 50GB) \\
-GPU & NVIDIA A100 40GB VRAM \\
-Ngôn ngữ & Python 3.10 \\
-Framework cốt lõi & LangChain 0.2+, Transformers 4.40+, PyTorch 2.0+ \\
-Cơ sở dữ liệu vector & ChromaDB 0.5+ \\
-Mô hình sinh (LLM) & Qwen2.5-3B-Instruct (float16) \\
-Mô hình nhúng văn bản & paraphrase-multilingual-MiniLM-L12-v2 (384 chiều) \\
-Mô hình thị giác & CLIP-ViT-B/16, OwlViT-B/32, Vintern-1B-v2 \\
-LLM giám khảo (judge) & MiMo-v2.5-pro (gọi qua API tương thích OpenAI) \\
+Nền tảng tính toán & Máy trạm cục bộ, Windows 11 \\
+CPU / RAM & 16 lõi / 63,9 GB \\
+GPU & \textbf{Không có} --- \texttt{torch 2.11.0+cpu}, CUDA không khả dụng \\
+Ngôn ngữ & Python 3.12.8 \\
+Framework cốt lõi & LangChain 1.2, Transformers 4.46.3, PyTorch 2.11 (CPU) \\
+Cơ sở dữ liệu vector & ChromaDB 1.5.9 \\
+Mô hình sinh (LLM) & Qwen2.5-3B-Instruct \\
+Mô hình nhúng văn bản & \texttt{BAAI/bge-m3} (1024 chiều) \\
+Mô hình xếp hạng lại & \texttt{BAAI/bge-reranker-v2-m3} (cross-encoder) \\
+Mô hình thị giác & CLIP-ViT-B/16, OwlViT-B/32 \\
+Nhận dạng ký tự & Tesseract, gói tiếng Việt \\
+LLM giám khảo (judge) & Gọi qua API tương thích OpenAI, tách khỏi mô hình bị chấm \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Việc sử dụng GPU A100 40GB VRAM cho phép nạp đồng thời mô hình sinh Qwen2.5-3B-Instruct (khoảng 6--8GB VRAM ở định dạng float16) cùng các mô hình thị giác (CLIP, OwlViT, Vintern-1B), nhờ đó tốc độ phản hồi của trợ lý ảo đạt mức gần thời gian thực. Mô hình giám khảo được tách riêng và truy cập qua API tương thích chuẩn OpenAI, bảo đảm \textit{tính độc lập} giữa mô hình bị đánh giá (Qwen2.5) và mô hình chấm điểm — một nguyên tắc quan trọng của phương pháp LLM-as-a-judge nhằm tránh thiên kiến tự đánh giá (self-enhancement bias)~\cite{zheng2023llmjudge}.
+Điểm đáng chú ý của cấu hình này là \textbf{toàn bộ pha ETL chạy trên CPU, không dùng GPU}. Đây không phải một hạn chế cần biện minh mà là một kết quả có ý nghĩa thực tiễn: pipeline được thiết kế xoay quanh thị giác máy tính cổ điển và nhận dạng ký tự xác định, nên phần đắt nhất của nó không cần phần cứng tăng tốc. Chi phí đo được nằm ở Mục~\ref{sec:ketqua}. GPU chỉ thực sự cần cho pha \textit{phục vụ} mô hình sinh Qwen2.5.
+
+Mô hình giám khảo được tách riêng và truy cập qua API tương thích chuẩn OpenAI, bảo đảm \textit{tính độc lập} giữa mô hình bị đánh giá (Qwen2.5) và mô hình chấm điểm --- một nguyên tắc quan trọng của phương pháp LLM-as-a-judge nhằm tránh thiên kiến tự đánh giá (self-enhancement bias)~\cite{zheng2023llmjudge}.
+
+Việc tiền xử lý cũng \textbf{không} bao gồm bước sinh chú thích ảnh tự động: mô hình sinh chú thích đã được đo và loại (Chương~\ref{chapter:phuong_phap_thuc_hien}), nên nó không có mặt trong ngăn xếp công nghệ ở Bảng~\ref{tab:env}.
 
 \section{Bộ dữ liệu tri thức đã số hóa và lập chỉ mục}
 \label{sec:corpus}
@@ -157,11 +164,15 @@ Gọi $R_k = (d_1, d_2, \dots, d_m)$ là danh sách $m \leq k$ đoạn văn bả
 \begin{equation}
 \mathrm{rel}(d) =
 \begin{cases}
-1 & \text{nếu } \mathrm{source}(d) = B^{*} \;\wedge\; |\mathrm{page}(d) - p^{*}| \leq 1 \\
+1 & \text{nếu } \mathrm{source}(d) = B^{*} \;\wedge\; \mathrm{page}(d) = p^{*} \\
 0 & \text{ngược lại}
 \end{cases}
 \end{equation}
-trong đó $(B^{*}, p^{*})$ là sách và trang nguồn của câu hỏi. Dung sai $\pm 1$ trang được dùng vì một đoạn văn bản có thể tràn qua ranh giới trang do cơ chế chunking. Ba độ đo chính được tính như sau:
+trong đó $(B^{*}, p^{*})$ là sách và trang nguồn của câu hỏi.
+
+\textbf{So với phiên bản trước, dung sai $\pm 1$ trang đã bị loại bỏ.} Dung sai đó được đưa vào với lập luận rằng một đoạn văn bản có thể tràn qua ranh giới trang do cơ chế phân mảnh. Lập luận này \textbf{không đúng với pipeline hiện tại}: bộ phân vùng bố cục cắt theo từng vùng \textit{bên trong} một trang, nên không đoạn nào vắt qua hai trang. Hệ quả là cửa sổ $\pm 1$ chỉ có thể tính công cho một đoạn thuộc trang \textit{khác} với trang nguồn --- tức là thổi phồng recall chứ không bao dung thêm trường hợp đúng nào. Nó còn che một lỗi thật: một sai lệch một đơn vị trong nhãn nguồn của bộ kiểm thử sẽ bị cửa sổ này che kín. Vì vậy điều kiện so khớp nay là \textbf{bằng đúng số trang}, và mọi con số ở Mục~\ref{sec:ketqua} được đo với dung sai $0$. Đây là một tiêu chí \textit{nghiêm hơn} bản trước, nên các giá trị recall trong đồ án này không so sánh trực tiếp được với các giá trị công bố ở báo cáo chuyên đề trước đó.
+
+Ba độ đo chính được tính như sau:
 
 \begin{itemize}
     \item \textbf{Precision@k} --- tỷ lệ đoạn truy xuất là đúng trang nguồn:
