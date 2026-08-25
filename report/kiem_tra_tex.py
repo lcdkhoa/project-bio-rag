@@ -1,0 +1,104 @@
+# -*- coding: utf-8 -*-
+"""Kiểm tra tĩnh nguồn LaTeX của báo cáo — vì máy này KHÔNG có trình biên dịch.
+
+Không có `pdflatex` nghĩa là mọi lỗi build chỉ lộ ra trên máy khác, sau khi đã
+commit. Script này bắt trước bốn lớp lỗi phổ biến nhất mà không cần biên dịch:
+
+1. `\\ref{...}` trỏ vào nhãn không tồn tại (LaTeX in `??` chứ không báo lỗi).
+2. `\\cite{...}` trỏ vào khoá không có trong `references.bib`.
+3. Lệnh cần gói mà gói chưa được nạp (`\\ce` cần `mhchem`, `\\multirow` cần
+   `multirow`, ...).
+4. Ký tự điều khiển lọt vào file — cách hỏng đặc trưng khi vá `.tex` bằng script
+   Python mà quên dùng chuỗi thô: `\\allowbreak` chứa `\\a` (BEL) và `\\textbf`
+   chứa `\\t` (TAB), Python sẽ âm thầm dịch chúng thành ký tự điều khiển.
+
+    python report/kiem_tra_tex.py
+
+Thoát khác 0 khi có lỗi, để dùng được trong một lệnh nối.
+"""
+from __future__ import annotations
+
+import glob
+import io
+import re
+import sys
+from pathlib import Path
+
+GOC = Path(__file__).resolve().parent / "tex_source"
+BIB = GOC / "src" / "references.bib"
+
+# Lệnh -> gói phải nạp. Chỉ liệt kê thứ ĐÃ dùng trong báo cáo này, không liệt kê
+# cho đủ: một danh sách dài mà sai sẽ sinh cảnh báo giả và bị bỏ qua.
+LENH_CAN_GOI = {
+    r"\ce": "mhchem",
+    r"\multirow": "multirow",
+    r"\toprule": "booktabs",
+    r"\includegraphics": "graphicx",
+    r"\subcaption": "subcaption",
+    r"\begin{tikzpicture}": "tikz",
+    r"\makecell": "makecell",
+}
+
+
+def _doc_tex():
+    return sorted(glob.glob(str(GOC / "src" / "**" / "*.tex"), recursive=True))
+
+
+def kiem_tra() -> list[str]:
+    loi: list[str] = []
+    tex = _doc_tex()
+    cls = GOC / "src" / "thesis.cls"
+    nguon = {p: io.open(p, encoding="utf-8").read() for p in tex}
+    cls_txt = io.open(cls, encoding="utf-8").read() if cls.exists() else ""
+    tat_ca = "\n".join(nguon.values())
+
+    # 1) ref vs label
+    nhan = set(re.findall(r"\\label\{([^}]+)\}", tat_ca))
+    for p, s in nguon.items():
+        for r in re.findall(r"\\(?:ref|autoref|eqref|nameref)\{([^}]+)\}", s):
+            if r not in nhan:
+                loi.append(f"[ref] {Path(p).name}: \\ref{{{r}}} không có \\label")
+
+    # 2) cite vs bib
+    if BIB.exists():
+        khoa = set(re.findall(r"@\w+\{([^,]+),", io.open(BIB, encoding="utf-8").read()))
+        for p, s in nguon.items():
+            for c in re.findall(r"\\cite\w*\{([^}]+)\}", s):
+                for k in (x.strip() for x in c.split(",")):
+                    if k and k not in khoa:
+                        loi.append(f"[cite] {Path(p).name}: \\cite{{{k}}} không có trong references.bib")
+
+    # 3) lệnh cần gói
+    da_nap = cls_txt + tat_ca
+    for lenh, goi in LENH_CAN_GOI.items():
+        if lenh in tat_ca and goi not in da_nap:
+            loi.append(f"[goi] dùng {lenh} nhưng chưa nạp gói {goi}")
+
+    # 4) ký tự điều khiển
+    for p, s in nguon.items():
+        xau = sorted({c for c in s if ord(c) < 32 and c not in "\n\r\t"})
+        if xau:
+            ma = ", ".join(f"0x{ord(c):02x}" for c in xau)
+            loi.append(f"[ctrl] {Path(p).name}: có ký tự điều khiển {ma} "
+                       f"(dấu hiệu vá .tex bằng chuỗi Python không phải chuỗi thô)")
+
+    return loi
+
+
+def main() -> int:
+    if not GOC.exists():
+        print(f"Không thấy {GOC} — chưa có source .tex?")
+        return 2
+    loi = kiem_tra()
+    n = len(_doc_tex())
+    if loi:
+        print(f"KIỂM TRA TEX: {len(loi)} vấn đề trên {n} file\n")
+        for x in loi:
+            print("  " + x)
+        return 1
+    print(f"KIỂM TRA TEX: sạch ({n} file .tex)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

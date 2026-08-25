@@ -1,7 +1,7 @@
 \chapter{PHƯƠNG PHÁP THỰC HIỆN VÀ KIẾN TRÚC HỆ THỐNG}
 \label{chapter:phuong_phap_thuc_hien}
 
-Chương này đi sâu vào chi tiết các bước thiết kế và triển khai hệ thống trợ lý ảo môn Sinh học. Nó bắt đầu từ việc trình bày kiến trúc tổng thể, sau đó là các kỹ thuật xử lý dữ liệu (ETL pipeline), luồng truy xuất tạo câu trả lời (RAG pipeline), và kết thúc bằng việc thiết kế giao diện tương tác người dùng (Frontend).
+Chương này đi sâu vào chi tiết các bước thiết kế và triển khai hệ thống trợ lý ảo môn Khoa học tự nhiên (Vật lí, Hoá học và Sinh học). Nó bắt đầu từ việc trình bày kiến trúc tổng thể, sau đó là các kỹ thuật xử lý dữ liệu (ETL pipeline), luồng truy xuất tạo câu trả lời (RAG pipeline), và kết thúc bằng việc thiết kế giao diện tương tác người dùng (Frontend).
 
 \section{Kiến trúc tổng thể hệ thống}
 Hệ thống trợ lý ảo được thiết kế theo mô hình Client-Server hiện đại, bao gồm hai thành phần chính: Backend (xử lý logic RAG, tương tác với LLM và Database) và Frontend (Giao diện Web cho người dùng).
@@ -16,21 +16,29 @@ Hệ thống trợ lý ảo được thiết kế theo mô hình Client-Server h
 Backend được xây dựng dựa trên ngôn ngữ Python, sử dụng Flask làm API Server và LangChain~\cite{langchain2022} làm framework cốt lõi để dàn xếp (orchestrate) các tác vụ truy xuất và sinh văn bản. Frontend được phát triển bằng Next.js, cung cấp trải nghiệm web mượt mà (SPA - Single Page Application).
 
 \section{Quy trình thu thập và xử lý dữ liệu (ETL Pipeline)}
-Quy trình Extract, Transform, Load (ETL) là trái tim của việc xây dựng Kho tri thức (Knowledge Base) cho trợ lý ảo. Đặc thù của nội dung Sinh học trong sách giáo khoa là sự đan xen giữa lý thuyết phức tạp và hình ảnh trực quan (sơ đồ tế bào, quá trình quang hợp, cấu tạo cơ thể sinh vật\ldots), do đó quy trình ETL được chia làm 2 luồng độc lập để xử lý lượng lớn dữ liệu từ 12 cuốn sách giáo khoa nói trên~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}:
+Quy trình Extract, Transform, Load (ETL) là trái tim của việc xây dựng Kho tri thức (Knowledge Base) cho trợ lý ảo. Đặc thù của nội dung Khoa học tự nhiên trong sách giáo khoa là sự đan xen giữa lý thuyết, \textbf{công thức} (Hoá học, Vật lí) và hình ảnh trực quan (sơ đồ tế bào, sơ đồ mạch điện, biểu đồ, bảng số liệu\ldots), do đó quy trình ETL được chia làm 2 luồng độc lập để xử lý lượng lớn dữ liệu từ 12 cuốn sách giáo khoa nói trên~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}:
 
 \subsection{Xử lý Dữ liệu Văn bản (Text ETL)}
-Quy trình Text ETL chịu trách nhiệm đọc các file PDF sách giáo khoa, trích xuất chữ và lưu vào ChromaDB.
+Quy trình Text ETL chịu trách nhiệm đọc các trang sách, trích xuất chữ và lưu vào ChromaDB.
+
+\textbf{Nguồn dữ liệu là ảnh trang, không phải PDF.} Toàn bộ 12 quyển được lưu dưới dạng ảnh PNG, mỗi trang một tệp, ở độ phân giải gốc của nhà xuất bản. Cách này loại bỏ khâu kết xuất PDF sang ảnh (poppler) vốn là một tham số ẩn: mỗi lần đổi DPI kết xuất là mọi ngưỡng hình học của bộ phân vùng bố cục phải hiệu chỉnh lại. Ba bộ sách có độ phân giải khác nhau đáng kể --- Kết nối tri thức $1094 \times 1536$, Chân trời sáng tạo và Cánh Diều $2280 \times 3201$ (riêng Cánh Diều lớp 6 là $2480 \times 3480$) --- nên mọi ngưỡng tính bằng điểm ảnh đều được quy về tỉ lệ theo chiều rộng trang thay vì gán cứng.
+
+\textbf{Số trang in được xác minh, không suy đoán.} Mỗi quyển có một tệp kê khai (manifest) ghi ánh xạ giữa chỉ số tệp ảnh và \textit{số trang in trên sách}, dựng bằng cách đọc số trang ở góc trang rồi ràng buộc theo tính đơn điệu; trang bìa được gán vai trò riêng và không đưa vào chỉ mục. Bộ nạp văn bản \textbf{báo lỗi} khi thiếu manifest thay vì lấy chỉ số tệp làm số trang --- vì một trích dẫn sai số trang sẽ chỉ học sinh tới sai chỗ.
 \begin{enumerate}
-    \item \textbf{Đọc và trích xuất chữ (OCR):} Đối với các trang sách dạng ảnh hoặc có định dạng phức tạp, hệ thống sử dụng thư viện Tesseract OCR~\cite{smith2007tesseract} và PDF2Image (thông qua Poppler) để chuyển đổi hình ảnh thành văn bản tiếng Việt (\texttt{tesser}\allowbreak\texttt{act-ocr-}\allowbreak\texttt{vie}).
+    \item \textbf{Đọc và trích xuất chữ (OCR):} Đối với các trang sách dạng ảnh hoặc có định dạng phức tạp, hệ thống sử dụng thư viện Tesseract OCR~\cite{smith2007tesseract} với gói ngôn ngữ tiếng Việt (\texttt{tesser}\allowbreak\texttt{act-ocr-}\allowbreak\texttt{vie}). Việc nhận dạng \textbf{không} chạy trên cả trang mà chạy theo \textbf{từng vùng bố cục} đã tách trước bằng thị giác máy tính cổ điển (hộp màu, thanh bên, khung hoạt động), mỗi vùng dùng chế độ phân đoạn trang phù hợp với chính nó. Đo trên cùng một mẫu, cách chạy cả trang với chế độ mặc định làm mất $3{,}8\%$ số từ.
     \item \textbf{Phân mảnh văn bản (Chunking):} Không thể đưa toàn bộ quyển sách vào LLM vì giới hạn cửa sổ ngữ cảnh (context window). Văn bản được chia nhỏ bằng \texttt{Recursive-}\allowbreak\texttt{Character-}\allowbreak\texttt{TextSplitter} của LangChain với \texttt{chunk\_size = 400} ký tự và \texttt{chunk\_overlap = 120} ký tự. Kích thước 400 được chọn nhằm đảm bảo mỗi đoạn văn chứa đủ một ý nghĩa sinh học trọn vẹn, còn khoảng chồng lấn (overlap) 120 ký tự giúp giữ được ngữ cảnh liên kết giữa các đoạn liền kề.
-    \item \textbf{Nhúng và lưu trữ (Embedding \& Indexing):} Các đoạn text được đưa qua mô hình \texttt{sentence-transformers/}\allowbreak\texttt{paraphrase-}\allowbreak\texttt{multilingual-}\allowbreak\texttt{MiniLM-L1}\allowbreak\texttt{2-v2} để tạo vector 384 chiều và lưu vào collection \texttt{biology\_text} trong ChromaDB.
+    \item \textbf{Nhúng và lưu trữ (Embedding \& Indexing):} Các đoạn văn bản được đưa qua mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3} để tạo vector $1024$ chiều và lưu vào collection \texttt{biology\_text} trong ChromaDB. Mô hình này thay cho \texttt{paraphrase-}\allowbreak\texttt{multilingual-}\allowbreak\texttt{MiniLM-L12-v2} ($384$ chiều) dùng ở giai đoạn trước; hai mô hình khác số chiều nên \textbf{không thể dùng chung một collection} --- đổi mô hình bắt buộc dựng lại toàn bộ chỉ mục.
+
+    \item \textbf{Chỉ mục từ khoá song song (BM25):} Cùng lượt lập chỉ mục, hệ thống dựng thêm một chỉ mục thưa Okapi BM25~\cite{robertson2009bm25} trên \textit{chính các đoạn đó} và dùng chung định danh đoạn, phục vụ cơ chế truy xuất lai trình bày ở Mục~\ref{sec:relevance_gate}.
 \end{enumerate}
 
 \subsection{Xử lý Dữ liệu Hình ảnh (Image ETL)}
-Học sinh khi hỏi về Sinh học thường cần xem hình vẽ. Luồng Image ETL hoạt động như sau:
+Học sinh khi hỏi về Khoa học tự nhiên thường cần xem hình vẽ, sơ đồ hoặc biểu đồ. Luồng Image ETL hoạt động như sau:
 \begin{enumerate}
-    \item \textbf{Cắt ảnh tự động:} Sử dụng mô hình \texttt{google/owlvit-base-patch32} (với ngưỡng confidence threshold 0.1) để quét từng trang sách, nhận diện các khu vực có chứa hình vẽ, biểu đồ và tự động cắt (crop) chúng ra khỏi trang.
-    \item \textbf{Sinh mô tả tự động (Image Captioning):} Hình ảnh cắt ra được đưa qua mô hình \texttt{5CD-AI/Vintern-1B-v2} để tự động sinh ra đoạn văn bản mô tả tiếng Việt chi tiết về nội dung bức ảnh (ví dụ: "Sơ đồ quang hợp ở thực vật").
+    \item \textbf{Cắt ảnh theo neo chú thích (anchor-first):} Bước phát hiện \textbf{đi từ chữ chú thích chứ không đi từ mô hình phát hiện vật thể}. Hệ thống tìm các nhãn dạng \texttt{Hình A.B} trên trang rồi cắt vùng hình phía trên hoặc phía dưới nhãn tuỳ quy ước của từng bộ sách; mô hình \texttt{google/owlvit-base-patch32} chỉ còn giữ vai trò \textit{phát hiện phụ} cho những hình không có nhãn. Ưu điểm quyết định của thứ tự này là \textbf{kết quả giải thích được}: mỗi khung cắt đều truy được về một chuỗi ký tự có thật trên trang, thay vì về một điểm tin cậy của mạng nơ-ron.
+
+    \item \textbf{Xử lý riêng theo nhà xuất bản:} Ba bộ sách đánh nhãn hình theo hai cách khác nhau, đo trên mẫu 30 trang mỗi quyển. Kết nối tri thức in nhãn \textbf{chữ trắng trên nền viên thuốc màu}, đọc được $23$--$28$ nhãn/30 trang qua một kênh chuyên biệt. Chân trời sáng tạo và Cánh Diều in nhãn bằng \textbf{chữ đen thường}: $30$--$65$ nhãn/30 trang qua kênh nhận dạng thông thường, và \textbf{0} nhãn qua kênh viên thuốc. Vì vậy mỗi quyển khai báo một \textit{vân tay bố cục} đo được, và bộ xử lý ảnh được chọn theo nhà xuất bản đọc từ chính tên quyển; tên quyển không xác định được nhà xuất bản thì hệ thống \textbf{dừng và báo lỗi} chứ không xử lý bằng bố cục của bộ sách khác.
+    \item \textbf{Siêu dữ liệu đọc lại từ điểm ảnh, không sinh bằng mô hình:} Mỗi hình cắt ra mang ba trường được \textit{đọc lại} từ trang gốc: nhãn hình (\texttt{Hình A.B}), dòng chú thích, và chữ nhận dạng được bên trong khung cắt. Hệ thống \textbf{không} dùng mô hình sinh chú thích ảnh. Đường xử lý với \texttt{5CD-AI/Vintern-1B-v2} đã được cài đặt và \textbf{đo trên 12 khung cắt thật}: $17{,}6$ giây mỗi khung trên CPU, khoảng gấp bốn lần chi phí của cả luồng ảnh; và khi mở từng khung ra đối chiếu thì $2/12$ mô tả đúng, $6/12$ đúng một phần, còn \textbf{$4/12$ bịa} chi tiết không có trên ảnh. Bằng chứng quyết định là: khi mô hình tự nêu số hiệu hình, nó \textbf{sai $4/4$ lần} --- đúng vào thông tin mà kênh đọc nhãn xác định đã cho chính xác. Vì vậy chức năng này được giữ trong mã nguồn nhưng \textbf{tắt mặc định}; muốn bật lại phải kèm một phép đo mới trên chính bộ khung cắt đó.
     \item \textbf{Chỉ mục đa phương thức:} Vector của hình ảnh được tạo ra bằng \texttt{openai/\allowbreak clip-vit-base-patch16}, lưu cùng với metadata (bao gồm caption tiếng Việt, số trang, tọa độ) vào collection \texttt{biology\_images}.
 \end{enumerate}
 
@@ -47,21 +55,33 @@ Khi người dùng (học sinh) nhập câu hỏi trên giao diện, Backend ti�
 
 \begin{enumerate}
     \item \textbf{Truy xuất kép (Dual Retrieval):} Câu hỏi được embed để tìm kiếm đồng thời trong collection Text (\texttt{RETRIEVER\_K = 3} đoạn text gần nhất) và collection Image (\texttt{IMAGE\_RETRIEVER\_K = 5} hình ảnh liên quan nhất dựa trên caption và CLIP vector).
-    \item \textbf{Tiền xử lý prompt:} Text context được ghép nối với các caption của hình ảnh tìm được. Một Prompt template chuyên biệt cho trợ lý giáo dục được sử dụng để ép LLM đóng vai trò một giáo viên Sinh học nhiệt tình, chỉ trả lời dựa trên ngữ cảnh được cung cấp.
+    \item \textbf{Tiền xử lý prompt:} Text context được ghép nối với các caption của hình ảnh tìm được. Một Prompt template chuyên biệt cho trợ lý giáo dục được sử dụng để ép LLM đóng vai trò một giáo viên Khoa học tự nhiên nhiệt tình, chỉ trả lời dựa trên ngữ cảnh được cung cấp.
     \item \textbf{Sinh văn bản (Generation):} Mô hình Qwen2.5~\cite{qwen25_2024} (sử dụng thư viện \texttt{transform}ers~\cite{wolf2020transformers} và \texttt{HuggingFace-}\allowbreak\texttt{Pipeline}) nhận prompt và sinh ra câu trả lời cuối cùng. Thông số \texttt{temperature = 0.1} được thiết lập thấp để LLM đưa ra câu trả lời chính xác, tránh việc "sáng tạo" quá mức làm sai lệch kiến thức khoa học.
 \end{enumerate}
 
 \subsection{Định tuyến theo ý định truy vấn (Query Intent Routing)}
 Không phải câu hỏi nào cũng cần cả văn bản lẫn hình ảnh. Trước khi truy xuất, hệ thống phân tích ý định của câu hỏi: nếu câu hỏi mang tính \textit{chỉ-hình-ảnh} (ví dụ chứa các cụm "cho tôi xem hình", "ảnh minh họa", "sơ đồ"), hệ thống ưu tiên luồng tìm ảnh; ngược lại, luồng văn bản giữ vai trò chính và hình ảnh chỉ đóng vai trò bổ trợ minh họa. Cơ chế định tuyến này (cài đặt trong module \texttt{query\_intent}) giúp tránh đưa nhiễu hình ảnh vào những câu hỏi lý thuyết thuần túy.
 
-\subsection{Truy xuất lai và cơ chế lọc liên quan (Hybrid Retrieval \& Relevance Gate)}
+\subsection{Truy xuất lai thưa--dày và cơ chế lọc liên quan}
 \label{sec:relevance_gate}
-Một bộ truy xuất top-$k$ thông thường luôn trả về đúng $k$ đoạn bất kể chúng có thực sự liên quan hay không, khiến các đoạn lạc chủ đề "lọt" vào ngữ cảnh và làm mô hình sinh ra câu trả lời ghép nối sai. Để khắc phục, hệ thống sử dụng một bộ truy xuất \textbf{có cổng lọc liên quan} (\texttt{RelevanceGatedRetriever}) hoạt động theo nguyên tắc khoảng cách tương đối:
-\begin{enumerate}
-    \item Lấy rộng \texttt{RETRIEVER\_FETCH\_K = 8} đoạn ứng viên cùng khoảng cách (distance) của chúng.
-    \item Gọi $d_{\min}$ là khoảng cách của đoạn gần nhất. Chỉ giữ lại các đoạn có khoảng cách $d \leq d_{\min}\,(1 + \texttt{margin})$ với \texttt{margin = 0.3}, và cắt tối đa \texttt{RETRIEVER\_MAX\_K = 4} đoạn.
-\end{enumerate}
-Nhờ cổng lọc này, những đoạn nằm xa cụm chủ đề tốt nhất sẽ bị loại, giảm hẳn hiện tượng "chảy máu ngữ cảnh" (context bleeding) giữa các trang không liên quan. Toàn bộ kết quả văn bản và hình ảnh sau đó được hợp nhất trong một bộ truy xuất lai (\texttt{HybridRetriever}) trước khi dựng prompt. Như sẽ phân tích ở Chương~\ref{chapter:thuc_nghiem_danh_gia}, chính cấu hình cắt-$k$ chặt chẽ này vừa là ưu điểm (giảm nhiễu) vừa là điểm đánh đổi (làm giảm recall), và là một định hướng tinh chỉnh quan trọng.
+
+Truy xuất theo ngữ nghĩa (dense) tìm được nội dung tương đồng về ý nghĩa ngay cả khi không trùng từ khoá, nhưng lại yếu ở đúng chỗ sách giáo khoa Khoa học tự nhiên cần nhất: \textbf{ký hiệu và công thức}. Một học sinh gõ \texttt{CO2} cần khớp với trang in \ce{CO2}; đó là một phép so khớp \textit{từ vựng}, không phải một phép so khớp ngữ nghĩa. Ngược lại, truy xuất từ khoá thuần tuý lại trượt khi học sinh diễn đạt khác với cách sách viết. Vì vậy hệ thống dùng \textbf{truy xuất lai}: chạy song song một kênh \textit{dày} (vector \texttt{bge-m3}) và một kênh \textit{thưa} (Okapi BM25~\cite{robertson2009bm25}) trên cùng tập đoạn văn bản, rồi hợp nhất hai bảng xếp hạng.
+
+\subsubsection{Kênh thưa và chuẩn hoá công thức}
+Chỉ mục BM25 được tự cài đặt thay vì dùng thư viện có sẵn, vì hai tham số $k_1$ và $b$ cần đặt được \textit{lúc truy vấn} --- chỉ khi đó việc quét toàn bộ lưới tham số mới đủ rẻ để làm bằng thực nghiệm thay vì chọn theo mặc định. Quét lưới $5 \times 5$ cho $k_1 = 0{,}7$, $b = 0{,}75$.
+
+Một kết quả đo \textbf{ngược với trực giác ban đầu}: bộ tách từ \textbf{giữ dấu} thắng bộ tách từ bỏ dấu (MRR $0{,}820$ so với $0{,}755$). Bỏ dấu tưởng là cách bao dung lỗi nhận dạng, nhưng trong tiếng Việt nó làm các từ chức năng va vào chính những từ mang nội dung quan trọng nhất của môn học --- \textit{khí} thành \textit{khi}, \textit{độ} thành \textit{do}, \textit{lá} thành \textit{la}, \textit{đá} thành \textit{da}.
+
+Riêng công thức được \textbf{chuẩn hoá ở phía truy vấn và phía chỉ mục thưa, tuyệt đối không sửa văn bản đã lưu} --- viết lại một chỉ số dưới mà máy đọc không ra là bịa dữ liệu. Đo trên 12 công thức, số đoạn đúng lọt vào top-10 tăng từ $6$ lên $97$, và số truy vấn tìm được đoạn đúng tăng từ $1/12$ lên $11/12$.
+
+\subsubsection{Hợp nhất, cổng lọc và xếp hạng lại}
+Thứ tự xử lý là \textbf{hợp nhất $\rightarrow$ cổng lọc $\rightarrow$ xếp hạng lại}, với ba công tắc rời nhau để có thể bật/tắt từng thành phần khi làm thực nghiệm đối chiếu (Chương~\ref{chapter:thuc_nghiem_danh_gia}). Bước xếp hạng lại dùng mô hình so khớp chéo (cross-encoder)~\cite{nogueira2019passage} \texttt{BAAI/bge-reranker-v2-m3} --- cùng họ BGE với mô hình nhúng --- chấm lại tập ứng viên là \textit{hợp} của top kênh dày và top kênh thưa.
+
+Việc tách rời ba công tắc bản thân nó đã sửa một khuyết điểm thiết kế: ở phiên bản trước, cổng lọc và bước xếp hạng lại \textbf{loại trừ lẫn nhau} --- bật xếp hạng lại thì nhánh cổng lọc không bao giờ chạy, nên tham số \texttt{margin} nói ở trên thực chất là một \textbf{số chết} trong suốt cấu hình thật.
+
+Khi đo được thật, kết luận đảo ngược so với giả thuyết ban đầu: \textbf{cổng lọc theo khoảng cách tương đối không mua được gì, thậm chí có hại}. Dưới cách hợp nhất theo thứ hạng nó trung tính (chênh trong khoảng $\pm 0{,}007$ MRR); dưới cách hợp nhất theo điểm chuẩn hoá nó \textbf{cắt mất chính đoạn chứa đáp án}, kéo Recall@10 từ $1{,}000$ xuống $0{,}890$. Nguyên nhân là giả định nền của cổng lọc --- "đoạn đúng luôn nằm sát đoạn gần nhất" --- không đúng với câu hỏi nhiều ý, nơi đoạn chứa đáp án có thể xếp thứ tư hoặc thứ năm. Cơ chế lọc thực sự có tác dụng là \textbf{sàn điểm tuyệt đối} của bộ xếp hạng lại, chứ không phải ngưỡng tương đối. Vì vậy cấu hình mặc định của hệ thống là \textbf{truy xuất lai, bật xếp hạng lại, tắt cổng lọc tương đối}; số liệu chống lưng cho lựa chọn này nằm ở Mục~\ref{sec:ketqua}.
+
+Cuối cùng, kết quả văn bản và kết quả hình ảnh được hợp nhất trong \texttt{HybridRetriever} trước khi dựng prompt.
 
 \section{Thiết kế giao diện người dùng (Frontend)}
 Giao diện ứng dụng đóng vai trò quan trọng trong việc thu hút học sinh sử dụng. Frontend của dự án được triển khai bằng \textbf{Next.js 14} và \textbf{React 19}.

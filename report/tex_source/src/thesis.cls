@@ -16,6 +16,12 @@
 
 \linespread{1.2}
 
+%========================= Công thức Hoá =========================%
+% `\ce{CO2}` -> CO2 với chỉ số dưới đúng chuẩn. Cần cho Chương 3 và 4:
+% chính chỉ số dưới là chỗ OCR làm hỏng nhiều nhất (xem phần bàn luận).
+\RequirePackage[version=4]{mhchem}
+
+
 %============================= Images ============================%
 \RequirePackage{graphicx}
 \RequirePackage{subcaption}
