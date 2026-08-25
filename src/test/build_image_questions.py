@@ -87,8 +87,37 @@ def _printed_page_map(books) -> Dict[str, Dict[int, int]]:
     return out
 
 
-def chon(per_book: int, out_dir: Path) -> List[Dict]:
+def _da_dung(out_dir: Path) -> tuple[dict, set]:
+    """(số ô còn dùng được theo quyển, tập trang đã xuất hiện trong phiếu).
+
+    Trang đã dùng bị loại khỏi lượt bù kể cả khi ô đó bị bỏ: nếu khung cắt của
+    một trang đã hỏng thì lấy lại đúng trang đó nhiều khả năng cho ra khung hỏng
+    tương tự, và người sẽ phải bỏ lần thứ hai.
+    """
+    p_items = out_dir / "items.json"
+    p_phieu = out_dir / "phieu_nguoi.json"
+    if not p_items.exists():
+        return {}, set()
+    items = {it["id"]: it for it in
+             json.loads(p_items.read_text(encoding="utf-8"))}
+    phieu = (json.loads(p_phieu.read_text(encoding="utf-8")).get("traloi", {})
+             if p_phieu.exists() else {})
+
+    con_lai: dict = defaultdict(int)
+    trang_da_dung = set()
+    for item_id, it in items.items():
+        trang_da_dung.add((it["quyen"], it["trang"]))
+        if not (phieu.get(item_id) or {}).get("bo"):
+            con_lai[it["quyen"]] += 1
+    return dict(con_lai), trang_da_dung
+
+
+def chon(per_book: int, out_dir: Path, can_them: dict | None = None,
+         tranh_trang: set | None = None) -> List[Dict]:
     """Chọn `per_book` hình MỖI QUYỂN, trải theo trang, chép crop ra để người xem.
+
+    `can_them` (chế độ bù): `{quyển: số ô cần thêm}`. Quyển không có trong dict
+    thì bỏ qua hẳn. `tranh_trang`: tập `(quyển, trang in)` không được lấy lại.
 
     Tiêu chí chọn cố ý ĐƠN GIẢN và giải thích được: hình thật (không phải hộp
     chữ), có `figure_label` (để trích dẫn kiểm được), và mỗi trang tối đa một
@@ -101,6 +130,8 @@ def chon(per_book: int, out_dir: Path) -> List[Dict]:
     crop_dir = out_dir / "crops"
     printed = _printed_page_map(sorted({m.get("pdf_filename") for m in got["metadatas"]
                                         if m.get("pdf_filename")}))
+    can_them = can_them or {}
+    tranh_trang = tranh_trang or set()
 
     by_book: Dict[str, List[Dict]] = defaultdict(list)
     for m in got["metadatas"]:
@@ -117,6 +148,9 @@ def chon(per_book: int, out_dir: Path) -> List[Dict]:
     items: List[Dict] = []
 
     for book in sorted(by_book):
+        muc_tieu = can_them.get(book, per_book) if can_them else per_book
+        if muc_tieu <= 0:
+            continue
         seen_pages = set()
         picked = []
         # sắp xếp xác định: theo trang rồi theo nhãn hình
@@ -126,9 +160,12 @@ def chon(per_book: int, out_dir: Path) -> List[Dict]:
             page = int(m.get("page_number") or 0)
             if page in seen_pages:
                 continue
+            trang_in_thu = printed.get(book, {}).get(page)
+            if (book, trang_in_thu) in tranh_trang:
+                continue           # trang đã xuất hiện ở phiếu trước
             seen_pages.add(page)
             picked.append(m)
-            if len(picked) >= per_book:
+            if len(picked) >= muc_tieu:
                 break
 
         for i, m in enumerate(picked, 1):
@@ -293,11 +330,23 @@ HTML_HEAD = """<!doctype html><meta charset="utf-8">
   <span class="dem" id="dem"></span>
 </div>
 <div class="huong-dan">
-  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> có thể đã được
-  mô hình điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
-  <b>không nhìn thấy hình</b>, nên phải kiểm chứ đừng tin. Câu hỏi phải trả lời
-  được <b>nhờ hình</b>, không phải nhờ chữ trên trang. Hình nào không dùng được
-  thì tick <i>Bỏ</i>. Xong thì bấm <b>Tải phieu_nguoi.json</b> và chép đè file cũ.
+  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> đã được mô hình
+  điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
+  <b>KHÔNG nhìn thấy hình</b>, nên phải kiểm chứ đừng tin.
+  <b>Sửa thoải mái, viết lại hẳn cũng được</b>: câu cuối cùng là của bạn.
+  Hai ràng buộc duy nhất — (1) phải trả lời được <b>nhờ nhìn hình</b>, không phải
+  nhờ đọc chữ trên trang; (2) đáp án đúng với thứ thực sự có trong hình.
+</div>
+<div class="huong-dan">
+  <b>Khi nào tick “Bỏ khung cắt này”:</b> chỉ khi <b>bản thân khung cắt hỏng</b>,
+  không liên quan tới câu hỏi. Bốn trường hợp:
+  <b>(a)</b> cắt lấn hoặc cắt thiếu — nuốt cả đoạn văn, hoặc mất một nửa sơ đồ;
+  <b>(b)</b> không phải hình — cắt nhầm bảng, khung chữ, hộp “Em có biết”;
+  <b>(c)</b> không hỏi được — icon, logo, ảnh trang trí không mang nội dung khoa học;
+  <b>(d)</b> trùng với một ô khác trong phiếu.
+  Ô <i>lý do bỏ</i> không đi vào bộ test — nó để sửa ETL, nên ghi ngắn là đủ
+  (“cắt lấn”, “là bảng”, “trùng ô trên”).
+  Bỏ bao nhiêu cũng được, số thiếu sẽ được bù bằng hình khác.
 </div>
 """
 
@@ -380,7 +429,8 @@ def lam_phieu_html(items: List[Dict], out_dir: Path) -> Path:
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">{_esc(a)}</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"{' checked' if d.get('bo') else ''}> Bỏ hình này
+      <input type="checkbox" class="chk"{' checked' if d.get('bo') else ''}>
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ">{_esc(d.get('ly_do_bo'))}</textarea>
   </div>
@@ -447,6 +497,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--chon", action="store_true",
                     help="máy chọn crop + chép ảnh (chạy trước)")
+    ap.add_argument("--bu", action="store_true",
+                    help="chọn hình THAY THẾ cho những ô người đã tick Bỏ")
     ap.add_argument("--nhap", action="store_true",
                     help="LLM viết NHÁP câu hỏi (cần EVAL_LLM_* trong .env)")
     ap.add_argument("--phieu", action="store_true",
@@ -474,6 +526,31 @@ def main() -> int:
             print(f"CHƯA ĐỦ 12 quyển × {a.per_book} — ETL hình 12 quyển xong thì chạy lại.")
             return 1
         print("Bước tiếp: --nhap (LLM viết nháp) rồi --phieu (lập phiếu cho người).")
+        return 0
+
+    if a.bu:
+        con_lai, tranh = _da_dung(out_dir)
+        if not con_lai:
+            print("Chưa có phiếu nào để bù. Chạy --chon trước.")
+            return 2
+        thieu = {b: a.per_book - n for b, n in con_lai.items()
+                 if n < a.per_book}
+        if not thieu:
+            print(f"Không thiếu ô nào — mọi quyển đủ {a.per_book}.")
+            return 0
+        print(f"Thiếu: {thieu}  (tổng {sum(thieu.values())} ô)")
+        them = chon(a.per_book, out_dir, can_them=thieu, tranh_trang=tranh)
+        # Ghi NỐI vào items.json, không ghi đè: ô cũ người đã duyệt phải còn.
+        p = out_dir / "items.json"
+        cu = json.loads(p.read_text(encoding="utf-8"))
+        cu_id = {x["id"] for x in cu}
+        moi = [x for x in them if x["id"] not in cu_id]
+        p.write_text(json.dumps(cu + moi, ensure_ascii=False, indent=1),
+                     encoding="utf-8")
+        print(f"Đã thêm {len(moi)} ô vào items.json.")
+        print("Bước tiếp: --nhap (chỉ gọi LLM cho ô mới) rồi --phieu.")
+        print("LƯU Ý: --phieu KHÔNG ghi đè phiếu cũ. Đổi tên phieu_nguoi.json "
+              "cũ thành phieu_nguoi_luot1.json trước, rồi trộn tay sau.")
         return 0
 
     if a.nhap:

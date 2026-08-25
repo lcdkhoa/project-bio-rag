@@ -214,3 +214,62 @@ def test_phieu_html_thoat_ky_tu_dac_biet(khu):
     html = B.lam_phieu_html(items, out).read_text(encoding="utf-8")
     assert "<script>x</script>" not in html
     assert "&lt;script&gt;" in html
+
+
+def test_bu_dem_dung_so_o_con_lai_va_tranh_trang_da_dung(khu):
+    """`--bu` phải đếm ô CÒN DÙNG ĐƯỢC, và không lấy lại trang đã xuất hiện.
+
+    Lấy lại đúng trang mà khung cắt đã hỏng thì nhiều khả năng ra khung hỏng
+    tương tự, và người phải bỏ lần thứ hai — phí công duyệt.
+    """
+    out, _ = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    _phieu(out, {
+        items[0]["id"]: {"cau_hoi": "q", "dap_an": "a", "bo": True,
+                         "ly_do_bo": "cắt lấn"},
+        items[1]["id"]: {"cau_hoi": "q2", "dap_an": "a2", "bo": False},
+    })
+    con_lai, tranh = B._da_dung(out)
+    assert con_lai == {"SGK_KHTN_6_KNTT": 1}, "ô bị bỏ không được tính là còn"
+    # CẢ HAI trang đều bị tránh, kể cả trang của ô đã bỏ
+    assert tranh == {("SGK_KHTN_6_KNTT", 10), ("SGK_KHTN_6_KNTT", 20)}
+
+
+def test_bu_khong_ghi_de_o_nguoi_da_duyet(khu, monkeypatch, capsys):
+    """items.json phải được GHI NỐI, không ghi đè — mất ô cũ là mất công duyệt."""
+    import sys
+    out, _ = khu
+    truoc = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    _phieu(out, {truoc[0]["id"]: {"cau_hoi": "", "dap_an": "", "bo": True}})
+
+    # giả lập `chon` trả về một ô mới
+    monkeypatch.setattr(B, "chon", lambda *a, **k: [{
+        "id": "SGK_KHTN_6_KNTT_p99_01", "quyen": "SGK_KHTN_6_KNTT",
+        "trang": 99, "trang_nguon": 99, "nhan_hinh": "Hình 9.9",
+        "anh": "crops/x.png", "figure_caption": "", "crop_text": "",
+        "chu_tren_trang": ""}])
+    monkeypatch.setattr(sys, "argv", ["b", "--bu", "--out-dir", str(out)])
+    assert B.main() == 0
+
+    sau = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    ids = {x["id"] for x in sau}
+    assert {x["id"] for x in truoc} <= ids, "ô cũ phải còn nguyên"
+    assert "SGK_KHTN_6_KNTT_p99_01" in ids, "ô mới phải được thêm"
+
+
+def test_bu_khong_them_o_trung_id(khu, monkeypatch):
+    """Chạy --bu hai lần không được nhân đôi ô."""
+    import sys
+    out, _ = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    _phieu(out, {items[0]["id"]: {"cau_hoi": "", "dap_an": "", "bo": True}})
+    moi = {"id": "SGK_KHTN_6_KNTT_p99_01", "quyen": "SGK_KHTN_6_KNTT",
+           "trang": 99, "trang_nguon": 99, "nhan_hinh": "Hình 9.9",
+           "anh": "crops/x.png", "figure_caption": "", "crop_text": "",
+           "chu_tren_trang": ""}
+    monkeypatch.setattr(B, "chon", lambda *a, **k: [moi])
+    monkeypatch.setattr(sys, "argv", ["b", "--bu", "--out-dir", str(out)])
+    B.main()
+    B.main()
+    sau = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    assert sum(1 for x in sau if x["id"] == moi["id"]) == 1

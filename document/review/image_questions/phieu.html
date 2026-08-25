@@ -31,11 +31,23 @@
   <span class="dem" id="dem"></span>
 </div>
 <div class="huong-dan">
-  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> có thể đã được
-  mô hình điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
-  <b>không nhìn thấy hình</b>, nên phải kiểm chứ đừng tin. Câu hỏi phải trả lời
-  được <b>nhờ hình</b>, không phải nhờ chữ trên trang. Hình nào không dùng được
-  thì tick <i>Bỏ</i>. Xong thì bấm <b>Tải phieu_nguoi.json</b> và chép đè file cũ.
+  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> đã được mô hình
+  điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
+  <b>KHÔNG nhìn thấy hình</b>, nên phải kiểm chứ đừng tin.
+  <b>Sửa thoải mái, viết lại hẳn cũng được</b>: câu cuối cùng là của bạn.
+  Hai ràng buộc duy nhất — (1) phải trả lời được <b>nhờ nhìn hình</b>, không phải
+  nhờ đọc chữ trên trang; (2) đáp án đúng với thứ thực sự có trong hình.
+</div>
+<div class="huong-dan">
+  <b>Khi nào tick “Bỏ khung cắt này”:</b> chỉ khi <b>bản thân khung cắt hỏng</b>,
+  không liên quan tới câu hỏi. Bốn trường hợp:
+  <b>(a)</b> cắt lấn hoặc cắt thiếu — nuốt cả đoạn văn, hoặc mất một nửa sơ đồ;
+  <b>(b)</b> không phải hình — cắt nhầm bảng, khung chữ, hộp “Em có biết”;
+  <b>(c)</b> không hỏi được — icon, logo, ảnh trang trí không mang nội dung khoa học;
+  <b>(d)</b> trùng với một ô khác trong phiếu.
+  Ô <i>lý do bỏ</i> không đi vào bộ test — nó để sửa ETL, nên ghi ngắn là đủ
+  (“cắt lấn”, “là bảng”, “trùng ô trên”).
+  Bỏ bao nhiêu cũng được, số thiếu sẽ được bù bằng hình khác.
 </div>
 
 
@@ -53,7 +65,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Các hoạt động: tìm hiểu vi khuẩn bằng kính hiển vi, tìm hiểu vũ trụ, tìm kiếm và thăm dò dầu khí ở vùng biển Việt Nam, lai tạo giống cây trồng mới là hoạt động nghiên cứu khoa học tự nhiên; còn tập thể dục và vận chuyển xăng, dầu thì không phải.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -73,7 +86,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Khoa học tự nhiên giúp: cung cấp thông tin và nâng cao hiểu biết của con người; bảo vệ môi trường (ví dụ: nghiên cứu xử lí ô nhiễm nước); bảo vệ sức khoẻ và cuộc sống của con người; ứng dụng trong sản xuất và phát triển.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -93,7 +107,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">a) Sinh học; b) Thiên văn học; c) Khoa học Trái Đất; đ) Vật lí; e) Hoá học.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -113,7 +128,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Học sinh ghi đúng tên các vật sống và vật không sống xuất hiện trong Hình 1.4 (ví dụ: vật sống như cây, con vật; vật không sống như đá, nước... tùy theo nội dung thực tế của hình).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -133,7 +149,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Bạn nhỏ đang thả diều. Đây không phải là hoạt động nghiên cứu khoa học vì thả diều chỉ là hoạt động vui chơi, giải trí, không nhằm tìm tòi, khám phá ra tri thức khoa học mới.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -153,7 +170,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Khoa học tự nhiên được ứng dụng vào sản xuất dược phẩm, góp phần bảo vệ và nâng cao sức khoẻ con người.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -173,7 +191,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Hạt đậu hút nước và trương lên, vỏ hạt bị vỡ; rễ mầm nhô ra trước và phát triển thành rễ, sau đó thân mầm cùng lá mầm mọc lên dần thành cây con.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -193,7 +212,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Đá sỏi là vật không sống, vì nó không có khả năng trao đổi chất, không sinh trưởng, phát triển và không sinh sản.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -213,7 +233,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">4 hiện tượng: hai thanh nam châm hút/đẩy nhau khi đưa lại gần; đun nóng đường xem đường có biến đổi thành chất khác không; chiếc đũa nhúng vào cốc nước trông như bị gãy ở mặt nước; cây bị bình thuỷ tinh chụp kín xem có phát triển bình thường không.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -233,7 +254,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Học sinh phải nêu đúng một cặp phương tiện thực tế có trong hình kèm lĩnh vực tương ứng (ví dụ cần đối chiếu lại với ảnh: giao thông – xe ngựa/đi bộ → ô tô/máy bay; liên lạc – thư tay → điện thoại).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -253,7 +275,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Cần mở ảnh để xác nhận; theo ngữ cảnh trang, khả năng cao hình liên quan đến thành tựu chinh phục vũ trụ (ví dụ vệ tinh nhân tạo Spút-nhích, tên lửa hoặc phi hành gia như Ga-ga-rin, Phạm Tuân).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -273,7 +296,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ví dụ: ăn uống, đùa nghịch trong phòng thực hành, hoặc làm thí nghiệm/tiếp xúc với hoá chất mà không đeo găng tay, kính bảo hộ... (học sinh chỉ cần nêu đúng một hoạt động không an toàn xuất hiện trong hình kèm lý do hợp lý).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -293,7 +317,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Hạt đỗ có ba kiểu nằm: nằm ngửa, nằm nghiêng và nằm ngang.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -313,7 +338,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Cổng quang điện gồm bộ phận phát tín hiệu (kí hiệu P) và bộ phận thu tín hiệu (kí hiệu T); chùm tín hiệu chiếu từ bộ phát (P) sang bộ thu (T).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -333,7 +359,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Máng nhôm; xe có gắn tấm chắn sáng; hai cổng quang điện (cổng quang điện 1 và cổng quang điện 2); đồng hồ đo thời gian hiện số.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -353,7 +380,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Sơ đồ mô tả quá trình chia nhỏ đồng tiền vàng nhiều lần; kết quả cuối cùng thu được hạt gọi là nguyên tử (atomos – nghĩa là 'không chia nhỏ hơn được nữa').</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -373,7 +401,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Hiện tượng mưa (mưa tự nhiên).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -393,7 +422,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Chúng đều là các đường cong dạng sóng biến đổi theo thời gian, nhưng các đồ thị không giống hệt nhau mà có dạng khác nhau.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -413,7 +443,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Hai góc nhìn: a) Mặt trước và b) Mặt sau của đồng hồ đo thời gian hiện số.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -433,7 +464,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ruột bút chì, với kích thước 0,5 mm (lớn hơn hạt bụi trong không khí, tế bào máu và vi khuẩn).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -453,7 +485,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ở Hình 1.1a, miếng gỗ nằm trên mặt có kích thước 12 cm × 6 cm; ở Hình 1.1b, miếng gỗ nằm trên mặt có kích thước 12 cm × 3 cm.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -473,7 +506,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">a) Cháy rừng; b) Hạn hán; c) Mưa to kèm theo sấm, sét.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -493,7 +527,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Theo số liệu OCR, nhiều khả năng là &quot;Sản xuất điện và nhiệt&quot; (25%), nhưng cần mở hình để xác nhận vì biểu đồ có thể còn nguồn khác chiếm tỉ lệ cao hơn chưa đọc được.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -513,7 +548,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Các nút: THANG ĐO, MODE và RESET.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -533,7 +569,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Là giá trị đọc được tại mực dung dịch trên vạch chia của ống đong ở Hình 1 (người duyệt xem hình và điền số mL cụ thể).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -553,7 +590,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Đèn cồn – dùng để đun nóng.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -573,7 +611,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">5a: Thìa thuỷ tinh – dùng để lấy từng lượng nhỏ chất rắn dạng bột; 5b: Đũa thuỷ tinh – dùng để khuấy khi hoà tan chất rắn hoặc pha trộn các dung dịch với nhau.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -593,7 +632,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Nhãn ghi đầy đủ thông tin về hoá chất, bao gồm tên hoá chất và công thức hoá học (có thể là dung dịch copper(II) sulfate – CuSO₄, người duyệt kiểm tra lại chữ trên nhãn trong hình).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -613,7 +653,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">a) Cốc thuỷ tinh; b) Ống đong.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -633,7 +674,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Lọ thuỷ tinh nút nhám, lọ nhựa, bình tam giác (bình erlen hay bình nón), ống nghiệm.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -653,7 +695,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Đũa thuỷ tinh (thanh thuỷ tinh dùng để khuấy, trộn).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -673,7 +716,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Thể rắn: kẽm (Zinc, Zn), lưu huỳnh (Sulfur, S), calcium carbonate (CaCO3); thể lỏng: dung dịch copper(II) sulfate (CuSO4) 10%, dung dịch bromine (Br2); thể khí: oxygen (O2).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -693,7 +737,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ví dụ: tên/công thức hoá học; khối lượng hoặc thể tích (vd: 500 g); tiêu chuẩn chất lượng (TCCL: TCCS 51/2008/HCĐG); hạn sử dụng (3 năm kể từ ngày sản xuất); ký hiệu cảnh báo...</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -713,7 +758,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ống đong (bình chia độ).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -733,7 +779,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Có hai loại: a) Máy đo pH và b) Bút đo pH.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -753,7 +800,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Có nút vặn (núm xoay) để chọn/chỉnh điện áp đầu ra một chiều (DC); các chốt cắm gồm chốt màu đỏ (cực dương) và chốt màu đen (cực âm).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -773,7 +821,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Thấu kính (đây là thí nghiệm về sự tạo ảnh của thấu kính).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -793,7 +842,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Thí nghiệm dùng để điều chế và thử tính chất của ethylene; ống dẫn bằng cao su được dùng để nối giữa các ống dẫn thủy tinh.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -813,7 +863,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Bộ đội đang kéo các khẩu pháo (trong chiến dịch Điện Biên Phủ). Vì lực của bộ đội tác dụng lên pháo làm pháo dịch chuyển theo hướng của lực, nên ta nói lực đó đã thực hiện công cơ học (sinh công).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -833,7 +884,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">a) Lực kéo thùng hàng đi lên của cần cẩu có sinh công vì thùng hàng dịch chuyển theo phương của lực. b) Lực xách túi của hành khách đứng chờ tàu không sinh công vì hành khách đứng yên, túi không dịch chuyển (s = 0).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -853,7 +905,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Thấu kính hội tụ và thấu kính phân kì.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -873,7 +926,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Đá vôi (calcium carbonate, CaCO₃); vôi sống (calcium oxide, CaO); glucose (C₆H₁₂O₆); saccharose (C₁₂H₂₂O₁₁).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -893,7 +947,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ba vật: kiện hàng đang dịch chuyển nhờ băng chuyền; ô tô đang chạy trên đường; máy bay đang chuyển động trên bầu trời.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -913,7 +968,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ba vật là: khí cầu lơ lửng trên không, đồng hồ treo trên tường và quả dừa ở trên cây. Chúng đều có thế năng vì đều ở độ cao nhất định so với mặt đất (W_t = Ph với h &gt; 0).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -933,7 +989,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Ghép với tấm chắn sáng có một hoặc nhiều khe sáng; đèn được nối với nguồn điện.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -953,7 +1010,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Khe có hình chữ F và được đánh số thứ tự (5).</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -973,7 +1031,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Lưới tản nhiệt – dùng để phân tán nhiệt khi đốt.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
@@ -993,7 +1052,8 @@
     <label>Đáp án chuẩn</label>
     <textarea class="a" rows="3">Báo cáo kết quả khảo sát thực tế về một số bệnh đường tiêu hoá và vấn đề vệ sinh an toàn thực phẩm tại địa phương.</textarea>
     <div class="bo"><label style="display:inline">
-      <input type="checkbox" class="chk"> Bỏ hình này
+      <input type="checkbox" class="chk">
+      Bỏ khung cắt này (crop hỏng — KHÔNG phải câu hỏi sai)
     </label></div>
     <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
   </div>
