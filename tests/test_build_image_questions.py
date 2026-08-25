@@ -187,7 +187,9 @@ def test_phieu_html_co_du_o_va_anh_tuong_doi(khu):
 
     p = B.lam_phieu_html(items, out)
     html = p.read_text(encoding="utf-8")
-    assert html.count('class="o" data-id=') == len(items)
+    # neo vào `data-id` chứ không vào tên class: class đổi theo giao diện
+    # (đã đổi thành "o chua-xem" ở lượt 2), còn data-id là hợp đồng dữ liệu.
+    assert html.count('data-id=') == len(items)
     assert '<img src="crops/' in html
     assert "/duong/dan/tuyet/doi/" not in html
     assert "NHAP Q" in html and "NHAP A" in html
