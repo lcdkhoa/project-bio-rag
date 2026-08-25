@@ -186,6 +186,46 @@ def normalize_formula(text: str) -> str:
     return _CHI_SO_ASCII.sub(lambda m: m.group(1).translate(_SUB), s)
 
 
+# Công thức HOÁ: chữ cái hoa mở đầu, có ít nhất một chỉ số (Unicode hoặc ASCII).
+# `(NH₄)₂SO₄` cũng khớp nhờ nhóm ngoặc.
+_TOKEN_HOA = re.compile(
+    r"\(?[A-Z][A-Za-z]{0,2}\)?(?:[₀-₉]|\d)"
+    r"(?:\(?[A-Z][A-Za-z]{0,2}\)?(?:[₀-₉]|\d)?)*")
+# Công thức LÝ: một phương trình có `=`, ví dụ `A = Fs`, `1 J = 1 N·m`.
+# Hai bên `=` chỉ nhận ký hiệu KHÔNG DẤU (chữ Latin trần, số, đơn vị) — nếu cho
+# phép chữ có dấu thì `công thức A = Fs với F` nuốt luôn cả câu văn tiếng Việt
+# quanh phương trình, và chỉ số CT sẽ đo văn xuôi thay vì đo công thức.
+# Ranh giới `(?<![A-Za-zÀ-ỹ])` là bắt buộc: không có nó thì `công thức A = Fs
+# với` khớp thành `c A = Fs v` — chữ `c` cuối "thức" và `v` đầu "với" đều là
+# chữ Latin trần.
+_KY_HIEU = r"(?<![A-Za-zÀ-ỹ])[A-Za-z0-9][A-Za-z0-9₀-₉·./^]*(?![A-Za-zÀ-ỹ])"
+_TOKEN_LY = re.compile(
+    rf"{_KY_HIEU}(?:\s{_KY_HIEU})?\s*=\s*{_KY_HIEU}(?:\s{_KY_HIEU})?")
+
+
+def formula_tokens(text: str) -> List[str]:
+    """Các token CÔNG THỨC trong một dòng — đơn vị chấm của chỉ số CT.
+
+    Thiết kế §3.2 đòi đo **token công thức**, không phải cả dòng. So cả dòng thì
+    một dòng 15 từ chỉ sai một dấu ở chữ thường cũng bị tính là hỏng công thức,
+    và con số ra từ đó không trả lời được câu hỏi thật: *engine có đọc được `O₂`
+    không?*
+
+    Chấp nhận cả `O₂` lẫn `O2` vì người duyệt được phép gõ ASCII (§3.5 luật 3);
+    `normalize_formula` gộp hai cách gõ lại khi so.
+    """
+    s = " ".join(str(text or "").split())
+    out = [m.group(0).strip() for m in _TOKEN_LY.finditer(s)]
+    da_co = " ".join(out)
+    for m in _TOKEN_HOA.finditer(s):
+        tok = m.group(0).strip()
+        # Bỏ token chỉ là số (`2016`) hoặc đã nằm trong một phương trình đã bắt.
+        if not any(c.isalpha() for c in tok) or tok in da_co:
+            continue
+        out.append(tok)
+    return out
+
+
 def diacritic_error_rate(gold: str, hyp: str) -> float:
     """Tỉ lệ từ sai **chỉ ở dấu** — cổng loại của bake-off.
 
@@ -249,9 +289,17 @@ def score_engine(items: Sequence[dict], gold: Dict[str, str],
             n_dc += 1
             tong_dau += diacritic_error_rate(chuan, doc)
         else:                                     # cong_thuc, so
-            n_ct += 1
-            dung_ct += float(
-                normalize_formula(chuan) == normalize_formula(doc))
+            # Đo TOKEN công thức, không phải cả dòng (§3.2). Ô mà bản người
+            # KHÔNG có token công thức nào (ví dụ ô `so` chỉ mất dấu phẩy thập
+            # phân) bị loại khỏi CT: tính nó vào mẫu số sẽ pha loãng chỉ số bằng
+            # thứ nó không đo. Lỗi DẤU của ô đó thì vẫn được tính.
+            tok_chuan = formula_tokens(chuan)
+            if tok_chuan:
+                n_ct += 1
+                tok_doc = {normalize_formula(t) for t in formula_tokens(doc)}
+                dung_ct += sum(
+                    1 for t in tok_chuan
+                    if normalize_formula(t) in tok_doc) / len(tok_chuan)
             tong_dau += diacritic_error_rate(chuan, doc)
 
     n_dau = n_ct + n_dc
@@ -428,9 +476,17 @@ def build_items(image_bgr, page_meta: dict, max_per_page: int = 8) -> List[dict]
         # Ô loại BẢNG phải là một DẢI chứa cả bảng, không phải dòng tiêu đề: gõ
         # lại một dòng tiêu đề không đo được gì về quan hệ hàng/cột (D-63). Và
         # một dải sinh HAI ô, vì header-mất và cột-bị-trộn là hai bệnh khác nhau.
+        vung_text = None
         if kind is ItemKind.BANG:
             bbox = table_band_bbox(line["bbox"], page_w, page_h)
             cau_hoi_list = table_questions()
+            # OCR CẢ DẢI bảng — đây mới là baseline Tesseract cho ô bảng. Dùng
+            # dòng tiêu đề làm baseline sẽ cho BẢNG = 0 giả (xem
+            # `baseline_reading`).
+            x0, y0, x1, y1 = bbox
+            vung = image_bgr[y0:y1, x0:x1]
+            vung_text = " ".join(
+                l["text"] for l in group_lines(_ocr_words(vung))) if vung.size                 else ""
         else:
             bbox = line["bbox"]
             cau_hoi_list = [question_for(kind)]
@@ -449,6 +505,7 @@ def build_items(image_bgr, page_meta: dict, max_per_page: int = 8) -> List[dict]
                 "conf": line["conf"],
                 "bbox": list(bbox),
                 "anh_b64": anh,
+                **({"may_doc_vung": vung_text} if vung_text is not None else {}),
             })
     return out
 
@@ -697,6 +754,31 @@ def archive_human_sheet(src: Path, kho: Path = ARCHIVE_DIR) -> Path:
     return dest
 
 
+def baseline_reading(items: Sequence[dict]) -> Dict[str, str]:
+    """Chữ Tesseract đọc được, dùng làm BASELINE — mốc để mọi engine so vào.
+
+    Ô bảng phải lấy `may_doc_vung` (OCR **cả dải bảng**), không phải `may_doc`
+    (dòng **tiêu đề**, vốn chỉ là anchor để tìm bảng). Lượt baseline đầu tiên đã
+    dùng nhầm `may_doc` và cho ra `BẢNG = 0.000` — một con số trông như kết quả
+    nhưng thật ra nói về cách dựng phiếu, không nói gì về Tesseract.
+
+    Thiếu `may_doc_vung` thì **raise**: lặng lẽ lùi về dòng tiêu đề sẽ tái lập
+    đúng con số 0 giả đó (nguyên tắc 5).
+    """
+    out: Dict[str, str] = {}
+    for it in items:
+        if it.get("kind") == ItemKind.BANG.value:
+            if "may_doc_vung" not in it:
+                raise RuntimeError(
+                    f"Ô bảng {it['id']} thiếu `may_doc_vung` (OCR cả dải). Phiếu "
+                    "này dựng trước bản vá — chạy lại `--export`. Dùng dòng tiêu "
+                    "đề thay thế sẽ cho BẢNG = 0 GIẢ.")
+            out[it["id"]] = it["may_doc_vung"]
+        else:
+            out[it["id"]] = it.get("may_doc", "")
+    return out
+
+
 def dump_crops(items: Sequence[dict], out_dir: Path) -> int:
     """Xuất crop PNG + `crops.json` để mang lên Colab.
 
@@ -749,15 +831,16 @@ def cmd_compare(out_dir: Path) -> int:
         print("   Chạy `--score` để xem chi tiết. KHÔNG in bảng so engine.")
         return 2
 
+    # Baseline Tesseract KHÔNG cần file engine nào: `may_doc` đã nằm trong
+    # items.json. Đó là con số "hiện tại đang tệ đến mức nào", tức MỐC để mọi
+    # engine so vào — bắt chạy 4 model trên Colab rồi mới biết mốc là ngược
+    # thứ tự làm việc.
     files = sorted(out_dir.glob("engine_*.json"))
     if not files:
-        print(f"Chưa có file engine_*.json nào trong {out_dir}.\n"
-              "Chạy các engine trên 15 trang rồi lưu mỗi engine một file "
-              '{"<id ô>": "<chữ đọc được>"}.')
-        return 1
+        print("(chưa có engine_*.json nào — in BASELINE Tesseract để có mốc)")
 
     print(f"Gold set: {kq_phieu['da_dien']}/{kq_phieu['tong_o']} ô người duyệt")
-    tesseract = {it["id"]: it.get("may_doc", "") for it in items}
+    tesseract = baseline_reading(items)
     bang = [("tesseract (hiện tại)", score_engine(items, gold, tesseract))]
     for f in files:
         ten = f.stem.replace("engine_", "")

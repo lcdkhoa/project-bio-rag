@@ -457,3 +457,145 @@ class TestLuuCongNguoi:
         assert dest != kho / "phieu_nguoi.json"
         assert json.loads((kho / "phieu_nguoi.json").read_text(
             encoding="utf-8"))["traloi"] == {"a": "cu"}
+
+
+class TestBaselineKhongCanEngine:
+    """Baseline Tesseract luôn có sẵn (`may_doc` nằm trong items.json), nên nó
+    phải in được NGAY — trước khi chạy bất cứ model nào.
+
+    Đó là con số "hiện tại đang tệ đến mức nào", tức mốc để mọi engine so vào.
+    Bắt người dùng chạy 4 model trên Colab rồi mới biết mốc là ngược thứ tự."""
+
+    def test_compare_prints_the_baseline_with_no_engine_files(self, tmp_path,
+                                                              capsys):
+        import json
+
+        from src.test.ocr_bakeoff import cmd_compare
+
+        items = [{"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0,",
+                  "quyen": "A", "trang": 1, "cau_hoi": "gõ"},
+                 {"id": "d1", "kind": "doi_chung", "may_doc": "Tế bào",
+                  "quyen": "A", "trang": 1, "cau_hoi": "gõ"}]
+        (tmp_path / "items.json").write_text(
+            json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        (tmp_path / "phieu_nguoi.json").write_text(
+            json.dumps({"traloi": {"f1": "khí O₂", "d1": "Tế bào"}},
+                       ensure_ascii=False), encoding="utf-8")
+
+        code = cmd_compare(tmp_path)
+        out = capsys.readouterr().out
+
+        assert code == 0
+        assert "tesseract" in out
+        assert "chưa có engine" in out.lower()
+
+
+class TestTokenCongThuc:
+    """Chỉ số CT phải đo TOKEN CÔNG THỨC, không phải cả dòng.
+
+    Thiết kế §3.2 viết: "tỉ lệ **token công thức** mà engine đọc khớp từng ký tự
+    với bản người duyệt". Code lần đầu so **cả dòng** — khắt khe hơn hẳn và trộn
+    hai thứ: một dòng 15 từ chỉ sai một dấu phẩy ở chữ thường cũng bị tính là
+    hỏng công thức. Con số ra từ đó không trả lời được câu hỏi "engine có đọc
+    được `O₂` không".
+    """
+
+    def test_subscript_tokens_are_extracted(self):
+        from src.test.ocr_bakeoff import formula_tokens
+
+        assert formula_tokens("hấp thụ khí O₂ và thải ra khí CO₂") == \
+            ["O₂", "CO₂"]
+
+    def test_ascii_written_formulas_are_extracted_too(self):
+        """Người duyệt được phép gõ `H2SO4` — §3.5 luật 3."""
+        from src.test.ocr_bakeoff import formula_tokens
+
+        assert formula_tokens("dung dịch H2SO4 loãng") == ["H2SO4"]
+
+    def test_physics_equations_are_extracted(self):
+        from src.test.ocr_bakeoff import formula_tokens
+
+        assert formula_tokens("công thức A = Fs với F là lực") == ["A = Fs"]
+
+    def test_plain_vietnamese_words_are_not_formulas(self):
+        from src.test.ocr_bakeoff import formula_tokens
+
+        assert formula_tokens("Tế bào là đơn vị cơ bản của sự sống") == []
+
+    def test_a_bare_number_is_not_a_formula(self):
+        from src.test.ocr_bakeoff import formula_tokens
+
+        assert formula_tokens("khoảng 26,2 tỉ thùng năm 2016") == []
+
+    def test_ct_counts_tokens_not_whole_lines(self):
+        """Engine đọc đúng `O₂` nhưng sai một chữ thường ở cuối dòng vẫn phải
+        được tính là ĐỌC ĐÚNG CÔNG THỨC."""
+        from src.test.ocr_bakeoff import score_engine
+
+        items = [{"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0,"}]
+        gold = {"f1": "hấp thụ khí O₂ ở lá"}
+        hyp = {"f1": "hấp thụ khí O₂ ở lạ"}      # sai 1 chữ, đúng công thức
+
+        assert score_engine(items, gold, hyp)["cong_thuc"] == 1.0
+
+    def test_an_item_whose_gold_has_no_formula_is_excluded_from_ct(self):
+        """Ô `so` (mất dấu phẩy thập phân) không có token công thức nào — tính
+        nó vào mẫu số của CT sẽ pha loãng chỉ số bằng thứ nó không đo."""
+        from src.test.ocr_bakeoff import score_engine
+
+        items = [{"id": "s1", "kind": "so", "may_doc": "262"}]
+        gold = {"s1": "khoảng 26,2 tỉ thùng"}
+
+        got = score_engine(items, gold, {"s1": "khoảng 262 tỉ thùng"})
+
+        assert got["n_cong_thuc"] == 0
+        assert got["cong_thuc"] is None
+
+
+class TestBaselineOBang:
+    """`BẢNG = 0.000` ở lượt baseline đầu tiên KHÔNG phải kết quả — nó là
+    artefact của cách dựng dữ liệu, đúng loại "số sai mà trông hợp lý".
+
+    `may_doc` của ô bảng là dòng **tiêu đề** (`Bảng 35.1. Sản lượng…`), vì đó là
+    dòng anchor dùng để tìm bảng. Người duyệt thì gõ **nội dung** bảng. So hai
+    thứ đó luôn cho 0, và con số 0 ấy nói về cách tôi dựng phiếu chứ không nói
+    gì về Tesseract.
+
+    Baseline đúng: Tesseract chạy trên **chính dải bảng** — cùng mẩu pixel engine
+    sẽ đọc.
+    """
+
+    def test_a_table_item_carries_the_ocr_of_the_whole_band(self):
+        import numpy as np
+
+        from src.test.ocr_bakeoff import build_items
+
+        img = np.full((1536, 1094, 3), 255, dtype=np.uint8)
+        items = build_items(img, {"quyen": "A", "trang": 1, "loai": "bang"})
+
+        for it in items:
+            if it["kind"] == "bang":
+                assert "may_doc_vung" in it, (
+                    "ô bảng phải mang OCR của cả dải, nếu không baseline so "
+                    "dòng tiêu đề với nội dung bảng và luôn ra 0")
+
+    def test_baseline_uses_the_band_ocr_for_table_items(self):
+        from src.test.ocr_bakeoff import baseline_reading
+
+        items = [{"id": "b1", "kind": "bang", "may_doc": "Bảng 35.1. Sản lượng",
+                  "may_doc_vung": "Năm | 1988 | 1992"},
+                 {"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0,"}]
+
+        got = baseline_reading(items)
+
+        assert got["b1"] == "Năm | 1988 | 1992"
+        assert got["f1"] == "khí 0,"
+
+    def test_a_table_item_without_band_ocr_falls_back_loudly(self):
+        """Ô bảng cũ (dựng trước bản vá) không có `may_doc_vung`. Dùng thầm dòng
+        tiêu đề sẽ tái lập đúng con số 0 giả — nên phải raise."""
+        from src.test.ocr_bakeoff import baseline_reading
+
+        with pytest.raises(RuntimeError, match="may_doc_vung"):
+            baseline_reading([{"id": "b1", "kind": "bang",
+                               "may_doc": "Bảng 35.1"}])
