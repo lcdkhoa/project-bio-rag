@@ -817,3 +817,64 @@ class TestPartialEngineRun:
         cmd_compare(tmp_path)
 
         assert "-> LOẠI" not in capsys.readouterr().out
+
+
+class TestDoiChieu:
+    """`--doi-chieu` phục vụ CẤM #11: không kết luận từ bảng mà chưa đọc ô."""
+
+    @staticmethod
+    def _setup(tmp_path, hyp):
+        import json
+
+        items = [
+            {"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0,"},
+            {"id": "d1", "kind": "doi_chung", "may_doc": "Quang hợp ở lá"},
+            {"id": "x1", "kind": "cong_thuc", "may_doc": "gì đó"},
+        ]
+        (tmp_path / "items.json").write_text(json.dumps(items), encoding="utf-8")
+        (tmp_path / "phieu_nguoi.json").write_text(json.dumps(
+            {"traloi": {"f1": "khí O₂", "d1": "Quang hợp ở lá", "x1": "???"}}),
+            encoding="utf-8")
+        (tmp_path / "engine_e.json").write_text(json.dumps(hyp), encoding="utf-8")
+        return items
+
+    def test_only_prints_cells_the_engine_actually_ran(self, tmp_path, capsys):
+        """Ô chưa chạy không nói gì về engine — và in nó ra dưới dạng dòng rỗng
+        sẽ trông y hệt ô engine đọc không ra (hai chuyện khác nhau, D-96)."""
+        from src.test.ocr_bakeoff import cmd_doi_chieu
+
+        self._setup(tmp_path, {"f1": "khí O2"})
+
+        assert cmd_doi_chieu(tmp_path, "e", 0) == 0
+        out = capsys.readouterr().out
+        assert "f1" in out and "d1" not in out
+        assert "đã chạy 1/3 ô" in out
+
+    def test_a_cell_the_human_could_not_read_is_skipped(self, tmp_path, capsys):
+        """`???` = không ai đọc được, kể cả người -> không có chuẩn để so."""
+        from src.test.ocr_bakeoff import cmd_doi_chieu
+
+        self._setup(tmp_path, {"x1": "engine doc gi do"})
+
+        assert cmd_doi_chieu(tmp_path, "e", 0) == 1
+        assert "Không có ô nào" in capsys.readouterr().out
+
+    def test_filters_by_kind(self, tmp_path, capsys):
+        from src.test.ocr_bakeoff import cmd_doi_chieu
+
+        self._setup(tmp_path, {"f1": "khí O2", "d1": "Quang hop o la"})
+
+        cmd_doi_chieu(tmp_path, "e", 0, "doi_chung")
+        out = capsys.readouterr().out
+        assert "d1" in out and "\nf1" not in out
+
+    def test_shows_the_human_the_engine_and_tesseract_together(self, tmp_path, capsys):
+        from src.test.ocr_bakeoff import cmd_doi_chieu
+
+        self._setup(tmp_path, {"f1": "khí O2"})
+
+        cmd_doi_chieu(tmp_path, "e", 0)
+        out = capsys.readouterr().out
+        assert "NGƯỜI" in out and "khí O₂" in out    # bản người
+        assert "khí O2" in out                       # engine
+        assert "khí 0," in out                       # tesseract, để so ba chiều

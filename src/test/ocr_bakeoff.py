@@ -893,8 +893,10 @@ def cmd_compare(out_dir: Path) -> int:
         if chua_du(st):
             print(f"\n!! {ten}: mới trả lời {st['n_o_cham'] - st['n_o_thieu']}"
                   f"/{st['n_o_cham']} ô -> CHƯA SO ĐƯỢC, không in số.")
-            print("   Bỏ `--limit` (bỏ comment khối dưới trong cell notebook) "
-                  "để chạy đủ; script tự nối tiếp phần đã chạy.")
+            print("   Đặt `LIMIT = 0` trong cell notebook để chạy đủ; script "
+                  "tự nối tiếp phần đã chạy.")
+            print(f"   Đọc 3 ô đã chạy: python -m src.test.ocr_bakeoff "
+                  f"--doi-chieu {ten}")
 
     goc = bang[0][1]
     print("\nLuật chốt (thiết kế §3.2): một engine chỉ THẮNG khi nó **không tệ "
@@ -922,6 +924,60 @@ def cmd_compare(out_dir: Path) -> int:
     return 0
 
 
+def cmd_doi_chieu(out_dir: Path, ten_engine: str, so_o: int,
+                  loai: str = "") -> int:
+    """In cạnh nhau: bản NGƯỜI · engine · Tesseract, cho từng ô.
+
+    CẤM #11 của prompt bàn giao: **không kết luận từ bảng mà chưa mở ô ra đọc**.
+    Một CT cao mà chữ đọc ra là rác thì con số đó sai chứ không phải engine tốt,
+    và một VLM có thể **bịa** chữ không có trên ảnh — đúng thứ đã loại Vintern-1B
+    (D-47: bịa 4/12 crop, tự khai số hình sai 4/4 lần). Bảng ba cột không tự phát
+    hiện bịa; mắt người thì có.
+    """
+    p_items = out_dir / "items.json"
+    p_gold = out_dir / "phieu_nguoi.json"
+    p_eng = out_dir / f"engine_{ten_engine}.json"
+    for f in (p_items, p_gold, p_eng):
+        if not f.exists():
+            print(f"Thiếu {f}.")
+            return 1
+    items = json.loads(p_items.read_text(encoding="utf-8"))
+    raw = json.loads(p_gold.read_text(encoding="utf-8"))
+    gold = raw.get("traloi", raw)
+    hyp = json.loads(p_eng.read_text(encoding="utf-8"))
+    tess = baseline_reading(items)
+
+    # Chỉ in ô engine ĐÃ chạy: ô chưa chạy không nói gì về engine, và in nó ra
+    # dưới dạng dòng rỗng sẽ trông y hệt ô engine đọc không ra — hai chuyện khác
+    # nhau (D-96).
+    chon = [it for it in items
+            if it["id"] in hyp
+            and str(gold.get(it["id"], "")).strip()
+            and str(gold.get(it["id"], "")).strip() != KHONG_DOC_DUOC
+            and (not loai or it.get("kind") == loai)]
+    if not chon:
+        print(f"Không có ô nào của {ten_engine!r} để đối chiếu"
+              + (f" với kind={loai!r}." if loai else "."))
+        return 1
+    if so_o > 0:
+        chon = chon[:so_o]
+
+    print(f"Đối chiếu {len(chon)} ô — engine {ten_engine} đã chạy "
+          f"{len(hyp)}/{len(items)} ô")
+    for it in chon:
+        print(f"\n" + "=" * 72)
+        print(f"{it['id']}   [{it.get('kind', '?')}]")
+        print(f"  NGƯỜI     : {str(gold[it['id']]).strip()}")
+        print(f"  {ten_engine:10.10s}: {str(hyp[it['id']]).strip()!r}")
+        print(f"  tesseract : {str(tess.get(it['id'], '')).strip()!r}")
+    print(f"\n" + "-" * 72)
+    print("Đọc bằng MẮT: (a) chữ engine có phải rác không, (b) engine có BỊA "
+          "chữ không có")
+    print("trên ảnh không — nếu có thì LOẠI THẲNG dù CT cao (D-47). Crop nằm ở "
+          f"{out_dir / 'crops'}.")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--export", action="store_true",
@@ -938,6 +994,14 @@ def main() -> int:
     # bake-off gói gọn 8,2 MB, và nó đi cùng lịch sử của chính phép đo.
     ap.add_argument("--out-dir", default="document/review/ocr_gold")
     ap.add_argument("--max-per-page", type=int, default=8)
+    ap.add_argument("--doi-chieu", metavar="ENGINE",
+                    help="In cạnh nhau bản NGƯỜI · engine · tesseract cho từng "
+                         "ô, để ĐỌC BẰNG MẮT trước khi tin bảng (CẤM #11).")
+    ap.add_argument("--so-o", type=int, default=10,
+                    help="Số ô in ra khi --doi-chieu (0 = tất cả).")
+    ap.add_argument("--loai", default="", choices=["", "cong_thuc", "doi_chung",
+                                                   "bang", "so"],
+                    help="Lọc theo loại ô khi --doi-chieu.")
     args = ap.parse_args()
 
     out_dir = Path(args.out_dir)
@@ -947,6 +1011,8 @@ def main() -> int:
         return cmd_score(out_dir)
     if args.compare:
         return cmd_compare(out_dir)
+    if args.doi_chieu:
+        return cmd_doi_chieu(out_dir, args.doi_chieu, args.so_o, args.loai)
     ap.print_help()
     return 1
 

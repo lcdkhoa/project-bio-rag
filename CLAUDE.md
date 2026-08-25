@@ -180,7 +180,7 @@ suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, c�
 ## Active redesign (2026-08) — read this first
 
 A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
-- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-97**).
+- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-98**).
 - **What to do next (updated 2026-08-23, sau khi index 12 quyển đã dựng xong):**
   `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` — prompt M2 đầy đủ: trích nguyên văn
   hợp đồng của `goal.docx` (Nội dung 2 và 4), mọi số đã đo (index 16 393 chunk, chỉ số dưới
@@ -422,6 +422,8 @@ python -m src.test.ablation_multimodal          # Cấu hình 2: text-only vs mu
 python -m src.test.prompt_scope_probe           # before/after câu Lý + câu Hoá khi sửa prompt
 python -m src.test.qa_citation_page             # G3 gate: does the CITED page contain the answer (no LLM needed, D-49)
 python -m src.test.qa_citation_page --judge     # + LLM rescue pass, calibrates the coverage threshold
+python -m src.test.ocr_bakeoff --compare        # bảng bake-off; engine thiếu ô -> in `—`, không in số (D-96)
+python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằng mắt: NGƯỜI · engine · tesseract (D-98)
 python -m src.test.qa_ocr_gold --export         # G2: build 24-page gold set for a HUMAN to correct (D-55)
 python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/diacritic-ER once corrected
 python src/test/evaluator.py                    # run real RAG, measure P/R/MRR + LLM judge (1–5)
