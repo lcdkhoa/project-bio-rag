@@ -3039,7 +3039,7 @@ class ImageProcessor:
                 # almost text-free, a paragraph reference is not.
                 band_h = int(page_height * 0.16)
                 y0 = max(top_limit, int(cy0) - band_h)
-                cw = max(40, cx1 - cx0, int(page_width * 0.18))
+                cw = max(40, cx1 - cx0)
                 bbox = (
                     max(0, int(cx0 - cw * 0.15)), max(0, y0 - 4),
                     min(page_width, int(cx1 + cw * 0.15)),
