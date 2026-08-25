@@ -266,12 +266,19 @@ def score_engine(items: Sequence[dict], gold: Dict[str, str],
        có bản người thì không có chuẩn để so; chấm bừa là bịa (nguyên tắc 1).
        `???` là câu trả lời hợp lệ và có giá trị: nó nói rằng chỗ đó không ai
        đọc được, kể cả người.
+    3. **Ô THIẾU KEY và ô RỖNG được đếm RIÊNG.** Thiếu key = engine chưa chạy ô
+       đó (lượt `--limit`, phiên Colab đứt); rỗng = engine đã chạy và không đọc
+       được. Cả hai đều chấm là SAI, nhưng chúng là hai chuyện khác nhau và
+       `--compare` phải nói ra chuyện nào: một engine mới chạy 3/97 ô có `DẤU`
+       **0,000** — điểm hoàn hảo ở đúng cột quyết định thắng/thua — chỉ vì một
+       từ mất hẳn không phải "lỗi dấu" (`_fold("Quang") != _fold("")`).
     """
     n_ct = n_dc = n_bang = 0
     dung_ct = 0.0
     tong_dau = 0.0
     dung_bang = 0.0
     khong_doc_duoc = 0
+    o_cham = o_thieu = o_rong = 0
 
     for it in items:
         chuan = gold.get(it["id"])
@@ -281,6 +288,11 @@ def score_engine(items: Sequence[dict], gold: Dict[str, str],
             khong_doc_duoc += 1
             continue
         doc = str(hyp.get(it["id"], ""))          # thiếu -> "" -> sai, không bỏ
+        o_cham += 1
+        if it["id"] not in hyp:
+            o_thieu += 1                          # engine CHƯA chạy ô này
+        elif not doc.strip():
+            o_rong += 1                           # engine chạy, không đọc được
         kind = it.get("kind")
         if kind == ItemKind.BANG.value:
             n_bang += 1
@@ -311,6 +323,13 @@ def score_engine(items: Sequence[dict], gold: Dict[str, str],
         "n_doi_chung": n_dc,
         "n_bang": n_bang,
         "n_khong_doc_duoc": khong_doc_duoc,
+        # Số ô THỰC SỰ được chấm — không phải `n_ct + n_dc + n_bang`: ô `so`
+        # không có token công thức nào bị loại khỏi trục CT nhưng vẫn được chấm
+        # ở trục DẤU, nên cộng ba trục lại cho mẫu số NHỎ HƠN thực tế (đo được:
+        # 77 thay vì 97, khiến bảng in ra "thiếu 94/77 ô" và "trả lời -17 ô").
+        "n_o_cham": o_cham,
+        "n_o_thieu": o_thieu,
+        "n_o_rong": o_rong,
     }
 
 
@@ -850,22 +869,44 @@ def cmd_compare(out_dir: Path) -> int:
     def o(v):
         return "  —  " if v is None else f"{v:5.3f}"
 
+    # Engine chưa chạy đủ ô thì KHÔNG in số. Bài học D-90: một mẫu đáng nghi
+    # phải CHẶN việc công bố, không phải đi kèm nó dưới dạng chú thích. Đo được
+    # vì sao: với 94/97 ô thiếu, `score_engine` cho CT 0,000 / DẤU **0,000** /
+    # BẢNG 0,000 — mà DẤU 0,000 là điểm HOÀN HẢO ở đúng cột quyết định
+    # thắng/thua (một từ mất hẳn không phải "lỗi dấu"), nên bảng đó nói NGƯỢC
+    # sự thật chứ không chỉ nói thiếu.
+    def chua_du(st):
+        return st["n_o_thieu"] > 0
+
     head = f"{'engine':28s} {'CT↑':>6s} {'DẤU↓':>6s} {'BẢNG↑':>6s}   n"
     print(f"\n{head}\n{'-' * len(head)}")
-    for ten, s in bang:
-        print(f"{ten:28s} {o(s['cong_thuc'])} {o(s['loi_dau'])} {o(s['bang'])}"
-              f"   ct={s['n_cong_thuc']} dc={s['n_doi_chung']} b={s['n_bang']}")
+    for ten, st in bang:
+        if chua_du(st):
+            print(f"{ten:28s} {'  —  ':>5s} {'  —  ':>5s} {'  —  ':>5s}"
+                  f"   CHƯA ĐỦ: thiếu {st['n_o_thieu']}/{st['n_o_cham']} ô")
+            continue
+        print(f"{ten:28s} {o(st['cong_thuc'])} {o(st['loi_dau'])} {o(st['bang'])}"
+              f"   ct={st['n_cong_thuc']} dc={st['n_doi_chung']} b={st['n_bang']}"
+              + (f"  ({st['n_o_rong']} ô rỗng)" if st["n_o_rong"] else ""))
+
+    for ten, st in bang[1:]:
+        if chua_du(st):
+            print(f"\n!! {ten}: mới trả lời {st['n_o_cham'] - st['n_o_thieu']}"
+                  f"/{st['n_o_cham']} ô -> CHƯA SO ĐƯỢC, không in số.")
+            print("   Bỏ `--limit` (bỏ comment khối dưới trong cell notebook) "
+                  "để chạy đủ; script tự nối tiếp phần đã chạy.")
 
     goc = bang[0][1]
     print("\nLuật chốt (thiết kế §3.2): một engine chỉ THẮNG khi nó **không tệ "
           "hơn**\nTesseract ở cột DẤU. Thắng công thức mà thua dấu là THUA — "
           "93% corpus\nlà chữ thường.")
     if goc["loi_dau"] is not None:
-        for ten, s in bang[1:]:
-            if s["loi_dau"] is None:
+        for ten, st in bang[1:]:
+            # Không áp luật chốt cho engine chưa chạy đủ: số của nó không tồn tại.
+            if st["loi_dau"] is None or chua_du(st):
                 continue
-            if s["loi_dau"] > goc["loi_dau"]:
-                print(f"  ✗ {ten}: lỗi dấu {s['loi_dau']:.3f} > tesseract "
+            if st["loi_dau"] > goc["loi_dau"]:
+                print(f"  ✗ {ten}: lỗi dấu {st['loi_dau']:.3f} > tesseract "
                       f"{goc['loi_dau']:.3f} -> LOẠI")
     if goc["n_khong_doc_duoc"]:
         print(f"\n{goc['n_khong_doc_duoc']} ô người ghi `???` (không ai đọc "
@@ -875,8 +916,8 @@ def cmd_compare(out_dir: Path) -> int:
     with io.open(p_csv, "w", encoding="utf-8-sig", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=["engine"] + list(bang[0][1].keys()))
         w.writeheader()
-        for ten, s in bang:
-            w.writerow({"engine": ten, **s})
+        for ten, st in bang:
+            w.writerow({"engine": ten, **st})
     print(f"\nĐã lưu: {p_csv}")
     return 0
 

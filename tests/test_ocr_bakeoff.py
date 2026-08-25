@@ -715,3 +715,105 @@ class TestColabEngineLoader:
 
         assert "database/review/ocr_gold" not in src
         assert ARCHIVE_DIR.as_posix() in src
+
+
+class TestPartialEngineRun:
+    """Engine mới chạy vài ô KHÔNG được in số — và vì sao đó không chỉ là thiếu.
+
+    Đo trên phiếu thật (lượt Colab `--limit 3` ngày 2026-08-26): engine có 3/97
+    ô, `score_engine` cho CT 0,000 / **DẤU 0,000** / BẢNG 0,000. DẤU 0,000 là
+    điểm HOÀN HẢO ở đúng cột quyết định thắng/thua, vì một từ mất hẳn không phải
+    "lỗi dấu" (`_fold("Quang") != _fold("")`). Bảng ấy nói NGƯỢC sự thật.
+    """
+
+    @staticmethod
+    def _items():
+        return [
+            {"id": "f1", "kind": "cong_thuc", "may_doc": "khí 0,"},
+            {"id": "d1", "kind": "doi_chung", "may_doc": "Quang hợp ở lá"},
+            {"id": "d2", "kind": "doi_chung", "may_doc": "Rễ hút nước"},
+        ]
+
+    def test_a_silent_engine_scores_a_perfect_diacritic_rate(self):
+        """Chốt CƠ CHẾ đã cắn, để không ai 'sửa' nó thành 1,0 mà không đo lại."""
+        from src.test.ocr_bakeoff import score_engine
+
+        gold = {"f1": "khí O₂", "d1": "Quang hợp ở lá", "d2": "Rễ hút nước"}
+
+        st = score_engine(self._items(), gold, {})
+
+        assert st["loi_dau"] == 0.0        # <- cái bẫy, cố ý khoá lại
+        assert st["n_o_thieu"] == 3        # <- và cái cứu nó
+        assert st["n_o_cham"] == 3
+
+    def test_missing_and_empty_cells_are_counted_separately(self):
+        """Thiếu key = engine chưa chạy ô đó; rỗng = chạy rồi, không đọc được.
+
+        Hai chuyện khác nhau: nhiều ô rỗng nghĩa là engine đọc kém, nhiều ô
+        thiếu nghĩa là lượt chạy chưa xong.
+        """
+        from src.test.ocr_bakeoff import score_engine
+
+        gold = {"f1": "khí O₂", "d1": "Quang hợp ở lá", "d2": "Rễ hút nước"}
+
+        st = score_engine(self._items(), gold, {"f1": "khí O2", "d1": ""})
+
+        assert st["n_o_thieu"] == 1 and st["n_o_rong"] == 1
+        assert st["n_o_cham"] == 3
+
+    def test_cells_dropped_from_CT_still_count_in_the_cell_total(self):
+        """`n_o_cham` KHÔNG phải `n_ct + n_dc + n_bang`.
+
+        Ô `so` không có token công thức nào bị loại khỏi trục CT nhưng vẫn được
+        chấm ở trục DẤU. Cộng ba trục cho mẫu số NHỎ HƠN thực tế — đã in ra
+        "thiếu 94/77 ô" và "mới trả lời -17/97 ô" trước bản vá.
+        """
+        from src.test.ocr_bakeoff import score_engine
+
+        items = [{"id": "s1", "kind": "so", "may_doc": "262"}]
+
+        st = score_engine(items, {"s1": "26,2"}, {})
+
+        assert st["n_cong_thuc"] == 0                       # không có token CT
+        assert st["n_o_cham"] == 1                          # nhưng vẫn được chấm
+        assert st["n_o_cham"] > st["n_cong_thuc"] + st["n_doi_chung"] + st["n_bang"]
+
+    def test_compare_refuses_to_print_numbers_for_a_partial_engine(self, tmp_path, capsys):
+        """`--compare` in `—` và nói thiếu bao nhiêu ô, thay vì in 0,000."""
+        import json
+
+        from src.test.ocr_bakeoff import cmd_compare
+
+        items = self._items()
+        (tmp_path / "items.json").write_text(json.dumps(items), encoding="utf-8")
+        (tmp_path / "phieu_nguoi.json").write_text(json.dumps(
+            {"traloi": {"f1": "khí O₂", "d1": "Quang hợp ở lá",
+                        "d2": "Rễ hút nước"}}), encoding="utf-8")
+        (tmp_path / "engine_moi.json").write_text(
+            json.dumps({"f1": "khí O2"}), encoding="utf-8")
+
+        assert cmd_compare(tmp_path) == 0
+        out = capsys.readouterr().out
+
+        dong = [l for l in out.splitlines() if l.startswith("engine_moi")
+                or l.startswith("moi")]
+        assert dong and "0.000" not in dong[0], dong
+        assert "CHƯA ĐỦ: thiếu 2/3 ô" in out
+        assert "mới trả lời 1/3 ô" in out
+
+    def test_the_decision_rule_is_not_applied_to_a_partial_engine(self, tmp_path, capsys):
+        """Engine chưa đủ không được tuyên THẮNG lẫn LOẠI — số của nó chưa tồn tại."""
+        import json
+
+        from src.test.ocr_bakeoff import cmd_compare
+
+        (tmp_path / "items.json").write_text(json.dumps(self._items()),
+                                             encoding="utf-8")
+        (tmp_path / "phieu_nguoi.json").write_text(json.dumps(
+            {"traloi": {"f1": "khí O₂", "d1": "Quang hợp ở lá",
+                        "d2": "Rễ hút nước"}}), encoding="utf-8")
+        (tmp_path / "engine_moi.json").write_text(json.dumps({}), encoding="utf-8")
+
+        cmd_compare(tmp_path)
+
+        assert "-> LOẠI" not in capsys.readouterr().out
