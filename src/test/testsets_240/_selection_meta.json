@@ -179,6 +179,15 @@
  "seed": 42,
  "nguon": "rút mẫu từ src/test/testsets/ (pool 300 câu), KHÔNG sinh mới",
  "human_reviewed": false,
- "human_review_note": "Pool gốc do LLM sinh. Mẫu 50 câu đã được NGƯỜI duyệt (D-90): gold key sai 2/49 = 4,1%, KTC 95% Wilson 1,1-13,7%, 1 câu không quyết được. Mẫu đó cố ý lệch về suy_luan (50% vs 32% cả bộ) nên 4,1% là con số BI QUAN; hiệu chỉnh theo trọng số cả bộ ~2,7%. Bộ 240 này CHƯA có lượt duyệt riêng.",
- "chien_luoc_chon": "Trải đều trên trang vàng trước (vòng 1 mỗi trang 1 câu), rồi mới lấy câu thứ 2 của một trang. Giảm tương quan mà _generation_meta.json của pool đã cảnh báo."
+ "human_review_note": "Phần văn bản: rút từ pool 300 câu do LLM sinh; mẫu 50 câu đã được người duyệt (D-90) cho tỉ lệ nhãn nguồn sai 2/49 = 4,1%, KTC Wilson 95% 1,1-13,7%. Phần hình: người duyệt KHUNG CẮT (loại 9/48), KHÔNG duyệt nội dung câu hỏi -- xem `cau_hoi_hinh`.",
+ "chien_luoc_chon": "Trải đều trên trang vàng trước (vòng 1 mỗi trang 1 câu), rồi mới lấy câu thứ 2 của một trang. Giảm tương quan mà _generation_meta.json của pool đã cảnh báo.",
+ "n_hinh_thuc_te": 39,
+ "n_tong_thuc_te": 231,
+ "cau_hoi_hinh": {
+  "quy_trinh": "Máy chọn 48 khung cắt (4/quyển) -> LLM viết nháp câu hỏi + đáp án từ chú thích và chữ OCR quanh hình -> người duyệt qua phiếu HTML.",
+  "nguoi_da_lam": "Loại 9/48 khung cắt hỏng, ghi lý do: 7 'cắt thiếu', 1 'cắt lấn', 1 khác. 6/9 thuộc bộ Kết nối tri thức.",
+  "nguoi_CHUA_lam": "Không sửa nội dung câu hỏi nào: 39/39 câu còn lại giữ nguyên 100% bản nháp của mô hình. Đo trên chính tệp phiếu: lượt 1 duyệt 48 ô trong 2,3 phút; lượt 2 duyệt 40 ô trong 3,3 phút (4,9 giây/ô).",
+  "he_qua": "Mô hình sinh nháp KHÔNG nhìn thấy hình -- nó suy từ chú thích và chữ OCR quanh hình. Vì vậy 39 câu hỏi hình phải được coi là DO LLM SINH, chưa được người kiểm chứng đối chiếu ảnh. Báo cáo dùng số đo trên bộ này phải ghi rõ điều đó.",
+  "gia_tri_van_con": "Khung cắt của 39 câu này ĐÃ được người xem và xác nhận không hỏng -- đó là phần bảo đảm thật, và nó chính là thứ đã lộ ra lỗi crop dải hẹp 17,5% ở Kết nối tri thức (D-125)."
+ }
 }
