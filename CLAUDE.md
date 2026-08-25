@@ -439,7 +439,12 @@ python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằ
 python -m src.test.qa_ocr_gold --export         # G2: build 24-page gold set for a HUMAN to correct (D-55)
 python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/diacritic-ER once corrected
 python src/test/evaluator.py                    # run real RAG, measure P/R/MRR + LLM judge (1–5)
-python src/test/recall_at_k.py                  # fast recall benchmark, no LLM calls; reports baseline vs rerank in ONE pass
+python -m src.test.recall_at_k                  # fast recall benchmark, no LLM calls; reports baseline vs rerank in ONE pass
+python -m src.test.recall_at_k --testset-dir src/test/testsets_240   # bộ 240 câu (CBHD kê)
+python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240
+python -m src.test.build_testset_240            # 192 câu văn bản, rút mẫu từ pool 300, 0 LLM
+python -m src.test.build_image_questions --chon # 48 câu HÌNH: máy chọn crop -> --nhap -> người duyệt
+python -m src.test.report_numbers [--latex]     # số liệu Bảng 4.2/4.3 đọc thẳng từ index
 python src/test/test_image_extraction_full.py   # canonical VISUAL QA for image cropping (draws boxes on pages)
 ```
 

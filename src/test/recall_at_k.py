@@ -48,9 +48,15 @@ def _rerank_order(query, scored, reranker):
     return [d for d, _ in sorted(zip(docs, ce), key=lambda p: p[1], reverse=True)]
 
 
-def main():
+def main(testset_dir: str = ""):
+    """`testset_dir` rỗng -> `src/test/testsets` (pool 300 câu).
+
+    Tham số hoá vì bộ CBHD kê nằm ở `testsets_240/`; hardcode một thư mục nghĩa
+    là bộ 240 **không đo được** bằng chính script đang dùng để công bố số.
+    """
     base = os.path.dirname(__file__)
-    testsets = sorted(glob.glob(os.path.join(base, "testsets", "*_testset.csv")))
+    thu_muc = testset_dir or os.path.join(base, "testsets")
+    testsets = sorted(glob.glob(os.path.join(thu_muc, "*_testset.csv")))
     if not testsets:
         # Thoát KHÁC 0: từ 2026-08-24 bộ test 4 quyển cũ đã bị chuyển vào
         # `_archive_4books_kntt_offset_minus1/` (gold key theo offset −1, vô
@@ -134,5 +140,14 @@ def main():
     print(f"  MRR(base/rer) = {avg['MRR (base)']:.3f}/{avg['MRR (rer)']:.3f}")
 
 
+def _cli() -> int:
+    import argparse
+    ap = argparse.ArgumentParser(description="Recall@k, không gọi LLM")
+    ap.add_argument("--testset-dir", default="",
+                    help="mặc định src/test/testsets; dùng src/test/testsets_240 "
+                         "cho bộ 240 câu")
+    return main(ap.parse_args().testset_dir) or 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(main() or 0)
+    raise SystemExit(_cli())

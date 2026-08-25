@@ -303,10 +303,19 @@ def run_evaluation(testsets_dir: str, report_csv: str, report_md: str):
 
 
 if __name__ == "__main__":
+    import argparse
     base = os.path.dirname(__file__)
-    TESTSETS_DIR = os.path.join(base, "testsets")
-    REPORT_CSV = os.path.join(base, "evaluation_report.csv")
-    REPORT_MD = os.path.join(base, "evaluation_report.md")
+    _ap = argparse.ArgumentParser(description="Đánh giá đầu-cuối, CÓ gọi LLM")
+    _ap.add_argument("--testset-dir", default=os.path.join(base, "testsets"),
+                     help="mặc định src/test/testsets; dùng src/test/testsets_240 "
+                          "cho bộ 240 câu")
+    _ap.add_argument("--hau-to", default="",
+                     help="hậu tố tên file báo cáo, ví dụ _240 -> "
+                          "evaluation_report_240.csv (đừng ghi đè số cũ)")
+    _a = _ap.parse_args()
+    TESTSETS_DIR = _a.testset_dir
+    REPORT_CSV = os.path.join(base, f"evaluation_report{_a.hau_to}.csv")
+    REPORT_MD = os.path.join(base, f"evaluation_report{_a.hau_to}.md")
 
     # Thiếu cấu hình LLM cũng phải thoát khác 0: nó là "chưa đo được", không
     # phải "đo xong".
