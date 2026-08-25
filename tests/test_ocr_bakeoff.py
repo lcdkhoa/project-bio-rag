@@ -1097,3 +1097,71 @@ class TestTransformers5Warning:
     def test_stays_quiet_on_4x(self, monkeypatch, capsys):
         out = self._chay(monkeypatch, capsys, "4.49.0")
         assert "transformers>=4.49,<5" not in out
+
+
+class TestNghiModelHong:
+    """Phân biệt "model HỎNG" với "model đọc kém" — chuyện của BÁO CÁO.
+
+    Viết "model X đọc kém tiếng Việt" khi thật ra nó nạp hỏng là một kết luận
+    SAI về một model có thể tốt, và nó sẽ nằm trong đồ án.
+
+    Giả thuyết đầu tiên (tỉ lệ ký tự ngoài Latin) đã bị chính phép đo bác bỏ:
+    chuỗi rác thật của ba lượt Nanonets cho 0,106 / 0,149 / 0,118 — sát nhiễu,
+    vì phần lớn token rác là tiếng Anh.
+    """
+
+    NGUOI = ("cây phú quý, cây oải hương, cây lưỡi hổ, ngoài khả năng "
+             "hấp thụ CO₂ và tạo ra khí O₂ vào ban")
+
+    def test_tesseract_reading_badly_is_not_flagged(self):
+        """Hỏng chỉ số dưới nhưng trúng gần hết từ -> đọc kém, KHÔNG phải rác."""
+        from src.test.ocr_bakeoff import dai_gap, ty_le_trung_tu
+
+        tess = self.NGUOI.replace("CO₂", "(0,").replace("O₂", "0,")
+
+        assert ty_le_trung_tu(self.NGUOI, tess) > 0.5
+        assert dai_gap(self.NGUOI, tess) < 3.0
+
+    def test_random_tokens_are_flagged(self):
+        from src.test.ocr_bakeoff import dai_gap, ty_le_trung_tu
+
+        rac = "getSession_Point Layer 瞠 Cocoa Fighting ировать " * 20
+
+        assert ty_le_trung_tu(self.NGUOI, rac) == 0.0
+        assert dai_gap(self.NGUOI, rac) > 3.0
+
+    def test_an_accentless_reading_is_not_flagged(self):
+        """Đọc mất dấu vẫn trùng từ (so trên dạng bỏ dấu) -> đọc kém, không rác."""
+        from src.test.ocr_bakeoff import ty_le_trung_tu
+
+        assert ty_le_trung_tu(self.NGUOI, "cay phu quy cay oai huong") > 0.05
+
+    def test_compare_warns_and_refuses_to_judge_a_broken_engine(self, tmp_path, capsys):
+        import json
+
+        from src.test.ocr_bakeoff import cmd_compare
+
+        items = [{"id": f"c{i}", "kind": "doi_chung", "may_doc": self.NGUOI}
+                 for i in range(4)]
+        (tmp_path / "items.json").write_text(json.dumps(items), encoding="utf-8")
+        (tmp_path / "phieu_nguoi.json").write_text(json.dumps(
+            {"traloi": {f"c{i}": self.NGUOI for i in range(4)}}), encoding="utf-8")
+        (tmp_path / "engine_hong.json").write_text(json.dumps(
+            {f"c{i}": "getSession_Point Layer 瞠 Cocoa ировать " * 20
+             for i in range(4)}), encoding="utf-8")
+
+        assert cmd_compare(tmp_path) == 0
+        out = capsys.readouterr().out
+        assert "NGHI MODEL HỎNG" in out
+        assert "đọc kém tiếng Việt" in out     # câu nhắc đừng viết vào báo cáo
+        assert "-> LOẠI" not in out            # không tuyên án khi model hỏng
+
+    def test_an_empty_cell_is_not_called_garbage(self, tmp_path):
+        """Ô rỗng là chuyện của `n_o_rong`, không phải bằng chứng model hỏng."""
+        from src.test.ocr_bakeoff import nghi_model_hong
+
+        items = [{"id": "c1", "kind": "doi_chung", "may_doc": self.NGUOI}]
+
+        h = nghi_model_hong(items, {"c1": self.NGUOI}, {"c1": ""})
+
+        assert h["o_cham"] == 0 and h["nghi"] is False

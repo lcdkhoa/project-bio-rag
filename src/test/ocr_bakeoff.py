@@ -250,6 +250,70 @@ def table_cells(row: str) -> List[str]:
     return [c.strip() for c in str(row or "").split("|") if c.strip()]
 
 
+# Ngưỡng nghi model HỎNG (không phải đọc kém). **Hiệu chỉnh trên chuỗi rác THẬT
+# của ba lượt Nanonets** (D-99/D-101), không phải số gõ bừa.
+#
+# Giả thuyết ĐẦU TIÊN đã bị chính phép đo bác bỏ: "rác thì nhiều ký tự ngoài
+# Latin". Đo ra 0,106 / 0,149 / 0,118 — sát mức nhiễu, vì phần lớn token rác là
+# tiếng Anh (`getSession`, `Cocoa`, `Fighting`). Ngưỡng nào cũng hoặc bỏ sót rác
+# hoặc giết oan engine đọc tiếng Anh.
+#
+# Hai dấu hiệu THẬT SỰ phân biệt, cả hai đều đúng bản chất "model sinh token":
+#   1. KHÔNG TRÙNG MỘT TỪ NÀO với bản người. Engine đọc kém vẫn trúng vài từ
+#      (Tesseract trúng gần hết, chỉ hỏng chỉ số dưới); model sinh ngẫu nhiên
+#      trúng 0.
+#   2. DÀI GẤP NHIỀU LẦN bản người — model không biết dừng nên chạy tới
+#      `max_new_tokens`, cho vài nghìn ký tự trên một crop một dòng ~100 ký tự.
+# Phải thoả CẢ HAI mới bị nghi, nên một engine đọc kém (trúng vài từ) hoặc một
+# engine dài dòng (nhưng trúng từ) đều không bị gắn cờ oan.
+TRUNG_TU_MIN = 0.05
+DAI_GAP_MAX = 3.0
+O_LA_MAX = 0.3
+
+
+def ty_le_trung_tu(chuan: str, doc: str) -> float:
+    """Tỉ lệ từ của bản NGƯỜI có mặt trong bản engine (so trên dạng bỏ dấu)."""
+    g = {_fold(t) for t in str(chuan or "").split() if len(t) > 1}
+    if not g:
+        return 1.0
+    h = {_fold(t) for t in str(doc or "").split()}
+    return len(g & h) / len(g)
+
+
+def dai_gap(chuan: str, doc: str) -> float:
+    """Bản engine dài gấp mấy lần bản người."""
+    n = len(str(chuan or "").strip())
+    return len(str(doc or "").strip()) / n if n else 0.0
+
+
+def nghi_model_hong(items, gold, hyp) -> dict:
+    """Engine có đang SINH RÁC thay vì đọc sai không.
+
+    Phân biệt này quan trọng cho **báo cáo**, không chỉ cho việc chạy: viết
+    "model X đọc kém tiếng Việt" khi thật ra nó nạp hỏng là một kết luận SAI về
+    một model có thể tốt — và nó sẽ nằm trong đồ án.
+    """
+    o_la = 0
+    o_cham = 0
+    vi_du = ""
+    for it in items:
+        chuan = str(gold.get(it["id"], "") or "").strip()
+        if not chuan or chuan == KHONG_DOC_DUOC or it["id"] not in hyp:
+            continue
+        doc = str(hyp[it["id"]])
+        if not doc.strip():
+            continue                     # ô rỗng là chuyện của n_o_rong, không phải rác
+        o_cham += 1
+        if (ty_le_trung_tu(chuan, doc) < TRUNG_TU_MIN
+                and dai_gap(chuan, doc) > DAI_GAP_MAX):
+            o_la += 1
+            if not vi_du:
+                vi_du = doc[:80]
+    ty_le = o_la / o_cham if o_cham else 0.0
+    return {"o_la": o_la, "o_cham": o_cham, "ty_le": round(ty_le, 4),
+            "nghi": ty_le > O_LA_MAX, "vi_du": vi_du}
+
+
 KHONG_DOC_DUOC = "???"
 
 
@@ -861,10 +925,12 @@ def cmd_compare(out_dir: Path) -> int:
     print(f"Gold set: {kq_phieu['da_dien']}/{kq_phieu['tong_o']} ô người duyệt")
     tesseract = baseline_reading(items)
     bang = [("tesseract (hiện tại)", score_engine(items, gold, tesseract))]
+    hong = {}
     for f in files:
         ten = f.stem.replace("engine_", "")
-        bang.append((ten, score_engine(items, gold,
-                                       json.loads(f.read_text(encoding="utf-8")))))
+        hyp = json.loads(f.read_text(encoding="utf-8"))
+        bang.append((ten, score_engine(items, gold, hyp)))
+        hong[ten] = nghi_model_hong(items, gold, hyp)
 
     def o(v):
         return "  —  " if v is None else f"{v:5.3f}"
@@ -898,6 +964,19 @@ def cmd_compare(out_dir: Path) -> int:
             print(f"   Đọc 3 ô đã chạy: python -m src.test.ocr_bakeoff "
                   f"--doi-chieu {ten}")
 
+    for ten, st in bang[1:]:
+        h = hong.get(ten, {})
+        if h.get("nghi"):
+            print("")
+            print(f"!! {ten}: NGHI MODEL HỎNG, không phải đọc kém — "
+                  f"{h['o_la']}/{h['o_cham']} ô không trùng MỘT TỪ NÀO với bản "
+                  f"người VÀ dài gấp >3 lần.")
+            print(f"   ví dụ: {h['vi_du']!r}")
+            print("   Dấu hiệu model sinh token ngẫu nhiên (lm_head chưa buộc, "
+                  "sai dtype, checkpoint thiếu).")
+            print("   ĐỪNG ghi vào báo cáo là 'model đọc kém tiếng Việt' — đó là "
+                  "kết luận SAI về một model có thể tốt (D-99, D-101).")
+
     goc = bang[0][1]
     print("\nLuật chốt (thiết kế §3.2): một engine chỉ THẮNG khi nó **không tệ "
           "hơn**\nTesseract ở cột DẤU. Thắng công thức mà thua dấu là THUA — "
@@ -905,7 +984,8 @@ def cmd_compare(out_dir: Path) -> int:
     if goc["loi_dau"] is not None:
         for ten, st in bang[1:]:
             # Không áp luật chốt cho engine chưa chạy đủ: số của nó không tồn tại.
-            if st["loi_dau"] is None or chua_du(st):
+            if (st["loi_dau"] is None or chua_du(st)
+                    or hong.get(ten, {}).get("nghi")):
                 continue
             if st["loi_dau"] > goc["loi_dau"]:
                 print(f"  ✗ {ten}: lỗi dấu {st['loi_dau']:.3f} > tesseract "
