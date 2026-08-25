@@ -96,15 +96,33 @@ INFO_BOX_TITLE_REGEX = re.compile(
 
 # v7 anchor-first patterns ------------------------------------------------
 
-# Strict figure caption: "Hình 1.1." / "Hình 1.1 abc"
+# Nhiễu OCR được phép đứng TRƯỚC chữ "Hình" của một chú thích.
+#
+# Chân trời sáng tạo in một tam giác ▲ trước MỌI chú thích hình
+# ("▲ Hình 2.1. Kích thước của một số vật thể") và Tesseract đọc glyph đó thành
+# chữ. Đo trên chữ đã lập chỉ mục, các dòng chứa "Hình N.M" của CTST:
+#     À 571 · A 139 · AÀ 124 · Á 39  = 873/1796 = 49%   (đầu dòng chỉ 64)
+# trong khi CD có 752/947 = 79% ở đầu dòng và KNTT 362, không bộ nào dùng ▲.
+#
+# Vì `FIG_CAPTION_STRICT_REGEX` neo `^\s*Hình`, 49% chú thích của CTST bị loại
+# ngay ở bước phân loại anchor -- khớp đúng tỉ lệ hình bỏ sót đo được độc lập ở
+# phía kho ảnh (CTST cắt được 51-65% số nhãn, CD 92-97%, KNTT 95-96%).
+#
+# Tiền tố cố ý giới hạn ở **tối đa 3 ký tự thuộc một tập đóng** rồi bắt buộc có
+# khoảng trắng. Nới rộng hơn (ví dụ "vài ký tự bất kỳ") sẽ kéo theo tham chiếu
+# thân bài -- "Quan sát Hình 2.1 ta thấy..." -- và mỗi cái sinh ra một khung cắt
+# sai chỗ. Tập ký tự lấy từ phép đo ở trên cộng các dấu ngoặc đã biết của KNTT.
+_CAPTION_NOISE_PREFIX = r"(?:[AÀÁÂÃaàáâã\^>»▲•\[\(\|\-]{1,3}\s+)?"
+
+# Strict figure caption: "Hình 1.1." / "Hình 1.1 abc" / "▲ Hình 1.1. abc"
 FIG_CAPTION_STRICT_REGEX = re.compile(
-    r"^\s*H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
+    r"^\s*" + _CAPTION_NOISE_PREFIX + r"H[iì]nh\s+\d+(?:\.\d+)?\s*[\.:]?\s*\S",
     flags=re.IGNORECASE,
 )
 
 # Strict table caption: "Bảng 1.1." / "Bảng 1.1 abc"  -> ALWAYS rejected.
 TABLE_CAPTION_STRICT_REGEX = re.compile(
-    r"^\s*B[aả]ng\s+\d+(?:\.\d+)?\s*[\.:]?",
+    r"^\s*" + _CAPTION_NOISE_PREFIX + r"B[aả]ng\s+\d+(?:\.\d+)?\s*[\.:]?",
     flags=re.IGNORECASE,
 )
 
