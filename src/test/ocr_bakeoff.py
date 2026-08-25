@@ -891,7 +891,11 @@ def main() -> int:
     ap.add_argument("--compare", action="store_true",
                     help="Bảng so các engine (engine_*.json) trên gold set người "
                          "duyệt. Từ chối in bảng nếu phiếu chưa dùng được.")
-    ap.add_argument("--out-dir", default="database/review/ocr_gold")
+    # Mặc định là thư mục NẰM TRONG GIT, không phải `database/` (bị gitignore).
+    # Nhờ vậy Colab chỉ cần `git clone` là có đủ crop + phiếu người + baseline —
+    # không phải upload gì lên Drive, không phải nhớ đường dẫn nào. Toàn bộ
+    # bake-off gói gọn 8,2 MB, và nó đi cùng lịch sử của chính phép đo.
+    ap.add_argument("--out-dir", default="document/review/ocr_gold")
     ap.add_argument("--max-per-page", type=int, default=8)
     args = ap.parse_args()
 
