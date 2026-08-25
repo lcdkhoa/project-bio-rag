@@ -296,6 +296,18 @@ def dai_gap(chuan: str, doc: str) -> float:
 # Markdown/HTML nên dài hơn là chuyện FORMAT, không phải bịa.
 DUOI_THUA_MAX = 1.2
 
+# Dấu hiệu engine xuất công thức bằng **LaTeX** — đó là FORMAT khác, KHÔNG phải
+# bịa. Đo trên 97 ô của MinerU: 5 ô "dài nhất" đều là LaTeX (`\mathrm{Fe}_{x}`,
+# `\(10^{-8}\)`, `	ext{N}_x	ext{O}_y`). Gọi chúng là "bịa" sẽ kết tội một
+# engine vì nó viết `A = Fs` thành `\(\mathrm{A} = \mathrm{Fs}\)` — cùng nội
+# dung, khác cách gõ. Bịa THẬT trông khác hẳn: `cây&Táry`, `cải axon, hệ, hỗn`.
+_DAU_LATEX = (r"\(", r"\)", r"\mathrm", r"\text", r"\frac", r"\approx",
+              "_{", "^{", r"\quad", r"\rightarrow", r"\math")
+
+
+def la_latex(s: str) -> bool:
+    return any(d in str(s or "") for d in _DAU_LATEX)
+
 
 def dem_duoi_thua(items, gold, hyp) -> dict:
     """Đếm ô mà engine viết DÀI HƠN bản người đáng kể — nghi bịa phần đuôi.
@@ -311,6 +323,7 @@ def dem_duoi_thua(items, gold, hyp) -> dict:
     """
     o_thua = []
     o_cham = 0
+    o_latex = 0
     for it in items:
         chuan = str(gold.get(it["id"], "") or "").strip()
         if (not chuan or chuan == KHONG_DOC_DUOC or it["id"] not in hyp
@@ -322,9 +335,13 @@ def dem_duoi_thua(items, gold, hyp) -> dict:
         o_cham += 1
         g = dai_gap(chuan, doc)
         if g > DUOI_THUA_MAX:
-            o_thua.append((it["id"], round(g, 2), doc[len(chuan):][:60]))
+            duoi = doc[len(chuan):][:60]
+            if la_latex(duoi):
+                o_latex += 1        # FORMAT, không phải bịa — đếm riêng
+            else:
+                o_thua.append((it["id"], round(g, 2), duoi))
     o_thua.sort(key=lambda x: -x[1])
-    return {"o_thua": o_thua, "o_cham": o_cham,
+    return {"o_thua": o_thua, "o_cham": o_cham, "o_latex": o_latex,
             "ty_le": round(len(o_thua) / o_cham, 4) if o_cham else 0.0}
 
 
@@ -1027,6 +1044,9 @@ def cmd_compare(out_dir: Path) -> int:
             print(f"!! {ten}: {len(t['o_thua'])}/{t['o_cham']} ô "
                   f"({t['ty_le']:.1%}) viết DÀI HƠN bản người >{DUOI_THUA_MAX:g}× "
                   "-> nghi BỊA phần đuôi.")
+            if t.get("o_latex"):
+                print(f"   (thêm {t['o_latex']} ô dài hơn vì xuất LaTeX — đó là "
+                      "FORMAT, KHÔNG tính là bịa)")
             for oid, g, duoi in t["o_thua"][:5]:
                 print(f"   {oid}  {g}×  đuôi: {duoi!r}")
             print("   Bịa là căn cứ LOẠI (nguyên tắc 1, D-47) — nhưng MỞ RA XEM "
