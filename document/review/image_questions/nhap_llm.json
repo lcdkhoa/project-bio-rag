@@ -128,5 +128,115 @@
   "cau_hoi": "Quan sát Hình 4, hãy cho biết dụng cụ được vẽ ở hình 4a là dụng cụ gì và nó dùng để làm gì?",
   "dap_an": "Đèn cồn – dùng để đun nóng.",
   "chac_chan": true
+ },
+ "SGK_KHTN_8_CD_p6_03": {
+  "cau_hoi": "Quan sát Hình 5, hãy cho biết hai dụng cụ được ghi chú ở 5a và 5b lần lượt là gì và mỗi dụng cụ dùng để làm gì?",
+  "dap_an": "5a: Thìa thuỷ tinh – dùng để lấy từng lượng nhỏ chất rắn dạng bột; 5b: Đũa thuỷ tinh – dùng để khuấy khi hoà tan chất rắn hoặc pha trộn các dung dịch với nhau.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_CD_p7_04": {
+  "cau_hoi": "Quan sát Hình 7, em hãy cho biết trên nhãn dán của lọ đựng dung dịch có ghi những thông tin gì?",
+  "dap_an": "Nhãn ghi đầy đủ thông tin về hoá chất, bao gồm tên hoá chất và công thức hoá học (có thể là dung dịch copper(II) sulfate – CuSO₄, người duyệt kiểm tra lại chữ trên nhãn trong hình).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_CTST_p6_01": {
+  "cau_hoi": "Quan sát Hình 1.1, hãy cho biết hai dụng cụ đo thể tích chất lỏng được vẽ trong hình là gì?",
+  "dap_an": "a) Cốc thuỷ tinh; b) Ống đong.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_CTST_p7_02": {
+  "cau_hoi": "Quan sát Hình 1.2, hãy kể tên các dụng cụ chứa hoá chất được vẽ trong hình theo thứ tự từ trái sang phải.",
+  "dap_an": "Lọ thuỷ tinh nút nhám, lọ nhựa, bình tam giác (bình erlen hay bình nón), ống nghiệm.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_CTST_p8_03": {
+  "cau_hoi": "Quan sát Hình 1.5, hãy cho biết dụng cụ được đánh dấu g) trong hình là dụng cụ gì?",
+  "dap_an": "Đũa thuỷ tinh (thanh thuỷ tinh dùng để khuấy, trộn).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_CTST_p9_04": {
+  "cau_hoi": "Quan sát Hình 1.6, hãy liệt kê các hoá chất được trình bày trong hình theo từng thể: rắn, lỏng và khí.",
+  "dap_an": "Thể rắn: kẽm (Zinc, Zn), lưu huỳnh (Sulfur, S), calcium carbonate (CaCO3); thể lỏng: dung dịch copper(II) sulfate (CuSO4) 10%, dung dịch bromine (Br2); thể khí: oxygen (O2).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_KNTT_p6_01": {
+  "cau_hoi": "Quan sát Hình 1.1, hãy kể tên ít nhất ba thông tin được ghi trên nhãn hoá chất trong hình.",
+  "dap_an": "Ví dụ: tên/công thức hoá học; khối lượng hoặc thể tích (vd: 500 g); tiêu chuẩn chất lượng (TCCL: TCCS 51/2008/HCĐG); hạn sử dụng (3 năm kể từ ngày sản xuất); ký hiệu cảnh báo...",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_KNTT_p7_02": {
+  "cau_hoi": "Quan sát Hình 1.2, hãy cho biết dụng cụ thí nghiệm được đánh dấu e) trong hình có tên gọi là gì?",
+  "dap_an": "Ống đong (bình chia độ).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_KNTT_p8_03": {
+  "cau_hoi": "Quan sát Hình 1.3, hãy cho biết sách giới thiệu những loại thiết bị đo pH nào?",
+  "dap_an": "Có hai loại: a) Máy đo pH và b) Bút đo pH.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_8_KNTT_p9_04": {
+  "cau_hoi": "Quan sát Hình 1.5, hãy cho biết trên biến áp nguồn có bộ phận nào dùng để chọn điện áp đầu ra phù hợp với thí nghiệm, và các chốt cắm dây của nguồn có màu gì?",
+  "dap_an": "Có nút vặn (núm xoay) để chọn/chỉnh điện áp đầu ra một chiều (DC); các chốt cắm gồm chốt màu đỏ (cực dương) và chốt màu đen (cực âm).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CD_p5_01": {
+  "cau_hoi": "Quan sát Hình 3, hãy cho biết thí nghiệm trong hình sử dụng dụng cụ quang học nào để tạo ra ảnh?",
+  "dap_an": "Thấu kính (đây là thí nghiệm về sự tạo ảnh của thấu kính).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CD_p6_02": {
+  "cau_hoi": "Quan sát Hình 6, hãy cho biết thí nghiệm trong hình nhằm mục đích gì và ống dẫn bằng cao su đảm nhận vai trò gì trong bộ thí nghiệm đó?",
+  "dap_an": "Thí nghiệm dùng để điều chế và thử tính chất của ethylene; ống dẫn bằng cao su được dùng để nối giữa các ống dẫn thủy tinh.",
+  "chac_chan": false
+ },
+ "SGK_KHTN_9_CD_p10_03": {
+  "cau_hoi": "Quan sát Hình 1.1: bộ đội đang tác dụng lực để kéo di chuyển vật gì, và vì sao ta nói rằng họ đã thực hiện công cơ học?",
+  "dap_an": "Bộ đội đang kéo các khẩu pháo (trong chiến dịch Điện Biên Phủ). Vì lực của bộ đội tác dụng lên pháo làm pháo dịch chuyển theo hướng của lực, nên ta nói lực đó đã thực hiện công cơ học (sinh công).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CD_p11_04": {
+  "cau_hoi": "Quan sát Hình 1.3: trong hai tình huống a) và b) được vẽ trong hình, lực nào sinh công và lực nào không sinh công? Vì sao?",
+  "dap_an": "a) Lực kéo thùng hàng đi lên của cần cẩu có sinh công vì thùng hàng dịch chuyển theo phương của lực. b) Lực xách túi của hành khách đứng chờ tàu không sinh công vì hành khách đứng yên, túi không dịch chuyển (s = 0).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CTST_p6_01": {
+  "cau_hoi": "Quan sát Hình 1.1: ngoài bộ tiêu bản nhiễm sắc thể người và lăng kính, hình còn cho thấy những loại thấu kính nào?",
+  "dap_an": "Thấu kính hội tụ và thấu kính phân kì.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CTST_p7_02": {
+  "cau_hoi": "Quan sát Hình 1.2, hãy kể tên các hoá chất cùng công thức hoá học được ghi trên nhãn trong hình.",
+  "dap_an": "Đá vôi (calcium carbonate, CaCO₃); vôi sống (calcium oxide, CaO); glucose (C₆H₁₂O₆); saccharose (C₁₂H₂₂O₁₁).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CTST_p10_03": {
+  "cau_hoi": "Quan sát Hình 2.1, hãy cho biết hình vẽ minh họa những vật nào đang chuyển động (tức đang có động năng)?",
+  "dap_an": "Ba vật: kiện hàng đang dịch chuyển nhờ băng chuyền; ô tô đang chạy trên đường; máy bay đang chuyển động trên bầu trời.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_CTST_p11_04": {
+  "cau_hoi": "Quan sát Hình 2.2, hãy kể tên ba vật có thế năng được minh họa trong hình và cho biết vì sao cả ba vật này đều có thế năng.",
+  "dap_an": "Ba vật là: khí cầu lơ lửng trên không, đồng hồ treo trên tường và quả dừa ở trên cây. Chúng đều có thế năng vì đều ở độ cao nhất định so với mặt đất (W_t = Ph với h > 0).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_KNTT_p6_01": {
+  "cau_hoi": "Quan sát Hình 1.1a: để tạo ra chùm sáng hẹp, đèn 12V-21W được ghép với dụng cụ nào (được ghi chú ngay trong hình) và đèn được nối với bộ phận nào?",
+  "dap_an": "Ghép với tấm chắn sáng có một hoặc nhiều khe sáng; đèn được nối với nguồn điện.",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_KNTT_p7_02": {
+  "cau_hoi": "Quan sát Hình 1.3, hãy cho biết khe tạo ra vật sáng có hình dạng chữ cái gì và được đánh số thứ tự bao nhiêu trong bộ dụng cụ?",
+  "dap_an": "Khe có hình chữ F và được đánh số thứ tự (5).",
+  "chac_chan": true
+ },
+ "SGK_KHTN_9_KNTT_p8_03": {
+  "cau_hoi": "Quan sát Hình 1.10, hãy cho biết đây là dụng cụ thí nghiệm nào và công dụng của nó là gì?",
+  "dap_an": "Lưới tản nhiệt – dùng để phân tán nhiệt khi đốt.",
+  "chac_chan": false
+ },
+ "SGK_KHTN_9_KNTT_p12_04": {
+  "cau_hoi": "Quan sát Hình 1.12, hãy cho biết chủ đề của bài thuyết trình mẫu được minh hoạ bằng phần mềm trình chiếu là gì?",
+  "dap_an": "Báo cáo kết quả khảo sát thực tế về một số bệnh đường tiêu hoá và vấn đề vệ sinh an toàn thực phẩm tại địa phương.",
+  "chac_chan": true
  }
 }
