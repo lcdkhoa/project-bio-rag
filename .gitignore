@@ -140,3 +140,7 @@ src/test/gold_ocr/**/page.png
 # muốn thu hồi dung lượng thật thì phải viết lại history, chưa làm.
 datasources/*
 !datasources/README.md
+
+# scratch của phiên M3 (đường dẫn log đang chạy) + log ETL cục bộ
+.m3_current_log
+logs/
