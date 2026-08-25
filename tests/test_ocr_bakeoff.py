@@ -1002,3 +1002,60 @@ class TestTieWeightsGate:
 
         assert mod._load_vlm("x/y", torch) is m
         assert m.da_goi_tie is False
+
+
+class TestTieGateIsLoud:
+    """Cổng tie phải NÓI RA thứ nó quan sát được, kể cả khi mọi thứ ổn.
+
+    Ca thật (Colab 2026-08-26, lượt 2): cổng **không in gì cả** — không `[vá]`,
+    không raise — nên không phân biệt được "đã tie" với "không kiểm được". Một
+    cổng im lặng khi ổn là một cổng vô dụng đúng lúc cần nhất.
+    """
+
+    @staticmethod
+    def _loader():
+        return TestColabEngineLoader._loader()
+
+    def test_says_so_when_the_weights_are_already_tied(self, capsys):
+        mod = self._loader()
+
+        assert mod._tie_da_xay_ra(TestTieWeightsGate._Model(tie_roi=True)) is True
+        assert "ĐÃ buộc" in capsys.readouterr().out
+
+    def test_says_so_when_they_are_not(self, capsys):
+        mod = self._loader()
+
+        assert mod._tie_da_xay_ra(TestTieWeightsGate._Model(tie_roi=False)) is False
+        assert "CHƯA buộc" in capsys.readouterr().out
+
+    def test_a_hidden_lm_head_is_still_checked(self, capsys):
+        """`get_output_embeddings() = None` KHÔNG phải bằng chứng model ổn.
+
+        Qwen2.5-VL trong transformers 5.x đặt phần ngôn ngữ dưới
+        `model.language_model`, nên lớp ngoài có thể không lộ lm_head ra — mà
+        lm_head vẫn có thật và vẫn có thể chưa được buộc.
+        """
+        mod = self._loader()
+
+        class _Sau(TestTieWeightsGate._Model):
+            def __init__(self):
+                super().__init__(tie_roi=False)
+                self.language_model = type("_LM", (), {})()
+                self.language_model.lm_head = self._out
+
+            def get_output_embeddings(self):
+                return None
+
+        assert mod._tie_da_xay_ra(_Sau()) is False
+        out = capsys.readouterr().out
+        assert "TÌM THẤY lm_head ở lớp sâu" in out and "CHƯA buộc" in out
+
+    def test_a_model_with_no_lm_head_anywhere_passes_and_says_why(self, capsys):
+        mod = self._loader()
+
+        class _Khong(TestTieWeightsGate._Model):
+            def get_output_embeddings(self):
+                return None
+
+        assert mod._tie_da_xay_ra(_Khong(tie_roi=False)) is True
+        assert "không tìm thấy lm_head" in capsys.readouterr().out

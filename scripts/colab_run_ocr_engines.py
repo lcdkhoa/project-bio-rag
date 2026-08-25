@@ -93,17 +93,51 @@ def _tie_da_xay_ra(model) -> bool:
     lay_out = getattr(model, "get_output_embeddings", None)
     lay_inp = getattr(model, "get_input_embeddings", None)
     if lay_out is None or lay_inp is None:
-        # Không kiểm được thì NÓI RA, đừng im lặng cho qua.
         print("[cổng tie] model không có get_(in|out)put_embeddings -> KHÔNG "
               "kiểm được lm_head. Đọc kỹ vài ô đầu bằng --doi-chieu.", flush=True)
         return True
     out = lay_out()
-    if out is None:
-        return True            # model không có lm_head riêng -> không có gì để buộc
     inp = lay_inp()
+    if out is None:
+        # KHÔNG phải bằng chứng model ổn: nhiều VLM giấu lm_head dưới
+        # `model.language_model`, nên `get_output_embeddings()` trả None trong
+        # khi lm_head vẫn có thật và vẫn có thể chưa được buộc. Cổng im lặng ở
+        # đây là đúng cái bệnh nó sinh ra để chặn.
+        thu = _lm_head_sau(model)
+        if thu is None:
+            print("[cổng tie] get_output_embeddings() = None và không tìm thấy "
+                  "lm_head ở lớp sâu -> coi như model không có lm_head riêng.",
+                  flush=True)
+            return True
+        out = thu
+        print("[cổng tie] get_output_embeddings() = None nhưng TÌM THẤY lm_head "
+              "ở lớp sâu -> vẫn kiểm.", flush=True)
     if inp is None:
+        print("[cổng tie] get_input_embeddings() = None -> không có gì để so.",
+              flush=True)
         return False
-    return out.weight.data_ptr() == inp.weight.data_ptr()
+    ok = out.weight.data_ptr() == inp.weight.data_ptr()
+    print(f"[cổng tie] lm_head {'ĐÃ' if ok else 'CHƯA'} buộc với embedding "
+          f"(ptr {out.weight.data_ptr()} vs {inp.weight.data_ptr()})", flush=True)
+    return ok
+
+
+def _lm_head_sau(model):
+    """Tìm `lm_head` ở các lớp sâu khi `get_output_embeddings()` trả None.
+
+    Qwen2.5-VL trong transformers 5.x đặt phần ngôn ngữ dưới
+    `model.language_model`, nên lớp ngoài có thể không lộ lm_head ra.
+    """
+    for duong in ("lm_head", "language_model.lm_head",
+                  "model.lm_head", "model.language_model.lm_head"):
+        obj = model
+        for phan in duong.split("."):
+            obj = getattr(obj, phan, None)
+            if obj is None:
+                break
+        if obj is not None and getattr(obj, "weight", None) is not None:
+            return obj
+    return None
 
 
 def _khai_bao_tie(model_id: str) -> bool:
