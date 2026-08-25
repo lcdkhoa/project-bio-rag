@@ -10,7 +10,7 @@ từ `main.py`.
     vào : <crops>/crops.json  + <crops>/<id>.png     (do `--export` sinh, 8,2 MB)
     ra  : engine_<ten>.json   = {"<id ô>": "<chữ engine đọc được>"}
 
-Chép `engine_*.json` về `database/review/ocr_gold/` rồi chấm bằng:
+Chép `engine_*.json` về `document/review/ocr_gold/` rồi chấm bằng:
 
     python -m src.test.ocr_bakeoff --compare
 
@@ -72,19 +72,66 @@ def load_crops(crops_dir: Path):
 # Mỗi engine là một hàm nhận (đường dẫn PNG, prompt) -> chuỗi. Thêm engine mới
 # thì thêm một hàm và một dòng trong ENGINES; không sửa vòng chạy.
 
+# Thứ tự thử auto-class. **ĐO ĐƯỢC, không phải phỏng đoán** — đọc `config.json`
+# trên HF (2026-08-26):
+#     nanonets/Nanonets-OCR2-3B          arch Qwen2_5_VLForConditionalGeneration, auto_map RỖNG
+#     opendatalab/MinerU2.5-Pro-...      arch Qwen2VLForConditionalGeneration,   auto_map RỖNG
+#     dots-studio/dots.ocr               arch DotsOCRForCausalLM, auto_map = {AutoConfig, AutoModelForCausalLM}
+# Nghĩa là bản cũ dùng MỘT `AutoModelForCausalLM` cho cả ba sẽ chết ở 2/3 engine
+# ngay bước nạp model: `qwen2_vl`/`qwen2_5_vl` không nằm trong registry của
+# AutoModelForCausalLM, chúng nằm ở MODEL_FOR_IMAGE_TEXT_TO_TEXT_MAPPING.
+_AUTO_CLASSES = ("AutoModelForImageTextToText", "AutoModelForCausalLM",
+                 "AutoModelForVision2Seq")
+
+
+def _load_vlm(model_id: str, torch):
+    """Nạp VLM bằng auto-class ĐÚNG cho model đó, và NÓI RA dùng class nào.
+
+    Không thử-rồi-nuốt: mọi lỗi được giữ lại, và nếu không class nào nạp được thì
+    raise kèm ĐỦ danh sách lỗi. Một fallback im lặng ở đây sẽ khiến engine chạy
+    bằng đường không ai kiểm — đúng bệnh đã cắn năm lần (D-68, D-75, D-83, D-84, D-94).
+    """
+    import transformers
+
+    # `torch_dtype` bị bỏ ở transformers 5.x, `dtype` chỉ có từ 4.56. Chọn theo
+    # phiên bản THẬT trên Colab thay vì đoán.
+    major = int(str(transformers.__version__).split(".")[0])
+    dtype_kw = ({"dtype": torch.bfloat16} if major >= 5
+                else {"torch_dtype": torch.bfloat16})
+
+    loi = []
+    for ten in _AUTO_CLASSES:
+        cls = getattr(transformers, ten, None)
+        if cls is None:
+            loi.append(f"{ten}: transformers {transformers.__version__} không có class này")
+            continue
+        try:
+            model = cls.from_pretrained(model_id, trust_remote_code=True,
+                                        device_map="auto", **dtype_kw)
+        except Exception as exc:  # noqa: BLE001 — gom lại rồi raise, không nuốt
+            loi.append(f"{ten}: {type(exc).__name__}: {exc}")
+            continue
+        print(f"[nạp] {model_id} <- transformers.{ten} "
+              f"(transformers {transformers.__version__})", flush=True)
+        return model
+
+    raise RuntimeError(
+        f"Không auto-class nào nạp được {model_id!r}. Đã thử:" + "\n  "
+        + "\n  ".join(loi))
+
+
 def _qwen_style(model_id: str):
     """Đường chung cho VLM theo giao diện chat của transformers.
 
-    Dùng được cho `Nanonets-OCR2-3B`, `dots.ocr`, và các model cùng họ Qwen2-VL.
-    Colab cần `transformers` mới (máy dev đang 4.46.3 — quá cũ cho nhóm này).
+    Dùng được cho `Nanonets-OCR2-3B` (Qwen2.5-VL), `MinerU2.5` (Qwen2-VL) và
+    `dots.ocr` (code riêng, khai qua `auto_map`). Class nạp model KHÔNG cố định —
+    xem `_load_vlm`. Colab cần `transformers` mới (máy dev đang 4.46.3 — quá cũ).
     """
     import torch
-    from transformers import AutoModelForCausalLM, AutoProcessor
+    from transformers import AutoProcessor
 
     proc = AutoProcessor.from_pretrained(model_id, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, trust_remote_code=True, torch_dtype=torch.bfloat16,
-        device_map="auto")
+    model = _load_vlm(model_id, torch)
     model.eval()
 
     def run(png: Path, prompt: str) -> str:
@@ -198,7 +245,7 @@ def main() -> int:
                         encoding="utf-8")
     rong = sum(1 for v in ket_qua.values() if not str(v).strip())
     print(f"\n[{args.engine}] xong {len(ket_qua)} ô, {rong} ô rỗng -> {out_path}")
-    print("Chép file này về database/review/ocr_gold/ rồi:")
+    print("Chép file này về document/review/ocr_gold/ rồi:")
     print("  python -m src.test.ocr_bakeoff --compare")
     return 0
 

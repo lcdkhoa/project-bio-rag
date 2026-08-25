@@ -599,3 +599,119 @@ class TestBaselineOBang:
         with pytest.raises(RuntimeError, match="may_doc_vung"):
             baseline_reading([{"id": "b1", "kind": "bang",
                                "may_doc": "Bảng 35.1"}])
+
+
+class TestColabEngineLoader:
+    """`scripts/colab_run_ocr_engines.py` nạp model bằng auto-class NÀO.
+
+    Bản đầu dùng một `AutoModelForCausalLM` cho cả ba engine. Đo trên
+    `config.json` của HF (2026-08-26) thì 2/3 sai:
+        nanonets/Nanonets-OCR2-3B     Qwen2_5_VLForConditionalGeneration, auto_map RỖNG
+        opendatalab/MinerU2.5-...     Qwen2VLForConditionalGeneration,   auto_map RỖNG
+        dots-studio/dots.ocr          auto_map = {AutoConfig, AutoModelForCausalLM}
+    Hai model Qwen*VL không nằm trong registry của `AutoModelForCausalLM`, nên
+    engine chết ngay bước nạp — người dùng đốt một phiên Colab để biết điều đó.
+    """
+
+    @staticmethod
+    def _loader():
+        import importlib.util
+        from pathlib import Path
+
+        p = Path(__file__).resolve().parents[1] / "scripts" / "colab_run_ocr_engines.py"
+        spec = importlib.util.spec_from_file_location("colab_run_ocr_engines", p)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_tries_the_next_auto_class_and_says_which_one_won(self, monkeypatch, capsys):
+        import torch
+        import transformers
+
+        mod = self._loader()
+        goi = []
+
+        class _Hong:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                raise ValueError("Unrecognized configuration class")
+
+        class _Duoc:
+            @staticmethod
+            def from_pretrained(model_id, **k):
+                goi.append(k)
+                return "MODEL"
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Hong,
+                            raising=False)
+        monkeypatch.setattr(transformers, "AutoModelForCausalLM", _Duoc,
+                            raising=False)
+
+        assert mod._load_vlm("dots-studio/dots.ocr", torch) == "MODEL"
+        # Phải NÓI RA class nào đã nạp — nếu không, engine chạy bằng đường
+        # không ai kiểm được (đúng bệnh D-83/D-94).
+        assert "AutoModelForCausalLM" in capsys.readouterr().out
+        assert goi[0]["trust_remote_code"] is True
+        assert goi[0]["device_map"] == "auto"
+
+    def test_all_classes_failing_raises_with_every_error(self, monkeypatch):
+        import torch
+        import transformers
+
+        mod = self._loader()
+
+        class _Hong:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                raise ValueError("khong nap duoc")
+
+        for ten in mod._AUTO_CLASSES:
+            monkeypatch.setattr(transformers, ten, _Hong, raising=False)
+
+        with pytest.raises(RuntimeError) as e:
+            mod._load_vlm("x/y", torch)
+        # Không được nuốt lỗi nào: cả ba class phải có tên trong thông báo.
+        for ten in mod._AUTO_CLASSES:
+            assert ten in str(e.value)
+
+    def test_dtype_kwarg_follows_the_installed_transformers(self, monkeypatch):
+        """`torch_dtype` bị bỏ ở transformers 5.x, `dtype` chỉ có từ 4.56."""
+        import torch
+        import transformers
+
+        mod = self._loader()
+        goi = []
+
+        class _Duoc:
+            @staticmethod
+            def from_pretrained(model_id, **k):
+                goi.append(k)
+                return "M"
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Duoc,
+                            raising=False)
+
+        monkeypatch.setattr(transformers, "__version__", "4.46.3", raising=False)
+        mod._load_vlm("x/y", torch)
+        assert "torch_dtype" in goi[-1] and "dtype" not in goi[-1]
+
+        monkeypatch.setattr(transformers, "__version__", "5.0.0", raising=False)
+        mod._load_vlm("x/y", torch)
+        assert "dtype" in goi[-1] and "torch_dtype" not in goi[-1]
+
+    def test_it_points_at_the_dir_compare_actually_reads(self):
+        """`--compare` đọc `document/review/ocr_gold` (ocr_bakeoff.py:ARCHIVE_DIR).
+
+        Script từng bảo người dùng chép `engine_*.json` về `database/review/...`;
+        làm theo thì `--compare` không thấy file nào và chỉ in lại baseline —
+        một thất bại trông như kết quả bình thường.
+        """
+        from pathlib import Path
+
+        from src.test.ocr_bakeoff import ARCHIVE_DIR
+
+        src = (Path(__file__).resolve().parents[1] / "scripts"
+               / "colab_run_ocr_engines.py").read_text(encoding="utf-8")
+
+        assert "database/review/ocr_gold" not in src
+        assert ARCHIVE_DIR.as_posix() in src
