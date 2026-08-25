@@ -1,0 +1,383 @@
+\chapter{THỰC NGHIỆM, ĐÁNH GIÁ VÀ THẢO LUẬN}
+\label{chapter:thuc_nghiem_danh_gia}
+
+Chương này trình bày toàn bộ quá trình thực nghiệm và đánh giá định lượng hệ thống trợ lý ảo. Nội dung bao gồm: thiết lập môi trường và bộ công cụ thực nghiệm; quy trình xây dựng 12 bộ dữ liệu kiểm thử (mỗi cuốn sách giáo khoa một bộ) có gắn nhãn nguồn (ground truth) để đo lường khách quan; hệ thống độ đo đánh giá tách thành hai pha (truy xuất và sinh ngôn ngữ); kết quả thực nghiệm thực tế trên 120 câu hỏi cùng các bảng biểu, biểu đồ minh họa; và cuối cùng là phần thảo luận chuyên sâu về ưu điểm, hạn chế cũng như các phát hiện quan trọng rút ra từ số liệu.
+
+\section{Môi trường và công cụ thực nghiệm}
+Quá trình tiền xử lý dữ liệu (OCR, phát hiện và cắt ảnh, sinh chú thích) cùng với suy luận của mô hình ngôn ngữ lớn đòi hỏi tài nguyên tính toán lớn, đặc biệt là bộ nhớ GPU. Hệ thống được phát triển và thực nghiệm trên nền tảng điện toán đám mây với cấu hình trình bày trong Bảng~\ref{tab:env}.
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình môi trường và ngăn xếp công nghệ thực nghiệm}
+\label{tab:env}
+\begin{tabular}{ll}
+\toprule
+\textbf{Thành phần} & \textbf{Chi tiết} \\
+\midrule
+Nền tảng tính toán & Google Colab Pro (High-RAM $\approx$ 50GB) \\
+GPU & NVIDIA A100 40GB VRAM \\
+Ngôn ngữ & Python 3.10 \\
+Framework cốt lõi & LangChain 0.2+, Transformers 4.40+, PyTorch 2.0+ \\
+Cơ sở dữ liệu vector & ChromaDB 0.5+ \\
+Mô hình sinh (LLM) & Qwen2.5-3B-Instruct (float16) \\
+Mô hình nhúng văn bản & paraphrase-multilingual-MiniLM-L12-v2 (384 chiều) \\
+Mô hình thị giác & CLIP-ViT-B/16, OwlViT-B/32, Vintern-1B-v2 \\
+LLM giám khảo (judge) & MiMo-v2.5-pro (gọi qua API tương thích OpenAI) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Việc sử dụng GPU A100 40GB VRAM cho phép nạp đồng thời mô hình sinh Qwen2.5-3B-Instruct (khoảng 6--8GB VRAM ở định dạng float16) cùng các mô hình thị giác (CLIP, OwlViT, Vintern-1B), nhờ đó tốc độ phản hồi của trợ lý ảo đạt mức gần thời gian thực. Mô hình giám khảo được tách riêng và truy cập qua API tương thích chuẩn OpenAI, bảo đảm \textit{tính độc lập} giữa mô hình bị đánh giá (Qwen2.5) và mô hình chấm điểm — một nguyên tắc quan trọng của phương pháp LLM-as-a-judge nhằm tránh thiên kiến tự đánh giá (self-enhancement bias)~\cite{zheng2023llmjudge}.
+
+\section{Bộ dữ liệu tri thức đã số hóa và lập chỉ mục}
+\label{sec:corpus}
+Trước khi đánh giá, kho tri thức (knowledge base) của hệ thống được xây dựng từ \textbf{12 bộ sách giáo khoa Khoa học tự nhiên} lớp 6, 7, 8, 9 của ba bộ sách (Cánh Diều, Chân trời sáng tạo, Kết nối tri thức với cuộc sống), toàn bộ ở \textbf{định dạng PDF} với tổng cộng \textbf{2.319 trang}. Quy trình ETL hai luồng (Mục~\ref{chapter:phuong_phap_thuc_hien}) xử lý song song văn bản và hình ảnh; kết quả lập chỉ mục được lưu trong ba collection của ChromaDB và tóm tắt theo từng bộ sách trong Bảng~\ref{tab:corpus}.
+
+\textbf{Luồng văn bản.} Sau khi trích xuất chữ (OCR) và phân mảnh (chunk $400$ ký tự, phần chồng lấn $120$ ký tự), toàn bộ corpus sinh ra \textbf{13.754 đoạn văn bản (chunk)}. Mỗi đoạn được nhúng bằng mô hình \texttt{paraphrase-multilingual-MiniLM-L12-v2} thành một \textbf{vector $384$ chiều}, tạo nên \textbf{13.754 vector văn bản} lưu trong collection \texttt{biology\_text}.
+
+\textbf{Luồng hình ảnh.} Mô hình OwlViT phát hiện và cắt các vùng hình minh họa trên từng trang; sau các bước lọc độ liên quan bằng CLIP, khử trùng lặp và rà soát thủ công, hệ thống giữ lại \textbf{2.408 hình ảnh} đặc thù môn Sinh học (gồm $1.166$ hình đơn, $504$ hình con, $401$ khung hoạt động, $176$ hình ghép, $130$ khung thông tin và $31$ nhóm dụng cụ thí nghiệm). Trong đó, \textbf{2.384 hình} đã được mô hình Vintern-1B sinh chú thích (caption) tiếng Việt tự động. Mỗi hình được nhúng bằng \texttt{clip-vit-base-patch16} thành một \textbf{vector $512$ chiều}, tạo nên \textbf{2.408 vector hình ảnh} trong collection \texttt{biology\_images}, đi kèm \textbf{2.408 bản ghi metadata} (caption, số trang, tọa độ hộp bao) trong collection \texttt{biology\_image\_metadata}.
+
+\begin{table}[H]
+\centering
+\caption{Thống kê bộ dữ liệu tri thức đã số hóa và lập chỉ mục theo từng bộ sách}
+\label{tab:corpus}
+\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{llccc}
+\toprule
+\textbf{Khối} & \textbf{Bộ sách} & \textbf{Số trang (PDF)} & \textbf{Chunk/vector văn bản} & \textbf{Vector hình ảnh} \\
+\midrule
+\multirow{3}{*}{Lớp 6}
+ & KHTN 6 Cánh Diều            & 182 & 863   & 379 \\
+ & KHTN 6 Chân trời sáng tạo   & 207 & 940   & 296 \\
+ & KHTN 6 Kết nối tri thức     & 199 & 912   & 106 \\
+\midrule
+\multirow{3}{*}{Lớp 7}
+ & KHTN 7 Cánh Diều            & 174 & 1.042 & 296 \\
+ & KHTN 7 Chân trời sáng tạo   & 187 & 1.061 & 198 \\
+ & KHTN 7 Kết nối tri thức     & 182 & 924   & 53  \\
+\midrule
+\multirow{3}{*}{Lớp 8}
+ & KHTN 8 Cánh Diều            & 155 & 811   & 231 \\
+ & KHTN 8 Chân trời sáng tạo   & 232 & 1.407 & 225 \\
+ & KHTN 8 Kết nối tri thức     & 246 & 1.660 & 20  \\
+\midrule
+\multirow{3}{*}{Lớp 9}
+ & KHTN 9 Cánh Diều            & 220 & 1.392 & 408 \\
+ & KHTN 9 Chân trời sáng tạo   & 219 & 1.364 & 168 \\
+ & KHTN 9 Kết nối tri thức     & 116 & 1.378 & 28  \\
+\midrule
+\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{2.319} & \textbf{13.754} & \textbf{2.408} \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+Như vậy, kho tri thức cuối cùng gồm \textbf{16.162 vector} ($13.754$ vector văn bản $384$ chiều và $2.408$ vector hình ảnh $512$ chiều) được lập chỉ mục trên ChromaDB, sẵn sàng phục vụ truy xuất đa phương thức. Có thể thấy mật độ hình ảnh chênh lệch đáng kể giữa các bộ sách (ví dụ KHTN 9 Cánh Diều có $408$ hình trong khi KHTN 8 Kết nối tri thức chỉ có $20$ hình được giữ lại), phản ánh khác biệt về bố cục trình bày và mức độ thân thiện với việc tự động phát hiện hình ảnh của từng bộ sách.
+
+\section{Xây dựng bộ dữ liệu kiểm thử (Testsets)}
+\label{sec:testset}
+Khác với cách đánh giá chỉ dựa trên cảm tính hoặc một vài câu hỏi rời rạc, luận văn xây dựng một quy trình sinh dữ liệu kiểm thử \textbf{có gắn nhãn nguồn xác định}. Đây là điều kiện then chốt để có thể tính các độ đo truy xuất (Precision, Recall, MRR) một cách \textit{khách quan và lặp lại được}, thay vì phụ thuộc hoàn toàn vào đánh giá ngữ nghĩa của một mô hình khác.
+
+\subsection{Nguyên lý gắn nhãn nguồn (ground truth)}
+Mỗi câu hỏi kiểm thử được sinh ra \textbf{từ một trang cụ thể} của một cuốn sách giáo khoa cụ thể. Do đó, với mỗi câu hỏi, hệ thống biết chắc \textit{tài liệu vàng} (gold document) là cặp \texttt{(tên\_sách, số\_trang)}. Khi chạy thử nghiệm truy xuất, ta đối chiếu phần \textit{metadata} (\texttt{source}, \texttt{page}) của các đoạn văn bản (chunk) mà hệ thống trả về với tài liệu vàng này để xác định đoạn nào là \textit{đúng}. Cơ chế đối chiếu khả thi nhờ trong quá trình ETL (Chương~\ref{chapter:phuong_phap_thuc_hien}), mỗi chunk lưu trong collection \texttt{biology\_text} đều mang metadata gồm tên file PDF gốc và số trang tương ứng.
+
+\subsection{Quy trình sinh dữ liệu tự động}
+Quy trình sinh testset được tự động hóa hoàn toàn và mô tả trong Thuật toán~\ref{alg:gen}. Với mỗi cuốn sách, hệ thống chọn ngẫu nhiên (với hạt giống cố định \texttt{seed=42} để tái lập) một số trang nội dung, bỏ qua các trang đầu (bìa, mục lục, lời nói đầu) và các trang quá ít chữ. Nội dung trang được OCR bằng Tesseract, sau đó đưa cho mô hình LLM đặt một câu hỏi kèm đáp án chuẩn (ground truth) \textbf{chỉ dựa trên nội dung trang đó}. Kết quả được lưu kèm cặp \texttt{(source\_book, source\_page)}.
+
+\begin{algorithm2e}[H]
+\caption{Sinh bộ kiểm thử có gắn nhãn nguồn cho một cuốn sách}
+\label{alg:gen}
+\SetAlgoLined
+\KwIn{Thư mục ảnh trang của sách $B$; số câu cần sinh $N$; ngưỡng chữ tối thiểu $L_{min}$}
+\KwOut{Danh sách bộ \texttt{(question, ground\_truth, source\_book, source\_page)}}
+Lấy danh sách trang, bỏ $10$ trang đầu (bìa/mục lục)\;
+Xáo trộn danh sách trang với hạt giống cố định\;
+$rows \leftarrow \emptyset$\;
+\ForEach{trang $p$ trong danh sách ứng viên}{
+    \If{$|rows| \geq N$}{\textbf{dừng}}
+    $text \leftarrow \text{OCR}(p)$\;
+    \If{$\text{độ\_dài}(text) < L_{min}$}{\textbf{bỏ qua}}
+    $(q, gt, ok) \leftarrow \text{LLM\_sinh\_câu\_hỏi}(text)$\;
+    \If{$ok$}{
+        Thêm \texttt{(q, gt, B, p)} vào $rows$\;
+    }
+}
+\Return $rows$\;
+\end{algorithm2e}
+
+Tổng cộng, hệ thống đã sinh được \textbf{120 câu hỏi} phân bố đều trên 12 cuốn sách (10 câu mỗi cuốn) như trình bày trong Bảng~\ref{tab:testset_dist}. Các câu hỏi tập trung vào nội dung \textbf{Sinh học} của chương trình (cấu tạo và hoạt động của tế bào, quang hợp, hô hấp, sinh vật và phân loại, di truyền, cơ thể người\ldots) và trải đều ba cấp độ: trích xuất trực tiếp, suy luận liên kết, và tổng hợp đa ngữ cảnh.
+
+\begin{table}[H]
+\centering
+\caption{Phân bố 12 bộ dữ liệu kiểm thử theo cuốn sách}
+\label{tab:testset_dist}
+\small
+\begin{tabular}{llc}
+\toprule
+\textbf{Khối} & \textbf{Bộ sách} & \textbf{Số câu hỏi} \\
+\midrule
+Lớp 6 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
+Lớp 7 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
+Lớp 8 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
+Lớp 9 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
+\midrule
+\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{120} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Bảng~\ref{tab:sample_q} minh họa một số câu hỏi tiêu biểu cùng đáp án chuẩn và trang nguồn được gắn nhãn.
+
+\begin{table}[H]
+\centering
+\caption{Một số câu hỏi kiểm thử tiêu biểu kèm nhãn nguồn}
+\label{tab:sample_q}
+\small
+\begin{tabular}{p{0.34\textwidth}p{0.38\textwidth}c}
+\toprule
+\textbf{Câu hỏi (Sinh học)} & \textbf{Đáp án chuẩn (ground truth)} & \textbf{Nguồn} \\
+\midrule
+Oxygen cần cho quá trình nào và carbon dioxide cần cho quá trình nào ở sinh vật? & Oxygen cần cho sự hô hấp; carbon dioxide cần cho sự quang hợp. & 6 CD, tr.41 \\
+\addlinespace
+Trong các nguyên sinh vật được quan sát, nguyên sinh vật nào gây ra bệnh sốt rét? & Trùng sốt rét. & 6 CTST, tr.120 \\
+\addlinespace
+Khi quan sát tế bào dưới kính hiển vi, vật kính nào được sử dụng đầu tiên? & Vật kính $10\times$. & 6 KNTT, tr.75 \\
+\addlinespace
+Giá trị pH của máu ở người khỏe mạnh nằm trong khoảng nào? & Từ $7{,}35$ đến $7{,}45$. & 8 CTST, tr.56 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Phương pháp và độ đo đánh giá}
+Do đầu ra của hệ thống là ngôn ngữ tự nhiên, việc dùng các thang đo so khớp từ khóa truyền thống như BLEU~\cite{papineni2002bleu} hay ROUGE~\cite{lin2004rouge} là không đủ, vì một câu trả lời đúng có thể được diễn đạt bằng nhiều cách khác nhau về mặt từ ngữ. Luận văn áp dụng phương pháp đánh giá \textbf{hai pha}: (i) pha truy xuất được đo bằng các độ đo truy hồi thông tin (IR) \textit{xác định} dựa trên nhãn nguồn; (ii) pha sinh ngôn ngữ được đo bằng mô hình \textbf{LLM-as-a-judge}~\cite{zheng2023llmjudge, liu2023geval} với một mô hình LLM thứ hai độc lập (MiMo-v2.5-pro). Cách tiếp cận dùng LLM để chấm điểm chất lượng câu trả lời của hệ thống RAG cũng phù hợp với các khung đánh giá chuyên biệt cho RAG gần đây như RAGAS~\cite{es2024ragas}. Toàn bộ luồng đánh giá tự động được mô tả trong Hình~\ref{fig:eval_pipeline_concept} (về mặt khái niệm) và Thuật toán~\ref{alg:eval}.
+
+\subsection{Đánh giá pha truy xuất (Retrieval Evaluation)}
+Gọi $R_k = (d_1, d_2, \dots, d_m)$ là danh sách $m \leq k$ đoạn văn bản hệ thống truy xuất được cho một câu hỏi, sắp theo thứ hạng. Hàm chỉ thị liên quan ở mức trang (page-level) được định nghĩa là:
+\begin{equation}
+\mathrm{rel}(d) =
+\begin{cases}
+1 & \text{nếu } \mathrm{source}(d) = B^{*} \;\wedge\; |\mathrm{page}(d) - p^{*}| \leq 1 \\
+0 & \text{ngược lại}
+\end{cases}
+\end{equation}
+trong đó $(B^{*}, p^{*})$ là sách và trang nguồn của câu hỏi. Dung sai $\pm 1$ trang được dùng vì một đoạn văn bản có thể tràn qua ranh giới trang do cơ chế chunking. Ba độ đo chính được tính như sau:
+
+\begin{itemize}
+    \item \textbf{Precision@k} --- tỷ lệ đoạn truy xuất là đúng trang nguồn:
+    \begin{equation}
+    \mathrm{Precision@}k = \frac{1}{|R_k|}\sum_{d \in R_k} \mathrm{rel}(d).
+    \end{equation}
+    \item \textbf{Recall@k (hit@k)} --- do mỗi câu hỏi chỉ có một trang vàng, recall là việc trang đó có xuất hiện trong top-$k$ hay không:
+    \begin{equation}
+    \mathrm{Recall@}k = \mathbf{1}\!\left[\exists\, d \in R_k : \mathrm{rel}(d) = 1\right].
+    \end{equation}
+    \item \textbf{MRR (Mean Reciprocal Rank --- điểm rank)}~\cite{voorhees1999trec} --- nghịch đảo thứ hạng của đoạn đúng đầu tiên, lấy trung bình trên $N$ câu hỏi:
+    \begin{equation}
+    \mathrm{MRR} = \frac{1}{N}\sum_{i=1}^{N} \frac{1}{\mathrm{rank}_i},
+    \end{equation}
+    với $\mathrm{rank}_i$ là vị trí đoạn đúng đầu tiên của câu hỏi thứ $i$ (bằng $\infty$, tức đóng góp $0$, nếu không có đoạn đúng nào).
+\end{itemize}
+
+Ngoài mức page-level (nghiêm ngặt), luận văn còn tính các độ đo tương ứng ở mức \textbf{book-level} (chỉ cần đúng sách) nhằm định lượng hiện tượng nhiễu chéo giữa 12 cuốn sách vốn được lưu chung trong một collection. Bên cạnh đó, để tách bạch \textit{khả năng tìm thấy của mô hình nhúng} với \textit{tổn thất do khâu lọc/cắt-k} ở cấu hình production, hệ thống còn đo \textbf{Recall@k thô} (raw top-$k$, bỏ qua bộ lọc liên quan) tại các mức $k \in \{3, 5, 10\}$; giá trị $\mathrm{Recall@}10$ đóng vai trò \textit{trần recall} (ngưỡng tốt nhất có thể đạt nếu nới rộng số đoạn lấy ra).
+
+\subsection{Đánh giá pha sinh ngôn ngữ (LLM-as-a-judge)}
+Câu trả lời do Qwen2.5 sinh ra được một mô hình LLM thứ hai (MiMo-v2.5-pro) chấm điểm độc lập. Mô hình giám khảo nhận đầu vào gồm câu hỏi, đáp án chuẩn, ngữ cảnh truy xuất và câu trả lời cần chấm, rồi trả về điểm theo ba tiêu chí trên thang $1$--$5$:
+\begin{itemize}
+    \item \textbf{Tính đúng (Correctness):} câu trả lời có chính xác so với đáp án chuẩn hay không.
+    \item \textbf{Độ trung thực (Faithfulness):} câu trả lời có bám sát ngữ cảnh được cung cấp, không bịa đặt (hallucination) hay không.
+    \item \textbf{Độ liên quan (Relevancy):} câu trả lời có đi đúng trọng tâm câu hỏi hay không.
+\end{itemize}
+
+\subsection{Điểm tổng hợp và xếp hạng}
+Để xếp hạng 12 cuốn sách, mỗi cuốn được quy về một \textit{điểm tổng thể} cân bằng giữa chất lượng truy xuất và chất lượng câu trả lời:
+\begin{align}
+\mathrm{retrieval\_score} &= \mathrm{mean}\big(\mathrm{Recall@}k_{\text{page}},\, \mathrm{MRR}_{\text{page}},\, \mathrm{Precision@}k_{\text{page}}\big), \\
+\mathrm{answer\_score} &= \frac{1}{5}\,\mathrm{mean}\big(\mathrm{Correctness},\, \mathrm{Faithfulness},\, \mathrm{Relevancy}\big), \\
+\mathrm{overall} &= \tfrac{1}{2}\big(\mathrm{retrieval\_score} + \mathrm{answer\_score}\big).
+\end{align}
+
+\begin{algorithm2e}[H]
+\caption{Quy trình đánh giá tự động cho một bộ kiểm thử}
+\label{alg:eval}
+\SetAlgoLined
+\KwIn{Bộ kiểm thử của sách $B$; mô hình giám khảo $J$}
+\KwOut{Các độ đo trung bình của sách $B$}
+\ForEach{câu hỏi $q$ kèm nhãn $(B^{*}, p^{*})$}{
+    $R \leftarrow \text{HybridRetriever}(q)$ \tcp*{truy xuất như API thật}
+    Tính Precision@k, Recall@k, MRR từ metadata của $R$ và $(B^{*}, p^{*})$\;
+    Tính Recall@\{3,5,10\} thô bằng tìm kiếm top-k bỏ qua bộ lọc\;
+    $ctx \leftarrow$ ghép nội dung các đoạn trong $R$\;
+    $ans \leftarrow \text{Qwen2.5}(\text{prompt}(ctx, q))$\;
+    $(corr, faith, rel) \leftarrow J(q, gt, ctx, ans)$ \tcp*{LLM thứ hai chấm}
+    Lưu lại toàn bộ chỉ số của câu hỏi\;
+}
+\Return trung bình các chỉ số trên toàn bộ câu hỏi của $B$\;
+\end{algorithm2e}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.42\textwidth]{src/images/chapter3/rag_pipeline.png}
+    \caption{Luồng đánh giá tự động: câu hỏi đi qua đúng pipeline RAG thật (truy xuất $\rightarrow$ Qwen2.5 sinh câu trả lời), sau đó được đo bằng độ đo IR và mô hình giám khảo thứ hai.}
+    \label{fig:eval_pipeline_concept}
+\end{figure}
+
+\section{Kết quả thực nghiệm}
+Phần này trình bày kết quả định lượng thu được khi chạy toàn bộ 120 câu hỏi qua hệ thống. Các số liệu trung bình tổng quát được tóm tắt trong Bảng~\ref{tab:summary}.
+
+\begin{table}[H]
+\centering
+\caption{Các độ đo trung bình trên toàn bộ 120 câu hỏi (12 bộ sách)}
+\label{tab:summary}
+\begin{tabular}{lc}
+\toprule
+\textbf{Độ đo} & \textbf{Giá trị trung bình} \\
+\midrule
+Recall@k (production, page-level) & 0.63 \\
+MRR (page-level) & 0.51 \\
+Precision@k (page-level) & 0.38 \\
+Recall@3 (thô) & 0.66 \\
+Recall@5 (thô) & 0.77 \\
+Recall@10 (thô --- trần recall) & 0.84 \\
+\midrule
+Tính đúng (Correctness, /5) & 3.76 \\
+Độ trung thực (Faithfulness, /5) & 4.25 \\
+Độ liên quan (Relevancy, /5) & 4.36 \\
+\midrule
+Điểm tổng thể (overall) & 0.67 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Xếp hạng tổng thể 12 bộ sách}
+Bảng~\ref{tab:leaderboard} và Hình~\ref{fig:leaderboard} trình bày bảng xếp hạng tổng thể của 12 cuốn sách theo điểm \texttt{overall}. Cuốn \textit{KHTN 9 Cánh diều} đạt điểm cao nhất ($0.783$) nhờ cân bằng tốt giữa truy xuất và chất lượng trả lời, trong khi \textit{KHTN 6 Kết nối tri thức} xếp cuối ($0.524$) chủ yếu do recall truy xuất thấp.
+
+\begin{table}[H]
+\centering
+\caption{Bảng xếp hạng tổng thể 12 bộ sách (judge: MiMo-v2.5-pro)}
+\label{tab:leaderboard}
+\small
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{clccccccc}
+\toprule
+\textbf{Hạng} & \textbf{Bộ sách} & \textbf{Overall} & \textbf{Recall@k} & \textbf{MRR} & \textbf{Precision} & \textbf{Correct/5} & \textbf{Faithful/5} & \textbf{Relevancy/5} \\
+\midrule
+1 & KHTN 9 CD   & 0.783 & 0.80 & 0.67 & 0.53 & 4.20 & 4.70 & 4.60 \\
+2 & KHTN 7 CD   & 0.734 & 0.80 & 0.63 & 0.43 & 3.80 & 4.40 & 4.50 \\
+3 & KHTN 6 CTST & 0.716 & 0.70 & 0.65 & 0.38 & 3.80 & 4.30 & 4.70 \\
+4 & KHTN 8 CTST & 0.714 & 0.80 & 0.68 & 0.50 & 3.40 & 3.80 & 4.30 \\
+5 & KHTN 8 KNTT & 0.710 & 0.60 & 0.50 & 0.50 & 4.00 & 4.90 & 4.40 \\
+6 & KHTN 8 CD   & 0.692 & 0.60 & 0.53 & 0.40 & 4.00 & 4.60 & 4.50 \\
+7 & KHTN 9 CTST & 0.677 & 0.70 & 0.55 & 0.33 & 4.00 & 4.10 & 4.30 \\
+8 & KHTN 7 KNTT & 0.672 & 0.60 & 0.43 & 0.30 & 4.40 & 4.40 & 4.70 \\
+9 & KHTN 9 KNTT & 0.671 & 0.60 & 0.53 & 0.43 & 3.80 & 4.10 & 4.40 \\
+10 & KHTN 7 CTST & 0.577 & 0.60 & 0.42 & 0.27 & 2.90 & 4.30 & 3.70 \\
+11 & KHTN 6 CD   & 0.528 & 0.50 & 0.28 & 0.27 & 3.30 & 3.40 & 3.90 \\
+12 & KHTN 6 KNTT & 0.524 & 0.30 & 0.25 & 0.23 & 3.50 & 4.00 & 4.30 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{src/images/chapter4/leaderboard.png}
+    \caption{Xếp hạng tổng thể 12 bộ sách theo điểm \texttt{overall}.}
+    \label{fig:leaderboard}
+\end{figure}
+
+Hình~\ref{fig:ret_vs_ans} phân tách điểm tổng thể thành hai thành phần. Có thể thấy điểm câu trả lời (answer\_score, trung bình $0.82$) ổn định và cao hơn hẳn điểm truy xuất (retrieval\_score, trung bình $0.51$) ở hầu hết các cuốn sách. Điều này cho thấy \textbf{nút thắt của hệ thống nằm ở pha truy xuất}, chứ không phải ở khả năng diễn đạt của mô hình sinh.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{src/images/chapter4/retrieval_vs_answer.png}
+    \caption{Hai thành phần điểm tổng thể: điểm truy xuất so với điểm câu trả lời theo từng bộ sách.}
+    \label{fig:ret_vs_ans}
+\end{figure}
+
+\subsection{Phân tích Recall@k: ảnh hưởng của số đoạn truy xuất}
+\label{sec:recallk}
+Đây là một trong những phát hiện quan trọng nhất của thực nghiệm. Bảng~\ref{tab:recallk} và Hình~\ref{fig:recall_at_k}, \ref{fig:recall_per_book} cho thấy: khi tăng số đoạn truy xuất $k$, giá trị Recall \textbf{tăng đơn điệu} từ $0.66$ ($k=3$) lên $0.77$ ($k=5$) và đạt $0.84$ ($k=10$). Trong khi đó, cấu hình production (chỉ giữ $\approx 3$ đoạn sau bộ lọc liên quan) chỉ đạt recall $0.63$.
+
+\begin{table}[H]
+\centering
+\caption{Recall@k (thô) theo từng bộ sách so với recall production}
+\label{tab:recallk}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Bộ sách} & \textbf{Recall@3} & \textbf{Recall@5} & \textbf{Recall@10} & \textbf{Recall (prod.)} \\
+\midrule
+KHTN 9 CD   & 0.80 & 0.80 & 0.80 & 0.80 \\
+KHTN 7 CD   & 0.80 & 0.80 & 0.80 & 0.80 \\
+KHTN 6 CTST & 0.70 & 0.80 & 0.90 & 0.70 \\
+KHTN 8 CTST & 0.90 & 0.90 & 0.90 & 0.80 \\
+KHTN 8 KNTT & 0.60 & 0.70 & 0.70 & 0.60 \\
+KHTN 8 CD   & 0.60 & 0.90 & 0.90 & 0.60 \\
+KHTN 9 CTST & 0.70 & 0.80 & 0.80 & 0.70 \\
+KHTN 7 KNTT & 0.70 & 0.80 & 1.00 & 0.60 \\
+KHTN 9 KNTT & 0.70 & 0.90 & 0.90 & 0.60 \\
+KHTN 7 CTST & 0.60 & 0.60 & 0.80 & 0.60 \\
+KHTN 6 CD   & 0.50 & 0.70 & 1.00 & 0.50 \\
+KHTN 6 KNTT & 0.30 & 0.50 & 0.60 & 0.30 \\
+\midrule
+\textbf{Trung bình} & \textbf{0.66} & \textbf{0.77} & \textbf{0.84} & \textbf{0.63} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{src/images/chapter4/recall_at_k.png}
+    \caption{Recall trung bình tăng đơn điệu theo $k$, so với cấu hình production.}
+    \label{fig:recall_at_k}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{src/images/chapter4/recall_per_book.png}
+    \caption{Recall@k theo từng bộ sách --- $k$ càng lớn, recall càng cao ở mọi bộ sách.}
+    \label{fig:recall_per_book}
+\end{figure}
+
+Khoảng cách giữa trần recall ($\mathrm{Recall@}10 = 0.84$) và recall production ($0.63$) --- tức $0.21$ --- chính là phần recall \textbf{bị mất do khâu xếp hạng và cắt-k} của bộ truy xuất, \textit{chứ không phải do mô hình nhúng không tìm được trang}. Nói cách khác, mô hình nhúng MiniLM gần như luôn đưa được trang vàng vào top-10, nhưng cấu hình hiện tại (giữ tối đa 3--4 đoạn sau bộ lọc liên quan) đã loại bỏ trang đúng trong khoảng $21\%$ số trường hợp. Đây là một định hướng cải tiến rõ ràng và có thể đo lường được (sẽ thảo luận ở Mục~\ref{sec:thaoluan}).
+
+\subsection{Chất lượng câu trả lời sinh ra}
+Hình~\ref{fig:judge} tổng hợp điểm trung bình do mô hình giám khảo chấm. Mô hình Qwen2.5 đạt điểm \textbf{Độ trung thực $4.25/5$} và \textbf{Độ liên quan $4.36/5$} --- mức cao, cho thấy cơ chế RAG cùng prompt nghiêm ngặt đã thành công trong việc buộc mô hình bám sát ngữ cảnh và trả lời đúng trọng tâm, hạn chế ảo giác. Điểm \textbf{Tính đúng} thấp hơn ($3.76/5$) phản ánh ảnh hưởng dây chuyền từ pha truy xuất: khi ngữ cảnh truy xuất thiếu trang vàng, mô hình khó cho ra đáp án hoàn toàn chính xác dù vẫn trung thực với ngữ cảnh nhận được.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\textwidth]{src/images/chapter4/judge_scores.png}
+    \caption{Chất lượng câu trả lời của Qwen2.5 do LLM thứ hai (MiMo-v2.5-pro) chấm.}
+    \label{fig:judge}
+\end{figure}
+
+\section{Thảo luận kết quả}
+\label{sec:thaoluan}
+Từ các số liệu thực nghiệm, có thể rút ra một số nhận định và phát hiện quan trọng:
+
+\begin{enumerate}
+    \item \textbf{Nút thắt nằm ở khâu xếp hạng/cắt-k, không phải ở mô hình nhúng.} Như phân tích ở Mục~\ref{sec:recallk}, trần recall đạt $0.84$ trong khi production chỉ $0.63$. Việc nới số đoạn giữ lại (\texttt{RETRIEVER\_MAX\_K}) hoặc bổ sung một bước \textit{re-ranking} (ví dụ cross-encoder) được kỳ vọng sẽ thu hẹp khoảng cách $0.21$ này, qua đó kéo theo cả Tính đúng của câu trả lời.
+    \item \textbf{Hạn chế của mô hình nhúng với câu hỏi ngắn/trừu tượng.} MiniLM được chọn vì gọn nhẹ, nhưng với các câu hỏi mang tính khái quát, vector câu hỏi nằm gần nhiều cụm chủ đề khác nhau, khiến trang đúng đôi khi tụt khỏi top-3. Điều này thể hiện rõ ở MRR trung bình chỉ $0.51$ (trang đúng thường ở hạng 2--3 thay vì hạng 1).
+    \item \textbf{Hiện tượng nhiễu chéo giữa các bộ sách.} Do ba bộ sách trình bày cùng một hệ thống kiến thức Sinh học THCS (tế bào, quang hợp, hô hấp, di truyền\ldots), nhiều chủ đề trùng lặp giữa chúng. Một câu hỏi sinh từ cuốn này đôi khi được trả lời đúng bằng nội dung Sinh học tương đương trong cuốn khác. Đây là lý do Precision ở mức trang khá thấp ($0.38$) dù câu trả lời vẫn đúng về mặt khoa học --- một điểm cần lưu ý khi diễn giải Precision trong miền dữ liệu chồng lấn.
+    \item \textbf{Khoảng cách giữa độ đo IR và đánh giá của giám khảo.} Nhiều câu có Recall page-level bằng $0$ nhưng vẫn được giám khảo chấm Tính đúng cao. Điều này khẳng định hai pha đo lường \textit{bổ sung} cho nhau: độ đo IR phản ánh chất lượng định vị nguồn, còn giám khảo phản ánh chất lượng nội dung trả lời.
+    \item \textbf{Sai số OCR.} Một số trang có nền phức tạp hoặc chữ in nghiêng làm Tesseract nhận diện sai, gây nhiễu cho cả việc sinh câu hỏi lẫn truy xuất, ảnh hưởng tới Precision.
+\end{enumerate}
+
+\subsection{Đánh giá thủ công luồng đa phương thức}
+Đối với luồng truy xuất hình ảnh, việc đánh giá tự động bằng độ đo IR gặp giới hạn (ảnh không có khái niệm "trang vàng" rõ ràng như văn bản). Do đó, nhóm tiến hành đánh giá thủ công với sự tham gia của giáo viên bộ môn theo các tiêu chí: (i) hình ảnh trả về có đúng nội dung câu hỏi không; (ii) chú thích tiếng Việt do Vintern-1B sinh ra có phản ánh đúng thuật ngữ Sinh học không; (iii) giao diện hiển thị hình ảnh và trích dẫn trang sách có rõ ràng, thân thiện với học sinh THCS không. Quá trình thực nghiệm với câu hỏi dài cũng làm lộ một lỗi kỹ thuật ở bộ mã hóa văn bản của CLIP (giới hạn 77 token); lỗi này đã được khắc phục bằng cách cắt ngắn truy vấn trước khi đưa vào CLIP, giúp luồng tìm ảnh hoạt động ổn định với mọi độ dài câu hỏi.
+
+\subsection{Ưu điểm}
+\begin{itemize}
+    \item \textbf{Giảm thiểu ảo giác:} điểm Độ trung thực $4.25/5$ cho thấy cơ chế RAG cùng prompt nghiêm ngặt đã buộc Qwen2.5 trả lời bám sát nội dung sách giáo khoa chính thống, hạn chế lấy thông tin thiếu kiểm chứng.
+    \item \textbf{Phương pháp đánh giá khách quan, lặp lại được:} nhờ gắn nhãn nguồn xác định, các độ đo Precision/Recall/MRR được tính trực tiếp từ metadata mà không phụ thuộc vào cảm tính hay sự dao động của mô hình chấm.
+    \item \textbf{Truy xuất hình ảnh trực quan:} việc kết hợp OwlViT để cắt ảnh và Vintern-1B để mô tả giúp hệ thống trả về đúng hình minh họa, tăng tính trực quan của một trợ lý ảo giáo dục.
+    \item \textbf{Giao diện mượt mà:} ứng dụng Next.js phản hồi nhanh, tích hợp tốt với luồng stream của LangChain.
+\end{itemize}
+
+\subsection{Hạn chế}
+\begin{itemize}
+    \item \textbf{Recall truy xuất ở production còn khiêm tốn ($0.63$):} do cấu hình giữ ít đoạn và mô hình nhúng nhẹ; cần re-ranking hoặc embedding mạnh hơn.
+    \item \textbf{Sai số OCR} đối với công thức, chữ trên hình, vẫn cần con người rà soát (human-in-the-loop).
+    \item \textbf{Tài nguyên phần cứng:} hệ thống cần GPU cấu hình cao (A100) để chạy mượt nhiều mô hình cùng lúc; muốn triển khai diện rộng cần nghiên cứu lượng tử hóa (quantization) để hạ chi phí.
+\end{itemize}

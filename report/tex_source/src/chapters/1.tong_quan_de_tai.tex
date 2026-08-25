@@ -1,0 +1,49 @@
+\chapter{TỔNG QUAN ĐỀ TÀI}
+\label{chapter:tong_quan_de_tai}
+
+\section{Bối cảnh và tính cấp thiết}
+Trong bối cảnh chuyển đổi số trong giáo dục đang diễn ra mạnh mẽ, việc ứng dụng trí tuệ nhân tạo (AI) vào quá trình dạy và học ngày càng trở nên phổ biến và đóng vai trò quan trọng~\cite{zawacki2019systematic, kasneci2023chatgpt}. Các hệ thống trợ lý ảo dựa trên mô hình ngôn ngữ lớn (Large Language Models – LLMs) đã thể hiện được khả năng vượt trội trong việc hiểu và sinh ngôn ngữ tự nhiên~\cite{brown2020gpt3, zhao2023llmsurvey}, qua đó hỗ trợ học sinh tra cứu kiến thức, giải thích khái niệm và tương tác với nội dung học tập một cách linh hoạt~\cite{kasneci2023chatgpt}. Điều này đặc biệt hữu ích đối với các môn học khoa học tự nhiên như Sinh học, nơi học sinh cần hiểu nhiều khái niệm phức tạp liên quan đến cấu trúc sinh vật, hệ sinh thái, di truyền học và các quá trình sinh học.
+
+Tuy nhiên, việc sử dụng trực tiếp các mô hình ngôn ngữ lớn trong giáo dục phổ thông vẫn tồn tại nhiều hạn chế đáng kể~\cite{kasneci2023chatgpt}. Thứ nhất, các mô hình này thường được huấn luyện trên khối lượng dữ liệu khổng lồ nhưng mang tính tổng quát, do đó có thể đưa ra thông tin không chính xác (hiện tượng ảo giác -- hallucination)~\cite{ji2023hallucination, huang2023hallucination} hoặc không phù hợp với chương trình học cụ thể của từng quốc gia hoặc cấp học. Thứ hai, kiến thức của mô hình bị "đóng băng" tại thời điểm huấn luyện và các hệ thống chatbot thông thường thiếu khả năng truy xuất tri thức một cách minh bạch từ các tài liệu chính thống như sách giáo khoa, tài liệu giảng dạy hoặc ngân hàng câu hỏi của giáo viên~\cite{lewis2020retrieval, gao2023ragsurvey}. Điều này làm giảm đáng kể độ tin cậy khi sử dụng AI như một nguồn tham khảo chuẩn mực trong môi trường giáo dục chính quy.
+
+Gần đây, phương pháp sinh văn bản tăng cường truy xuất (Retrieval-Augmented Generation - RAG)~\cite{lewis2020retrieval} đã nổi lên như một hướng tiếp cận hiệu quả nhằm kết hợp khả năng sinh ngôn ngữ tự nhiên xuất sắc của LLM với khả năng truy xuất tri thức từ các nguồn dữ liệu chuyên biệt, đáng tin cậy~\cite{gao2023ragsurvey}. Thay vì dựa hoàn toàn vào "trí nhớ" (kiến thức đã được huấn luyện sẵn) của mô hình, cơ chế RAG cho phép hệ thống tìm kiếm thông tin liên quan từ một kho tri thức (knowledge base) trước khi tổng hợp và tạo ra câu trả lời~\cite{lewis2020retrieval, guu2020realm}. Cách tiếp cận này giúp cải thiện tính chính xác, khả năng giải thích (người dùng có thể biết thông tin được lấy từ đâu), và mức độ cập nhật của thông tin mà không cần phải huấn luyện lại toàn bộ mô hình ngôn ngữ với chi phí đắt đỏ~\cite{gao2023ragsurvey}.
+
+Đặc thù của môn Sinh học ở cấp Trung học cơ sở (THCS) không chỉ chứa đựng lượng lý thuyết lớn mà còn đi kèm với rất nhiều hình ảnh minh họa quan trọng như cấu trúc tế bào, sơ đồ chuỗi thức ăn, các bộ phận của cơ thể sinh vật. Vì vậy, một hệ thống RAG không chỉ cần xử lý văn bản mà còn phải có khả năng hiểu và trích xuất hình ảnh (Multi-modal RAG), dựa trên các mô hình biểu diễn liên kết ngôn ngữ -- thị giác như CLIP~\cite{radford2021clip}. Từ những yêu cầu thực tiễn đó, việc thực hiện đề tài \textbf{"Xây dựng trợ lý ảo thông minh dựa trên RAG hỗ trợ dạy và học môn Sinh học tại các trường trung học cơ sở"} là một yêu cầu hết sức cấp thiết, không chỉ bắt kịp xu hướng công nghệ giáo dục (EdTech) mà còn trực tiếp giải quyết bài toán cung cấp học liệu cá nhân hóa, an toàn và chính xác cho học sinh và giáo viên.
+
+\section{Mục tiêu của đề tài}
+Đề tài hướng đến việc thiết kế, xây dựng và đánh giá một hệ thống trợ lý ảo thông minh dựa trên kỹ thuật Retrieval-Augmented Generation (RAG) nhằm hỗ trợ việc dạy và học môn Sinh học tại các trường trung học cơ sở. Các mục tiêu cụ thể của đề tài bao gồm:
+
+\begin{itemize}
+    \item \textbf{Xây dựng kho tri thức chuyên biệt môn Sinh học:} Thu thập, xử lý và số hóa dữ liệu từ 12 cuốn sách giáo khoa Khoa học tự nhiên lớp 6, 7, 8, 9 của ba bộ sách (Kết nối tri thức với cuộc sống, Chân trời sáng tạo, Cánh Diều)~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9} được sử dụng chính thức trong chương trình giáo dục phổ thông mới, trong đó khai thác trọng tâm phần kiến thức Sinh học, tạo ra một cơ sở dữ liệu vector bao gồm cả văn bản và hình ảnh.
+    \item \textbf{Thiết kế cơ chế truy xuất đa phương thức (Multi-modal Retrieval):} Phát triển luồng xử lý riêng biệt để nhúng (embed) văn bản và hình ảnh, đảm bảo khi học sinh đặt câu hỏi, hệ thống có thể truy xuất đồng thời đoạn văn bản giải thích và hình ảnh minh họa liên quan.
+    \item \textbf{Tích hợp mô hình ngôn ngữ lớn (LLM):} Triển khai và tối ưu hóa mô hình LLM (như Qwen2.5) với cơ chế RAG để tạo ra câu trả lời chính xác, văn phong phù hợp và dễ hiểu với trình độ học sinh cấp 2, hạn chế tối đa hiện tượng sinh ảo giác.
+    \item \textbf{Phát triển giao diện người dùng (UI):} Xây dựng một ứng dụng web tương tác thân thiện, cho phép người dùng (học sinh, giáo viên) dễ dàng đặt câu hỏi, xem câu trả lời kèm theo hình ảnh trích dẫn và vị trí trang sách giáo khoa tương ứng.
+    \item \textbf{Đánh giá hệ thống:} Xây dựng 12 bộ dữ liệu kiểm thử có gắn nhãn nguồn (mỗi cuốn sách một bộ) và thực nghiệm đánh giá hai pha: pha truy xuất đo bằng các độ đo định lượng khách quan (Precision@k, Recall@k, MRR) đối chiếu trực tiếp với trang nguồn; pha sinh ngôn ngữ đo bằng phương pháp LLM-as-a-judge với một mô hình ngôn ngữ thứ hai độc lập chấm điểm câu trả lời theo các tiêu chí tính đúng, độ trung thực và độ liên quan.
+\end{itemize}
+
+\section{Đối tượng và phạm vi nghiên cứu}
+\subsection{Đối tượng nghiên cứu}
+\begin{itemize}
+    \item Các công nghệ Xử lý ngôn ngữ tự nhiên (NLP) và Trí tuệ nhân tạo tạo sinh (Generative AI).
+    \item Các mô hình ngôn ngữ lớn mã nguồn mở (Open-source LLMs).
+    \item Kiến trúc hệ thống Retrieval-Augmented Generation (RAG) xử lý cả văn bản (Text) và hình ảnh (Image).
+    \item Cơ sở dữ liệu Vector (Vector Database) và các mô hình nhúng (Embedding Models).
+\end{itemize}
+
+\subsection{Phạm vi nghiên cứu}
+\begin{itemize}
+    \item \textbf{Về dữ liệu:} Nghiên cứu tập trung vào miền kiến thức \textbf{Sinh học} ở cấp Trung học cơ sở. Ở chương trình hiện hành, Sinh học là một phân môn nằm trong môn tích hợp Khoa học tự nhiên; do đó kho tri thức được xây dựng từ 12 cuốn sách giáo khoa Khoa học tự nhiên lớp 6, 7, 8, 9 của ba bộ sách (Kết nối tri thức với cuộc sống~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9}, Chân trời sáng tạo~\cite{sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9}, Cánh Diều~\cite{sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}), với trọng tâm khai thác và đánh giá trên nội dung Sinh học.
+    \item \textbf{Về mặt kỹ thuật:} Hệ thống được thiết kế dưới dạng ứng dụng Web, trong đó phần backend quản lý luồng RAG và LLM sử dụng ngôn ngữ Python cùng framework LangChain, cơ sở dữ liệu ChromaDB. Phần frontend cung cấp giao diện tương tác sử dụng framework Next.js.
+    \item \textbf{Về đối tượng phục vụ:} Học sinh và giáo viên trung học cơ sở có nhu cầu tra cứu, tìm hiểu, giải đáp các thắc mắc xoay quanh nội dung môn Sinh học.
+\end{itemize}
+
+\section{Cấu trúc của báo cáo}
+Báo cáo chuyên đề tốt nghiệp được cấu trúc thành 5 chương chính như sau:
+
+\begin{itemize}
+    \item \textbf{Chương 1: Tổng quan đề tài.} Trình bày bối cảnh, tính cấp thiết, mục tiêu, đối tượng, phạm vi nghiên cứu của đề tài và bố cục tổng thể của quyển báo cáo.
+    \item \textbf{Chương 2: Cơ sở lý thuyết.} Cung cấp các kiến thức nền tảng quan trọng phục vụ cho việc thực hiện đề tài, bao gồm các khái niệm về Xử lý ngôn ngữ tự nhiên, Mô hình ngôn ngữ lớn (LLM), nguyên lý hoạt động của kiến trúc Retrieval-Augmented Generation (RAG), hệ quản trị cơ sở dữ liệu Vector, cũng như phương pháp xử lý hình ảnh và văn bản.
+    \item \textbf{Chương 3: Phương pháp thực hiện.} Mô tả chi tiết kiến trúc tổng thể của hệ thống trợ lý ảo, các công nghệ được lựa chọn. Trình bày quy trình trích xuất dữ liệu (ETL) văn bản và hình ảnh, cách thức xây dựng luồng RAG kết hợp đa phương thức và thiết kế giao diện ứng dụng.
+    \item \textbf{Chương 4: Thực nghiệm, đánh giá và thảo luận.} Trình bày môi trường thực nghiệm, quy trình xây dựng 12 bộ dữ liệu kiểm thử có gắn nhãn nguồn, hệ thống độ đo hai pha (truy xuất và sinh ngôn ngữ), kết quả định lượng thực tế trên 120 câu hỏi kèm bảng biểu, biểu đồ minh họa, và thảo luận chuyên sâu về các phát hiện cùng hạn chế của hệ thống.
+    \item \textbf{Chương 5: Kết luận.} Tóm tắt lại những kết quả quan trọng nhất mà đề tài đã đạt được, chỉ ra những hạn chế còn tồn tại và đề xuất các định hướng phát triển, cải tiến hệ thống trong tương lai.
+\end{itemize}

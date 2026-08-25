@@ -1,0 +1,116 @@
+\chapter{PHƯƠNG PHÁP THỰC HIỆN VÀ KIẾN TRÚC HỆ THỐNG}
+\label{chapter:phuong_phap_thuc_hien}
+
+Chương này đi sâu vào chi tiết các bước thiết kế và triển khai hệ thống trợ lý ảo môn Sinh học. Nó bắt đầu từ việc trình bày kiến trúc tổng thể, sau đó là các kỹ thuật xử lý dữ liệu (ETL pipeline), luồng truy xuất tạo câu trả lời (RAG pipeline), và kết thúc bằng việc thiết kế giao diện tương tác người dùng (Frontend).
+
+\section{Kiến trúc tổng thể hệ thống}
+Hệ thống trợ lý ảo được thiết kế theo mô hình Client-Server hiện đại, bao gồm hai thành phần chính: Backend (xử lý logic RAG, tương tác với LLM và Database) và Frontend (Giao diện Web cho người dùng).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{src/images/chapter3/architecture.png}
+    \caption{Sơ đồ kiến trúc tổng thể của hệ thống Trợ lý ảo RAG}
+    \label{fig:system_architecture}
+\end{figure}
+
+Backend được xây dựng dựa trên ngôn ngữ Python, sử dụng Flask làm API Server và LangChain~\cite{langchain2022} làm framework cốt lõi để dàn xếp (orchestrate) các tác vụ truy xuất và sinh văn bản. Frontend được phát triển bằng Next.js, cung cấp trải nghiệm web mượt mà (SPA - Single Page Application).
+
+\section{Quy trình thu thập và xử lý dữ liệu (ETL Pipeline)}
+Quy trình Extract, Transform, Load (ETL) là trái tim của việc xây dựng Kho tri thức (Knowledge Base) cho trợ lý ảo. Đặc thù của nội dung Sinh học trong sách giáo khoa là sự đan xen giữa lý thuyết phức tạp và hình ảnh trực quan (sơ đồ tế bào, quá trình quang hợp, cấu tạo cơ thể sinh vật\ldots), do đó quy trình ETL được chia làm 2 luồng độc lập để xử lý lượng lớn dữ liệu từ 12 cuốn sách giáo khoa nói trên~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}:
+
+\subsection{Xử lý Dữ liệu Văn bản (Text ETL)}
+Quy trình Text ETL chịu trách nhiệm đọc các file PDF sách giáo khoa, trích xuất chữ và lưu vào ChromaDB.
+\begin{enumerate}
+    \item \textbf{Đọc và trích xuất chữ (OCR):} Đối với các trang sách dạng ảnh hoặc có định dạng phức tạp, hệ thống sử dụng thư viện Tesseract OCR~\cite{smith2007tesseract} và PDF2Image (thông qua Poppler) để chuyển đổi hình ảnh thành văn bản tiếng Việt (\texttt{tesser}\allowbreak\texttt{act-ocr-}\allowbreak\texttt{vie}).
+    \item \textbf{Phân mảnh văn bản (Chunking):} Không thể đưa toàn bộ quyển sách vào LLM vì giới hạn cửa sổ ngữ cảnh (context window). Văn bản được chia nhỏ bằng \texttt{Recursive-}\allowbreak\texttt{Character-}\allowbreak\texttt{TextSplitter} của LangChain với \texttt{chunk\_size = 400} ký tự và \texttt{chunk\_overlap = 120} ký tự. Kích thước 400 được chọn nhằm đảm bảo mỗi đoạn văn chứa đủ một ý nghĩa sinh học trọn vẹn, còn khoảng chồng lấn (overlap) 120 ký tự giúp giữ được ngữ cảnh liên kết giữa các đoạn liền kề.
+    \item \textbf{Nhúng và lưu trữ (Embedding \& Indexing):} Các đoạn text được đưa qua mô hình \texttt{sentence-transformers/}\allowbreak\texttt{paraphrase-}\allowbreak\texttt{multilingual-}\allowbreak\texttt{MiniLM-L1}\allowbreak\texttt{2-v2} để tạo vector 384 chiều và lưu vào collection \texttt{biology\_text} trong ChromaDB.
+\end{enumerate}
+
+\subsection{Xử lý Dữ liệu Hình ảnh (Image ETL)}
+Học sinh khi hỏi về Sinh học thường cần xem hình vẽ. Luồng Image ETL hoạt động như sau:
+\begin{enumerate}
+    \item \textbf{Cắt ảnh tự động:} Sử dụng mô hình \texttt{google/owlvit-base-patch32} (với ngưỡng confidence threshold 0.1) để quét từng trang sách, nhận diện các khu vực có chứa hình vẽ, biểu đồ và tự động cắt (crop) chúng ra khỏi trang.
+    \item \textbf{Sinh mô tả tự động (Image Captioning):} Hình ảnh cắt ra được đưa qua mô hình \texttt{5CD-AI/Vintern-1B-v2} để tự động sinh ra đoạn văn bản mô tả tiếng Việt chi tiết về nội dung bức ảnh (ví dụ: "Sơ đồ quang hợp ở thực vật").
+    \item \textbf{Chỉ mục đa phương thức:} Vector của hình ảnh được tạo ra bằng \texttt{openai/\allowbreak clip-vit-base-patch16}, lưu cùng với metadata (bao gồm caption tiếng Việt, số trang, tọa độ) vào collection \texttt{biology\_images}.
+\end{enumerate}
+
+Để tăng chất lượng tìm kiếm, hệ thống cũng cung cấp các script (ví dụ: \texttt{main.py --export-image-review}) cho phép xuất dữ liệu ảnh ra file JSON để chuyên gia (giáo viên) rà soát, chỉnh sửa thủ công caption (human-in-the-loop) rồi apply ngược lại vào Database.
+
+\section{Luồng truy xuất và sinh văn bản (RAG Pipeline)}
+Khi người dùng (học sinh) nhập câu hỏi trên giao diện, Backend tiếp nhận yêu cầu và xử lý theo quy trình RAG đa phương thức:
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.65\textwidth]{src/images/chapter3/rag_pipeline.png}
+    \caption{Luồng xử lý truy vấn RAG Đa phương thức trong Backend}
+\end{figure}
+
+\begin{enumerate}
+    \item \textbf{Truy xuất kép (Dual Retrieval):} Câu hỏi được embed để tìm kiếm đồng thời trong collection Text (\texttt{RETRIEVER\_K = 3} đoạn text gần nhất) và collection Image (\texttt{IMAGE\_RETRIEVER\_K = 5} hình ảnh liên quan nhất dựa trên caption và CLIP vector).
+    \item \textbf{Tiền xử lý prompt:} Text context được ghép nối với các caption của hình ảnh tìm được. Một Prompt template chuyên biệt cho trợ lý giáo dục được sử dụng để ép LLM đóng vai trò một giáo viên Sinh học nhiệt tình, chỉ trả lời dựa trên ngữ cảnh được cung cấp.
+    \item \textbf{Sinh văn bản (Generation):} Mô hình Qwen2.5~\cite{qwen25_2024} (sử dụng thư viện \texttt{transform}ers~\cite{wolf2020transformers} và \texttt{HuggingFace-}\allowbreak\texttt{Pipeline}) nhận prompt và sinh ra câu trả lời cuối cùng. Thông số \texttt{temperature = 0.1} được thiết lập thấp để LLM đưa ra câu trả lời chính xác, tránh việc "sáng tạo" quá mức làm sai lệch kiến thức khoa học.
+\end{enumerate}
+
+\subsection{Định tuyến theo ý định truy vấn (Query Intent Routing)}
+Không phải câu hỏi nào cũng cần cả văn bản lẫn hình ảnh. Trước khi truy xuất, hệ thống phân tích ý định của câu hỏi: nếu câu hỏi mang tính \textit{chỉ-hình-ảnh} (ví dụ chứa các cụm "cho tôi xem hình", "ảnh minh họa", "sơ đồ"), hệ thống ưu tiên luồng tìm ảnh; ngược lại, luồng văn bản giữ vai trò chính và hình ảnh chỉ đóng vai trò bổ trợ minh họa. Cơ chế định tuyến này (cài đặt trong module \texttt{query\_intent}) giúp tránh đưa nhiễu hình ảnh vào những câu hỏi lý thuyết thuần túy.
+
+\subsection{Truy xuất lai và cơ chế lọc liên quan (Hybrid Retrieval \& Relevance Gate)}
+\label{sec:relevance_gate}
+Một bộ truy xuất top-$k$ thông thường luôn trả về đúng $k$ đoạn bất kể chúng có thực sự liên quan hay không, khiến các đoạn lạc chủ đề "lọt" vào ngữ cảnh và làm mô hình sinh ra câu trả lời ghép nối sai. Để khắc phục, hệ thống sử dụng một bộ truy xuất \textbf{có cổng lọc liên quan} (\texttt{RelevanceGatedRetriever}) hoạt động theo nguyên tắc khoảng cách tương đối:
+\begin{enumerate}
+    \item Lấy rộng \texttt{RETRIEVER\_FETCH\_K = 8} đoạn ứng viên cùng khoảng cách (distance) của chúng.
+    \item Gọi $d_{\min}$ là khoảng cách của đoạn gần nhất. Chỉ giữ lại các đoạn có khoảng cách $d \leq d_{\min}\,(1 + \texttt{margin})$ với \texttt{margin = 0.3}, và cắt tối đa \texttt{RETRIEVER\_MAX\_K = 4} đoạn.
+\end{enumerate}
+Nhờ cổng lọc này, những đoạn nằm xa cụm chủ đề tốt nhất sẽ bị loại, giảm hẳn hiện tượng "chảy máu ngữ cảnh" (context bleeding) giữa các trang không liên quan. Toàn bộ kết quả văn bản và hình ảnh sau đó được hợp nhất trong một bộ truy xuất lai (\texttt{HybridRetriever}) trước khi dựng prompt. Như sẽ phân tích ở Chương~\ref{chapter:thuc_nghiem_danh_gia}, chính cấu hình cắt-$k$ chặt chẽ này vừa là ưu điểm (giảm nhiễu) vừa là điểm đánh đổi (làm giảm recall), và là một định hướng tinh chỉnh quan trọng.
+
+\section{Thiết kế giao diện người dùng (Frontend)}
+Giao diện ứng dụng đóng vai trò quan trọng trong việc thu hút học sinh sử dụng. Frontend của dự án được triển khai bằng \textbf{Next.js 14} và \textbf{React 19}.
+
+Về mặt thẩm mỹ và tương tác:
+\begin{itemize}
+    \item \textbf{Tailwind CSS:} Được sử dụng để xây dựng thiết kế theo chuẩn UI/UX hiện đại, màu sắc thân thiện với lứa tuổi học sinh, giao diện tương thích tốt trên cả máy tính và thiết bị di động (Responsive).
+    \item \textbf{Framer Motion:} Tích hợp nhằm tạo ra các hiệu ứng hoạt hình (animations) mượt mà khi gửi tin nhắn, hiển thị kết quả truy xuất, tạo cảm giác như học sinh đang trò chuyện trực tiếp với một "gia sư AI" thực thụ.
+    \item \textbf{Hiển thị hình ảnh:} Giao diện chat không chỉ in ra chữ mà còn hiển thị trực tiếp các hình ảnh minh họa (cùng trang sách gốc) được Backend trả về trong payload của API, giúp bài giảng Sinh học trở nên sinh động và dễ hình dung hơn bao giờ hết.
+\end{itemize}
+
+\subsection{Một số giao diện tiêu biểu}
+Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tương tác của người dùng: từ đăng nhập, đặt câu hỏi, đến khung trò chuyện và câu trả lời kèm hình ảnh minh họa. Hình~\ref{fig:fe_image_detail} thể hiện tính năng đặc trưng của hệ thống đa phương thức --- khi học sinh nhấp vào một hình, giao diện hiển thị chi tiết hình minh họa Sinh học cùng trích dẫn trang sách gốc.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{src/images/chapter3/fe-login.png}
+        \caption{Màn hình đăng nhập}
+        \label{fig:fe_login}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{src/images/chapter3/fe-ask-question.png}
+        \caption{Đặt câu hỏi}
+        \label{fig:fe_ask}
+    \end{subfigure}
+
+    \vspace{1em}
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{src/images/chapter3/fe-chatbox.png}
+        \caption{Khung trò chuyện}
+        \label{fig:fe_chatbox}
+    \end{subfigure}\hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{src/images/chapter3/fe-response.png}
+        \caption{Câu trả lời kèm hình minh họa}
+        \label{fig:fe_response}
+    \end{subfigure}
+    \caption{Các màn hình chính của giao diện trợ lý ảo Sinh học.}
+    \label{fig:fe_overview}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{src/images/chapter3/fe-image-detail.png}
+    \caption{Chi tiết hình ảnh minh họa Sinh học kèm trích dẫn trang sách gốc do hệ thống trả về.}
+    \label{fig:fe_image_detail}
+\end{figure}

@@ -1,0 +1,32 @@
+\chapter{KẾT LUẬN VÀ HƯỚNG PHÁT TRIỂN}
+\label{chapter:ket_luan}
+
+\section{Kết luận}
+Nghiên cứu "Xây dựng trợ lý ảo thông minh dựa trên RAG hỗ trợ dạy và học môn Sinh học tại các trường trung học cơ sở" đã hoàn thành tốt đẹp các mục tiêu đặt ra. Báo cáo chuyên đề tốt nghiệp này đã trình bày một cách hệ thống từ cơ sở lý thuyết, kiến trúc hệ thống, cho đến các phương pháp triển khai thực tế. 
+
+Những kết quả nổi bật mà đề tài đạt được bao gồm:
+\begin{enumerate}
+    \item Xây dựng thành công quy trình ETL hoàn chỉnh để số hóa, làm sạch và phân mảnh nội dung Sinh học từ 12 bộ sách giáo khoa Khoa học tự nhiên lớp 6, 7, 8, 9 của ba nhà xuất bản (Kết nối tri thức với cuộc sống, Chân trời sáng tạo, Cánh diều). Đặc biệt, hệ thống đã giải quyết được bài toán khó là tách bạch và tự động sinh chú thích (caption) cho các hình ảnh minh họa Sinh học trong sách nhờ mô hình OwlViT và Vintern-1B.
+    \item Triển khai thành công kiến trúc Multi-modal RAG kết hợp cơ sở dữ liệu ChromaDB, cho phép truy xuất đồng thời cả lý thuyết văn bản và hình ảnh trực quan.
+    \item Tích hợp mô hình ngôn ngữ lớn Qwen2.5-3B-Instruct nhằm sinh ra các câu trả lời tự nhiên, chính xác, dựa hoàn toàn vào dữ liệu chính thống, khắc phục được triệt để nhược điểm sinh thông tin sai lệch (hallucination) của chatbot truyền thống.
+    \item Hoàn thiện giao diện tương tác trên nền tảng web (Frontend) bằng Next.js, tạo ra môi trường học tập thân thiện, hiện đại, hỗ trợ hiệu quả cho quá trình tự học của học sinh và công tác giảng dạy của giáo viên.
+    \item Thiết lập một khung đánh giá định lượng khách quan với 12 bộ dữ liệu kiểm thử có gắn nhãn nguồn (120 câu hỏi). Kết quả thực nghiệm cho thấy câu trả lời của hệ thống đạt độ trung thực $4{,}25/5$ và độ liên quan $4{,}36/5$ (do một mô hình LLM thứ hai chấm độc lập), khẳng định hiệu quả của cơ chế RAG trong việc hạn chế ảo giác; đồng thời phân tích Recall@k chỉ ra rõ tiềm năng cải thiện ở pha truy xuất (recall trần đạt $0{,}84$ so với $0{,}63$ ở cấu hình hiện tại).
+\end{enumerate}
+
+\section{Hạn chế của đề tài}
+Bên cạnh những kết quả đạt được, quá trình thực hiện đề tài vẫn còn một số điểm giới hạn:
+\begin{itemize}
+    \item Việc nạp số lượng lớn dữ liệu từ 12 quyển sách với cấu trúc hình ảnh đa dạng tạo ra thách thức lớn đối với quá trình tinh chỉnh tham số truy xuất. Hiện tại, độ chính xác tìm kiếm hình ảnh phụ thuộc nhiều vào chất lượng mô tả tự động của Vintern-1B.
+    \item Quá trình OCR văn bản từ PDF đôi chỗ còn sai sót đối với các công thức hóa học, sinh học hoặc chữ viết tay trên hình, đòi hỏi sự can thiệp thủ công của con người (human-in-the-loop) để chỉnh sửa metadata trước khi đưa vào cơ sở dữ liệu.
+    \item Yêu cầu về cấu hình phần cứng (đặc biệt là GPU) còn khá cao, gây khó khăn cho việc đóng gói và triển khai hệ thống trên các máy tính thông thường tại phòng tin học của các trường THCS.
+\end{itemize}
+
+\section{Hướng phát triển tương lai}
+Để hệ thống trợ lý ảo ngày càng hoàn thiện và có khả năng ứng dụng rộng rãi, hướng phát triển trong thời gian tới sẽ tập trung vào các hạng mục sau:
+\begin{itemize}
+    \item \textbf{Nâng cao recall của pha truy xuất:} Dựa trên phát hiện về khoảng cách giữa recall trần ($0{,}84$) và recall production ($0{,}63$), hướng ưu tiên là bổ sung bước \textit{re-ranking} (ví dụ cross-encoder) và nới rộng số đoạn ứng viên, nhằm đưa trang đúng lên đầu danh sách mà vẫn giữ được khả năng lọc nhiễu của cổng liên quan. Song song, có thể thay thế mô hình nhúng MiniLM bằng mô hình mạnh hơn để cải thiện thứ hạng với các câu hỏi ngắn, trừu tượng.
+    \item \textbf{Cải thiện chất lượng Vector Database:} Ứng dụng các cơ chế đánh trọng số từ khóa, phân loại câu hỏi (query routing) dựa trên khối lớp (6, 7, 8, 9) để tăng độ chính xác trong việc truy xuất nội dung chuyên biệt cho từng khối học.
+    \item \textbf{Lượng tử hóa mô hình (Quantization):} Nghiên cứu áp dụng các kỹ thuật lượng tử hóa (như GGUF, AWQ, GPTQ) để giảm độ chính xác biểu diễn trọng số, qua đó nén kích thước mô hình ngôn ngữ lớn và cho phép trợ lý ảo hoạt động trơn tru trên các máy chủ có cấu hình thấp hơn hoặc thậm chí là máy tính cá nhân.
+    \item \textbf{Tính năng đánh giá người học:} Phát triển thêm khả năng cho phép LLM tự động sinh ra các bài trắc nghiệm (quiz) dựa trên nội dung bài học để kiểm tra kiến thức học sinh ngay sau khi tra cứu thông tin.
+    \item \textbf{Triển khai thực tế và lấy ý kiến phản hồi:} Đưa hệ thống vào thử nghiệm thực tế tại một số trường THCS nhằm thu thập dữ liệu hành vi người dùng, từ đó tinh chỉnh hệ thống ngày một thông minh và sát với nhu cầu thực tiễn hơn.
+\end{itemize}

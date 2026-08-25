@@ -1,0 +1,69 @@
+\chapter{CƠ SỞ LÝ THUYẾT}
+\label{chapter:co_so_ly_thuyet}
+
+Chương này trình bày các khái niệm nền tảng tạo nên hệ thống trợ lý ảo thông minh. Nội dung bao gồm tổng quan về Xử lý ngôn ngữ tự nhiên, Mô hình ngôn ngữ lớn, kiến trúc Sinh văn bản tăng cường truy xuất (RAG) và các công nghệ lõi như Vector Database và Multi-modal Embedding.
+
+\section{Tổng quan về Xử lý ngôn ngữ tự nhiên và Trí tuệ nhân tạo tạo sinh}
+Xử lý ngôn ngữ tự nhiên (Natural Language Processing - NLP) là một nhánh của Trí tuệ nhân tạo (AI) tập trung vào việc cho phép máy tính hiểu, diễn giải và thao tác với ngôn ngữ con người. Trong những năm gần đây, NLP đã chứng kiến sự chuyển mình mạnh mẽ từ các phương pháp dựa trên luật (rule-based) và học máy thống kê (statistical machine learning) sang các phương pháp dựa trên học sâu (Deep Learning)~\cite{bengio2003neural, lecun2015deeplearning}. Bước ngoặt đầu tiên đến từ việc biểu diễn từ dưới dạng véc-tơ phân tán (word embedding) như \textit{word2vec}~\cite{mikolov2013word2vec}, theo sau là các kiến trúc mạng nơ-ron hồi quy và mô hình chuỗi-sang-chuỗi (sequence-to-sequence) kèm cơ chế chú ý (attention) cho dịch máy~\cite{sutskever2014seq2seq, bahdanau2015attention}.
+
+Đặc biệt, sự ra đời của Trí tuệ nhân tạo tạo sinh (Generative AI) đã đánh dấu một bước ngoặt lớn. Thay vì chỉ phân loại hoặc nhận dạng mẫu trong dữ liệu (Discriminative AI), Generative AI có khả năng tạo ra nội dung mới, chưa từng tồn tại trước đó, như văn bản, hình ảnh, âm thanh hoặc mã nguồn, dựa trên sự phân phối xác suất học được từ tập dữ liệu khổng lồ~\cite{bommasani2021foundation}. Trong lĩnh vực văn bản, hạt nhân của Generative AI chính là các Mô hình ngôn ngữ lớn~\cite{zhao2023llmsurvey}.
+
+\section{Mô hình ngôn ngữ lớn (Large Language Models - LLMs)}
+\subsection{Kiến trúc Transformer}
+Được giới thiệu bởi Vaswani và cộng sự vào năm 2017 \cite{vaswani2017attention}, kiến trúc Transformer đã trở thành nền tảng tiêu chuẩn cho hầu hết các LLM hiện đại. Điểm cốt lõi của Transformer là cơ chế tự chú ý (Self-Attention), cho phép mô hình đánh giá tầm quan trọng của các từ khác nhau trong cùng một câu khi xử lý từng từ một, bất kể khoảng cách giữa chúng.
+
+Cơ chế này khắc phục được nhược điểm của mạng nơ-ron hồi quy (RNN) trong việc xử lý các chuỗi dài, đồng thời hỗ trợ tính toán song song, giúp quá trình huấn luyện trên phần cứng GPU trở nên cực kỳ hiệu quả. Trên nền tảng Transformer, hai dòng mô hình tiền huấn luyện tiêu biểu đã hình thành: dòng mã hóa hai chiều như BERT~\cite{devlin2019bert} chuyên cho các bài toán hiểu ngôn ngữ, và dòng giải mã tự hồi quy như GPT-3~\cite{brown2020gpt3} chuyên cho sinh văn bản. Nghiên cứu cũng chỉ ra rằng khi tăng quy mô tham số và dữ liệu, hiệu năng của mô hình tuân theo các quy luật tỷ lệ (scaling laws)~\cite{kaplan2020scaling} và làm xuất hiện những khả năng mới (emergent abilities) mà các mô hình nhỏ không có~\cite{wei2022emergent}.
+
+\subsection{Họ mô hình Qwen}
+Qwen (Qwen2.5) là một trong những họ mô hình ngôn ngữ lớn mã nguồn mở tiên tiến hiện nay, được phát triển bởi Alibaba Cloud~\cite{qwen25_2024}. Xu hướng phát triển các LLM mã nguồn mở (như họ LLaMA~\cite{touvron2023llama}) cho phép cộng đồng nghiên cứu và triển khai mô hình mạnh mà không phụ thuộc hoàn toàn vào các API thương mại đóng. Phiên bản Qwen2.5-3B-Instruct được thiết kế tối ưu hóa cho khả năng tuân thủ chỉ thị (instruction following) -- một năng lực đạt được nhờ tinh chỉnh theo chỉ thị và học tăng cường từ phản hồi của con người (RLHF)~\cite{ouyang2022instructgpt} -- đồng thời giữ được kích thước tương đối nhỏ (khoảng 3 tỷ tham số), phù hợp để chạy trên các hệ thống có tài nguyên phần cứng hạn chế (ví dụ: Google Colab Pro hoặc GPU cá nhân tầm trung) mà vẫn đảm bảo được chất lượng sinh văn bản xuất sắc.
+
+Mô hình này hỗ trợ đa ngôn ngữ, đặc biệt có khả năng xử lý tiếng Việt rất tốt, đáp ứng yêu cầu giao tiếp và giải thích ngữ nghĩa trong bài toán trợ lý ảo môn Sinh học. Việc xử lý hiệu quả tiếng Việt là một thách thức riêng đã được cộng đồng quan tâm thông qua các mô hình tiền huấn luyện chuyên biệt như PhoBERT~\cite{nguyen2020phobert}.
+
+\section{Sinh văn bản tăng cường truy xuất (RAG)}
+\subsection{Hạn chế của LLM truyền thống}
+Mặc dù LLM có khả năng sinh văn bản lưu loát, chúng gặp phải 3 vấn đề chính khi áp dụng vào thực tế~\cite{gao2023ragsurvey}:
+\begin{enumerate}
+    \item \textbf{Ảo giác (Hallucination):} Mô hình có thể sinh ra thông tin sai lệch một cách rất tự tin, không bám sát sự thật hoặc nguồn dẫn~\cite{ji2023hallucination, huang2023hallucination}.
+    \item \textbf{Kiến thức tĩnh:} LLM bị giới hạn kiến thức tại thời điểm huấn luyện, không thể cập nhật các thông tin mới nếu không được fine-tune (với chi phí cực cao)~\cite{lewis2020retrieval}.
+    \item \textbf{Thiếu kiến thức miền (Domain-specific knowledge):} Mô hình không có quyền truy cập vào dữ liệu riêng của tổ chức, cá nhân, hoặc sách giáo khoa cụ thể~\cite{guu2020realm}.
+\end{enumerate}
+
+\subsection{Nguyên lý hoạt động của RAG}
+Retrieval-Augmented Generation (RAG)~\cite{lewis2020retrieval} là kiến trúc giải quyết các vấn đề trên bằng cách kết hợp cơ chế Truy xuất thông tin (Information Retrieval) với Sinh văn bản (Text Generation). Ý tưởng tăng cường mô hình ngôn ngữ bằng tri thức truy xuất từ kho dữ liệu ngoài đã được khẳng định qua nhiều công trình nền tảng như REALM~\cite{guu2020realm} và Fusion-in-Decoder~\cite{izacard2021fid}, và tiếp tục được hệ thống hóa, mở rộng trong các khảo sát gần đây~\cite{gao2023ragsurvey} cũng như các biến thể có khả năng tự phản tỉnh như Self-RAG~\cite{asai2023selfrag}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{src/images/chapter2/rag_concept.png}
+    \caption{Sơ đồ nguyên lý hoạt động cơ bản của hệ thống RAG}
+    \label{fig:rag_concept}
+\end{figure}
+
+Quy trình hoạt động của RAG bao gồm 2 pha chính:
+\begin{itemize}
+    \item \textbf{Pha Indexing (Lập chỉ mục):} Dữ liệu gốc (PDF, Doc) được cắt nhỏ thành các đoạn (chunks). Các đoạn này được đưa qua mô hình Embedding để chuyển thành các vector số học và lưu trữ vào Vector Database.
+    \item \textbf{Pha Query (Truy vấn):} Câu hỏi của người dùng được chuyển thành vector. Hệ thống tìm kiếm các vector trong Database có khoảng cách gần nhất (độ tương đồng cao nhất) với vector câu hỏi để lấy ra các đoạn văn bản chứa tri thức liên quan (Context). Cơ chế truy xuất theo ngữ nghĩa này -- thường gọi là truy xuất đoạn văn dày đặc (dense passage retrieval)~\cite{karpukhin2020dpr} -- giúp tìm được nội dung tương đồng về ý nghĩa ngay cả khi không trùng khớp từ khóa, khác với các phương pháp dựa trên thống kê từ khóa như BM25~\cite{robertson2009bm25}. Cuối cùng, LLM nhận đầu vào là Câu hỏi gốc + Context để sinh ra câu trả lời cuối cùng.
+\end{itemize}
+
+\section{Nhúng (Embedding) và Cơ sở dữ liệu Vector}
+\subsection{Khái niệm Embedding}
+Embedding là kỹ thuật chuyển đổi các thực thể (như từ, câu, đoạn văn, hoặc hình ảnh) thành các véc-tơ số học (vector n-chiều) liên tục~\cite{mikolov2013word2vec}. Đặc tính quan trọng nhất của Embedding là khả năng bảo toàn ngữ nghĩa: các thực thể có ý nghĩa tương đồng sẽ nằm gần nhau trong không gian vector đa chiều. Đối với cấp độ câu và đoạn văn, kiến trúc Sentence-BERT~\cite{reimers2019sbert} cho phép sinh ra các véc-tơ câu có thể so sánh trực tiếp bằng độ tương đồng cosine một cách hiệu quả. Ví dụ, câu "Tế bào là đơn vị cơ bản của sự sống" và "Mọi cơ thể sinh vật đều cấu tạo từ tế bào" sẽ có khoảng cách cosine rất nhỏ.
+
+Dự án này sử dụng mô hình \texttt{paraphrase-multilingual-MiniLM-L12-v2} (thuộc thư viện sentence-transformers~\cite{reimers2019sbert}). Mô hình dựa trên kiến trúc MiniLM~\cite{wang2020minilm}, một mô hình được chưng cất (distillation) từ Transformer lớn nhằm đạt sự cân bằng giữa kích thước gọn nhẹ và chất lượng biểu diễn ngữ nghĩa, phù hợp cho triển khai trên tài nguyên hạn chế và hỗ trợ tốt tiếng Việt.
+
+\subsection{Cơ sở dữ liệu Vector (ChromaDB)}
+Vector Database là hệ quản trị cơ sở dữ liệu chuyên biệt được thiết kế để lưu trữ và truy vấn các vector đa chiều một cách nhanh chóng thông qua cơ chế tìm kiếm tương đồng (Similarity Search) dựa trên các phép đo như Cosine Similarity, L2 Distance hay Inner Product. Để đạt tốc độ truy vấn cao trên hàng triệu véc-tơ, các hệ thống này áp dụng kỹ thuật tìm kiếm lân cận gần đúng (Approximate Nearest Neighbor -- ANN), tiêu biểu là chỉ mục đồ thị HNSW~\cite{malkov2018hnsw} và các thư viện tìm kiếm tương đồng quy mô lớn như FAISS~\cite{johnson2019faiss}.
+
+Trong hệ thống này, ChromaDB~\cite{chromadb2023} được lựa chọn làm Vector Database nhờ đặc tính mã nguồn mở, hỗ trợ chạy trực tiếp trên máy cục bộ (local) mà không cần cài đặt server phức tạp, đồng thời tích hợp chặt chẽ với framework LangChain~\cite{langchain2022}, giúp dễ dàng thao tác lưu trữ và truy xuất các đoạn kiến thức (chunks) từ sách giáo khoa Sinh học.
+
+\section{Xử lý Đa phương thức (Multi-modal) trong RAG}
+Sách giáo khoa môn Sinh học chứa rất nhiều hình ảnh (hình vẽ giải phẫu, sơ đồ quá trình quang hợp, v.v.). Một hệ thống RAG văn bản thuần túy sẽ bỏ sót những lượng thông tin khổng lồ này. Do đó, kỹ thuật Multi-modal RAG được áp dụng, dựa trên những tiến bộ của thị giác máy tính khi đưa kiến trúc Transformer vào xử lý ảnh (Vision Transformer)~\cite{dosovitskiy2021vit} và các mô hình tiền huấn luyện liên kết ngôn ngữ -- thị giác~\cite{radford2021clip, li2022blip}. Bản thân bài toán hỏi đáp dựa trên hình ảnh (Visual Question Answering)~\cite{antol2015vqa} cũng là một hướng nghiên cứu nền tảng cho việc kết hợp văn bản và hình ảnh.
+
+\subsection{Mô hình trích xuất và gán nhãn ảnh}
+Hệ thống sử dụng các mô hình thị giác máy tính (Computer Vision) kết hợp:
+\begin{itemize}
+    \item \textbf{OwlViT (\texttt{google/owlvit-base-patch32})~\cite{minderer2022owlvit}:} Mô hình phát hiện vật thể (Object Detection) dựa trên Zero-shot text-conditioned, được dùng để xác định vị trí hộp bao (bounding box) của các hình ảnh, biểu đồ nằm rải rác trong các trang sách PDF.
+    \item \textbf{CLIP (\texttt{openai/clip-vit-base-patch16})~\cite{radford2021clip}:} Sinh vector embedding cho hình ảnh, cho phép so sánh độ tương đồng giữa câu hỏi (text) và hình ảnh (image) trong cùng một không gian vector.
+    \item \textbf{Vintern-1B (\texttt{5CD-AI/Vintern-1B-v2}):} Một mô hình VQA (Visual Question Answering) chuyên biệt hỗ trợ tiếng Việt, dùng để tự động sinh ra mô tả (caption) cho từng hình ảnh được cắt ra. Việc có caption văn bản cho ảnh giúp cải thiện đáng kể độ chính xác của quá trình truy xuất sau này.
+\end{itemize}
+
+Kết hợp các công nghệ này, kiến trúc Multi-modal RAG của hệ thống đảm bảo cả luồng tri thức văn bản và hình ảnh được lưu trữ và truy xuất đồng bộ, cung cấp ngữ cảnh đầy đủ nhất cho mô hình LLM sinh câu trả lời.
