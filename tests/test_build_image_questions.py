@@ -146,3 +146,24 @@ def test_thieu_csv_bo_240_thi_dung_han_chu_khong_tao_moi(khu, tmp_path):
                                             "bo": False}})
     with pytest.raises(SystemExit):
         B.ap_dung(out, tmp_path / "khong_ton_tai")
+
+
+def test_trang_cua_cau_hoi_hinh_la_trang_IN_khong_phai_chi_so_nguon(khu):
+    """Gold key của câu hình phải CÙNG HỆ với gold key của câu văn bản.
+
+    `page_number` của image doc là CHỈ SỐ TRANG NGUỒN; gold key văn bản là SỐ
+    TRANG IN. Hôm nay hai số bằng nhau (offset 0, D-65) nên lỗi này sẽ không lộ
+    ra trên corpus hiện tại — đúng kiểu bug ngủ đông. Test dựng một quyển có
+    offset khác 0 để bắt nó ngay bây giờ.
+    """
+    out, ts = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    items[0]["trang"] = 7           # trang IN
+    items[0]["trang_nguon"] = 10    # chỉ số trang nguồn (offset -3)
+    (out / "items.json").write_text(json.dumps(items, ensure_ascii=False),
+                                    encoding="utf-8")
+    _phieu(out, {items[0]["id"]: {"cau_hoi": "q", "dap_an": "a", "bo": False}})
+    B.ap_dung(out, ts)
+    row = [r for r in _rows(ts) if r["nguon_cau_hoi"] == "hinh"][0]
+    assert row["source_page"] == "7", "source_page phải là trang IN"
+    assert row["source_page_index"] == "10", "source_page_index là chỉ số nguồn"

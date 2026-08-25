@@ -63,6 +63,30 @@ def _page_texts() -> Dict[tuple, str]:
     return {k: "\n".join(v) for k, v in pages.items()}
 
 
+def _printed_page_map(books) -> Dict[str, Dict[int, int]]:
+    """`{quyển: {chỉ số trang nguồn -> số trang IN}}`, đọc từ manifest.
+
+    Vì sao không dùng thẳng `page_number` của image doc: nó là **chỉ số trang
+    nguồn** (`page_num` trong `image_processor.py`), còn gold key của câu hỏi
+    VĂN BẢN là **số trang IN** (`page` trong metadata chunk, thứ mà
+    `ablation.py:422` đối chiếu). Hôm nay hai số bằng nhau vì offset = 0 trên
+    12/12 quyển (D-65) — nhưng CLAUDE.md dặn thẳng: đừng đánh đồng chúng *về mặt
+    thiết kế* dù chúng đang trùng. Trùng nhau là một phép đo của hôm nay, không
+    phải một bảo đảm; đổi corpus một lần là 48 câu hỏi hình lệch một trang mà
+    không ai thấy.
+    """
+    from src.config import MANIFEST_DIR
+    from src.etl.book.manifest import book_id_from_source_name, load_manifest
+
+    out: Dict[str, Dict[int, int]] = {}
+    for book in books:
+        man = load_manifest(
+            Path(MANIFEST_DIR) / f"{book_id_from_source_name(book)}.json")
+        out[book] = {int(p["page_index"]): p.get("printed_page")
+                     for p in man.pages}
+    return out
+
+
 def chon(per_book: int, out_dir: Path) -> List[Dict]:
     """Chọn `per_book` hình MỖI QUYỂN, trải theo trang, chép crop ra để người xem.
 
@@ -75,6 +99,8 @@ def chon(per_book: int, out_dir: Path) -> List[Dict]:
     got = col.get(limit=100000, include=["metadatas"])
     page_text = _page_texts()
     crop_dir = out_dir / "crops"
+    printed = _printed_page_map(sorted({m.get("pdf_filename") for m in got["metadatas"]
+                                        if m.get("pdf_filename")}))
 
     by_book: Dict[str, List[Dict]] = defaultdict(list)
     for m in got["metadatas"]:
@@ -106,21 +132,27 @@ def chon(per_book: int, out_dir: Path) -> List[Dict]:
                 break
 
         for i, m in enumerate(picked, 1):
-            page = int(m.get("page_number") or 0)
-            item_id = f"{book}_p{page}_{i:02d}"
+            page = int(m.get("page_number") or 0)          # chỉ số trang NGUỒN
+            trang_in = printed.get(book, {}).get(page)     # số trang IN
+            if trang_in is None:
+                # Không quy đổi được thì BỎ ô, không mượn `page` làm trang in:
+                # gold key sai một trang là chỉ học sinh tới sai chỗ (nguyên tắc 1).
+                continue
+            item_id = f"{book}_p{trang_in}_{i:02d}"
             dest = crop_dir / f"{item_id}.png"
             shutil.copyfile(m["image_path"], dest)
             items.append({
                 "id": item_id,
                 "quyen": book,
-                "trang": page,
+                "trang": trang_in,          # số trang IN — cùng hệ với gold key văn bản
+                "trang_nguon": page,        # chỉ số trang nguồn, để lần lại file PNG
                 "nhan_hinh": (m.get("figure_label") or "").strip(),
                 "anh": dest.as_posix(),
                 # ba trường đọc lại từ PIXEL — đưa nguyên trạng, kể cả khi vỡ,
                 # để người thấy máy có gì mà tự đánh giá độ tin
                 "figure_caption": (m.get("figure_caption") or "").strip(),
                 "crop_text": (m.get("crop_text") or "").strip(),
-                "chu_tren_trang": (page_text.get((book, page)) or "")[:1500],
+                "chu_tren_trang": (page_text.get((book, trang_in)) or "")[:1500],
             })
 
     (out_dir / "items.json").write_text(
@@ -255,7 +287,7 @@ def ap_dung(out_dir: Path, testset_dir: Path) -> Dict:
         by_book[it["quyen"]].append({
             "question": q, "ground_truth": a,
             "source_book": it["quyen"], "source_page": it["trang"],
-            "source_page_index": it["trang"],
+            "source_page_index": it.get("trang_nguon", it["trang"]),
             "do_kho": "truc_tiep",
             "nguon_cau_hoi": "hinh", "figure_label": it["nhan_hinh"],
         })
