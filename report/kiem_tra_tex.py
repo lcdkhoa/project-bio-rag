@@ -37,6 +37,9 @@ LENH_CAN_GOI = {
     r"\subcaption": "subcaption",
     r"\begin{tikzpicture}": "tikz",
     r"\makecell": "makecell",
+    # `\dfrac` KHÔNG phải LaTeX lõi, khác với `\frac` — dễ tưởng nhầm.
+    r"\dfrac": "amsmath",
+    r"\begin{align}": "amsmath",
 }
 
 
