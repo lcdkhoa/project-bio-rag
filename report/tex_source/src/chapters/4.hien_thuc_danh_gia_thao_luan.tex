@@ -252,7 +252,70 @@ Câu trả lời do Qwen2.5 sinh ra được một mô hình LLM thứ hai (MiMo
 
 \section{Kết quả thực nghiệm}
 \label{sec:ketqua}
-Phần này trình bày kết quả định lượng thu được khi chạy toàn bộ 120 câu hỏi qua hệ thống. Các số liệu trung bình tổng quát được tóm tắt trong Bảng~\ref{tab:summary}.
+Phần này trình bày kết quả định lượng khi chạy toàn bộ bộ kiểm thử qua hệ thống. Mục~\ref{sec:ablation} trả lời trực tiếp Mục tiêu 4 của đề cương bằng các bảng đối chiếu; các mục sau trình bày độ đo tổng quát và chất lượng câu trả lời.
+
+\subsection{Đối chiếu cấu hình truy xuất}
+\label{sec:ablation}
+
+Ba thành phần của pha truy xuất --- kênh truy xuất, xếp hạng lại, và cổng lọc liên quan --- được đặt trên ba công tắc rời nhau (Mục~\ref{sec:relevance_gate}), nên có thể đo tác dụng của từng cái trên \textit{cùng một} bộ kiểm thử. Toàn bộ bảng trong mục này được sinh bằng một lượt chạy duy nhất và \textbf{không gọi mô hình ngôn ngữ lần nào}: chúng chỉ đo pha truy xuất.
+
+\textbf{Bảng~\ref{tab:ablation_main} đo ở bề rộng thật của hệ thống} ($20$ ứng viên mỗi kênh), tức đúng cấu hình mà người dùng nhận được, chứ không phải một bề rộng nới rộng cho đẹp số.
+
+\begin{table}[H]
+\centering
+\caption{Đối chiếu kênh truy xuất và cổng lọc, ở bề rộng production ($20$ ứng viên/kênh). Xếp hạng lại BẬT ở mọi hàng.}
+\label{tab:ablation_main}
+\begin{tabular}{llccccc}
+\toprule
+\textbf{Kênh} & \textbf{Cổng lọc} & \textbf{R@1} & \textbf{R@3} & \textbf{R@5} & \textbf{R@10} & \textbf{MRR} \\
+\midrule
+\textbf{Lai (hybrid)} & \textbf{tắt} & \textbf{0,740} & \textbf{0,909} & \textbf{0,926} & \textbf{0,970} & \textbf{0,826} \\
+BM25 & tắt & 0,732 & 0,887 & 0,922 & 0,948 & 0,813 \\
+Ngữ nghĩa (dense) & tắt & 0,723 & 0,866 & 0,883 & 0,926 & 0,798 \\
+\midrule
+Lai (hybrid) & bật & 0,701 & 0,840 & 0,870 & 0,892 & 0,775 \\
+BM25 & bật & 0,732 & 0,887 & 0,922 & 0,948 & 0,813 \\
+Ngữ nghĩa (dense) & bật & 0,723 & 0,866 & 0,883 & 0,926 & 0,798 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Hai kết luận rút ra, cả hai đều là \textit{đối chiếu trực tiếp} chứ không phải suy đoán:
+
+\textbf{(i) Truy xuất lai thắng ở mọi cột.} So với BM25 thuần, truy xuất lai hơn $+0{,}008$ ở R@1, $+0{,}022$ ở R@3 và $+0{,}022$ ở R@10; so với truy xuất ngữ nghĩa thuần, khoảng cách rộng hơn ($+0{,}017$ R@1, $+0{,}044$ R@10). Đây không phải thắng ở giá trị trung bình rồi thua ở chỗ khác --- nó thắng ở từng độ đo.
+
+\textbf{(ii) Cổng lọc theo khoảng cách tương đối làm hại, không làm lợi.} Bật cổng lọc kéo R@10 của truy xuất lai từ $0{,}970$ xuống $0{,}892$ và MRR từ $0{,}826$ xuống $0{,}775$. Nguyên nhân đã nêu ở Mục~\ref{sec:relevance_gate}: giả định ``đoạn đúng luôn nằm sát đoạn gần nhất'' không đúng với câu hỏi nhiều ý. Vì vậy cấu hình mặc định của hệ thống \textbf{tắt} cổng lọc này.
+
+\textbf{Bảng~\ref{tab:ablation_rerank} tách riêng đóng góp của bước xếp hạng lại}, đo ở bề rộng $50$ ứng viên để thấy rõ dư địa mà bước này khai thác.
+
+\begin{table}[H]
+\centering
+\caption{Đóng góp của bước xếp hạng lại bằng cross-encoder (cổng lọc tắt, hợp nhất theo thứ hạng)}
+\label{tab:ablation_rerank}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Kênh} & \textbf{Xếp hạng lại} & \textbf{R@1} & \textbf{R@10} & \textbf{MRR} \\
+\midrule
+\multirow{2}{*}{Lai (hybrid)} & tắt & 0,671 & 0,931 & 0,762 \\
+ & \textbf{bật} & \textbf{0,745} & \textbf{0,974} & \textbf{0,832} \\
+\midrule
+\multirow{2}{*}{BM25} & tắt & 0,693 & 0,931 & 0,765 \\
+ & bật & 0,736 & 0,970 & 0,825 \\
+\midrule
+\multirow{2}{*}{Ngữ nghĩa (dense)} & tắt & 0,602 & 0,896 & 0,699 \\
+ & bật & 0,732 & 0,948 & 0,814 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Xếp hạng lại là thành phần đóng góp lớn nhất trong ba công tắc: nó nâng R@1 của truy xuất lai từ $0{,}671$ lên $0{,}745$ và MRR từ $0{,}762$ lên $0{,}832$. Kênh ngữ nghĩa hưởng lợi nhiều nhất ($+21{,}6\%$ R@1), điều này nhất quán với vai trò của nó: bộ nhúng hai tháp mã hoá truy vấn và tài liệu độc lập nên xếp hạng thô hơn, còn cross-encoder nhìn được tương tác giữa hai bên.
+
+Một quan sát đáng chú ý cho miền Khoa học tự nhiên: \textbf{khi tắt xếp hạng lại, BM25 thuần vượt truy xuất ngữ nghĩa thuần một khoảng lớn} ($0{,}693$ so với $0{,}602$ ở R@1) --- đúng như phân tích ở Mục~\ref{sec:relevance_gate} về ký hiệu và công thức. Nhưng khi bật xếp hạng lại, khoảng cách gần như biến mất ($0{,}736$ so với $0{,}732$): cross-encoder bù được phần lớn điểm yếu đó của kênh ngữ nghĩa.
+
+Cuối cùng, cột \textit{trần} $P@5 = 0{,}979$ giữ nguyên ở mọi cấu hình. Đây là giới hạn do \textit{bộ kiểm thử} đặt ra chứ không phải do hệ thống: khoảng $2\%$ số câu không thể đạt $P@5 = 1$ dù cấu hình có lý tưởng đến đâu, vì trang vàng của chúng không có đủ $5$ đoạn. Không cấu hình nào trả về kết quả rỗng.
+
+\subsection{Độ đo tổng quát}
+Các số liệu trung bình tổng quát được tóm tắt trong Bảng~\ref{tab:summary}.
 
 \begin{table}[H]
 \centering
