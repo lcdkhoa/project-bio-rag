@@ -4093,40 +4093,81 @@ class ImageProcessor:
 # Publisher routing
 # ===========================================================================
 
-# Corpus hiện tại có ĐÚNG MỘT nhà xuất bản: Kết Nối Tri Thức (Bộ đã hợp nhất,
-# CD và CTST bị thu hồi). Trước đây có ba nhánh xử lý theo từ khoá trong tên
-# file; `CtsstImageProcessor` (335 dòng) đã bị xoá và nhánh "cd" chỉ là lớp cơ
-# sở, nên biến thể không còn được SUY RA từ tên file nữa — nó là một hằng số.
+# Corpus có BA nhà xuất bản trở lại (`goal.docx`, RULE #0): Kết Nối Tri Thức,
+# Chân Trời Sáng Tạo, Cánh Diều — 12 quyển / 2 399 trang.
 #
-# Vì sao không giữ lại phép suy ra "cho chắc": nó là một fallback im lặng. Đưa
-# một quyển CTST vào thì hệ thống sẽ gán nhãn 'kntt' và xử lý bằng logic KNTT mà
-# không ai biết. Thêm nhà xuất bản thứ hai là việc phải ĐO lại (caption, hộp
-# màu, pill), không phải thêm một từ khoá vào regex.
-LAYOUT_VARIANT = "kntt"     # Kết Nối Tri Thức
+# Chỗ này từng là hằng số `LAYOUT_VARIANT = "kntt"`, đặt ra để CHẶN một fallback
+# im lặng ("đưa một quyển CTST vào thì hệ thống gán nhãn 'kntt' mà không ai
+# biết"). Chẩn đoán đó đúng; cách chữa thì sai. Một hằng số không ngăn được
+# fallback — nó BIẾN fallback thành mặc định, và D-109 đo được cái giá:
+# **11 459/16 393 chunk (69,9%) của CD/CTST mang `variant='kntt'`, 0 chunk mang
+# nhãn đúng.** Không test nào bắt được, vì hằng số luôn tự nhất quán với chính
+# nó; chỉ một phép đếm trên dữ liệu thật mới lộ ra. (Cùng họ với D-71, nơi
+# `book_id` nối cứng `-KNTT` ghi đè manifest của quyển khác.)
+#
+# Cách chữa đúng theo nguyên tắc 5 là **fail loudly**: đọc nhà xuất bản từ hậu
+# tố tên quyển, và NÉM khi không khớp cả ba. Một quyển lạ dừng ở lệnh đầu tiên
+# thay vì lộ ra sau 16 393 chunk.
+_PUBLISHER_SUFFIX = re.compile(r"(?:^|[_\s])(KNTT|CTST|CD)$", re.IGNORECASE)
+
+# Lớp xử lý cho từng nhà xuất bản. Bảng này là KẾT QUẢ ĐO (D-110, 15 trang/quyển,
+# OWL-ViT bật), không phải trực giác:
+#   kntt -> KnttImageProcessor : lớp đã QA trên corpus này (D-45, D-46, D-87)
+#   cd   -> ImageProcessor     : lớp cơ sở CHÍNH LÀ bản Cánh Diều (docstring của
+#                                nó), caption chữ đen nằm DƯỚI hình
+#   ctst -> ImageProcessor     : base THẮNG lớp KNTT trên cùng 15 trang của
+#                                7_CTST — 11 vs 10 nhãn, 7,70 vs 8,95 s/trang.
+#                                KHÔNG khôi phục `CtsstImageProcessor` đã xoá:
+#                                nó viết cho render PDF 150 DPI, chưa từng QA
+#                                trên nguồn pixel.
+_VARIANT_PROCESSOR = {
+    "kntt": lambda: KnttImageProcessor,
+    "cd": lambda: ImageProcessor,
+    "ctst": lambda: ImageProcessor,
+}
+
+
+class UnknownPublisher(ValueError):
+    """Tên quyển không cho biết nhà xuất bản -> dừng, không đoán."""
 
 
 def get_pdf_variant(pdf_filename: str = "") -> str:
-    """Biến thể layout của corpus. Một nhà xuất bản -> một hằng số.
+    """Biến thể layout ĐỌC TỪ tên quyển: `kntt` / `ctst` / `cd`.
 
-    Giữ hàm (thay vì thay hằng số ở mọi call site) để `variant` trong metadata
-    chunk vẫn có đúng một nơi định nghĩa, và để chỗ này là nơi duy nhất phải sửa
-    nếu corpus có lại nhiều nhà xuất bản.
+    Hậu tố phải nằm ở CUỐI tên (sau khi bỏ `.pdf`), vì đó là chỗ nó thực sự nằm
+    trên corpus (`SGK_KHTN_8_CD`). Cho phép nó ở giữa thì `CD_SGK_KHTN_6` cũng
+    khớp, tức mở lại đúng loại đoán mò mà hàm này sinh ra để đóng.
+
+    Ném `UnknownPublisher` khi không khớp — KHÔNG có giá trị mặc định. Giá trị
+    này đi thẳng vào metadata chunk, nên một nhãn sai ở đây là một nhãn sai
+    trên hàng nghìn chunk (D-109).
     """
-    return LAYOUT_VARIANT
+    # IGNORECASE: một quyển hợp lệ tên "SGK KHTN 6 CD.PDF" mà bị ném là ném
+    # OAN — sai hướng, vì nó chặn việc chạy được chứ không chặn việc đoán bừa.
+    stem = re.sub(r"\.pdf$", "", str(pdf_filename or ""),
+                  flags=re.IGNORECASE).strip()
+    match = _PUBLISHER_SUFFIX.search(stem)
+    if not match:
+        raise UnknownPublisher(
+            f"Không đọc được nhà xuất bản từ tên quyển {pdf_filename!r}. "
+            f"Tên phải kết thúc bằng một trong ba hậu tố: KNTT, CTST, CD "
+            f"(ví dụ SGK_KHTN_8_CD). Không có mặc định — đoán nhà xuất bản "
+            f"nghĩa là xử lý sách bằng bố cục của quyển khác."
+        )
+    return match.group(1).lower()
 
 
 def make_image_processor(
     pdf_filename: str = "",
     status_tracker=None,
 ) -> "ImageProcessor":
-    """Processor cho một quyển. Chỉ còn KNTT (xem `LAYOUT_VARIANT`).
+    """Processor ảnh cho một quyển, chọn theo nhà xuất bản ĐỌC TỪ tên quyển.
 
-    `pdf_filename` được giữ trong chữ ký vì mọi call site đang truyền nó và nó
-    sẽ cần lại nếu có nhà xuất bản thứ hai; hiện tại nó không định tuyến gì.
-    `KnttImageProcessor` là lớp DUY NHẤT được QA trên corpus này (D-45, D-46) —
-    lớp cơ sở `ImageProcessor` chỉ còn là phần dùng chung.
+    Xem `_VARIANT_PROCESSOR` cho bảng ánh xạ và số đo chống lưng cho nó. Tên
+    quyển không cho biết nhà xuất bản thì ném `UnknownPublisher`.
     """
-    return KnttImageProcessor(status_tracker=status_tracker)
+    variant = get_pdf_variant(pdf_filename)
+    return _VARIANT_PROCESSOR[variant]()(status_tracker=status_tracker)
 
 
 # ---------------------------------------------------------------------------

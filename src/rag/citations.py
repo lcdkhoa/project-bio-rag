@@ -42,9 +42,14 @@ def format_book_name(source: str) -> str:
     `SGK_KHTN_6_KNTT` -> `Khoa học tự nhiên 6 (Kết nối tri thức)`.
 
     Tên nào KHÔNG khớp khuôn thì trả về nguyên văn (đã bỏ `.pdf`) — không đoán,
-    vì một nhãn sai trong trích dẫn là chỉ học sinh tới sai quyển sách. Bản cũ
-    dựa vào `get_pdf_variant`, hàm này nay là hằng số nên nó sẽ dán "(KNTT)" lên
-    mọi thứ; ở đây nhà xuất bản đọc từ CHÍNH tên quyển sách.
+    vì một nhãn sai trong trích dẫn là chỉ học sinh tới sai quyển sách.
+
+    Hàm này đọc nhà xuất bản từ CHÍNH tên quyển và luôn làm vậy — đó là lý do
+    nó thoát được lỗi D-109, trong khi `get_pdf_variant` (hồi còn là hằng số
+    `LAYOUT_VARIANT`) dán 'kntt' lên 11 459 chunk của CD/CTST. `get_pdf_variant`
+    nay cũng đọc từ tên quyển, nhưng hai hàm cố ý KHÔNG dùng chung một đường:
+    ở đây tên lạ trả về nguyên văn (hiển thị được là đủ), còn ở kia tên lạ thì
+    NÉM (một biến thể sai làm hỏng dữ liệu, không chỉ hỏng nhãn hiển thị).
     """
     stem = re.sub(r"\.pdf$", "", str(source or ""), flags=re.IGNORECASE).strip()
     if not stem:
