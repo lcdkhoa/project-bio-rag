@@ -260,6 +260,42 @@ def _qwen_style(model_id: str):
     return run
 
 
+def _mineru25():
+    """MinerU2.5-Pro qua giao diện RIÊNG của nó (`mineru-vl-utils`).
+
+    **Không dùng prompt tự do được** — đo được ngày 2026-08-26: với `PROMPT_DONG`,
+    model lặp lại chính câu prompt ("Trích xuất chính xác toàn bộ chữ trong ảnh,
+    từ 0 đến 100…" ×25) ở một ô, và xuất format nội bộ `<|class_start|>chart
+    <|class_end|>` kèm nội dung không có trên ảnh ở một ô khác. Đó là dấu hiệu
+    **ép model vào giao diện sai**, KHÔNG phải bằng chứng model bịa — model card
+    nói rõ nó chạy qua `MinerUClient.two_step_extract()` (bước 1 phân tích bố
+    cục, bước 2 nhận dạng từng khối).
+
+    Loại nó vì "bịa" khi chưa cho nó giao diện đúng sẽ lặp lại đúng cái sai suýt
+    xảy ra với Nanonets (D-102): kết luận về CHẤT LƯỢNG từ một lỗi MÔI TRƯỜNG.
+    """
+    import torch
+    from PIL import Image
+    from mineru_vl_utils import MinerUClient
+    from mineru_vl_utils.post_process import json2md
+    from transformers import AutoProcessor
+
+    mid = "opendatalab/MinerU2.5-Pro-2605-1.2B"
+    proc = AutoProcessor.from_pretrained(mid, use_fast=True)
+    model = _load_vlm(mid, torch)
+    model.eval()
+    client = MinerUClient(backend="transformers", model=model, processor=proc)
+
+    def run(png: Path, prompt: str) -> str:
+        # `prompt` cố ý KHÔNG dùng: giao diện này không nhận prompt tự do. Giữ
+        # tham số cho khớp chữ ký chung của mọi engine.
+        del prompt
+        blocks = client.two_step_extract(Image.open(png).convert("RGB"))
+        return str(json2md(blocks)).strip()
+
+    return run
+
+
 def _paddleocr_vl():
     """PaddleOCR-VL 1.6 (0,9 B) — nhỏ nhất trong bốn ứng viên."""
     from paddleocr import PaddleOCRVL
@@ -285,7 +321,7 @@ ENGINES = {
     "paddleocr_vl": _paddleocr_vl,
     "nanonets_ocr2_3b": lambda: _qwen_style("nanonets/Nanonets-OCR2-3B"),
     "dots_ocr": lambda: _qwen_style("dots-studio/dots.ocr"),
-    "mineru25": lambda: _qwen_style("opendatalab/MinerU2.5-Pro-2605-1.2B"),
+    "mineru25": _mineru25,
 }
 
 

@@ -1165,3 +1165,32 @@ class TestNghiModelHong:
         h = nghi_model_hong(items, {"c1": self.NGUOI}, {"c1": ""})
 
         assert h["o_cham"] == 0 and h["nghi"] is False
+
+
+class TestMineruUsesItsOwnInterface:
+    """MinerU2.5 KHÔNG nhận prompt tự do — nó có giao diện riêng.
+
+    Đo 2026-08-26 với `PROMPT_DONG`: một ô model lặp lại chính câu prompt
+    ("Trích xuất chính xác toàn bộ chữ trong ảnh, từ 0 đến 100…" ×25), một ô
+    khác xuất format nội bộ `<|class_start|>chart<|class_end|>` kèm nội dung
+    không có trên ảnh. Đó là dấu hiệu ÉP MODEL VÀO GIAO DIỆN SAI, không phải
+    bằng chứng model bịa — loại nó vì "bịa" sẽ lặp lại đúng cái sai suýt xảy ra
+    với Nanonets (D-102).
+    """
+
+    @staticmethod
+    def _loader():
+        return TestColabEngineLoader._loader()
+
+    def test_mineru_is_not_routed_through_the_free_prompt_path(self):
+        mod = self._loader()
+
+        assert mod.ENGINES["mineru25"] is mod._mineru25
+        assert mod.ENGINES["dots_ocr"] is not mod._mineru25
+
+    def test_the_free_prompt_path_still_serves_dots_ocr(self):
+        """dots.ocr vẫn đi đường chat thường — đừng đổi cả hai vì một."""
+        mod = self._loader()
+        import inspect
+
+        assert "dots" in inspect.getsource(mod.ENGINES["dots_ocr"])
