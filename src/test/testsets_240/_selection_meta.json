@@ -1,0 +1,184 @@
+{
+ "per_book": {
+  "SGK_KHTN_6_CD": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 4,
+    "truc_tiep": 12
+   },
+   "by_phan_mon": {
+    "hoa": 3,
+    "khac": 6,
+    "ly": 2,
+    "sinh": 5
+   }
+  },
+  "SGK_KHTN_6_CTST": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 3,
+    "truc_tiep": 13
+   },
+   "by_phan_mon": {
+    "hoa": 5,
+    "khac": 2,
+    "ly": 4,
+    "sinh": 5
+   }
+  },
+  "SGK_KHTN_6_KNTT": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 3,
+    "truc_tiep": 13
+   },
+   "by_phan_mon": {
+    "khac": 4,
+    "ly": 5,
+    "sinh": 7
+   }
+  },
+  "SGK_KHTN_7_CD": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 4,
+    "truc_tiep": 12
+   },
+   "by_phan_mon": {
+    "hoa": 8,
+    "sinh": 8
+   }
+  },
+  "SGK_KHTN_7_CTST": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 7,
+    "truc_tiep": 9
+   },
+   "by_phan_mon": {
+    "hoa": 3,
+    "khac": 6,
+    "ly": 4,
+    "sinh": 3
+   }
+  },
+  "SGK_KHTN_7_KNTT": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 4,
+    "truc_tiep": 12
+   },
+   "by_phan_mon": {
+    "hoa": 7,
+    "ly": 5,
+    "sinh": 4
+   }
+  },
+  "SGK_KHTN_8_CD": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 6,
+    "truc_tiep": 10
+   },
+   "by_phan_mon": {
+    "hoa": 13,
+    "ly": 3
+   }
+  },
+  "SGK_KHTN_8_CTST": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 6,
+    "truc_tiep": 10
+   },
+   "by_phan_mon": {
+    "hoa": 6,
+    "ly": 2,
+    "sinh": 8
+   }
+  },
+  "SGK_KHTN_8_KNTT": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 2,
+    "truc_tiep": 14
+   },
+   "by_phan_mon": {
+    "hoa": 6,
+    "ly": 7,
+    "sinh": 3
+   }
+  },
+  "SGK_KHTN_9_CD": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 3,
+    "truc_tiep": 13
+   },
+   "by_phan_mon": {
+    "hoa": 6,
+    "khac": 2,
+    "ly": 8
+   }
+  },
+  "SGK_KHTN_9_CTST": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 5,
+    "truc_tiep": 11
+   },
+   "by_phan_mon": {
+    "hoa": 7,
+    "khac": 2,
+    "ly": 7
+   }
+  },
+  "SGK_KHTN_9_KNTT": {
+   "n_van_ban": 16,
+   "n_trang_vang": 9,
+   "n_trang_vang_trong_pool": 9,
+   "by_do_kho": {
+    "suy_luan": 5,
+    "truc_tiep": 11
+   },
+   "by_phan_mon": {
+    "hoa": 5,
+    "ly": 7,
+    "sinh": 4
+   }
+  }
+ },
+ "thieu": {},
+ "n_van_ban": 192,
+ "n_hinh_du_kien": 48,
+ "n_tong_du_kien": 240,
+ "text_per_book": 16,
+ "image_per_book": 4,
+ "seed": 42,
+ "nguon": "rút mẫu từ src/test/testsets/ (pool 300 câu), KHÔNG sinh mới",
+ "human_reviewed": false,
+ "human_review_note": "Pool gốc do LLM sinh. Mẫu 50 câu đã được NGƯỜI duyệt (D-90): gold key sai 2/49 = 4,1%, KTC 95% Wilson 1,1-13,7%, 1 câu không quyết được. Mẫu đó cố ý lệch về suy_luan (50% vs 32% cả bộ) nên 4,1% là con số BI QUAN; hiệu chỉnh theo trọng số cả bộ ~2,7%. Bộ 240 này CHƯA có lượt duyệt riêng.",
+ "chien_luoc_chon": "Trải đều trên trang vàng trước (vòng 1 mỗi trang 1 câu), rồi mới lấy câu thứ 2 của một trang. Giảm tương quan mà _generation_meta.json của pool đã cảnh báo."
+}
