@@ -84,6 +84,45 @@ _AUTO_CLASSES = ("AutoModelForImageTextToText", "AutoModelForCausalLM",
                  "AutoModelForVision2Seq")
 
 
+def _tie_da_xay_ra(model) -> bool:
+    """lm_head có dùng CHUNG bộ nhớ với bảng embedding không.
+
+    Dùng `get_input_embeddings` / `get_output_embeddings` (API chuẩn) chứ không
+    dò tên thuộc tính, vì mỗi họ VLM đặt tên một kiểu.
+    """
+    lay_out = getattr(model, "get_output_embeddings", None)
+    lay_inp = getattr(model, "get_input_embeddings", None)
+    if lay_out is None or lay_inp is None:
+        # Không kiểm được thì NÓI RA, đừng im lặng cho qua.
+        print("[cổng tie] model không có get_(in|out)put_embeddings -> KHÔNG "
+              "kiểm được lm_head. Đọc kỹ vài ô đầu bằng --doi-chieu.", flush=True)
+        return True
+    out = lay_out()
+    if out is None:
+        return True            # model không có lm_head riêng -> không có gì để buộc
+    inp = lay_inp()
+    if inp is None:
+        return False
+    return out.weight.data_ptr() == inp.weight.data_ptr()
+
+
+def _khai_bao_tie(model_id: str) -> bool:
+    """`tie_word_embeddings` model TỰ KHAI — top-level, rồi tới `text_config`.
+
+    Nanonets-OCR2-3B khai nó **chỉ trong `text_config`** (top-level là `None`),
+    và `model.safetensors.index.json` **không có key `lm_head.weight`** nào
+    trong 824 key — tức checkpoint thật sự tied.
+    """
+    from transformers import AutoConfig
+
+    cfg = AutoConfig.from_pretrained(model_id, trust_remote_code=True)
+    for obj in (cfg, getattr(cfg, "text_config", None)):
+        v = getattr(obj, "tie_word_embeddings", None) if obj is not None else None
+        if v is not None:
+            return bool(v)
+    return False
+
+
 def _load_vlm(model_id: str, torch):
     """Nạp VLM bằng auto-class ĐÚNG cho model đó, và NÓI RA dùng class nào.
 
@@ -113,6 +152,29 @@ def _load_vlm(model_id: str, torch):
             continue
         print(f"[nạp] {model_id} <- transformers.{ten} "
               f"(transformers {transformers.__version__})", flush=True)
+
+        # CỔNG: model nạp THIẾU TRỌNG SỐ mà vẫn sinh chữ là fallback im lặng tệ
+        # nhất trong cả repo này — nó sinh RÁC trông y hệt "engine đọc kém", nên
+        # bảng sẽ ghi CT 0,000 và ta loại oan một model có thể tốt.
+        #
+        # Ca thật (2026-08-26, Colab, transformers 5.15.1): Nanonets-OCR2-3B báo
+        # `lm_head.weight | MISSING` rồi đọc 3/3 ô ra token ngẫu nhiên đa ngôn
+        # ngữ. ĐO ĐƯỢC nguyên nhân: `model.safetensors.index.json` không có key
+        # `lm_head.weight` nào trong 824 key (checkpoint TIED), và
+        # `tie_word_embeddings: true` chỉ khai trong `text_config` — top-level là
+        # `None`. transformers 5.x không buộc trọng số, lm_head thành ngẫu nhiên.
+        if not _tie_da_xay_ra(model) and _khai_bao_tie(model_id):
+            print("[vá] lm_head CHƯA được buộc với embedding dù model khai "
+                  "tie_word_embeddings=True -> gọi tie_weights()", flush=True)
+            model.tie_weights()
+            if not _tie_da_xay_ra(model):
+                raise RuntimeError(
+                    f"{model_id}: lm_head vẫn KHÔNG được buộc sau tie_weights() "
+                    f"trên transformers {transformers.__version__}. Model sẽ sinh "
+                    "RÁC chứ không phải đọc kém — dừng ở đây thay vì để nó chấm "
+                    "một bảng vô nghĩa. Thử `pip install 'transformers<5'`.")
+            print("[vá] xong: lm_head và embedding nay dùng chung trọng số.",
+                  flush=True)
         return model
 
     raise RuntimeError(

@@ -640,14 +640,14 @@ class TestColabEngineLoader:
             @staticmethod
             def from_pretrained(model_id, **k):
                 goi.append(k)
-                return "MODEL"
+                return TestTieWeightsGate._Model(tie_roi=True)
 
         monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Hong,
                             raising=False)
         monkeypatch.setattr(transformers, "AutoModelForCausalLM", _Duoc,
                             raising=False)
 
-        assert mod._load_vlm("dots-studio/dots.ocr", torch) == "MODEL"
+        assert mod._load_vlm("dots-studio/dots.ocr", torch) is not None
         # Phải NÓI RA class nào đã nạp — nếu không, engine chạy bằng đường
         # không ai kiểm được (đúng bệnh D-83/D-94).
         assert "AutoModelForCausalLM" in capsys.readouterr().out
@@ -686,7 +686,7 @@ class TestColabEngineLoader:
             @staticmethod
             def from_pretrained(model_id, **k):
                 goi.append(k)
-                return "M"
+                return TestTieWeightsGate._Model(tie_roi=True)
 
         monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Duoc,
                             raising=False)
@@ -878,3 +878,127 @@ class TestDoiChieu:
         assert "NGƯỜI" in out and "khí O₂" in out    # bản người
         assert "khí O2" in out                       # engine
         assert "khí 0," in out                       # tesseract, để so ba chiều
+
+
+class TestTieWeightsGate:
+    """Model nạp THIẾU lm_head sinh RÁC, không phải "đọc kém" — phải chặn.
+
+    Ca thật (Colab, 2026-08-26, transformers 5.15.1): Nanonets-OCR2-3B báo
+    `lm_head.weight | MISSING` rồi đọc 3/3 ô ra token ngẫu nhiên đa ngôn ngữ
+    (`瞠`, `Uber`, `xoops` lặp lại). ĐO ĐƯỢC nguyên nhân trên HF:
+    `model.safetensors.index.json` **không có key `lm_head.weight`** nào trong
+    824 key (checkpoint TIED), và `tie_word_embeddings: true` chỉ khai trong
+    `text_config` — top-level là `None`.
+    """
+
+    @staticmethod
+    def _loader():
+        return TestColabEngineLoader._loader()
+
+    class _W:
+        def __init__(self, ptr):
+            self._ptr = ptr
+
+        def data_ptr(self):
+            return self._ptr
+
+    class _Emb:
+        def __init__(self, ptr):
+            self.weight = TestTieWeightsGate._W(ptr)
+
+    class _Model:
+        """Model giả: `tie_weights()` làm lm_head trỏ vào cùng bộ nhớ embedding."""
+
+        def __init__(self, tie_roi, tie_duoc=True):
+            self._inp = TestTieWeightsGate._Emb(111)
+            self._out = TestTieWeightsGate._Emb(111 if tie_roi else 999)
+            self._tie_duoc = tie_duoc
+            self.da_goi_tie = False
+
+        def get_input_embeddings(self):
+            return self._inp
+
+        def get_output_embeddings(self):
+            return self._out
+
+        def tie_weights(self):
+            self.da_goi_tie = True
+            if self._tie_duoc:
+                self._out = TestTieWeightsGate._Emb(111)
+
+    def test_detects_an_untied_lm_head(self):
+        mod = self._loader()
+
+        assert mod._tie_da_xay_ra(self._Model(tie_roi=True)) is True
+        assert mod._tie_da_xay_ra(self._Model(tie_roi=False)) is False
+
+    def test_a_model_without_lm_head_is_fine(self):
+        """Không có lm_head riêng thì không có gì để buộc — không được raise."""
+        mod = self._loader()
+
+        class _KhongCoLmHead(self._Model):
+            def get_output_embeddings(self):
+                return None
+
+        assert mod._tie_da_xay_ra(_KhongCoLmHead(tie_roi=False)) is True
+
+    def test_load_ties_the_weights_when_the_model_declares_it(self, monkeypatch, capsys):
+        import torch
+        import transformers
+
+        mod = self._loader()
+        m = self._Model(tie_roi=False)
+
+        class _Cls:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                return m
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Cls,
+                            raising=False)
+        monkeypatch.setattr(mod, "_khai_bao_tie", lambda mid: True)
+
+        assert mod._load_vlm("x/y", torch) is m
+        assert m.da_goi_tie is True
+        out = capsys.readouterr().out
+        assert "CHƯA được buộc" in out and "xong" in out
+
+    def test_load_raises_when_tying_does_not_take(self, monkeypatch):
+        """Không sửa được thì DỪNG — không để engine chấm một bảng vô nghĩa."""
+        import pytest
+        import torch
+        import transformers
+
+        mod = self._loader()
+
+        class _Cls:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                return TestTieWeightsGate._Model(tie_roi=False, tie_duoc=False)
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Cls,
+                            raising=False)
+        monkeypatch.setattr(mod, "_khai_bao_tie", lambda mid: True)
+
+        with pytest.raises(RuntimeError, match="sinh"):
+            mod._load_vlm("x/y", torch)
+
+    def test_a_model_that_does_not_declare_tying_is_left_alone(self, monkeypatch):
+        """Không khai tie thì lm_head rời là ĐÚNG — không được tự ý buộc."""
+        import torch
+        import transformers
+
+        mod = self._loader()
+        m = self._Model(tie_roi=False)
+
+        class _Cls:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                return m
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Cls,
+                            raising=False)
+        monkeypatch.setattr(mod, "_khai_bao_tie", lambda mid: False)
+
+        assert mod._load_vlm("x/y", torch) is m
+        assert m.da_goi_tie is False
