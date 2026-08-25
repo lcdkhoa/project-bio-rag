@@ -180,7 +180,7 @@ suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, c�
 ## Active redesign (2026-08) — read this first
 
 A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
-- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-96**).
+- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-97**).
 - **What to do next (updated 2026-08-23, sau khi index 12 quyển đã dựng xong):**
   `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` — prompt M2 đầy đủ: trích nguyên văn
   hợp đồng của `goal.docx` (Nội dung 2 và 4), mọi số đã đo (index 16 393 chunk, chỉ số dưới
