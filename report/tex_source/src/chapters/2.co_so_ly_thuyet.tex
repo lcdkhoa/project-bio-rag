@@ -29,6 +29,7 @@ Mặc dù LLM có khả năng sinh văn bản lưu loát, chúng gặp phải 3 
 \end{enumerate}
 
 \subsection{Nguyên lý hoạt động của RAG}
+\label{sec:rag_nguyenly}
 Retrieval-Augmented Generation (RAG)~\cite{lewis2020retrieval} là kiến trúc giải quyết các vấn đề trên bằng cách kết hợp cơ chế Truy xuất thông tin (Information Retrieval) với Sinh văn bản (Text Generation). Ý tưởng tăng cường mô hình ngôn ngữ bằng tri thức truy xuất từ kho dữ liệu ngoài đã được khẳng định qua nhiều công trình nền tảng như REALM~\cite{guu2020realm} và Fusion-in-Decoder~\cite{izacard2021fid}, và tiếp tục được hệ thống hóa, mở rộng trong các khảo sát gần đây~\cite{gao2023ragsurvey} cũng như các biến thể có khả năng tự phản tỉnh như Self-RAG~\cite{asai2023selfrag}.
 
 \begin{figure}[H]
@@ -48,22 +49,51 @@ Quy trình hoạt động của RAG bao gồm 2 pha chính:
 \subsection{Khái niệm Embedding}
 Embedding là kỹ thuật chuyển đổi các thực thể (như từ, câu, đoạn văn, hoặc hình ảnh) thành các véc-tơ số học (vector n-chiều) liên tục~\cite{mikolov2013word2vec}. Đặc tính quan trọng nhất của Embedding là khả năng bảo toàn ngữ nghĩa: các thực thể có ý nghĩa tương đồng sẽ nằm gần nhau trong không gian vector đa chiều. Đối với cấp độ câu và đoạn văn, kiến trúc Sentence-BERT~\cite{reimers2019sbert} cho phép sinh ra các véc-tơ câu có thể so sánh trực tiếp bằng độ tương đồng cosine một cách hiệu quả. Ví dụ, câu "Tế bào là đơn vị cơ bản của sự sống" và "Mọi cơ thể sinh vật đều cấu tạo từ tế bào" sẽ có khoảng cách cosine rất nhỏ.
 
-Dự án này sử dụng mô hình \texttt{paraphrase-multilingual-MiniLM-L12-v2} (thuộc thư viện sentence-transformers~\cite{reimers2019sbert}). Mô hình dựa trên kiến trúc MiniLM~\cite{wang2020minilm}, một mô hình được chưng cất (distillation) từ Transformer lớn nhằm đạt sự cân bằng giữa kích thước gọn nhẹ và chất lượng biểu diễn ngữ nghĩa, phù hợp cho triển khai trên tài nguyên hạn chế và hỗ trợ tốt tiếng Việt.
+Hệ thống sử dụng mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3}, sinh véc-tơ $1024$ chiều. Đây là mô hình đa ngữ được huấn luyện để phục vụ đồng thời ba kiểu truy xuất (dày đặc, thưa và đa véc-tơ), và hỗ trợ ngữ cảnh dài --- phù hợp với các đoạn văn bản sách giáo khoa có kèm ký hiệu và công thức.
+
+Ở giai đoạn trước, hệ thống dùng \texttt{paraphrase-multilingual-MiniLM-L12-v2}~\cite{reimers2019sbert} dựa trên kiến trúc MiniLM~\cite{wang2020minilm} ($384$ chiều). Cần lưu ý một ràng buộc kỹ thuật quan trọng khi thay mô hình nhúng: hai mô hình có \textbf{số chiều khác nhau không thể dùng chung một collection}, nên mọi lần đổi mô hình đều bắt buộc dựng lại toàn bộ chỉ mục chứ không thể chuyển đổi tại chỗ.
 
 \subsection{Cơ sở dữ liệu Vector (ChromaDB)}
 Vector Database là hệ quản trị cơ sở dữ liệu chuyên biệt được thiết kế để lưu trữ và truy vấn các vector đa chiều một cách nhanh chóng thông qua cơ chế tìm kiếm tương đồng (Similarity Search) dựa trên các phép đo như Cosine Similarity, L2 Distance hay Inner Product. Để đạt tốc độ truy vấn cao trên hàng triệu véc-tơ, các hệ thống này áp dụng kỹ thuật tìm kiếm lân cận gần đúng (Approximate Nearest Neighbor -- ANN), tiêu biểu là chỉ mục đồ thị HNSW~\cite{malkov2018hnsw} và các thư viện tìm kiếm tương đồng quy mô lớn như FAISS~\cite{johnson2019faiss}.
 
-Trong hệ thống này, ChromaDB~\cite{chromadb2023} được lựa chọn làm Vector Database nhờ đặc tính mã nguồn mở, hỗ trợ chạy trực tiếp trên máy cục bộ (local) mà không cần cài đặt server phức tạp, đồng thời tích hợp chặt chẽ với framework LangChain~\cite{langchain2022}, giúp dễ dàng thao tác lưu trữ và truy xuất các đoạn kiến thức (chunks) từ sách giáo khoa Sinh học.
+Trong hệ thống này, ChromaDB~\cite{chromadb2023} được lựa chọn làm Vector Database nhờ đặc tính mã nguồn mở, hỗ trợ chạy trực tiếp trên máy cục bộ (local) mà không cần cài đặt server phức tạp, đồng thời tích hợp chặt chẽ với framework LangChain~\cite{langchain2022}, giúp dễ dàng thao tác lưu trữ và truy xuất các đoạn kiến thức (chunks) từ sách giáo khoa Khoa học tự nhiên.
 
 \section{Xử lý Đa phương thức (Multi-modal) trong RAG}
-Sách giáo khoa môn Sinh học chứa rất nhiều hình ảnh (hình vẽ giải phẫu, sơ đồ quá trình quang hợp, v.v.). Một hệ thống RAG văn bản thuần túy sẽ bỏ sót những lượng thông tin khổng lồ này. Do đó, kỹ thuật Multi-modal RAG được áp dụng, dựa trên những tiến bộ của thị giác máy tính khi đưa kiến trúc Transformer vào xử lý ảnh (Vision Transformer)~\cite{dosovitskiy2021vit} và các mô hình tiền huấn luyện liên kết ngôn ngữ -- thị giác~\cite{radford2021clip, li2022blip}. Bản thân bài toán hỏi đáp dựa trên hình ảnh (Visual Question Answering)~\cite{antol2015vqa} cũng là một hướng nghiên cứu nền tảng cho việc kết hợp văn bản và hình ảnh.
+Sách giáo khoa môn Khoa học tự nhiên chứa rất nhiều hình ảnh và sơ đồ (hình vẽ giải phẫu, sơ đồ quang hợp, sơ đồ mạch điện, đồ thị chuyển động, v.v.). Một hệ thống RAG văn bản thuần túy sẽ bỏ sót những lượng thông tin khổng lồ này. Do đó, kỹ thuật Multi-modal RAG được áp dụng, dựa trên những tiến bộ của thị giác máy tính khi đưa kiến trúc Transformer vào xử lý ảnh (Vision Transformer)~\cite{dosovitskiy2021vit} và các mô hình tiền huấn luyện liên kết ngôn ngữ -- thị giác~\cite{radford2021clip, li2022blip}. Bản thân bài toán hỏi đáp dựa trên hình ảnh (Visual Question Answering)~\cite{antol2015vqa} cũng là một hướng nghiên cứu nền tảng cho việc kết hợp văn bản và hình ảnh.
 
 \subsection{Mô hình trích xuất và gán nhãn ảnh}
 Hệ thống sử dụng các mô hình thị giác máy tính (Computer Vision) kết hợp:
 \begin{itemize}
-    \item \textbf{OwlViT (\texttt{google/owlvit-base-patch32})~\cite{minderer2022owlvit}:} Mô hình phát hiện vật thể (Object Detection) dựa trên Zero-shot text-conditioned, được dùng để xác định vị trí hộp bao (bounding box) của các hình ảnh, biểu đồ nằm rải rác trong các trang sách PDF.
+    \item \textbf{OwlViT (\texttt{google/owlvit-base-patch32})~\cite{minderer2022owlvit}:} Mô hình phát hiện vật thể (Object Detection) zero-shot có điều kiện văn bản, dùng để xác định hộp bao của hình ảnh và biểu đồ trên trang sách. Trong hệ thống này nó giữ vai trò \textit{phát hiện phụ}: bước phát hiện chính đi từ nhãn chú thích có thật trên trang (xem Chương~\ref{chapter:phuong_phap_thuc_hien}).
     \item \textbf{CLIP (\texttt{openai/clip-vit-base-patch16})~\cite{radford2021clip}:} Sinh vector embedding cho hình ảnh, cho phép so sánh độ tương đồng giữa câu hỏi (text) và hình ảnh (image) trong cùng một không gian vector.
-    \item \textbf{Vintern-1B (\texttt{5CD-AI/Vintern-1B-v2}):} Một mô hình VQA (Visual Question Answering) chuyên biệt hỗ trợ tiếng Việt, dùng để tự động sinh ra mô tả (caption) cho từng hình ảnh được cắt ra. Việc có caption văn bản cho ảnh giúp cải thiện đáng kể độ chính xác của quá trình truy xuất sau này.
+    \item \textbf{Mô hình sinh chú thích ảnh (image captioning), ví dụ Vintern-1B (\texttt{5CD-AI/Vintern-1B-v2}):} Một mô hình VQA~\cite{antol2015vqa} hỗ trợ tiếng Việt, về lý thuyết có thể tự sinh mô tả cho từng hình cắt ra. Hướng này đã được cài đặt và \textbf{đo trên dữ liệu thật} của đề tài; kết quả đo cùng lý do hệ thống cuối cùng \textbf{không} dùng nó được trình bày ở Chương~\ref{chapter:phuong_phap_thuc_hien}.
 \end{itemize}
 
 Kết hợp các công nghệ này, kiến trúc Multi-modal RAG của hệ thống đảm bảo cả luồng tri thức văn bản và hình ảnh được lưu trữ và truy xuất đồng bộ, cung cấp ngữ cảnh đầy đủ nhất cho mô hình LLM sinh câu trả lời.
+
+\section{Truy xuất lai và xếp hạng lại}
+\label{sec:cosolythuyet_hybrid}
+
+Truy xuất ngữ nghĩa (Mục~\ref{sec:rag_nguyenly}) không phải là kỹ thuật truy xuất duy nhất, và trong nhiều bài toán nó cũng không phải kỹ thuật tốt nhất khi đứng một mình. Phần này trình bày ba kỹ thuật tạo nên đóng góp phương pháp của đề tài.
+
+\subsection{Truy xuất thưa: BM25}
+BM25~\cite{robertson2009bm25} là hàm xếp hạng dựa trên thống kê từ khoá, phát triển từ mô hình xác suất truy hồi thông tin. Với truy vấn $Q$ gồm các từ $q_1,\dots,q_n$ và tài liệu $D$, điểm số được tính:
+\begin{equation}
+\mathrm{BM25}(D, Q) = \sum_{i=1}^{n} \mathrm{IDF}(q_i) \cdot
+\frac{f(q_i, D)\,(k_1 + 1)}{f(q_i, D) + k_1\left(1 - b + b\,\dfrac{|D|}{\mathrm{avgdl}}\right)}
+\end{equation}
+trong đó $f(q_i, D)$ là tần suất của từ $q_i$ trong $D$, $|D|$ là độ dài tài liệu, $\mathrm{avgdl}$ là độ dài trung bình của tài liệu trong kho, còn $k_1$ và $b$ là hai siêu tham số điều chỉnh mức bão hoà tần suất và mức chuẩn hoá theo độ dài.
+
+Điểm mạnh của BM25 là nó \textbf{khớp đúng ký tự}. Với một môn học đầy ký hiệu như Khoa học tự nhiên, đó không phải là hạn chế mà là ưu thế: truy vấn chứa \ce{H2SO4} hay tên một định luật cần khớp chính xác chuỗi ký tự đó, chứ không cần một mô hình hiểu ngữ nghĩa. Điểm yếu tương ứng là nó không bắc cầu được giữa hai cách diễn đạt khác nhau của cùng một ý.
+
+\subsection{Truy xuất lai (hybrid retrieval)}
+Hai kênh thưa và dày có điểm mạnh bù trừ nhau, nên cách tự nhiên là chạy cả hai rồi hợp nhất hai bảng xếp hạng. Một kỹ thuật hợp nhất phổ biến là \textbf{hợp nhất theo thứ hạng nghịch đảo} (Reciprocal Rank Fusion), trong đó mỗi tài liệu $d$ nhận điểm
+\begin{equation}
+\mathrm{RRF}(d) = \sum_{r \in R} \frac{1}{k + \mathrm{rank}_r(d)}
+\end{equation}
+với $R$ là tập các bảng xếp hạng thành phần và $k$ là hằng số làm mượt. Ưu điểm của cách hợp nhất theo \textit{thứ hạng} thay vì theo \textit{điểm số} là nó không đòi hai kênh phải có thang điểm so sánh được --- điều vốn không đúng giữa khoảng cách cosine và điểm BM25.
+
+\subsection{Xếp hạng lại bằng cross-encoder}
+Bộ nhúng hai tháp (bi-encoder) mã hoá truy vấn và tài liệu \textit{độc lập} nên tìm kiếm rất nhanh, nhưng cũng vì độc lập mà nó không nhìn được tương tác chi tiết giữa hai bên. Mô hình \textbf{cross-encoder}~\cite{nogueira2019passage} đưa cặp (truy vấn, tài liệu) qua cùng một Transformer nên nắm được tương tác đó và cho thứ hạng chính xác hơn, đổi lại chi phí tính toán cao hơn nhiều.
+
+Vì vậy hai loại mô hình được dùng theo kiểu \textbf{phễu}: bi-encoder và BM25 lấy rộng một tập ứng viên, rồi cross-encoder chấm lại chỉ tập ứng viên đó. Đây cũng là lý do khoảng cách giữa \textit{recall khi chạy thực tế} và \textit{trần recall} lại quan trọng đến vậy: nếu đoạn đúng không lọt vào tập ứng viên ở bước lấy rộng thì không bước xếp hạng lại nào cứu được nó.
