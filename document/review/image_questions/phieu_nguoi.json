@@ -1,8 +1,38 @@
 {
  "_huong_dan": "Điền qua phieu.html",
- "_bat_dau": 1787682328120,
- "_ket_thuc": 1787682466198,
+ "_bat_dau": 1787683282628,
+ "_ket_thuc": 1787683479898,
  "traloi": {
+  "SGK_KHTN_6_CD_p9_04": {
+   "cau_hoi": "Quan sát Hình 1.4, hãy nêu tên hai vật sống và hai vật không sống được vẽ trong hình.",
+   "dap_an": "Học sinh ghi đúng tên các vật sống và vật không sống xuất hiện trong Hình 1.4 (ví dụ: vật sống như cây, con vật; vật không sống như đá, nước... tùy theo nội dung thực tế của hình).",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p9_02": {
+   "cau_hoi": "Quan sát Hình 1.2, hãy kể tên MỘT cặp phương tiện (xưa – nay) mà hình vẽ dùng để so sánh và cho biết cặp phương tiện đó thuộc lĩnh vực nào của đời sống.",
+   "dap_an": "Học sinh phải nêu đúng một cặp phương tiện thực tế có trong hình kèm lĩnh vực tương ứng (ví dụ cần đối chiếu lại với ảnh: giao thông – xe ngựa/đi bộ → ô tô/máy bay; liên lạc – thư tay → điện thoại).",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CTST_p11_02": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết các đồ thị tín hiệu âm được vẽ trong hình giống và khác nhau như thế nào?",
+   "dap_an": "Chúng đều là các đường cong dạng sóng biến đổi theo thời gian, nhưng các đồ thị không giống hệt nhau mà có dạng khác nhau.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p10_03": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguồn phát thải khí nhà kính nào chiếm tỉ lệ lớn nhất trong biểu đồ.",
+   "dap_an": "Theo số liệu OCR, nhiều khả năng là \"Sản xuất điện và nhiệt\" (25%), nhưng cần mở hình để xác nhận vì biểu đồ có thể còn nguồn khác chiếm tỉ lệ cao hơn chưa đọc được.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_CD_p6_02": {
+   "cau_hoi": "Quan sát Hình 6, hãy cho biết thí nghiệm trong hình nhằm mục đích gì và ống dẫn bằng cao su đảm nhận vai trò gì trong bộ thí nghiệm đó?",
+   "dap_an": "Thí nghiệm dùng để điều chế và thử tính chất của ethylene; ống dẫn bằng cao su được dùng để nối giữa các ống dẫn thủy tinh.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
   "SGK_KHTN_6_CD_p5_01": {
    "cau_hoi": "Quan sát Hình 1.1, hãy cho biết những hoạt động nào được minh họa trong hình là hoạt động nghiên cứu khoa học tự nhiên?",
    "dap_an": "Các hoạt động: tìm hiểu vi khuẩn bằng kính hiển vi, tìm hiểu vũ trụ, tìm kiếm và thăm dò dầu khí ở vùng biển Việt Nam, lai tạo giống cây trồng mới là hoạt động nghiên cứu khoa học tự nhiên; còn tập thể dục và vận chuyển xăng, dầu thì không phải.",
@@ -18,12 +48,6 @@
   "SGK_KHTN_6_CD_p7_03": {
    "cau_hoi": "Quan sát Hình 1.3, hãy cho biết từng nhánh a), b), c), đ), e) trong hình tương ứng với lĩnh vực chủ yếu nào của khoa học tự nhiên?",
    "dap_an": "a) Sinh học; b) Thiên văn học; c) Khoa học Trái Đất; đ) Vật lí; e) Hoá học.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_CD_p9_04": {
-   "cau_hoi": "Quan sát Hình 1.4, hãy nêu tên hai vật sống và hai vật không sống được vẽ trong hình.",
-   "dap_an": "Học sinh ghi đúng tên các vật sống và vật không sống xuất hiện trong Hình 1.4 (ví dụ: vật sống như cây, con vật; vật không sống như đá, nước... tùy theo nội dung thực tế của hình).",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -45,35 +69,11 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_6_CTST_p9_04": {
-   "cau_hoi": "Quan sát Hình 2.11, em hãy cho biết vật được chụp trong hình là vật sống hay vật không sống? Nêu một lí do dựa vào đặc điểm của vật sống.",
-   "dap_an": "Đá sỏi là vật không sống, vì nó không có khả năng trao đổi chất, không sinh trưởng, phát triển và không sinh sản.",
+  "SGK_KHTN_7_CD_p10_04": {
+   "cau_hoi": "Quan sát Hình 1.1, sơ đồ này mô tả quá trình gì và khi chia nhỏ nhiều lần đến mức 'không thể phân chia được nữa' thì thu được hạt gọi là gì?",
+   "dap_an": "Sơ đồ mô tả quá trình chia nhỏ đồng tiền vàng nhiều lần; kết quả cuối cùng thu được hạt gọi là nguyên tử (atomos – nghĩa là 'không chia nhỏ hơn được nữa').",
    "bo": true,
-   "ly_do_bo": "cắt lấn"
-  },
-  "SGK_KHTN_6_KNTT_p8_01": {
-   "cau_hoi": "Nhìn vào Hình 1.1, em hãy cho biết có tất cả bao nhiêu hiện tượng tự nhiên được minh hoạ trong hình?",
-   "dap_an": "4 hiện tượng: hai thanh nam châm hút/đẩy nhau khi đưa lại gần; đun nóng đường xem đường có biến đổi thành chất khác không; chiếc đũa nhúng vào cốc nước trông như bị gãy ở mặt nước; cây bị bình thuỷ tinh chụp kín xem có phát triển bình thường không.",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
-  },
-  "SGK_KHTN_6_KNTT_p9_02": {
-   "cau_hoi": "Quan sát Hình 1.2, hãy kể tên MỘT cặp phương tiện (xưa – nay) mà hình vẽ dùng để so sánh và cho biết cặp phương tiện đó thuộc lĩnh vực nào của đời sống.",
-   "dap_an": "Học sinh phải nêu đúng một cặp phương tiện thực tế có trong hình kèm lĩnh vực tương ứng (ví dụ cần đối chiếu lại với ảnh: giao thông – xe ngựa/đi bộ → ô tô/máy bay; liên lạc – thư tay → điện thoại).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_KNTT_p10_03": {
-   "cau_hoi": "Quan sát Hình 1.4 (trang 10), em hãy cho biết hình ảnh trong hình minh họa cho sự kiện hay thành tựu nào được kể trong phần chữ xung quanh về việc con người chinh phục vũ trụ?",
-   "dap_an": "Cần mở ảnh để xác nhận; theo ngữ cảnh trang, khả năng cao hình liên quan đến thành tựu chinh phục vũ trụ (ví dụ vệ tinh nhân tạo Spút-nhích, tên lửa hoặc phi hành gia như Ga-ga-rin, Phạm Tuân).",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
-  },
-  "SGK_KHTN_6_KNTT_p11_04": {
-   "cau_hoi": "Quan sát Hình 2.1, em hãy chỉ ra ít nhất một hoạt động của học sinh trong phòng thực hành được vẽ là KHÔNG an toàn và nêu ngắn gọn lý do.",
-   "dap_an": "Ví dụ: ăn uống, đùa nghịch trong phòng thực hành, hoặc làm thí nghiệm/tiếp xúc với hoá chất mà không đeo găng tay, kính bảo hộ... (học sinh chỉ cần nêu đúng một hoạt động không an toàn xuất hiện trong hình kèm lý do hợp lý).",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
+   "ly_do_bo": "crop hỏng"
   },
   "SGK_KHTN_7_CD_p4_01": {
    "cau_hoi": "Quan sát Hình 1, hãy cho biết hạt đỗ có thể nằm ở những kiểu nào khi rơi xuống mặt đất?",
@@ -93,24 +93,6 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_7_CD_p10_04": {
-   "cau_hoi": "Quan sát Hình 1.1, sơ đồ này mô tả quá trình gì và khi chia nhỏ nhiều lần đến mức 'không thể phân chia được nữa' thì thu được hạt gọi là gì?",
-   "dap_an": "Sơ đồ mô tả quá trình chia nhỏ đồng tiền vàng nhiều lần; kết quả cuối cùng thu được hạt gọi là nguyên tử (atomos – nghĩa là 'không chia nhỏ hơn được nữa').",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_7_CTST_p9_01": {
-   "cau_hoi": "Quan sát Hình 1.1, hãy cho biết hình ảnh này minh họa hiện tượng tự nhiên nào?",
-   "dap_an": "Hiện tượng mưa (mưa tự nhiên).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_7_CTST_p11_02": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết các đồ thị tín hiệu âm được vẽ trong hình giống và khác nhau như thế nào?",
-   "dap_an": "Chúng đều là các đường cong dạng sóng biến đổi theo thời gian, nhưng các đồ thị không giống hệt nhau mà có dạng khác nhau.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
   "SGK_KHTN_7_CTST_p12_03": {
    "cau_hoi": "Quan sát Hình 1.5: đồng hồ đo thời gian hiện số được trình bày qua những góc nhìn nào? Hãy kể tên.",
    "dap_an": "Hai góc nhìn: a) Mặt trước và b) Mặt sau của đồng hồ đo thời gian hiện số.",
@@ -123,6 +105,18 @@
    "bo": false,
    "ly_do_bo": ""
   },
+  "SGK_KHTN_7_CTST_p9_01": {
+   "cau_hoi": "Quan sát Hình 1.1, hãy cho biết hình ảnh này minh họa hiện tượng tự nhiên nào?",
+   "dap_an": "Hiện tượng mưa (mưa tự nhiên).",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p11_04": {
+   "cau_hoi": "Quan sát Hình 1.5 (mặt trước của đồng hồ đo thời gian hiện số): hãy kể tên các nút được ghi chú trên mặt trước của đồng hồ.",
+   "dap_an": "Các nút: THANG ĐO, MODE và RESET.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
   "SGK_KHTN_7_KNTT_p7_01": {
    "cau_hoi": "Quan sát Hình 1.1a và Hình 1.1b: trong hai lần đo, miếng gỗ được đặt nằm sao cho mặt nào tiếp xúc với mặt bàn?",
    "dap_an": "Ở Hình 1.1a, miếng gỗ nằm trên mặt có kích thước 12 cm × 6 cm; ở Hình 1.1b, miếng gỗ nằm trên mặt có kích thước 12 cm × 3 cm.",
@@ -132,18 +126,6 @@
   "SGK_KHTN_7_KNTT_p8_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy nêu tên từng hiện tượng tự nhiên được thể hiện ở các ảnh a), b) và c).",
    "dap_an": "a) Cháy rừng; b) Hạn hán; c) Mưa to kèm theo sấm, sét.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_7_KNTT_p10_03": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguồn phát thải khí nhà kính nào chiếm tỉ lệ lớn nhất trong biểu đồ.",
-   "dap_an": "Theo số liệu OCR, nhiều khả năng là \"Sản xuất điện và nhiệt\" (25%), nhưng cần mở hình để xác nhận vì biểu đồ có thể còn nguồn khác chiếm tỉ lệ cao hơn chưa đọc được.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_7_KNTT_p11_04": {
-   "cau_hoi": "Quan sát Hình 1.5 (mặt trước của đồng hồ đo thời gian hiện số): hãy kể tên các nút được ghi chú trên mặt trước của đồng hồ.",
-   "dap_an": "Các nút: THANG ĐO, MODE và RESET.",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -195,39 +177,15 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_8_KNTT_p6_01": {
-   "cau_hoi": "Quan sát Hình 1.1, hãy kể tên ít nhất ba thông tin được ghi trên nhãn hoá chất trong hình.",
-   "dap_an": "Ví dụ: tên/công thức hoá học; khối lượng hoặc thể tích (vd: 500 g); tiêu chuẩn chất lượng (TCCL: TCCS 51/2008/HCĐG); hạn sử dụng (3 năm kể từ ngày sản xuất); ký hiệu cảnh báo...",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
-  },
   "SGK_KHTN_8_KNTT_p7_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy cho biết dụng cụ thí nghiệm được đánh dấu e) trong hình có tên gọi là gì?",
    "dap_an": "Ống đong (bình chia độ).",
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_8_KNTT_p8_03": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết sách giới thiệu những loại thiết bị đo pH nào?",
-   "dap_an": "Có hai loại: a) Máy đo pH và b) Bút đo pH.",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
-  },
   "SGK_KHTN_8_KNTT_p9_04": {
    "cau_hoi": "Quan sát Hình 1.5, hãy cho biết trên biến áp nguồn có bộ phận nào dùng để chọn điện áp đầu ra phù hợp với thí nghiệm, và các chốt cắm dây của nguồn có màu gì?",
    "dap_an": "Có nút vặn (núm xoay) để chọn/chỉnh điện áp đầu ra một chiều (DC); các chốt cắm gồm chốt màu đỏ (cực dương) và chốt màu đen (cực âm).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_9_CD_p5_01": {
-   "cau_hoi": "Quan sát Hình 3, hãy cho biết thí nghiệm trong hình sử dụng dụng cụ quang học nào để tạo ra ảnh?",
-   "dap_an": "Thấu kính (đây là thí nghiệm về sự tạo ảnh của thấu kính).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_9_CD_p6_02": {
-   "cau_hoi": "Quan sát Hình 6, hãy cho biết thí nghiệm trong hình nhằm mục đích gì và ống dẫn bằng cao su đảm nhận vai trò gì trong bộ thí nghiệm đó?",
-   "dap_an": "Thí nghiệm dùng để điều chế và thử tính chất của ethylene; ống dẫn bằng cao su được dùng để nối giữa các ống dẫn thủy tinh.",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -243,15 +201,9 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_9_CTST_p6_01": {
-   "cau_hoi": "Quan sát Hình 1.1: ngoài bộ tiêu bản nhiễm sắc thể người và lăng kính, hình còn cho thấy những loại thấu kính nào?",
-   "dap_an": "Thấu kính hội tụ và thấu kính phân kì.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_9_CTST_p7_02": {
-   "cau_hoi": "Quan sát Hình 1.2, hãy kể tên các hoá chất cùng công thức hoá học được ghi trên nhãn trong hình.",
-   "dap_an": "Đá vôi (calcium carbonate, CaCO₃); vôi sống (calcium oxide, CaO); glucose (C₆H₁₂O₆); saccharose (C₁₂H₂₂O₁₁).",
+  "SGK_KHTN_9_CD_p5_01": {
+   "cau_hoi": "Quan sát Hình 3, hãy cho biết thí nghiệm trong hình sử dụng dụng cụ quang học nào để tạo ra ảnh?",
+   "dap_an": "Thấu kính (đây là thí nghiệm về sự tạo ảnh của thấu kính).",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -267,27 +219,27 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_9_KNTT_p6_01": {
-   "cau_hoi": "Quan sát Hình 1.1a: để tạo ra chùm sáng hẹp, đèn 12V-21W được ghép với dụng cụ nào (được ghi chú ngay trong hình) và đèn được nối với bộ phận nào?",
-   "dap_an": "Ghép với tấm chắn sáng có một hoặc nhiều khe sáng; đèn được nối với nguồn điện.",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
-  },
-  "SGK_KHTN_9_KNTT_p7_02": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết khe tạo ra vật sáng có hình dạng chữ cái gì và được đánh số thứ tự bao nhiêu trong bộ dụng cụ?",
-   "dap_an": "Khe có hình chữ F và được đánh số thứ tự (5).",
+  "SGK_KHTN_9_CTST_p6_01": {
+   "cau_hoi": "Quan sát Hình 1.1: ngoài bộ tiêu bản nhiễm sắc thể người và lăng kính, hình còn cho thấy những loại thấu kính nào?",
+   "dap_an": "Thấu kính hội tụ và thấu kính phân kì.",
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_9_KNTT_p8_03": {
-   "cau_hoi": "Quan sát Hình 1.10, hãy cho biết đây là dụng cụ thí nghiệm nào và công dụng của nó là gì?",
-   "dap_an": "Lưới tản nhiệt – dùng để phân tán nhiệt khi đốt.",
-   "bo": true,
-   "ly_do_bo": "cắt thiếu"
+  "SGK_KHTN_9_CTST_p7_02": {
+   "cau_hoi": "Quan sát Hình 1.2, hãy kể tên các hoá chất cùng công thức hoá học được ghi trên nhãn trong hình.",
+   "dap_an": "Đá vôi (calcium carbonate, CaCO₃); vôi sống (calcium oxide, CaO); glucose (C₆H₁₂O₆); saccharose (C₁₂H₂₂O₁₁).",
+   "bo": false,
+   "ly_do_bo": ""
   },
   "SGK_KHTN_9_KNTT_p12_04": {
    "cau_hoi": "Quan sát Hình 1.12, hãy cho biết chủ đề của bài thuyết trình mẫu được minh hoạ bằng phần mềm trình chiếu là gì?",
    "dap_an": "Báo cáo kết quả khảo sát thực tế về một số bệnh đường tiêu hoá và vấn đề vệ sinh an toàn thực phẩm tại địa phương.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p7_02": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết khe tạo ra vật sáng có hình dạng chữ cái gì và được đánh số thứ tự bao nhiêu trong bộ dụng cụ?",
+   "dap_an": "Khe có hình chữ F và được đánh số thứ tự (5).",
    "bo": false,
    "ly_do_bo": ""
   }

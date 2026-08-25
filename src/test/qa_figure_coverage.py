@@ -15,6 +15,18 @@ cho ta một tỉ lệ phủ trên **toàn bộ quyển**, không tốn một gi
 Chính phép đo này đã lộ ra lỗi ▲ của Chân trời sáng tạo (D-121): CD đạt 92--97%,
 KNTT 95--96%, còn CTST chỉ **51--65%** --- và nguyên nhân là một ký tự.
 
+## HẠN CHẾ LỚN NHẤT: phép đo này KHÔNG thấy khung cắt sai vùng
+
+Nó trả lời *"có khung cắt nào mang nhãn `Hình A.B` không"*, KHÔNG trả lời *"khung
+cắt có đúng vùng hình không"*. Hai câu hỏi khác nhau, và người duyệt tay đã lộ ra
+khoảng cách giữa chúng (D-125): **KNTT đạt 95--96% độ phủ nhãn trong khi 17,5%
+khung cắt là dải dọc hẹp** (rộng < 20% chiều rộng trang và cao > 1,5× rộng) --- ví
+dụ `8_KNTT` trang 6, `Hình 1.1` là hình ghép ba panel rộng ~865 px mà khung cắt chỉ
+ra 135×289 px.
+
+Vì vậy: **độ phủ cao KHÔNG có nghĩa khung cắt đúng.** Đừng dùng riêng con số này để
+kết luận chất lượng luồng ảnh; phải kèm QA bằng mắt hoặc một phép đo hình học.
+
 ## Giới hạn phải nói rõ khi trích số
 
 Nhãn trong chữ có thể là **tham chiếu thân bài** ("Quan sát Hình 2.1...") chứ
