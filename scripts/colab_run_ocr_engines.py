@@ -171,6 +171,18 @@ def _load_vlm(model_id: str, torch):
     major = int(str(transformers.__version__).split(".")[0])
     dtype_kw = ({"dtype": torch.bfloat16} if major >= 5
                 else {"torch_dtype": torch.bfloat16})
+    if major >= 5:
+        # ĐO ĐƯỢC trên T4, ba lượt: transformers 5.15.1 nạp Nanonets-OCR2-3B với
+        # `lm_head.weight MISSING` và model sinh token ngẫu nhiên — BA LƯỢT CHO BA
+        # CHUỖI KHÁC HẲN NHAU dù `do_sample=False`. Greedy mà output đổi giữa các
+        # lượt nạp nghĩa là TRỌNG SỐ đổi, tức lm_head khởi tạo ngẫu nhiên.
+        # `tie_weights()` ở dưới chạy sau khi model đã dựng nên không cứu được.
+        print(f"!! transformers {transformers.__version__} (>=5) — bản 5.x ĐÃ ĐO "
+              "là nạp hỏng lm_head của Nanonets-OCR2-3B (model sinh RÁC, không "
+              "phải đọc kém).", flush=True)
+        print("!! Nếu chữ đọc ra là token ngẫu nhiên: "
+              "`pip install -U 'transformers>=4.49,<5'` rồi Runtime -> Restart.",
+              flush=True)
 
     loi = []
     for ten in _AUTO_CLASSES:

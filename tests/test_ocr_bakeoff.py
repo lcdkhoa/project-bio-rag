@@ -1059,3 +1059,41 @@ class TestTieGateIsLoud:
 
         assert mod._tie_da_xay_ra(_Khong(tie_roi=False)) is True
         assert "không tìm thấy lm_head" in capsys.readouterr().out
+
+
+class TestTransformers5Warning:
+    """transformers 5.x nạp hỏng lm_head của Nanonets — phải cảnh báo TRƯỚC.
+
+    Bằng chứng (T4, 2026-08-26): ba lượt nạp cho ba chuỗi rác KHÁC HẲN nhau dù
+    `do_sample=False`. Greedy + cùng ảnh + cùng prompt mà output đổi giữa các
+    lượt nạp => trọng số đổi mỗi lượt => lm_head khởi tạo ngẫu nhiên.
+    """
+
+    @staticmethod
+    def _loader():
+        return TestColabEngineLoader._loader()
+
+    def _chay(self, monkeypatch, capsys, version):
+        import torch
+        import transformers
+
+        mod = self._loader()
+
+        class _Cls:
+            @staticmethod
+            def from_pretrained(*a, **k):
+                return TestTieWeightsGate._Model(tie_roi=True)
+
+        monkeypatch.setattr(transformers, "AutoModelForImageTextToText", _Cls,
+                            raising=False)
+        monkeypatch.setattr(transformers, "__version__", version, raising=False)
+        mod._load_vlm("x/y", torch)
+        return capsys.readouterr().out
+
+    def test_warns_on_5x(self, monkeypatch, capsys):
+        out = self._chay(monkeypatch, capsys, "5.15.1")
+        assert "transformers>=4.49,<5" in out and "RÁC" in out
+
+    def test_stays_quiet_on_4x(self, monkeypatch, capsys):
+        out = self._chay(monkeypatch, capsys, "4.49.0")
+        assert "transformers>=4.49,<5" not in out
