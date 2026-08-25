@@ -54,6 +54,7 @@ if str(ROOT) not in sys.path:
 from src.config import DATA_DIR, MANIFEST_DIR  # noqa: E402
 from src.etl.book.manifest import book_id_from_source_name, load_manifest  # noqa: E402
 from src.etl.image_processor import make_image_processor  # noqa: E402
+from src.etl.layout.loader import SPINE_UNTRUSTED_FLAGS  # noqa: E402
 from src.etl.page_source import discover_page_sources  # noqa: E402
 
 logging.basicConfig(level=logging.WARNING,
@@ -85,7 +86,7 @@ def page_regions(processor, source, page_number: int):
     return list(detection["regions"]), width, height, text_lines
 
 
-def scan(source, manifest, pages: list) -> dict:
+def scan(source, manifest, pages: list, chon_theo: str = "bai") -> dict:
     processor = make_image_processor(source.name)
     bai_of_page = {int(p["page_index"]): p.get("bai_so")
                    for p in manifest.pages}
@@ -134,7 +135,15 @@ def scan(source, manifest, pages: list) -> dict:
         missing = [n for n in range(1, max(indices) + 1) if n not in indices]
         if missing:
             gaps[bai] = missing
-    return {"found": {b: sorted(v) for b, v in sorted(found.items())},
+    # Cờ spine đọc từ manifest, dùng ĐÚNG hằng số mà đường text dùng để quyết
+    # có ghi `bai_so` vào metadata hay không — hai chỗ phải nói cùng một thứ.
+    co_spine = sorted({f["kind"] for f in (getattr(manifest, "flags", None) or [])
+                       if f.get("kind") in SPINE_UNTRUSTED_FLAGS})
+    return {"spine_tin_duoc": not co_spine, "co_spine": co_spine,
+            "chon_theo": chon_theo,
+            "pages_with_bai": sum(1 for pg in pages
+                                  if bai_of_page.get(pg) is not None),
+            "found": {b: sorted(v) for b, v in sorted(found.items())},
             "gaps": gaps, "misassigned": misassigned,
             "unlabelled": unlabelled, "rows": rows,
             "oversized": oversized, "crop_stats": crop_stats,
@@ -151,13 +160,34 @@ def report(book: str, result: dict) -> str:
     found = result["found"]
     total = sum(len(v) for v in found.values())
     missing = sum(len(v) for v in result["gaps"].values())
-    lines = [f"\n=== G4 {book}",
+    # Spine chưa đáng tin thì `misassigned` KHÔNG phân giải được: "Hình 7.4 nằm
+    # ở trang mà manifest ghi Bài 6" có thể là crop gán sai, mà cũng có thể là
+    # manifest ghi sai Bài. In một con số ở đây là đọc như "đã kiểm và có 1 lỗi",
+    # trong khi sự thật là "kiểm được nhưng không quy trách nhiệm được".
+    # Cùng lớp bẫy với D-96 ở bake-off OCR (thiếu dữ liệu ra điểm hoàn hảo).
+    tin = result.get("spine_tin_duoc", True)
+    nhan = "G4" if tin else "G4 (SPINE CHƯA TIN ĐƯỢC)"
+    if tin:
+        dong_sai_bai = f"  gán SAI Bài           : {len(result['misassigned'])}"
+    else:
+        dong_sai_bai = (f"  lệch Bài (KHÔNG quy được lỗi cho ai)"
+                        f" : {len(result['misassigned'])}")
+    lines = [f"\n=== {nhan} {book}",
              f"  hình có nhãn đọc được : {total}",
              f"  hình KHÔNG có nhãn    : {result['unlabelled']}",
-             f"  gán SAI Bài           : {len(result['misassigned'])}",
-             f"  thiếu (cận dưới)      : {missing}",
+             dong_sai_bai,
+             (f"  thiếu (cận dưới)      : {missing}"
+              if result.get("chon_theo", "bai") == "bai" else
+              f"  thiếu                 : KHÔNG ĐỌC ĐƯỢC ({missing} khoảng trống,"
+              f" nhưng mẫu là trang RỜI nên phần lớn chỉ là hình chưa quét tới)"),
              f"  crop nghi cắt lấn     : {len(result['oversized'])}"
              f" / {len(result['crop_stats'])} crop"]
+    if not tin:
+        lines.append(f"  * Quyển này mang cờ {result.get('co_spine')} nên số Bài "
+                     f"trong manifest CHƯA đáng tin.")
+        lines.append("  * Đọc được: 'B liên tục 1..max', độ phủ, cờ cắt lấn.")
+        lines.append("  * KHÔNG đọc được: hình có gán đúng Bài không. Phải QA "
+                     "bằng MẮT trước khi công bố, và ghi rõ trong báo cáo.")
     for bai, indices in found.items():
         gap = result["gaps"].get(bai)
         mark = f"   THIẾU {gap}" if gap else ""
@@ -179,6 +209,10 @@ def main() -> int:
     parser.add_argument("--bai", default="", help="danh sách số Bài, ví dụ 1,2,3")
     parser.add_argument("--bai-per-book", type=int, default=3)
     parser.add_argument("--pages", default="", help="danh sách trang nguồn")
+    parser.add_argument(
+        "--trang-mau", type=int, default=0,
+        help="quét N trang rải đều thay vì chọn theo Bài — dùng khi quyển chưa "
+             "có spine đáng tin, hoặc muốn mẫu trải rộng cả sách")
     parser.add_argument("--out", type=Path, default=None, help="ghi JSON kết quả")
     args = parser.parse_args()
 
@@ -192,15 +226,29 @@ def main() -> int:
             return 1
         manifest = load_manifest(
             Path(MANIFEST_DIR) / f"{book_id_from_source_name(book)}.json")
+        chon_theo = "bai"
         if args.pages:
             pages = [int(x) for x in args.pages.split(",") if x.strip()]
+            chon_theo = "trang_mau"      # trang tự chọn cũng không phủ hết Bài
+        elif args.trang_mau:
+            # Rải đều, bỏ 10 trang đầu (bìa/mục lục) — cùng quy ước Algorithm 1
+            # của báo cáo, để mẫu G4 và mẫu bộ test nói về cùng một phần sách.
+            body = [int(p["page_index"]) for p in manifest.pages][10:]
+            step = max(1, len(body) // args.trang_mau)
+            pages = body[::step][:args.trang_mau]
+            chon_theo = "trang_mau"
         else:
             numbers = ([int(x) for x in args.bai.split(",") if x.strip()]
                        if args.bai else
                        sorted({p["bai_so"] for p in manifest.pages
                                if p.get("bai_so")})[:args.bai_per_book])
             pages = pages_for_bai(manifest, numbers)
-        result = scan(source, manifest, pages)
+            if not pages:
+                print(f"[ERR] {book}: chọn theo Bài ra 0 trang. Dùng "
+                      f"`--trang-mau N` hoặc `--pages`. KHÔNG in báo cáo rỗng "
+                      f"như thể đã đạt.")
+                return 1
+        result = scan(source, manifest, pages, chon_theo=chon_theo)
         payload[book] = result
         text.append(report(book, result))
         print(report(book, result), flush=True)
