@@ -1239,3 +1239,54 @@ class TestEngineRunSignature:
         assert '"table" if kind == "bang" else "text"' in src
         assert "client.content_extract(" in src
         assert "client.two_step_extract(" not in src   # còn nhắc trong docstring là được
+
+
+class TestDuoiThua:
+    """Engine đọc ĐÚNG phần chính rồi VIẾT TIẾP một đoạn không có trên ảnh.
+
+    Dạng bịa khác D-47 (Vintern thay hẳn nội dung): ở đây phần đầu đúng nên mọi
+    chỉ số đều đẹp, mà đoạn đuôi vẫn đi thẳng vào chunk và thành câu trả lời cho
+    học sinh. Đo trên 9 ô thật của MinerU: 3/9 ô có đuôi bịa.
+    """
+
+    NGUOI = "khí CO₂ từ tế bào được máu chuyển tới phổi để bảo vệ chăm sóc"
+
+    def test_a_clean_reading_is_not_flagged(self):
+        from src.test.ocr_bakeoff import dem_duoi_thua
+
+        items = [{"id": "c1", "kind": "cong_thuc", "may_doc": "x"}]
+
+        t = dem_duoi_thua(items, {"c1": self.NGUOI}, {"c1": self.NGUOI})
+
+        assert t["o_thua"] == [] and t["o_cham"] == 1
+
+    def test_a_hallucinated_tail_is_flagged_with_the_tail_shown(self):
+        from src.test.ocr_bakeoff import dem_duoi_thua
+
+        items = [{"id": "c1", "kind": "cong_thuc", "may_doc": "x"}]
+        doc = self.NGUOI + " cải axon, hệ, hỗn và thêm một đoạn không có"
+
+        t = dem_duoi_thua(items, {"c1": self.NGUOI}, {"c1": doc})
+
+        assert len(t["o_thua"]) == 1
+        oid, gap, duoi = t["o_thua"][0]
+        assert oid == "c1" and gap > 1.2
+        assert "cải axon" in duoi        # phải CHỈ RA đoạn thừa, không chỉ đếm
+
+    def test_table_cells_are_exempt(self):
+        """Người gõ theo `|`, engine xuất Markdown/HTML — dài hơn là FORMAT."""
+        from src.test.ocr_bakeoff import dem_duoi_thua
+
+        items = [{"id": "b1", "kind": "bang", "may_doc": "x"}]
+
+        t = dem_duoi_thua(items, {"b1": "Năm | 1988"},
+                          {"b1": "| Năm | 1988 |\n|---|---|\n" * 3})
+
+        assert t["o_thua"] == [] and t["o_cham"] == 0
+
+    def test_the_threshold_leaves_room_on_both_sides(self):
+        """Chốt lại phép hiệu chỉnh: 1,3 chỉ để biên 0,01 ở ca sát nhất."""
+        from src.test.ocr_bakeoff import DUOI_THUA_MAX
+
+        assert DUOI_THUA_MAX < 1.31      # bắt được ca sát nhất đã đo
+        assert DUOI_THUA_MAX > 1.02      # tha ô đọc đúng đã đo

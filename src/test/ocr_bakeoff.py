@@ -286,6 +286,48 @@ def dai_gap(chuan: str, doc: str) -> float:
     return len(str(doc or "").strip()) / n if n else 0.0
 
 
+# Ngưỡng "đuôi thừa". Hiệu chỉnh trên 9 ô THẬT của MinerU (2026-08-26), đo chứ
+# không ước lượng:
+#   ô đọc đúng      p121_07 = 1,00 · p121_04 = 1,02 · p21_02 = 1,00
+#   ô có đuôi bịa   p121_08 = 1,31 · p21_01 = 1,76 · p121_02 = 2,00
+# 1,3 bắt được cả ba nhưng biên chỉ 0,01 ở ca sát nhất — quá mỏng để tin. 1,2 để
+# lại biên 0,18 phía dưới và 0,11 phía trên, và vẫn tha cho ô mà bản người gõ
+# thiếu vài từ. Ô BẢNG được MIỄN: bản người gõ theo `|` còn engine xuất
+# Markdown/HTML nên dài hơn là chuyện FORMAT, không phải bịa.
+DUOI_THUA_MAX = 1.2
+
+
+def dem_duoi_thua(items, gold, hyp) -> dict:
+    """Đếm ô mà engine viết DÀI HƠN bản người đáng kể — nghi bịa phần đuôi.
+
+    Đây là dạng bịa khác với D-47 (Vintern thay nội dung bằng chuyện khác): ở đây
+    engine đọc ĐÚNG phần chính rồi **viết tiếp** một đoạn không có trên ảnh. Nguy
+    hiểm hơn lỗi dấu cho production, vì đoạn đó đi thẳng vào chunk và trở thành
+    câu trả lời cho học sinh — đúng thứ nguyên tắc 1 cấm.
+
+    **Chưa biết nó có phải artefact của việc chấm trên CROP hay không**: crop cắt
+    giữa câu nên model có thể đang cố "hoàn thành" câu. Trên cả trang có thể khác.
+    Đó là câu hỏi mở, không phải kết luận — nên hàm này ĐẾM và LIỆT KÊ, không loại.
+    """
+    o_thua = []
+    o_cham = 0
+    for it in items:
+        chuan = str(gold.get(it["id"], "") or "").strip()
+        if (not chuan or chuan == KHONG_DOC_DUOC or it["id"] not in hyp
+                or it.get("kind") == ItemKind.BANG.value):
+            continue
+        doc = str(hyp[it["id"]])
+        if not doc.strip():
+            continue
+        o_cham += 1
+        g = dai_gap(chuan, doc)
+        if g > DUOI_THUA_MAX:
+            o_thua.append((it["id"], round(g, 2), doc[len(chuan):][:60]))
+    o_thua.sort(key=lambda x: -x[1])
+    return {"o_thua": o_thua, "o_cham": o_cham,
+            "ty_le": round(len(o_thua) / o_cham, 4) if o_cham else 0.0}
+
+
 def nghi_model_hong(items, gold, hyp) -> dict:
     """Engine có đang SINH RÁC thay vì đọc sai không.
 
@@ -976,6 +1018,21 @@ def cmd_compare(out_dir: Path) -> int:
                   "sai dtype, checkpoint thiếu).")
             print("   ĐỪNG ghi vào báo cáo là 'model đọc kém tiếng Việt' — đó là "
                   "kết luận SAI về một model có thể tốt (D-99, D-101).")
+
+    for ten, st in bang[1:]:
+        f = json.loads((out_dir / f"engine_{ten}.json").read_text(encoding="utf-8"))
+        t = dem_duoi_thua(items, gold, f)
+        if t["o_thua"]:
+            print("")
+            print(f"!! {ten}: {len(t['o_thua'])}/{t['o_cham']} ô "
+                  f"({t['ty_le']:.1%}) viết DÀI HƠN bản người >{DUOI_THUA_MAX:g}× "
+                  "-> nghi BỊA phần đuôi.")
+            for oid, g, duoi in t["o_thua"][:5]:
+                print(f"   {oid}  {g}×  đuôi: {duoi!r}")
+            print("   Bịa là căn cứ LOẠI (nguyên tắc 1, D-47) — nhưng MỞ RA XEM "
+                  "trước khi kết luận:")
+            print("   crop cắt giữa câu nên model có thể đang 'hoàn thành' câu; "
+                  "trên cả trang có thể khác.")
 
     goc = bang[0][1]
     print("\nLuật chốt (thiết kế §3.2): một engine chỉ THẮNG khi nó **không tệ "
