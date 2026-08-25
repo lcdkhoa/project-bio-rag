@@ -307,8 +307,15 @@ HTML_HEAD = """<!doctype html><meta charset="utf-8">
             padding:12px 16px;border-radius:6px;margin:16px 0}
  @media(prefers-color-scheme:dark){.huong-dan{background:#3a3000;color:#ffe9a3}}
  .o{border:1px solid #8884;border-radius:10px;padding:16px;margin:18px 0;
-    display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:18px}
- @media(max-width:820px){.o{grid-template-columns:1fr}}
+    display:grid;grid-template-columns:minmax(380px,55%) 1fr;gap:18px}
+ @media(max-width:980px){.o{grid-template-columns:1fr}}
+ .o.chua-xem{border-color:#e0a800;border-width:2px}
+ .o.da-xem{border-color:#2e9e4f}
+ .uu-tien{background:#e0a80022;border-left:4px solid #e0a800;padding:6px 10px;
+          border-radius:5px;font-size:13px;margin-bottom:8px}
+ .btn-xem{background:#e0a800;margin-top:8px}
+ .btn-xem.roi{background:#2e9e4f}
+ button:disabled{background:#8886;cursor:not-allowed}
  .o img{width:100%;height:auto;border:1px solid #8884;border-radius:6px;background:#fff}
  .ma{font:12px/1.45 ui-monospace,monospace;color:#8a8a8a;word-break:break-word}
  label{display:block;font-weight:600;margin:10px 0 4px;font-size:13px}
@@ -326,7 +333,7 @@ HTML_HEAD = """<!doctype html><meta charset="utf-8">
 </style>
 <h1>Phiếu duyệt câu hỏi sinh từ HÌNH</h1>
 <div class="thanh">
-  <button onclick="xuat()">Tải phieu_nguoi.json</button>
+  <button id="nut-tai" onclick="xuat()">Tải phieu_nguoi.json</button>
   <span class="dem" id="dem"></span>
 </div>
 <div class="huong-dan">
@@ -353,16 +360,34 @@ HTML_HEAD = """<!doctype html><meta charset="utf-8">
 HTML_TAIL = """
 <script>
 const bd = Date.now();
+
+// Một ô coi là XONG khi: đã tick Bỏ, HOẶC (đã bấm "Tôi đã xem ảnh" VÀ có đủ
+// câu hỏi + đáp án). Điều kiện "đã xem ảnh" là chủ đích: lượt duyệt trước cho
+// thấy khi mọi ô đã có sẵn chữ trông hợp lý thì thao tác rẻ nhất là cuộn qua,
+// và phiếu xuất ra vẫn trông như đã duyệt đủ.
+function daXem(btn){
+  const o = btn.closest('.o');
+  o.classList.remove('chua-xem'); o.classList.add('da-xem');
+  o.dataset.daXem = '1';
+  btn.textContent = 'Đã xem ảnh ✓'; btn.classList.add('roi');
+  dem();
+}
+function oXong(e){
+  if (e.querySelector('.chk').checked) return true;
+  const q = e.querySelector('.q').value.trim();
+  const a = e.querySelector('.a').value.trim();
+  return e.dataset.daXem === '1' && q && a;
+}
 function dem(){
-  const o = document.querySelectorAll('.o').length;
-  let xong = 0;
-  document.querySelectorAll('.o').forEach(e=>{
-    const bo = e.querySelector('.chk').checked;
-    const q = e.querySelector('.q').value.trim();
-    const a = e.querySelector('.a').value.trim();
-    if (bo || (q && a)) xong++;
-  });
-  document.getElementById('dem').textContent = xong + '/' + o + ' ô đã xong';
+  const os = [...document.querySelectorAll('.o')];
+  const xong = os.filter(oXong).length;
+  const el = document.getElementById('dem');
+  el.textContent = xong + '/' + os.length + ' ô đã xong';
+  const nut = document.getElementById('nut-tai');
+  nut.disabled = xong < os.length;
+  nut.title = nut.disabled
+    ? 'Còn ' + (os.length - xong) + ' ô chưa bấm "Tôi đã xem ảnh" hoặc chưa đủ câu/đáp án'
+    : '';
 }
 document.addEventListener('input', dem);
 document.addEventListener('change', dem);
@@ -392,17 +417,32 @@ def _esc(x) -> str:
             .replace(">", "&gt;").replace('"', "&quot;"))
 
 
-def lam_phieu_html(items: List[Dict], out_dir: Path) -> Path:
+def lam_phieu_html(items: List[Dict], out_dir: Path,
+                   bo_qua_o_da_bo: bool = False) -> Path:
     """Trang HTML cục bộ: ảnh cạnh ô nhập, nháp điền sẵn, xuất lại JSON.
 
     Đọc nháp từ `nhap_llm.json` và câu người đã điền từ `phieu_nguoi.json` (nếu
     có) — mở lại trang giữa chừng thì không mất việc đã làm.
+
+    `bo_qua_o_da_bo=True` (lượt duyệt thứ hai): ẩn hẳn những ô người đã tick Bỏ
+    và xếp ô mà mô hình **tự khai không chắc** lên đầu. Trang cũng buộc bấm
+    "Đã xem ảnh" ở từng ô trước khi cho xuất --- lượt 1 cho thấy khi mọi ô đã có
+    sẵn chữ trông hợp lý thì thao tác rẻ nhất là cuộn qua (48 ô trong 2,3 phút,
+    40 ô giữ nguyên 100% nháp). Nhãn "người duyệt" là một khẳng định trong báo
+    cáo, nên nó phải tốn đúng cái công mà nó tuyên bố.
     """
     nhap_p = out_dir / "nhap_llm.json"
     nhap = json.loads(nhap_p.read_text(encoding="utf-8")) if nhap_p.exists() else {}
     cu_p = out_dir / "phieu_nguoi.json"
     cu = (json.loads(cu_p.read_text(encoding="utf-8")).get("traloi", {})
           if cu_p.exists() else {})
+
+    if bo_qua_o_da_bo:
+        items = [it for it in items if not (cu.get(it["id"]) or {}).get("bo")]
+    # Ô mô hình tự khai KHÔNG chắc lên đầu: đó là những ô nhiều khả năng sai nhất,
+    # và người duyệt thường mất tập trung dần về cuối danh sách.
+    items = sorted(items, key=lambda it: (
+        (nhap.get(it["id"]) or {}).get("chac_chan") is not False, it["id"]))
 
     phan = [HTML_HEAD]
     for it in items:
@@ -412,10 +452,13 @@ def lam_phieu_html(items: List[Dict], out_dir: Path) -> Path:
         a = d.get("dap_an") or n.get("dap_an") or ""
         # ảnh nằm cùng thư mục với file HTML -> đường dẫn tương đối
         anh = "crops/" + Path(it["anh"]).name
-        canh_bao = ("" if n.get("chac_chan") is not False else
+        khong_chac = n.get("chac_chan") is False
+        canh_bao = ("" if not khong_chac else
                     '<span class="nhan khongchac">mô hình tự khai KHÔNG chắc</span>')
+        uu_tien = ('<div class="uu-tien">Mô hình <b>tự khai không chắc</b> về ô '
+                   'này — đọc kỹ hơn bình thường.</div>' if khong_chac else "")
         phan.append(f"""
-<div class="o" data-id="{_esc(it['id'])}">
+<div class="o chua-xem" data-id="{_esc(it['id'])}">
   <div>
     <img src="{_esc(anh)}" alt="{_esc(it['id'])}" loading="lazy">
     <div class="ma"><b>{_esc(it['quyen'])}</b> · trang in {it['trang']} ·
@@ -424,6 +467,8 @@ def lam_phieu_html(items: List[Dict], out_dir: Path) -> Path:
     <div class="ma">chữ trong hình: {_esc(it['crop_text'][:220]) or '(trống)'}</div>
   </div>
   <div>
+    {uu_tien}
+    <button type="button" class="btn-xem" onclick="daXem(this)">Tôi đã xem ảnh</button>
     <label>Câu hỏi</label>
     <textarea class="q" rows="4">{_esc(q)}</textarea>
     <label>Đáp án chuẩn</label>
@@ -497,6 +542,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--chon", action="store_true",
                     help="máy chọn crop + chép ảnh (chạy trước)")
+    ap.add_argument("--luot2", action="store_true",
+                    help="phiếu duyệt LƯỢT 2: ẩn ô đã bỏ, ưu tiên ô model không "
+                         "chắc, buộc bấm 'Tôi đã xem ảnh' mới cho xuất")
     ap.add_argument("--bu", action="store_true",
                     help="chọn hình THAY THẾ cho những ô người đã tick Bỏ")
     ap.add_argument("--nhap", action="store_true",
@@ -565,7 +613,7 @@ def main() -> int:
     if a.phieu:
         items = json.loads((out_dir / "items.json").read_text(encoding="utf-8"))
         p = lam_phieu(items, out_dir)
-        h = lam_phieu_html(items, out_dir)
+        h = lam_phieu_html(items, out_dir, bo_qua_o_da_bo=a.luot2)
         print(f"Phiếu JSON : {p}")
         print(f"Phiếu HTML : {h}")
         print("Mở file HTML bằng trình duyệt, nhìn ảnh rồi điền, bấm nút tải "
