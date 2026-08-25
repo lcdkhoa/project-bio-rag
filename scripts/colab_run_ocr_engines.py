@@ -152,7 +152,21 @@ def main() -> int:
 
     print(f"[{args.engine}] nạp model …", flush=True)
     t0 = time.time()
-    run = ENGINES[args.engine]()
+    try:
+        run = ENGINES[args.engine]()
+    except Exception as exc:
+        # THOÁT KHÁC 0, và nói rõ thiếu gì. Trước bản vá này lỗi nạp model chỉ
+        # in traceback rồi cell notebook chạy tiếp sang `--compare`, in ra bảng
+        # baseline trông như một kết quả bình thường — đúng cái bệnh D-83: một
+        # bước thất bại mà lớp gọi nó vẫn báo thành công.
+        print(f"\n!! NẠP MODEL THẤT BẠI: {type(exc).__name__}: {exc}")
+        print(f"!! Engine {args.engine!r} CHƯA chạy. KHÔNG có engine_"
+              f"{args.engine}.json nào được ghi.")
+        if "paddle" in str(exc).lower():
+            print("!! PaddleOCR cần `paddlepaddle` (framework) cài RIÊNG, và bản "
+                  "GPU không nằm trên PyPI. Dùng engine khác trước — ba engine "
+                  "kia chỉ cần `transformers`.")
+        return 3
     print(f"[{args.engine}] nạp xong trong {time.time() - t0:.0f}s", flush=True)
 
     out_path = Path(args.out_dir) / f"engine_{args.engine}.json"
