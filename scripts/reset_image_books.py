@@ -10,16 +10,19 @@ dựng lại y nguyên những quyển vốn đã đúng.
 
 ## Nó làm đúng hai việc, theo đúng thứ tự
 
-1. **Xoá doc ảnh** của các quyển đó trên cả hai collection, qua
+1. **Hạ cờ `image_extracted`** trong `processing_status` cho đúng các trang đó,
+   để lần chạy sau coi chúng là chưa xử lý.
+2. **Xoá doc ảnh** của các quyển đó trên cả hai collection, qua
    `ImageVectorDB.delete_page_documents`. Bỏ bước này thì doc cũ **sống sót thành
    mồ côi**: `image_id` là hash của chính khung cắt, nên khung cắt đổi là id đổi,
    doc cũ không bị ghi đè mà nằm lại (D-52).
-2. **Hạ cờ `image_extracted`** trong `processing_status` cho đúng các trang đó,
-   để lần chạy sau coi chúng là chưa xử lý.
 
-Thứ tự này quan trọng: xoá doc trước, hạ cờ sau. Nếu hạ cờ trước rồi xoá doc thất
-bại giữa chừng, ta còn một lượt chạy lại sạch; ngược lại thì có doc mồ côi mà
-checkpoint lại nói "đã xong".
+**Thứ tự này đã được sửa sau khi bản đầu hỏng trên dữ liệu thật.** Bản đầu xoá doc
+trước rồi mới hạ cờ, với lập luận "hỏng giữa chừng thì còn một lượt chạy lại sạch".
+Lập luận đó ngược: bước hạ cờ ném lỗi thật, để lại **doc đã xoá + checkpoint vẫn
+nói đã xong**, nên lần chạy sau BỎ QUA các quyển đó và 815 doc biến mất không dấu
+vết. Hạ cờ trước thì trường hợp xấu nhất chỉ là doc cũ nằm lại, mà lần chạy sau
+vẫn dựng lại và `run_etl_image_only` gọi `delete_page_documents` trước khi ghi.
 
 ## Cách dùng
 
@@ -112,7 +115,26 @@ def main() -> int:
         print("\n--thu: không xoá gì.")
         return 0
 
-    # 1) Xoá doc ảnh TRƯỚC (xem docstring về thứ tự)
+    # 1) Hạ cờ checkpoint TRƯỚC (xem docstring về thứ tự).
+    #    Đi qua `ProcessingStatus.update_status` chứ KHÔNG gọi thẳng
+    #    `collection.update(documents=...)`: Chroma sẽ tính lại embedding bằng
+    #    hàm mặc định 384 chiều trong khi collection là 1024 chiều, và ném
+    #    `InvalidArgumentError` -- đúng lỗi đã làm hỏng lượt chạy đầu tiên.
+    from src.etl import ProcessingStatus
+    ps = ProcessingStatus()
+    cap = [(i, d) for v in theo_quyen.values() for i, d in v]
+    for _, d in cap:
+        ps.update_status(
+            page_key=d["page_key"],
+            page_number=int(d["page_number"]),
+            image_extracted=False,
+            image_extraction_version="",
+            pdf_filename=d.get("pdf_filename"),
+        )
+    print(f"\nĐã hạ cờ image_extracted cho {len(cap)} trang "
+          f"(text_indexed giữ nguyên).")
+
+    # 2) Xoá doc ảnh SAU
     from src.rag.image_vectorstore import ImageVectorDB
     vdb = ImageVectorDB()
     da_xoa = 0
@@ -124,22 +146,8 @@ def main() -> int:
                         if m.get("page_number") is not None})
         if pages:
             da_xoa += vdb.delete_page_documents(b, pages)
-    print(f"\nĐã xoá {da_xoa} doc ảnh.")
+    print(f"Đã xoá {da_xoa} doc ảnh.")
 
-    # 2) Hạ cờ checkpoint SAU — ghi lại chính chuỗi JSON trong `documents`,
-    #    giữ nguyên mọi trường khác (đặc biệt `text_indexed`: chỉ luồng ẢNH bị
-    #    reset, chữ đã lập chỉ mục KHÔNG được đụng tới).
-    cap = [(i, d) for v in theo_quyen.values() for i, d in v]
-    for i in range(0, len(cap), 500):
-        lo = cap[i:i + 500]
-        st.update(
-            ids=[i for i, _ in lo],
-            documents=[json.dumps({**d, "image_extracted": False,
-                                   "image_extraction_version": ""})
-                       for _, d in lo],
-        )
-    print(f"Đã hạ cờ image_extracted cho {len(cap)} trang "
-          f"(text_indexed giữ nguyên).")
     print("\nChạy lại: python main.py --image-only")
     return 0
 

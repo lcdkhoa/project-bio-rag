@@ -1,0 +1,315 @@
+{
+ "_huong_dan": "MỞ FILE ẢNH ở trường 'anh' của items.json ra NHÌN, rồi sửa 'cau_hoi' và 'dap_an' cho khớp với thứ NHÌN THẤY. Hai trường này có thể đã được LLM điền sẵn NHÁP — nháp sinh từ chữ OCR quanh hình, model KHÔNG nhìn thấy hình, nên phải kiểm chứ đừng tin. Câu phải trả lời được NHỜ hình, không phải nhờ chữ trên trang. Hình nào không dùng được thì đặt bo=true kèm lý do. Đừng sửa khoá 'id'.",
+ "_bat_dau": 1787664885706,
+ "_ket_thuc": 0,
+ "traloi": {
+  "SGK_KHTN_6_CD_p5_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CD_p6_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CD_p7_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CD_p9_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p6_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p7_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p8_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p9_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p8_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p9_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p10_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p11_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CD_p4_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CD_p8_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CD_p9_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CD_p10_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CTST_p9_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CTST_p11_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CTST_p12_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CTST_p13_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p7_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p8_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p10_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_KNTT_p11_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CD_p4_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CD_p5_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CD_p6_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CD_p7_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CTST_p7_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CTST_p10_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CTST_p11_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_CTST_p12_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p6_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p7_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p8_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p9_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_CD_p5_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_CD_p6_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_CD_p10_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_CD_p11_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p6_01": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p7_02": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p8_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p12_04": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "nhap_chac_chan": null,
+   "bo": false,
+   "ly_do_bo": ""
+  }
+ }
+}

@@ -1,0 +1,954 @@
+<!doctype html><meta charset="utf-8">
+<title>Phiếu duyệt câu hỏi từ HÌNH</title>
+<style>
+ :root{color-scheme:light dark}
+ body{font:15px/1.5 system-ui,sans-serif;margin:0;padding:24px;max-width:1100px;margin-inline:auto}
+ h1{font-size:20px;margin:0 0 4px}
+ .huong-dan{background:#fff8e1;color:#4a3b00;border-left:4px solid #e0a800;
+            padding:12px 16px;border-radius:6px;margin:16px 0}
+ @media(prefers-color-scheme:dark){.huong-dan{background:#3a3000;color:#ffe9a3}}
+ .o{border:1px solid #8884;border-radius:10px;padding:16px;margin:18px 0;
+    display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:18px}
+ @media(max-width:820px){.o{grid-template-columns:1fr}}
+ .o img{width:100%;height:auto;border:1px solid #8884;border-radius:6px;background:#fff}
+ .ma{font:12px/1.45 ui-monospace,monospace;color:#8a8a8a;word-break:break-word}
+ label{display:block;font-weight:600;margin:10px 0 4px;font-size:13px}
+ textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;
+          border:1px solid #8886;border-radius:6px;background:transparent;color:inherit}
+ .bo{margin-top:10px;font-weight:600;color:#c0392b}
+ .thanh{position:sticky;top:0;background:Canvas;padding:12px 0;border-bottom:1px solid #8884;
+        display:flex;gap:12px;align-items:center;z-index:9}
+ button{font:inherit;padding:8px 16px;border-radius:6px;border:1px solid #8886;
+        background:#2d7ff9;color:#fff;cursor:pointer}
+ .dem{color:#8a8a8a;font-size:13px}
+ .nhan{display:inline-block;background:#8882;border-radius:4px;padding:1px 7px;
+       font-size:12px;margin-right:6px}
+ .khongchac{background:#e0a80033;color:#8a6d00}
+</style>
+<h1>Phiếu duyệt câu hỏi sinh từ HÌNH</h1>
+<div class="thanh">
+  <button onclick="xuat()">Tải phieu_nguoi.json</button>
+  <span class="dem" id="dem"></span>
+</div>
+<div class="huong-dan">
+  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> có thể đã được
+  mô hình điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
+  <b>không nhìn thấy hình</b>, nên phải kiểm chứ đừng tin. Câu hỏi phải trả lời
+  được <b>nhờ hình</b>, không phải nhờ chữ trên trang. Hình nào không dùng được
+  thì tick <i>Bỏ</i>. Xong thì bấm <b>Tải phieu_nguoi.json</b> và chép đè file cũ.
+</div>
+
+
+<div class="o" data-id="SGK_KHTN_6_CD_p5_01">
+  <div>
+    <img src="crops/SGK_KHTN_6_CD_p5_01.png" alt="SGK_KHTN_6_CD_p5_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CD</b> · trang in 5 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: hình 1.1 và cho biết những hoạt động nào là hoạt động nghiên cứu khoa học tự nhiên. a) Tìm hiểu vi khuẩn bằng kính b) Tìm hiểu vũ trụ c) Tìm kiếm và thăm dò dầu khí hiên vi ở vùng biên Việt</div>
+    <div class="ma">chữ trong hình: a) Tìm hiểu vi khuẩn bằng kính b) Tìm hiểu vũ trụ c) Tìm kiếm và thăm dò dầu khí hiên vi ở vùng biên Việt Nam ò NT ` ! % d) Tập thê dục e) Vận chuyên xăng, dầu ø) Lai tạo giống cây trồng mới Hình 1.1. Một số hoạt động củ</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CD_p6_02">
+  <div>
+    <img src="crops/SGK_KHTN_6_CD_p6_02.png" alt="SGK_KHTN_6_CD_p6_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CD</b> · trang in 6 ·
+      <span class="nhan">Hình 1.2</span></div>
+    <div class="ma">chú thích máy đọc: hình 1.2 wð và cho biết khoa học tự nhiên có vai trò như thế nào trong cuộc sống của con người. Cho ví dụ minh hoa. qng sản Xuất Về Phát tiện At 1n VAI TRÒ CỦA KHOA HỌC TỰ NHIÊN TRONG CUỘC</div>
+    <div class="ma">chữ trong hình: 2g SỐM S——£0' Hiển: wwð cò kửn, sẻ VAI TRÒ CỦA KHOA HỌC TỰ NHIÊN TRONG CUỘC SỐNG</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CD_p7_03">
+  <div>
+    <img src="crops/SGK_KHTN_6_CD_p7_03.png" alt="SGK_KHTN_6_CD_p7_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CD</b> · trang in 7 ·
+      <span class="nhan">Hình 1.3</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.3. Đói tượng nghiên cứu của khoa học tự nhiên ađds&gt;œ&gt;œ——&lt;= KHOA HỌC TỰ NHIÊN 6</div>
+    <div class="ma">chữ trong hình: b) Thiên văn học nghiên cứu ©) Khoa học Trái Đái nghiên cứu a) Sinh học nghiên cứu các sinh vật vê vũ trụ (các hành tỉnh, về Trái Đât. và sự sông trên Trái Đât. các ngôi sao....). đ) Vát lí nghiên cứu về vật chât, năng l</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CD_p9_04">
+  <div>
+    <img src="crops/SGK_KHTN_6_CD_p9_04.png" alt="SGK_KHTN_6_CD_p9_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CD</b> · trang in 9 ·
+      <span class="nhan">Hình 1.4</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.4. Một số ví dụ về vật sóng và vật không sông KHOA HỌC TỰ NHIÊN 6 ..</div>
+    <div class="ma">chữ trong hình: Tớ ẴSốivy CC: TH TƯ NNGL\Y (CÓ đc VN N6G MGIUNAOANEGSL.ESĐWGA TƯ GUYNGENGSZNR:. vs. ..aaCC.. aðốổẽốỐ cẽ = mang những đặc điêm của sự sông. Hình 1.4. Một số ví dụ về vật sông và vật không sống</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CTST_p6_01">
+  <div>
+    <img src="crops/SGK_KHTN_6_CTST_p6_01.png" alt="SGK_KHTN_6_CTST_p6_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CTST</b> · trang in 6 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1. Thả diều À Hình 1.2. Lấy mẫu nước nghiên cứu</div>
+    <div class="ma">chữ trong hình: äàibÀ bai, Gi0j0 lá =Ẩ=Ẩœ&lt;&lt;Œ À Hình 1.1. Thả diều À Hình 1.2. Lấy mẫu nước nghiên cứu</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CTST_p7_02">
+  <div>
+    <img src="crops/SGK_KHTN_6_CTST_p7_02.png" alt="SGK_KHTN_6_CTST_p7_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CTST</b> · trang in 7 ·
+      <span class="nhan">Hình 1.10</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.9. Sử dụng năng lượng gió để À Hình 1.10. Thạch nhũ tạo ra trong hang động sản xuất điện @ Khoa học tự nhiên có vai trò quan trọng trong: — Hoạt động nghiên cứu khoa học. — Nâng cao n</div>
+    <div class="ma">chữ trong hình: À Hình 1.10. Thạch nhũ tạo ra trong hang động ftè 112m †#nanơ f+nơ°</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CTST_p8_03">
+  <div>
+    <img src="crops/SGK_KHTN_6_CTST_p8_03.png" alt="SGK_KHTN_6_CTST_p8_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CTST</b> · trang in 8 ·
+      <span class="nhan">Hình 2.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 2.1. Sự nảy mầm của hạt đậu À Hình 2.2. Chiếu đèn pin vào quả địa cầu @) Khoa học tự nhiên bao gồm một số lĩnh vực chính như: TU AAIIÃA Cố AC C72 ^A ^A,.UG L⁄/C -.D. CD TA, ^ 3^ÁA., — 2</div>
+    <div class="ma">chữ trong hình: À Hình 2.1. Sự nảy mầm của hạt đậu</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_CTST_p9_04">
+  <div>
+    <img src="crops/SGK_KHTN_6_CTST_p9_04.png" alt="SGK_KHTN_6_CTST_p9_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_CTST</b> · trang in 9 ·
+      <span class="nhan">Hình 2</span></div>
+    <div class="ma">chú thích máy đọc: Hình 2E. MẬ hình chăn nhâi hà cữa tiên tiến A Hình 26. Nông dân xử lí đất chua</div>
+    <div class="ma">chữ trong hình: (trống)</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_KNTT_p8_01">
+  <div>
+    <img src="crops/SGK_KHTN_6_KNTT_p8_01.png" alt="SGK_KHTN_6_KNTT_p8_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_KNTT</b> · trang in 8 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: (trống)</div>
+    <div class="ma">chữ trong hình: 7 =— = c- ĐI - hưmo mg côabuc.&lt;eolDcaobic¬con.- ,E. sảng ,(ANAH NHA _——...... nghiệm kiểm tra. gỈ š- 9 iiếc đũa vào cóc nước thi ta thấy Đem bình thuỷ tinh chụp kín cây bị gãy ở mặt nước. Làm thí nghiệm cây có tiếp tục p</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_KNTT_p9_02">
+  <div>
+    <img src="crops/SGK_KHTN_6_KNTT_p9_02.png" alt="SGK_KHTN_6_KNTT_p9_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_KNTT</b> · trang in 9 ·
+      <span class="nhan">Hình 1.2</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.2, hãy so sánh các phương tiện mà con người sử dụng trong một số lĩnh vực của đời sống khi khoa học và công nghệ còn chưa phát triển và hiện nay. Tìm thêm ví dụ minh hoạ. Khi khoa h</div>
+    <div class="ma">chữ trong hình: Dựa vào Hình 1.2, hãy so sánh các phương tiện mà con người sử dụng trong một số lĩnh vực của đời sống khi khoa học và công nghệ còn chưa phát triển và hiện nay. Tìm thêm ví dụ minh hoạ. Khi khoa học và Khi khoa học và cô</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_KNTT_p10_03">
+  <div>
+    <img src="crops/SGK_KHTN_6_KNTT_p10_03.png" alt="SGK_KHTN_6_KNTT_p10_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_KNTT</b> · trang in 10 ·
+      <span class="nhan">Hình 1.4</span></div>
+    <div class="ma">chú thích máy đọc: (trống)</div>
+    <div class="ma">chữ trong hình: (trống)</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_6_KNTT_p11_04">
+  <div>
+    <img src="crops/SGK_KHTN_6_KNTT_p11_04.png" alt="SGK_KHTN_6_KNTT_p11_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_6_KNTT</b> · trang in 11 ·
+      <span class="nhan">Hình 2.1</span></div>
+    <div class="ma">chú thích máy đọc: (trống)</div>
+    <div class="ma">chữ trong hình: Hình21 Nữ Một số quy địr ©ẹ M_ ®</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CD_p4_01">
+  <div>
+    <img src="crops/SGK_KHTN_7_CD_p4_01.png" alt="SGK_KHTN_7_CD_p4_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CD</b> · trang in 4 ·
+      <span class="nhan">Hình 1</span></div>
+    <div class="ma">chú thích máy đọc: hình 1). Liệu kiểu nằm của hạt có ảnh hưởng đến khả năng nảy mầm của nó hay không? Năm nưửa Năm nghiêng Đ</div>
+    <div class="ma">chữ trong hình: Năm nưửa Năm nghiêng Năm ngang Hình 1. Ba kiêu năm của hạt đỗ</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CD_p8_02">
+  <div>
+    <img src="crops/SGK_KHTN_7_CD_p8_02.png" alt="SGK_KHTN_7_CD_p8_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CD</b> · trang in 8 ·
+      <span class="nhan">Hình 4</span></div>
+    <div class="ma">chú thích máy đọc: hinh 3). In TỐC EHU KỸ Hình 2. Mặt trước đông hỗ đo thời gian hiện số Hình 3. Mặt sau đồng hỗ đo thời gian hiện số 2. Cổng quang điện Công quang điện gôm một bộ phận phát tín hiệu (P) và</div>
+    <div class="ma">chữ trong hình: HN HỦ TWỜN L2 ,HIỆN SỐ Hình 2. Mặt trước đông hỗ đo thời gian hiện số Hình 3. Mặt sau đồng hỗ đo thời gian hiện số 2. Cổng quang điện Công quang điện gôm một bộ phận phát tín hiệu (P) và một bộ phận thu tín hiệu (T} từ b</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CD_p9_03">
+  <div>
+    <img src="crops/SGK_KHTN_7_CD_p9_03.png" alt="SGK_KHTN_7_CD_p9_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CD</b> · trang in 9 ·
+      <span class="nhan">Hình 5</span></div>
+    <div class="ma">chú thích máy đọc: Hình 5. Thí nghiệm đo thời gian chuyển động của xe giữa hai vị trí Quá trình tìm hiểu tự nhiễn bao qỗm các bước:</div>
+    <div class="ma">chữ trong hình: Hh -...ẻ.ẻ.....¬.ằ.. nh... ha ằẽốẽ.. ..,.. .,ố r... xẻ an. ru, cẻẻ.,:.,,.. ..n.ecnnn h thời gian hiện số. Công quang điện I Công quang điện 2 .__ ¿4 38 36 2728 « K5 5 š7 &amp;W 39 6l) 6é? Hình 5. Thí nghiệm đo thời gian chuy</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CD_p10_04">
+  <div>
+    <img src="crops/SGK_KHTN_7_CD_p10_04.png" alt="SGK_KHTN_7_CD_p10_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CD</b> · trang in 10 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1. Sơ đỗ mô tả quả trình chia nhỏ đẳng tiền văng AÃ VU HLE KH MAI TT. (INEVIN: 1. ÝƯJ LG MÃ GÀ] xiên ÀjGI(ƑE LÁ1Y/E ĐẦU: LH ni ng Đê-mô-crít (Demoeritus) cho rằng nều chia nhỏ nhiều l</div>
+    <div class="ma">chữ trong hình: Hình 1.1. Sơ để mô tả quả trình “ha: xxx h: zycx BÊn</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CTST_p9_01">
+  <div>
+    <img src="crops/SGK_KHTN_7_CTST_p9_01.png" alt="SGK_KHTN_7_CTST_p9_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CTST</b> · trang in 9 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1.Hiện tượng mưatựnhiên chính là những kiến thức mới cho bản thân hay cho khoa học. 2. Kĩ năng phân loại Sau khi đã thu thập mẫu vật, dữ liệu để nghiên cứu, các nhà khoa học lựa chọn</div>
+    <div class="ma">chữ trong hình: AÀ Hình 1.1. Hiện tượng mưa tự nhiên 2 Eï nănơ phân loali</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CTST_p11_02">
+  <div>
+    <img src="crops/SGK_KHTN_7_CTST_p11_02.png" alt="SGK_KHTN_7_CTST_p11_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CTST</b> · trang in 11 ·
+      <span class="nhan">Hình 1.4</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.4): (1) POWER: Bật/Tắt nguồn. (2) CHIINPUT: Ngõ kết nối micro. (3) INTEN: Điều chỉnh độ sáng của tín hiệu trên màn hình. (4) EOCUS: Điều chỉnh độ nét của tín hiệu trên màn</div>
+    <div class="ma">chữ trong hình: AÀ Hình 1.4. Mặt trước của dao động kí</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CTST_p12_03">
+  <div>
+    <img src="crops/SGK_KHTN_7_CTST_p12_03.png" alt="SGK_KHTN_7_CTST_p12_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CTST</b> · trang in 12 ·
+      <span class="nhan">Hình 1.5</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.5. Đồng hồ đo thời gian hiện số 12</div>
+    <div class="ma">chữ trong hình: a) Mặt trước À Hình 1.5. Đồn</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_CTST_p13_04">
+  <div>
+    <img src="crops/SGK_KHTN_7_CTST_p13_04.png" alt="SGK_KHTN_7_CTST_p13_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_CTST</b> · trang in 13 ·
+      <span class="nhan">Hình 1.6</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.6. Cổng quang điện » Dao động kí là thiết bị có thể hiển thị đồ thị của tín hiệu điện theo thời gian (giúp chúng ta biết được dạng đồ thị của tín hiệu theo thời gian). se Đồng hồ đo t</div>
+    <div class="ma">chữ trong hình: À Hình 1.6. Cổng quang điện</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_KNTT_p7_01">
+  <div>
+    <img src="crops/SGK_KHTN_7_KNTT_p7_01.png" alt="SGK_KHTN_7_KNTT_p7_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_KNTT</b> · trang in 7 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1a và Hình 1.1b). Kéo lực kế từ từ cho tới khi vật bắt đầu chuyển động đều (lực kế chỉ một giá trị ổn định), thì đọc số chỉ của lực kế. Số chỉ của lực kế là độ lớn của lực ma sát tr</div>
+    <div class="ma">chữ trong hình: 12cm 3cm a) Đo lực ma sát trượt của miếng gỗ có diện tích tiếp xúc là 12 cm x6 cm 3cm 12cm b) Đo lực ma sát trượt của miếng gỗ có diện tích tiếp xúc là 12 cm x 3 cm me Đo lực ma sát trượt của</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_KNTT_p8_02">
+  <div>
+    <img src="crops/SGK_KHTN_7_KNTT_p8_02.png" alt="SGK_KHTN_7_KNTT_p8_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_KNTT</b> · trang in 8 ·
+      <span class="nhan">Hình 1.2</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.2. a) Cháy rừng b) Hạn hán c) Mưa to kèm theo sấm, sét (CƯ 2) Mọt số hiện tượng tự nhiên 2. Kĩ năng liên kết</div>
+    <div class="ma">chữ trong hình: a) Cháy rừng b) Hạn hán c) Mưa to kèm theo sấm, sét (CÔ) Mọi số hiện tượng tự nhiên</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_KNTT_p10_03">
+  <div>
+    <img src="crops/SGK_KHTN_7_KNTT_p10_03.png" alt="SGK_KHTN_7_KNTT_p10_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_KNTT</b> · trang in 10 ·
+      <span class="nhan">Hình 1.3</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.3 và cho biết nguyên nhân nào làm phát thải khí nhà kính nhiều nhất. Hãy tìm hiểu và để xuất biện pháp giảm sự phát thải khí carbon dioxide từ nguồn này. 2. Tìm hiểu thông tin trên s</div>
+    <div class="ma">chữ trong hình: Cácnguồn năng lượng khác Sản xuất điện. % h 10% và nhiệt 25% Xây dựng 6% Biểu đồ tỉ phát thải khí nhà kír</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_7_KNTT_p11_04">
+  <div>
+    <img src="crops/SGK_KHTN_7_KNTT_p11_04.png" alt="SGK_KHTN_7_KNTT_p11_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_7_KNTT</b> · trang in 11 ·
+      <span class="nhan">Hình 1.5</span></div>
+    <div class="ma">chú thích máy đọc: (trống)</div>
+    <div class="ma">chữ trong hình: (CTED) vi tiuốc cú: ông!</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CD_p4_01">
+  <div>
+    <img src="crops/SGK_KHTN_8_CD_p4_01.png" alt="SGK_KHTN_8_CD_p4_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CD</b> · trang in 4 ·
+      <span class="nhan">Hình 1</span></div>
+    <div class="ma">chú thích máy đọc: hình 1), ghi lại thê tích ` của dung địch trong ống đong và báo cáo kết quả trước lớp. Hình I1. Ông đong đựng dung dịch copper(TT] sulfate I. MỘT SỐ DỤNG CỤ VÀ H0Á CHẤT TRONG MÔN KHOA HỌ</div>
+    <div class="ma">chữ trong hình: Hình 1. Ông đong đựng dung dịch copper(II) sulfate</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CD_p5_02">
+  <div>
+    <img src="crops/SGK_KHTN_8_CD_p5_02.png" alt="SGK_KHTN_8_CD_p5_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CD</b> · trang in 5 ·
+      <span class="nhan">Hình 4</span></div>
+    <div class="ma">chú thích máy đọc: hình 2}. z Ẫ Dụng cụ đựng hoá chât Hình 2. Vị trí đặt mắt khi đọc « Công dụng: Dùng đê đựng hoá chât (dạng lỏng, răn). chỉ số thể tích chât lòng «Cách sử dụng: Đôi với dụng cụ bảo quản h</div>
+    <div class="ma">chữ trong hình: » Cách sử dụng ống đong: Rót chất lỏng vào ông đong cho đến gần vạch thẻ tích cần lấy, sau đó dùng ông hút nhỏ giọt nhỏ thêm dân chất lỏng cho đến vạch cân đong. * Lưu ÿ: — Đặt dụng cụ đo thăng đứng. - Đặt tầm mất ngang,</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CD_p6_03">
+  <div>
+    <img src="crops/SGK_KHTN_8_CD_p6_03.png" alt="SGK_KHTN_8_CD_p6_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CD</b> · trang in 6 ·
+      <span class="nhan">Hình 5</span></div>
+    <div class="ma">chú thích máy đọc: Hình 5. Một số dụng cụ lầy hoá chất, khuấy và trộn hoá chất Dụng cụ giữ cô định và để ống nghiệm</div>
+    <div class="ma">chữ trong hình: a] Thia thuy tỉnh bị Đùa thuy tính Hình 5. Một sũ dụng cụ läy hoá chát, khuấy và trận hoa chất</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CD_p7_04">
+  <div>
+    <img src="crops/SGK_KHTN_8_CD_p7_04.png" alt="SGK_KHTN_8_CD_p7_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CD</b> · trang in 7 ·
+      <span class="nhan">Hình 7</span></div>
+    <div class="ma">chú thích máy đọc: Hình 7. Lọ đựng dung dịch</div>
+    <div class="ma">chữ trong hình: Hình 7. Lọ đựng dung dịch</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CTST_p7_01">
+  <div>
+    <img src="crops/SGK_KHTN_8_CTST_p7_01.png" alt="SGK_KHTN_8_CTST_p7_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CTST</b> · trang in 7 ·
+      <span class="nhan">Hình 1.2</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.2. Một số dụng cụ chứa hoá chất NA NI - TL ý .. 1. Y°YA.. TY... .- ..ÍỐ.7 xF . 35s. &lt;- 4G .+;: N. 'A XD... #—.... Ẩ.... -. tt... . 2 M, 3 Để bảo quản các hoá chất rắn nên dùng dụng cụ</div>
+    <div class="ma">chữ trong hình: Ñ/ V/Á Ống nghiệm</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CTST_p10_02">
+  <div>
+    <img src="crops/SGK_KHTN_8_CTST_p10_02.png" alt="SGK_KHTN_8_CTST_p10_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CTST</b> · trang in 10 ·
+      <span class="nhan">Hình 1.8</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.8. Hoá chất trong phòng thực hành Vì sao em không nên lấy hoá chất trong những lọ không có nhãn ghi tên hoá chất? Sau buổi thực hành thí nghiệm, em được phân công dọn đẹp vệ si</div>
+    <div class="ma">chữ trong hình: a) Hoá chất được đựng trong lọ có dán nhãn và phải được đậy kín A Hình 1.8. Hoá c</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CTST_p11_03">
+  <div>
+    <img src="crops/SGK_KHTN_8_CTST_p11_03.png" alt="SGK_KHTN_8_CTST_p11_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CTST</b> · trang in 11 ·
+      <span class="nhan">Hình 1.10</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.10) hay máy chụp hình là dụng cụ dùng để Í14Máy ảnh, ống nhòm thu ảnh thành một ảnh tĩnh hay được sử dụng trong việc thành một loạt các ảnh chuyển phát triển lí năng nào động (gọi là</div>
+    <div class="ma">chữ trong hình: AÀ Hình 1.10. Máy ảnh</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_CTST_p12_04">
+  <div>
+    <img src="crops/SGK_KHTN_8_CTST_p12_04.png" alt="SGK_KHTN_8_CTST_p12_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_CTST</b> · trang in 12 ·
+      <span class="nhan">Hình 1.12</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.11) còn gọi là ống ngắm, có cấu tạo gồm hệ thống kính quang học cho phép người quan sát đặt mắt để quan sát các vật ở xa, có tầm nhìn rộng hơn. Cấu tạo ống nhòm gồm vật kính, thị kín</div>
+    <div class="ma">chữ trong hình: AÁ Hình 1.11. Ống nhòm À Hình 1.12. Băng y tế</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_KNTT_p6_01">
+  <div>
+    <img src="crops/SGK_KHTN_8_KNTT_p6_01.png" alt="SGK_KHTN_8_KNTT_p6_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_KNTT</b> · trang in 6 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1. TCCL: TCCS 51/2008/HCĐG. Hạn sử dụng 3năm kể từ. ngày sẵn xuất a) Chất rắn b) Chất lỏng ©) Chất khí CÔ Một số nhãn hoá chất 2. Quy tắc sử dụng hoá chất an toàn trong phòng thí nghi</div>
+    <div class="ma">chữ trong hình: ME ˆ” :500 g ý HCĐG kểtừ</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_KNTT_p7_02">
+  <div>
+    <img src="crops/SGK_KHTN_8_KNTT_p7_02.png" alt="SGK_KHTN_8_KNTT_p7_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_KNTT</b> · trang in 7 ·
+      <span class="nhan">Hình 1.2</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.2 giới thiệu một số dụng cụ thí nghiệm thông dụng. 1x JzeA dạo _—=- a) Ống nghiệm b) Cốc thuỷ tinh © Bình tam giác d) Phễu lọc e) Ống đong (bình chia độ) .—œe ., Ống hút nhỏ giọt h)</div>
+    <div class="ma">chữ trong hình: Hình 1.2 giới thiệu một số dụng cụ thí nghiệm thông dụng. = số 1á JxxÀ dm ch ng nghiệm b) Cốc thuỷ tỉnh ©) Bình tam giác đ) Phu lọc e) Ống đon (bình chia đ t nhỏ giọt h) Kẹp gỗ amn Một số dụng cụ thí nghiệm</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_KNTT_p8_03">
+  <div>
+    <img src="crops/SGK_KHTN_8_KNTT_p8_03.png" alt="SGK_KHTN_8_KNTT_p8_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_KNTT</b> · trang in 8 ·
+      <span class="nhan">Hình 1.3</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.44) gồm một bao làm bằng cao su, được bọc trong băng vải dài để có thể quấn quanh cánh tay, nối với áp kế đồng hồ bằng đoạn ống ca</div>
+    <div class="ma">chữ trong hình: (GIE/EE)) Mo: s6 thiết bị đo pH các mẫu sau: a) nước máy; b) nước mưa; ; ø) nước vôi trong.</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_8_KNTT_p9_04">
+  <div>
+    <img src="crops/SGK_KHTN_8_KNTT_p9_04.png" alt="SGK_KHTN_8_KNTT_p9_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_8_KNTT</b> · trang in 9 ·
+      <span class="nhan">Hình 1.5</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.5 } Biến áp nguồn Thiết bị đo điện gồm ampe kế và vôn kế: ampe kế đo cường độ dòng điện, vôn kế đo hiệu. điện thế. Khi dùng ampe kế và vôn kế cần chú</div>
+    <div class="ma">chữ trong hình: ẤC -oC POWER SUPPLY3..20 để Ũ “ Ũ 24V Biến áp nguồn</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_CD_p5_01">
+  <div>
+    <img src="crops/SGK_KHTN_9_CD_p5_01.png" alt="SGK_KHTN_9_CD_p5_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_CD</b> · trang in 5 ·
+      <span class="nhan">Hinh 3</span></div>
+    <div class="ma">chú thích máy đọc: Hình 2. Thí nghiệm tán sắc ánh sáng laser nổi với nguồn điện. qua lăng kinh h1 «Được dùng để tạo ra chùm l Ì ta sáng trong một số thí mm nghiệm về ảnh sáng, Thấu kính ø Được làm từ các chấ</div>
+    <div class="ma">chữ trong hình: 1Í Hình 3. Thi nghiệm vẻ sự tạo ảnh của thâu kinh</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_CD_p6_02">
+  <div>
+    <img src="crops/SGK_KHTN_9_CD_p6_02.png" alt="SGK_KHTN_9_CD_p6_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_CD</b> · trang in 6 ·
+      <span class="nhan">Hình 6</span></div>
+    <div class="ma">chú thích máy đọc: Hình 6. Thi nghiệm điều chế —— và thử tính chất của ethylene Ống dẫn bằng cao su _. „ Được tạo từ vật liệu đàn hồi, có dạng ống dẫn.</div>
+    <div class="ma">chữ trong hình: Hình 6. Thí nghiệm điều chế</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_CD_p10_03">
+  <div>
+    <img src="crops/SGK_KHTN_9_CD_p10_03.png" alt="SGK_KHTN_9_CD_p10_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_CD</b> · trang in 10 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: hình 1.1). Ở hoạt động này, bộ đội đã tác dụng lực và làm địch chuyên các khẩu pháo, ta nói bộ đội đã thực hiện công cơ học. Vậy công cơ học được xác định như thể nảo? `&quot; I. CÔNG CƠ HỌC Hì</div>
+    <div class="ma">chữ trong hình: 3: Trong chiến — kéo những Ì trận địa trết kilômẻt (hìn Ở hoạt động địch chuyền hiện công cc như thê nảo' I. CÔNG CƠ HỌC &quot;B Thuờa li crÄ— sa Hình 1.1. Bộ đội kéo `—</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_CD_p11_04">
+  <div>
+    <img src="crops/SGK_KHTN_9_CD_p11_04.png" alt="SGK_KHTN_9_CD_p11_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_CD</b> · trang in 11 ·
+      <span class="nhan">Hình 1.3</span></div>
+    <div class="ma">chú thích máy đọc: hình 1.3 cỏ sinh công hay không? Vì sao? =4) a) Lực để kéo thùng hàng đi lên của cần cầu — b) Lực để xách túi của hảnh khách khi đứng chờ tàu Hình 1.3. Lực tác dụng lên vật trang một số trư</div>
+    <div class="ma">chữ trong hình: =2 2. Các lực được mỏ tả trong hình 1.3 cỏ sinh công hay không? Vì sao? a) Lực để kéo thùng hàng đi lên của cần câu — b} Lực để xách túi của hành khách kh Hình 1.3. Lực tác dụng lên vật trang một số trường hợp</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_KNTT_p6_01">
+  <div>
+    <img src="crops/SGK_KHTN_9_KNTT_p6_01.png" alt="SGK_KHTN_9_KNTT_p6_01" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_KNTT</b> · trang in 6 ·
+      <span class="nhan">Hình 1.1</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.1a). ”~ a) Đèn 12V-21W ) Đèn laser Cũng có thể sử dụng nguồn laser trong phòng thí nghiệm (Hình 1.1b), mm Nguồn sáng mỗi tia sáng được điều khiển bằng một công tắc trên đèn. ; Z1 vu</div>
+    <div class="ma">chữ trong hình: Nối với nguồn điện 21W b) Đèn laser mm Nguồn sáng</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_KNTT_p7_02">
+  <div>
+    <img src="crops/SGK_KHTN_9_KNTT_p7_02.png" alt="SGK_KHTN_9_KNTT_p7_02" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_KNTT</b> · trang in 7 ·
+      <span class="nhan">Hình 1.3</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.3) bao gồm: thấu kính hội tụ (1), thấu kính phân kì (2), màn chắn (3) và vật sáng được tạo ra bằng cách chiếu sáng từ đèn (4) qua khe hình chữ F (5). Để dịch chuyển vật sáng, thấu k</div>
+    <div class="ma">chữ trong hình: (trống)</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_KNTT_p8_03">
+  <div>
+    <img src="crops/SGK_KHTN_9_KNTT_p8_03.png" alt="SGK_KHTN_9_KNTT_p8_03" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_KNTT</b> · trang in 8 ·
+      <span class="nhan">Hình 1.10</span></div>
+    <div class="ma">chú thích máy đọc: HìNH 1:9 1U (TEE) sinh cầu Đựng chất lỏng, pha chế dung dịch, đun nóng, chưng cất. Lưới tản nhiệt Dùng để phân tán nhiệt khi đốt.</div>
+    <div class="ma">chữ trong hình: (trống)</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<div class="o" data-id="SGK_KHTN_9_KNTT_p12_04">
+  <div>
+    <img src="crops/SGK_KHTN_9_KNTT_p12_04.png" alt="SGK_KHTN_9_KNTT_p12_04" loading="lazy">
+    <div class="ma"><b>SGK_KHTN_9_KNTT</b> · trang in 12 ·
+      <span class="nhan">Hình 1.12</span></div>
+    <div class="ma">chú thích máy đọc: Hình 1.12): - LẠ. (&amp; BÁO CÁO KẾT QUẢ KHẢO SÁT THỰC TẾ Điều tra và nghiên cứu sẽ cung cấp VỀ MỘT SỐ BỆNH ĐƯỜNG TIÊU HOÁ thông tin quan trọng để nâng cao. VÀ VẤN ĐỀ VỆ SINH AN TOÀN THỰC PHẨM</div>
+    <div class="ma">chữ trong hình: Ví dụ bài thuyết trình một vấn để khoa học trên phần mềm trình chiếu (Hình 1.12): &quot; LẠ. (&amp; BÁO CÁO KẾT QUẢ KHẢO SÁT THỰC TẾ Điều tra và nghiên cứu sẽ cung cấp VỀ MỘT SỐ BỆNH ĐƯỜNG TIÊU HOÁ thông tin quan trọng để nâng ca</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4"></textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3"></textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ"></textarea>
+  </div>
+</div>
+
+<script>
+const bd = Date.now();
+function dem(){
+  const o = document.querySelectorAll('.o').length;
+  let xong = 0;
+  document.querySelectorAll('.o').forEach(e=>{
+    const bo = e.querySelector('.chk').checked;
+    const q = e.querySelector('.q').value.trim();
+    const a = e.querySelector('.a').value.trim();
+    if (bo || (q && a)) xong++;
+  });
+  document.getElementById('dem').textContent = xong + '/' + o + ' ô đã xong';
+}
+document.addEventListener('input', dem);
+document.addEventListener('change', dem);
+dem();
+function xuat(){
+  const traloi = {};
+  document.querySelectorAll('.o').forEach(e=>{
+    traloi[e.dataset.id] = {
+      cau_hoi: e.querySelector('.q').value.trim(),
+      dap_an: e.querySelector('.a').value.trim(),
+      bo: e.querySelector('.chk').checked,
+      ly_do_bo: e.querySelector('.ldb').value.trim()
+    };
+  });
+  const d = {_huong_dan: "Điền qua phieu.html", _bat_dau: bd,
+             _ket_thuc: Date.now(), traloi: traloi};
+  const b = new Blob([JSON.stringify(d, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'phieu_nguoi.json'; a.click();
+}
+</script>
