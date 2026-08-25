@@ -38,11 +38,19 @@ Việc tiền xử lý cũng \textbf{không} bao gồm bước sinh chú thích 
 
 \section{Bộ dữ liệu tri thức đã số hóa và lập chỉ mục}
 \label{sec:corpus}
-Trước khi đánh giá, kho tri thức (knowledge base) của hệ thống được xây dựng từ \textbf{12 bộ sách giáo khoa Khoa học tự nhiên} lớp 6, 7, 8, 9 của ba bộ sách (Cánh Diều, Chân trời sáng tạo, Kết nối tri thức với cuộc sống), toàn bộ ở \textbf{định dạng PDF} với tổng cộng \textbf{2.319 trang}. Quy trình ETL hai luồng (Mục~\ref{chapter:phuong_phap_thuc_hien}) xử lý song song văn bản và hình ảnh; kết quả lập chỉ mục được lưu trong ba collection của ChromaDB và tóm tắt theo từng bộ sách trong Bảng~\ref{tab:corpus}.
+Kho tri thức được xây dựng từ \textbf{12 cuốn sách giáo khoa Khoa học tự nhiên} lớp 6, 7, 8, 9 của ba bộ sách (Cánh Diều, Chân trời sáng tạo, Kết nối tri thức với cuộc sống), lưu dưới dạng \textbf{ảnh trang} (mỗi trang một tệp PNG ở độ phân giải gốc của nhà xuất bản), tổng cộng \textbf{2.399 trang}. Quy trình ETL hai luồng (Chương~\ref{chapter:phuong_phap_thuc_hien}) xử lý song song văn bản và hình ảnh; kết quả được lưu trong ba collection của ChromaDB và tóm tắt trong Bảng~\ref{tab:corpus}.
 
-\textbf{Luồng văn bản.} Sau khi trích xuất chữ (OCR) và phân mảnh (chunk $400$ ký tự, phần chồng lấn $120$ ký tự), toàn bộ corpus sinh ra \textbf{13.754 đoạn văn bản (chunk)}. Mỗi đoạn được nhúng bằng mô hình \texttt{paraphrase-multilingual-MiniLM-L12-v2} thành một \textbf{vector $384$ chiều}, tạo nên \textbf{13.754 vector văn bản} lưu trong collection \texttt{biology\_text}.
+Trong 2.399 trang đó, \textbf{2.387 trang được lập chỉ mục}. Chênh lệch đúng 12 trang là \textbf{trang bìa} --- mỗi cuốn một trang, được tệp kê khai gán vai trò riêng và bỏ qua ở bước phân mảnh. Đây là con số kiểm được, không phải trang bị bỏ sót.
 
-\textbf{Luồng hình ảnh.} Mô hình OwlViT phát hiện và cắt các vùng hình minh họa trên từng trang; sau các bước lọc độ liên quan bằng CLIP, khử trùng lặp và rà soát thủ công, hệ thống giữ lại \textbf{2.408 hình ảnh} đặc thù môn Sinh học (gồm $1.166$ hình đơn, $504$ hình con, $401$ khung hoạt động, $176$ hình ghép, $130$ khung thông tin và $31$ nhóm dụng cụ thí nghiệm). Trong đó, \textbf{2.384 hình} đã được mô hình Vintern-1B sinh chú thích (caption) tiếng Việt tự động. Mỗi hình được nhúng bằng \texttt{clip-vit-base-patch16} thành một \textbf{vector $512$ chiều}, tạo nên \textbf{2.408 vector hình ảnh} trong collection \texttt{biology\_images}, đi kèm \textbf{2.408 bản ghi metadata} (caption, số trang, tọa độ hộp bao) trong collection \texttt{biology\_image\_metadata}.
+\textbf{Luồng văn bản.} Sau khi nhận dạng ký tự theo từng vùng bố cục và phân mảnh (đoạn $400$ ký tự, chồng lấn $120$ ký tự), toàn bộ corpus sinh ra \textbf{16.393 đoạn văn bản}. Mỗi đoạn được nhúng bằng \texttt{BAAI/bge-m3}~\cite{chen2024bgem3} thành một \textbf{vector $1024$ chiều} trong collection \texttt{biology\_text}. Cùng lượt lập chỉ mục, hệ thống dựng thêm một chỉ mục thưa BM25 trên chính các đoạn đó (dùng chung định danh đoạn) để phục vụ truy xuất lai.
+
+\textbf{Luồng hình ảnh.} Bước phát hiện đi từ nhãn chú thích có thật trên trang (Chương~\ref{chapter:phuong_phap_thuc_hien}), với OwlViT giữ vai trò phát hiện phụ. Hệ thống thu được \textbf{3.880 khung hình} trên cả 12 cuốn, gồm $2.171$ hình đơn, $824$ hình con, $442$ khung hoạt động, $324$ hình ghép, $87$ khung thông tin và $32$ nhóm dụng cụ thí nghiệm. Mỗi khung được nhúng bằng \texttt{clip-vit-base-patch16} thành một \textbf{vector $512$ chiều} trong collection \texttt{biology\_images}, kèm một bản ghi siêu dữ liệu trong \texttt{biology\_image\_metadata}.
+
+Khác với phiên bản trước, siêu dữ liệu của mỗi khung hình \textbf{không chứa chú thích do mô hình sinh}. Ba trường đi kèm --- nhãn hình, dòng chú thích và chữ nhận dạng được bên trong khung --- đều được \textit{đọc lại} từ điểm ảnh của trang gốc. Lý do loại bỏ mô hình sinh chú thích được trình bày ở Chương~\ref{chapter:phuong_phap_thuc_hien}.
+
+\textbf{Độ phủ nhãn hình.} Để kiểm chất lượng luồng ảnh trên toàn bộ corpus mà không cần người dán nhãn, hệ thống đối chiếu tập nhãn \texttt{Hình A.B} xuất hiện trong \textit{văn bản đã lập chỉ mục} với tập nhãn của các khung hình thu được --- mỗi nhãn trong văn bản là bằng chứng do chính cuốn sách đưa ra rằng có một hình mang số hiệu đó. Kết quả: Cánh Diều đạt $92$--$97\%$, Kết nối tri thức $95$--$96\%$, Chân trời sáng tạo $72$--$89\%$.
+
+Chính phép đo này đã phát hiện một lỗi hệ thống ở bộ Chân trời sáng tạo: bộ sách này in một tam giác trước mọi chú thích hình, ký tự đó bị nhận dạng thành chữ cái, và biểu thức nhận diện chú thích --- vốn đòi dòng phải \textit{bắt đầu} bằng chữ ``Hình'' --- loại bỏ $49\%$ số chú thích ($873/1.796$ dòng). Sau khi sửa và dựng lại bốn cuốn, số khung hình của bộ này tăng từ $815$ lên $1.552$ ($+90\%$) và độ phủ tăng từ $51$--$65\%$ lên $72$--$89\%$.
 
 \begin{table}[H]
 \centering
@@ -54,33 +62,36 @@ Trước khi đánh giá, kho tri thức (knowledge base) của hệ thống đ�
 \toprule
 \textbf{Khối} & \textbf{Bộ sách} & \textbf{Số trang (PDF)} & \textbf{Chunk/vector văn bản} & \textbf{Vector hình ảnh} \\
 \midrule
+% Thân bảng sinh bằng `python -m src.test.report_numbers --latex` — đừng gõ tay.
 \multirow{3}{*}{Lớp 6}
- & KHTN 6 Cánh Diều            & 182 & 863   & 379 \\
- & KHTN 6 Chân trời sáng tạo   & 207 & 940   & 296 \\
- & KHTN 6 Kết nối tri thức     & 199 & 912   & 106 \\
+ & KHTN 6 Cánh Diều            & 178 & 1.087 & 418 \\
+ & KHTN 6 Chân trời sáng tạo   & 203 & 1.231 & 470 \\
+ & KHTN 6 Kết nối tri thức     & 194 & 1.102 & 285 \\
 \midrule
 \multirow{3}{*}{Lớp 7}
- & KHTN 7 Cánh Diều            & 174 & 1.042 & 296 \\
- & KHTN 7 Chân trời sáng tạo   & 187 & 1.061 & 198 \\
- & KHTN 7 Kết nối tri thức     & 182 & 924   & 53  \\
+ & KHTN 7 Cánh Diều            & 170 & 1.166 & 269 \\
+ & KHTN 7 Chân trời sáng tạo   & 187 & 1.380 & 335 \\
+ & KHTN 7 Kết nối tri thức     & 178 & 1.060 & 203 \\
 \midrule
 \multirow{3}{*}{Lớp 8}
- & KHTN 8 Cánh Diều            & 155 & 811   & 231 \\
- & KHTN 8 Chân trời sáng tạo   & 232 & 1.407 & 225 \\
- & KHTN 8 Kết nối tri thức     & 246 & 1.660 & 20  \\
+ & KHTN 8 Cánh Diều            & 206 & 1.439 & 324 \\
+ & KHTN 8 Chân trời sáng tạo   & 222 & 1.798 & 423 \\
+ & KHTN 8 Kết nối tri thức     & 195 & 1.234 & 215 \\
 \midrule
 \multirow{3}{*}{Lớp 9}
- & KHTN 9 Cánh Diều            & 220 & 1.392 & 408 \\
- & KHTN 9 Chân trời sáng tạo   & 219 & 1.364 & 168 \\
- & KHTN 9 Kết nối tri thức     & 116 & 1.378 & 28  \\
+ & KHTN 9 Cánh Diều            & 214 & 1.590 & 379 \\
+ & KHTN 9 Chân trời sáng tạo   & 214 & 1.768 & 324 \\
+ & KHTN 9 Kết nối tri thức     & 226 & 1.538 & 235 \\
 \midrule
-\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{2.319} & \textbf{13.754} & \textbf{2.408} \\
+\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{2.387} & \textbf{16.393} & \textbf{3.880} \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
 \end{table}
 
-Như vậy, kho tri thức cuối cùng gồm \textbf{16.162 vector} ($13.754$ vector văn bản $384$ chiều và $2.408$ vector hình ảnh $512$ chiều) được lập chỉ mục trên ChromaDB, sẵn sàng phục vụ truy xuất đa phương thức. Có thể thấy mật độ hình ảnh chênh lệch đáng kể giữa các bộ sách (ví dụ KHTN 9 Cánh Diều có $408$ hình trong khi KHTN 8 Kết nối tri thức chỉ có $20$ hình được giữ lại), phản ánh khác biệt về bố cục trình bày và mức độ thân thiện với việc tự động phát hiện hình ảnh của từng bộ sách.
+Như vậy kho tri thức gồm \textbf{20.273 vector} --- $16.393$ vector văn bản $1024$ chiều và $3.880$ vector hình ảnh $512$ chiều --- lập chỉ mục trên ChromaDB.
+
+Mật độ hình vẫn chênh giữa các bộ sách, nhưng ở mức hẹp hơn nhiều so với phiên bản trước: cao nhất là KHTN 6 Chân trời sáng tạo ($470$ khung trên $203$ trang, tức $2{,}3$ khung/trang), thấp nhất là KHTN 7 Kết nối tri thức ($203$ khung trên $178$ trang, $1{,}1$ khung/trang) --- chênh khoảng $2$ lần. Ở phiên bản trước, chênh lệch này lên tới $20$ lần ($408$ so với $20$ khung), và phần lớn khoảng cách đó \textit{không} phản ánh khác biệt bố cục mà phản ánh lỗi của chính bước phát hiện, như trường hợp bộ Chân trời sáng tạo trình bày ở trên.
 
 \section{Xây dựng bộ dữ liệu kiểm thử (Testsets)}
 \label{sec:testset}
