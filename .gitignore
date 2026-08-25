@@ -145,5 +145,6 @@ datasources/*
 .m3_current_log
 logs/
 
-# phiếu 48 câu hỏi hình: dựng lại được sau khi ETL 12 quyển xong
-document/review/image_questions/
+# `document/review/image_questions/` KHÔNG bị bỏ qua: phiếu người duyệt là sản
+# phẩm lao động phải giữ, và 48 crop đi kèm để lượt sau tái lập được đúng cái
+# người đã nhìn — cùng lý do với `document/review/ocr_gold/` (D-93).
