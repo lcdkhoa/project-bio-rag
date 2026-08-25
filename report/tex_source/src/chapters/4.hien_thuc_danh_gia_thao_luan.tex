@@ -113,23 +113,29 @@ $rows \leftarrow \emptyset$\;
 \Return $rows$\;
 \end{algorithm2e}
 
-Tổng cộng, hệ thống đã sinh được \textbf{120 câu hỏi} phân bố đều trên 12 cuốn sách (10 câu mỗi cuốn) như trình bày trong Bảng~\ref{tab:testset_dist}. Các câu hỏi tập trung vào nội dung \textbf{Sinh học} của chương trình (cấu tạo và hoạt động của tế bào, quang hợp, hô hấp, sinh vật và phân loại, di truyền, cơ thể người\ldots) và trải đều ba cấp độ: trích xuất trực tiếp, suy luận liên kết, và tổng hợp đa ngữ cảnh.
+Bộ kiểm thử của đồ án gồm \textbf{240 câu hỏi}, chia đều $12$ cuốn $\times\, 20$ câu, tức $80$ câu cho mỗi bộ sách. Mỗi cuốn đóng góp \textbf{16 câu sinh từ văn bản} và \textbf{4 câu sinh từ hình}. Câu hỏi trải trên cả ba phân môn Vật lí, Hoá học và Sinh học, có nhãn phân môn, khối lớp, bộ sách và độ khó đi kèm từng câu.
+
+\textbf{Chọn câu theo trang, không chọn ngẫu nhiên thuần.} Vì mỗi lần gọi mô hình sinh nhiều câu từ cùng một trang, các câu sinh cùng trang \textit{tương quan với nhau}: một bộ $16$ câu rơi vào $6$ trang có sức phân biệt thống kê gần với $6$ hơn là với $16$. Quy trình chọn vì vậy ưu tiên trải rộng --- vòng đầu lấy mỗi trang vàng một câu, chỉ khi cần mới lấy câu thứ hai của một trang. Kết quả đo trên bộ thật: $16$ câu phủ hết $9/9$ trang vàng ở \textbf{cả 12 cuốn}.
+
+\textbf{Câu hỏi sinh từ hình không thể tự động hoá, và điều này tự nó là một kết quả.} Ý định ban đầu là sinh câu hỏi hình từ chính siêu dữ liệu mà pipeline đọc được quanh mỗi hình. Phép đo trên $938$ hình của bốn cuốn cho thấy hướng đó không dùng được: dòng chú thích hình trùng với văn bản đã lập chỉ mục của \textit{chính trang đó} ở mức \textbf{trung vị $0{,}958$} (73,3\% số hình có độ phủ $\geq 0{,}8$), nên câu hỏi sinh từ nó thực chất là câu hỏi văn bản đội lốt; còn phần chữ đọc được \textit{bên trong} khung hình mà độc lập với văn bản trang thì lại hỏng nặng do nhận dạng. Đưa những chuỗi đó cho mô hình sinh câu hỏi là mời nó bịa. Vì vậy $48$ câu hỏi hình được soạn theo quy trình \textbf{người trong vòng lặp}: hệ thống chọn hình và trình ra mọi thông tin nó đọc được, mô hình viết bản nháp, và \textbf{người mở từng hình ra xem rồi viết câu hỏi cùng đáp án cuối cùng}.
+
+\textbf{Độ tin cậy của nhãn nguồn được đo, không được giả định.} Phần câu hỏi văn bản do mô hình sinh, nên bản thân nhãn nguồn cũng có sai số. Trên một mẫu $50$ câu do người rà soát thủ công, tỉ lệ nhãn nguồn sai đo được là \textbf{2/49 = 4,1\%} (một câu không quyết được), khoảng tin cậy Wilson 95\% là $1{,}1\%$--$13{,}7\%$. Mẫu này \textit{cố ý lệch} về nhóm câu suy luận ($50\%$ so với $32\%$ của cả bộ) nên $4{,}1\%$ là con số bi quan; hiệu chỉnh theo trọng số cả bộ cho khoảng $2{,}7\%$. Đáng chú ý là \textbf{cả hai câu sai đều thuộc cùng một ô} (Hoá học $\times$ suy luận), và đều là lỗi \textit{sinh câu hỏi} --- câu đòi học sinh tự viết phương trình nên đáp án không nằm nguyên văn ở trang vàng --- chứ không phải lỗi chọn trang. Mọi con số ở Mục~\ref{sec:ketqua} cần được đọc cùng với sai số này.
 
 \begin{table}[H]
 \centering
-\caption{Phân bố 12 bộ dữ liệu kiểm thử theo cuốn sách}
+\caption{Phân bố bộ dữ liệu kiểm thử 240 câu theo cuốn sách và nguồn sinh câu hỏi}
 \label{tab:testset_dist}
 \small
-\begin{tabular}{llc}
+\begin{tabular}{llccc}
 \toprule
-\textbf{Khối} & \textbf{Bộ sách} & \textbf{Số câu hỏi} \\
+\textbf{Khối} & \textbf{Bộ sách} & \textbf{Từ văn bản} & \textbf{Từ hình} & \textbf{Cộng} \\
 \midrule
-Lớp 6 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
-Lớp 7 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
-Lớp 8 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
-Lớp 9 & Cánh diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 10$ \\
+Lớp 6 & Cánh Diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 16$ & $3 \times 4$ & $60$ \\
+Lớp 7 & Cánh Diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 16$ & $3 \times 4$ & $60$ \\
+Lớp 8 & Cánh Diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 16$ & $3 \times 4$ & $60$ \\
+Lớp 9 & Cánh Diều, Chân trời sáng tạo, Kết nối tri thức & $3 \times 16$ & $3 \times 4$ & $60$ \\
 \midrule
-\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{120} \\
+\multicolumn{2}{r}{\textbf{Tổng cộng}} & \textbf{192} & \textbf{48} & \textbf{240} \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -43,6 +43,28 @@ LENH_CAN_GOI = {
 }
 
 
+# Số / cụm từ của BÁO CÁO CHUYÊN ĐỀ CŨ không được phép còn trong bản mới.
+# Mỗi mục: (chuỗi bị cấm, lý do + giá trị thay thế). Danh sách này là hàng rào
+# cuối cùng trước khi in: một con số cũ sống sót thì không làm hỏng build, không
+# ai thấy, và nó nói dối bằng một con số trông rất chính xác.
+SO_CU_BI_CAM = [
+    ("2.319", "trang: nay là 2 387 trang nội dung / 2 399 trang trên đĩa"),
+    ("13.754", "chunk văn bản: nay là 16 393"),
+    ("2.408", "vector hình: nay đo lại theo từng lượt ETL"),
+    ("16.162", "tổng vector: phải tính lại"),
+    ("120 câu", "bộ kiểm thử: nay là 240 câu (192 văn bản + 48 hình)"),
+    ("MiniLM-L12-v2 (384", "mô hình nhúng: nay là bge-m3, 1024 chiều"),
+    ("A100", "môi trường: ETL chạy CPU, không GPU"),
+    ("MiMo-v2.5-pro", "LLM giám khảo đã đổi"),
+    ("BÁO CÁO CHUYÊN ĐỀ", "loại báo cáo: nay là ĐỒ ÁN TỐT NGHIỆP"),
+    ("MÔN SINH HỌC", "tên đề tài theo đề cương đã ký là môn KHOA HỌC TỰ NHIÊN"),
+]
+
+# Chỗ được phép nhắc lại số cũ vì đang NÓI VỀ nó (so sánh với bản trước).
+# Phải là một dòng nêu rõ đó là số cũ, không phải một dòng dùng nó làm số thật.
+DAU_MIEN_TRU = "% SO-CU-CO-Y"
+
+
 def _doc_tex():
     return sorted(glob.glob(str(GOC / "src" / "**" / "*.tex"), recursive=True))
 
@@ -77,7 +99,18 @@ def kiem_tra() -> list[str]:
         if lenh in tat_ca and goi not in da_nap:
             loi.append(f"[goi] dùng {lenh} nhưng chưa nạp gói {goi}")
 
-    # 4) ký tự điều khiển
+    # 4) số của báo cáo cũ còn sót
+    for p, txt in nguon.items():
+        for dong_so, dong in enumerate(txt.splitlines(), 1):
+            if DAU_MIEN_TRU in dong:
+                continue
+            for xau, ly_do in SO_CU_BI_CAM:
+                if xau in dong:
+                    loi.append(f"[socu] {Path(p).name}:{dong_so}: còn {xau!r} "
+                               f"-- {ly_do}. Cố ý giữ thì thêm '{DAU_MIEN_TRU}' "
+                               f"vào cuối dòng.")
+
+    # 5) ký tự điều khiển
     for p, s in nguon.items():
         xau = sorted({c for c in s if ord(c) < 32 and c not in "\n\r\t"})
         if xau:
