@@ -242,9 +242,10 @@ def _qwen_style(model_id: str):
     model = _load_vlm(model_id, torch)
     model.eval()
 
-    def run(png: Path, prompt: str) -> str:
+    def run(png: Path, prompt: str, kind: str = "") -> str:
         from PIL import Image
 
+        del kind                     # đường chat tự do không phân biệt loại ô
         img = Image.open(png).convert("RGB")
         msgs = [{"role": "user", "content": [
             {"type": "image"}, {"type": "text", "text": prompt}]}]
@@ -277,7 +278,6 @@ def _mineru25():
     import torch
     from PIL import Image
     from mineru_vl_utils import MinerUClient
-    from mineru_vl_utils.post_process import json2md
     from transformers import AutoProcessor
 
     mid = "opendatalab/MinerU2.5-Pro-2605-1.2B"
@@ -286,12 +286,17 @@ def _mineru25():
     model.eval()
     client = MinerUClient(backend="transformers", model=model, processor=proc)
 
-    def run(png: Path, prompt: str) -> str:
+    def run(png: Path, prompt: str, kind: str = "") -> str:
         # `prompt` cố ý KHÔNG dùng: giao diện này không nhận prompt tự do. Giữ
         # tham số cho khớp chữ ký chung của mọi engine.
         del prompt
-        blocks = client.two_step_extract(Image.open(png).convert("RGB"))
-        return str(json2md(blocks)).strip()
+        # `content_extract` = BƯỚC 2 của two_step_extract, với bbox = cả ảnh.
+        # Dùng `two_step_extract` trên crop cho **rỗng 3/3 ô** (đo 2026-08-26):
+        # bước 1 phân tích BỐ CỤC CẢ TRANG, mà một crop một dòng thì không có bố
+        # cục nào để tìm -> 0 block -> chuỗi rỗng. Không phải model đọc không ra.
+        loai = "table" if kind == "bang" else "text"
+        res = client.content_extract(Image.open(png).convert("RGB"), type=loai)
+        return "" if res is None else str(res).strip()
 
     return run
 
@@ -302,7 +307,8 @@ def _paddleocr_vl():
 
     pipe = PaddleOCRVL()
 
-    def run(png: Path, prompt: str) -> str:
+    def run(png: Path, prompt: str, kind: str = "") -> str:
+        del kind
         res = pipe.predict(str(png))
         parts = []
         for r in res:
@@ -373,7 +379,8 @@ def main() -> int:
             continue
         try:
             ket_qua[it["id"]] = run(crops_dir / it["file"],
-                                    prompt_for(it.get("kind", "")))
+                                    prompt_for(it.get("kind", "")),
+                                    it.get("kind", ""))
         except Exception as exc:
             # Ghi chuỗi RỖNG, không bỏ qua: bỏ qua sẽ thưởng cho engine im lặng
             # và `--compare` sẽ chấm nó trên ít ô hơn (bài học D-83).

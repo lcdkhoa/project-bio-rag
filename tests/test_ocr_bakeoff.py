@@ -1194,3 +1194,48 @@ class TestMineruUsesItsOwnInterface:
         import inspect
 
         assert "dots" in inspect.getsource(mod.ENGINES["dots_ocr"])
+
+
+class TestEngineRunSignature:
+    """Mọi engine nhận `kind` — MinerU cần biết ô là DÒNG hay BẢNG.
+
+    `two_step_extract` trên crop cho RỖNG 3/3 ô (đo 2026-08-26): bước 1 phân
+    tích BỐ CỤC CẢ TRANG, mà crop một dòng thì không có bố cục nào để tìm -> 0
+    block -> chuỗi rỗng. Không phải model đọc không ra. `content_extract` là
+    bước 2 với bbox = cả ảnh, tức đúng đơn vị mà bake-off đang chấm.
+    """
+
+    @staticmethod
+    def _loader():
+        return TestColabEngineLoader._loader()
+
+    def test_every_engine_run_takes_kind(self):
+        import inspect
+
+        mod = self._loader()
+        src = inspect.getsource(mod)
+
+        # ba engine -> ba `def run(...)`, tất cả phải có `kind`
+        dong = [l for l in src.splitlines() if l.strip().startswith("def run(png")]
+        assert len(dong) == 3, dong
+        assert all("kind" in l for l in dong), dong
+
+    def test_the_loop_passes_the_kind_through(self):
+        import inspect
+
+        mod = self._loader()
+        src = inspect.getsource(mod.main)
+
+        assert 'it.get("kind", "")' in src
+        # phải truyền HAI lần: một cho prompt, một cho engine
+        assert src.count('it.get("kind", "")') >= 2
+
+    def test_mineru_maps_table_cells_to_the_table_type(self):
+        import inspect
+
+        mod = self._loader()
+        src = inspect.getsource(mod._mineru25)
+
+        assert '"table" if kind == "bang" else "text"' in src
+        assert "client.content_extract(" in src
+        assert "client.two_step_extract(" not in src   # còn nhắc trong docstring là được
