@@ -167,3 +167,50 @@ def test_trang_cua_cau_hoi_hinh_la_trang_IN_khong_phai_chi_so_nguon(khu):
     row = [r for r in _rows(ts) if r["nguon_cau_hoi"] == "hinh"][0]
     assert row["source_page"] == "7", "source_page phải là trang IN"
     assert row["source_page_index"] == "10", "source_page_index là chỉ số nguồn"
+
+
+def test_phieu_html_co_du_o_va_anh_tuong_doi(khu):
+    """Phiếu HTML là thứ NGƯỜI thực sự dùng — hỏng nó là mất cả buổi duyệt.
+
+    Chốt ba tính chất: đủ số ô, ảnh trỏ đường dẫn TƯƠNG ĐỐI (trang mở từ đĩa,
+    đường dẫn tuyệt đối của máy tôi sẽ hỏng trên máy khác), và nháp được điền sẵn.
+    """
+    out, _ = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    for it in items:
+        it["anh"] = f"/duong/dan/tuyet/doi/{it['id']}.png"
+    (out / "items.json").write_text(json.dumps(items, ensure_ascii=False),
+                                    encoding="utf-8")
+    (out / "nhap_llm.json").write_text(json.dumps({
+        items[0]["id"]: {"cau_hoi": "NHAP Q", "dap_an": "NHAP A",
+                         "chac_chan": False}}, ensure_ascii=False), encoding="utf-8")
+
+    p = B.lam_phieu_html(items, out)
+    html = p.read_text(encoding="utf-8")
+    assert html.count('class="o" data-id=') == len(items)
+    assert '<img src="crops/' in html
+    assert "/duong/dan/tuyet/doi/" not in html
+    assert "NHAP Q" in html and "NHAP A" in html
+    assert "KHÔNG chắc" in html          # cờ model tự khai
+
+
+def test_phieu_html_giu_lai_viec_nguoi_da_dien(khu):
+    """Mở lại trang giữa chừng không được xoá việc đã làm."""
+    out, _ = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    _phieu(out, {items[0]["id"]: {"cau_hoi": "NGUOI VIET", "dap_an": "DA",
+                                  "bo": False, "ly_do_bo": ""}})
+    html = B.lam_phieu_html(items, out).read_text(encoding="utf-8")
+    assert "NGUOI VIET" in html
+
+
+def test_phieu_html_thoat_ky_tu_dac_biet(khu):
+    """Chú thích OCR có thể chứa `<`, `&`, `\"` — không được phá vỡ HTML."""
+    out, _ = khu
+    items = json.loads((out / "items.json").read_text(encoding="utf-8"))
+    items[0]["figure_caption"] = 'a < b & c "d" <script>x</script>'
+    (out / "items.json").write_text(json.dumps(items, ensure_ascii=False),
+                                    encoding="utf-8")
+    html = B.lam_phieu_html(items, out).read_text(encoding="utf-8")
+    assert "<script>x</script>" not in html
+    assert "&lt;script&gt;" in html

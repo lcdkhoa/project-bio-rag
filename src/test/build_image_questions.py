@@ -260,6 +260,137 @@ def lam_phieu(items: List[Dict], out_dir: Path) -> Path:
     return p
 
 
+HTML_HEAD = """<!doctype html><meta charset="utf-8">
+<title>Phiếu duyệt câu hỏi từ HÌNH</title>
+<style>
+ :root{color-scheme:light dark}
+ body{font:15px/1.5 system-ui,sans-serif;margin:0;padding:24px;max-width:1100px;margin-inline:auto}
+ h1{font-size:20px;margin:0 0 4px}
+ .huong-dan{background:#fff8e1;color:#4a3b00;border-left:4px solid #e0a800;
+            padding:12px 16px;border-radius:6px;margin:16px 0}
+ @media(prefers-color-scheme:dark){.huong-dan{background:#3a3000;color:#ffe9a3}}
+ .o{border:1px solid #8884;border-radius:10px;padding:16px;margin:18px 0;
+    display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:18px}
+ @media(max-width:820px){.o{grid-template-columns:1fr}}
+ .o img{width:100%;height:auto;border:1px solid #8884;border-radius:6px;background:#fff}
+ .ma{font:12px/1.45 ui-monospace,monospace;color:#8a8a8a;word-break:break-word}
+ label{display:block;font-weight:600;margin:10px 0 4px;font-size:13px}
+ textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;
+          border:1px solid #8886;border-radius:6px;background:transparent;color:inherit}
+ .bo{margin-top:10px;font-weight:600;color:#c0392b}
+ .thanh{position:sticky;top:0;background:Canvas;padding:12px 0;border-bottom:1px solid #8884;
+        display:flex;gap:12px;align-items:center;z-index:9}
+ button{font:inherit;padding:8px 16px;border-radius:6px;border:1px solid #8886;
+        background:#2d7ff9;color:#fff;cursor:pointer}
+ .dem{color:#8a8a8a;font-size:13px}
+ .nhan{display:inline-block;background:#8882;border-radius:4px;padding:1px 7px;
+       font-size:12px;margin-right:6px}
+ .khongchac{background:#e0a80033;color:#8a6d00}
+</style>
+<h1>Phiếu duyệt câu hỏi sinh từ HÌNH</h1>
+<div class="thanh">
+  <button onclick="xuat()">Tải phieu_nguoi.json</button>
+  <span class="dem" id="dem"></span>
+</div>
+<div class="huong-dan">
+  <b>Nhìn ảnh rồi mới viết.</b> Ô <i>Câu hỏi</i> và <i>Đáp án</i> có thể đã được
+  mô hình điền sẵn <b>nháp</b> — nháp sinh từ chữ OCR quanh hình, mô hình
+  <b>không nhìn thấy hình</b>, nên phải kiểm chứ đừng tin. Câu hỏi phải trả lời
+  được <b>nhờ hình</b>, không phải nhờ chữ trên trang. Hình nào không dùng được
+  thì tick <i>Bỏ</i>. Xong thì bấm <b>Tải phieu_nguoi.json</b> và chép đè file cũ.
+</div>
+"""
+
+HTML_TAIL = """
+<script>
+const bd = Date.now();
+function dem(){
+  const o = document.querySelectorAll('.o').length;
+  let xong = 0;
+  document.querySelectorAll('.o').forEach(e=>{
+    const bo = e.querySelector('.chk').checked;
+    const q = e.querySelector('.q').value.trim();
+    const a = e.querySelector('.a').value.trim();
+    if (bo || (q && a)) xong++;
+  });
+  document.getElementById('dem').textContent = xong + '/' + o + ' ô đã xong';
+}
+document.addEventListener('input', dem);
+document.addEventListener('change', dem);
+dem();
+function xuat(){
+  const traloi = {};
+  document.querySelectorAll('.o').forEach(e=>{
+    traloi[e.dataset.id] = {
+      cau_hoi: e.querySelector('.q').value.trim(),
+      dap_an: e.querySelector('.a').value.trim(),
+      bo: e.querySelector('.chk').checked,
+      ly_do_bo: e.querySelector('.ldb').value.trim()
+    };
+  });
+  const d = {_huong_dan: "Điền qua phieu.html", _bat_dau: bd,
+             _ket_thuc: Date.now(), traloi: traloi};
+  const b = new Blob([JSON.stringify(d, null, 1)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(b); a.download = 'phieu_nguoi.json'; a.click();
+}
+</script>
+"""
+
+
+def _esc(x) -> str:
+    return (str(x or "").replace("&", "&amp;").replace("<", "&lt;")
+            .replace(">", "&gt;").replace('"', "&quot;"))
+
+
+def lam_phieu_html(items: List[Dict], out_dir: Path) -> Path:
+    """Trang HTML cục bộ: ảnh cạnh ô nhập, nháp điền sẵn, xuất lại JSON.
+
+    Đọc nháp từ `nhap_llm.json` và câu người đã điền từ `phieu_nguoi.json` (nếu
+    có) — mở lại trang giữa chừng thì không mất việc đã làm.
+    """
+    nhap_p = out_dir / "nhap_llm.json"
+    nhap = json.loads(nhap_p.read_text(encoding="utf-8")) if nhap_p.exists() else {}
+    cu_p = out_dir / "phieu_nguoi.json"
+    cu = (json.loads(cu_p.read_text(encoding="utf-8")).get("traloi", {})
+          if cu_p.exists() else {})
+
+    phan = [HTML_HEAD]
+    for it in items:
+        n = nhap.get(it["id"]) or {}
+        d = cu.get(it["id"]) or {}
+        q = d.get("cau_hoi") or n.get("cau_hoi") or ""
+        a = d.get("dap_an") or n.get("dap_an") or ""
+        # ảnh nằm cùng thư mục với file HTML -> đường dẫn tương đối
+        anh = "crops/" + Path(it["anh"]).name
+        canh_bao = ("" if n.get("chac_chan") is not False else
+                    '<span class="nhan khongchac">mô hình tự khai KHÔNG chắc</span>')
+        phan.append(f"""
+<div class="o" data-id="{_esc(it['id'])}">
+  <div>
+    <img src="{_esc(anh)}" alt="{_esc(it['id'])}" loading="lazy">
+    <div class="ma"><b>{_esc(it['quyen'])}</b> · trang in {it['trang']} ·
+      <span class="nhan">{_esc(it['nhan_hinh'])}</span>{canh_bao}</div>
+    <div class="ma">chú thích máy đọc: {_esc(it['figure_caption'][:220]) or '(trống)'}</div>
+    <div class="ma">chữ trong hình: {_esc(it['crop_text'][:220]) or '(trống)'}</div>
+  </div>
+  <div>
+    <label>Câu hỏi</label>
+    <textarea class="q" rows="4">{_esc(q)}</textarea>
+    <label>Đáp án chuẩn</label>
+    <textarea class="a" rows="3">{_esc(a)}</textarea>
+    <div class="bo"><label style="display:inline">
+      <input type="checkbox" class="chk"{' checked' if d.get('bo') else ''}> Bỏ hình này
+    </label></div>
+    <textarea class="ldb" rows="1" placeholder="lý do bỏ">{_esc(d.get('ly_do_bo'))}</textarea>
+  </div>
+</div>""")
+    phan.append(HTML_TAIL)
+    p = out_dir / "phieu.html"
+    p.write_text("\n".join(phan), encoding="utf-8")
+    return p
+
+
 def ap_dung(out_dir: Path, testset_dir: Path) -> Dict:
     """Trộn câu ĐÃ DUYỆT vào bộ 240. Ô chưa điền / đã bỏ thì KHÔNG vào.
 
@@ -319,7 +450,7 @@ def main() -> int:
     ap.add_argument("--nhap", action="store_true",
                     help="LLM viết NHÁP câu hỏi (cần EVAL_LLM_* trong .env)")
     ap.add_argument("--phieu", action="store_true",
-                    help="lập phiếu cho người, điền sẵn nháp nếu có")
+                    help="lập phiếu cho người (JSON + trang HTML xem ảnh)")
     ap.add_argument("--ap-dung", action="store_true",
                     help="trộn câu đã duyệt vào bộ 240")
     ap.add_argument("--per-book", type=int, default=PER_BOOK)
@@ -357,7 +488,11 @@ def main() -> int:
     if a.phieu:
         items = json.loads((out_dir / "items.json").read_text(encoding="utf-8"))
         p = lam_phieu(items, out_dir)
-        print(f"Phiếu người: {p}")
+        h = lam_phieu_html(items, out_dir)
+        print(f"Phiếu JSON : {p}")
+        print(f"Phiếu HTML : {h}")
+        print("Mở file HTML bằng trình duyệt, nhìn ảnh rồi điền, bấm nút tải "
+              "phieu_nguoi.json và chép đè file JSON trên.")
         return 0
 
     if a.ap_dung:
