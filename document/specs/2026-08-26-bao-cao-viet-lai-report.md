@@ -187,4 +187,8 @@ CLAUDE.md                                              bảng MT + bảng tiến
 
 ## 9. Còn chờ người dùng
 
-- **Push các commit lên `origin/master`?** (đã hỏi ở lượt trước, chưa có trả lời)
+**Không còn gì.** Câu hỏi *"push các commit lên `origin/master`?"* đã được người dùng trả
+lời 2026-08-26: **đã push hết**. Kiểm lại bằng `git rev-list --left-right --count
+origin/master...master` → **`0  0`**, tức hai nhánh bằng nhau và `85ee3f2d` đã ở trên remote.
+
+Từ đây trở đi cứ commit thẳng lên `master` và push, không cần hỏi lại.

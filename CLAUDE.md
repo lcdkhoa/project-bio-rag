@@ -331,7 +331,9 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 
 Bốn câu của m0-prompt §6 nay **đã có ba câu trả lời** (2026-08-23): frontend là
 `D:\personal_repo\project_rag_fe` (xem dòng MT5); LLM đánh giá đổi sang OpenRouter và **đã
-gọi thật** (D-67); người dùng đã cho phép commit + push `master`. Câu **hạn mức/ngày của OpenRouter** nay người dùng
+gọi thật** (D-67); người dùng đã cho phép commit + push `master` — **xác nhận lại 2026-08-26:
+đã push hết, `git rev-list --left-right --count origin/master...master` = `0 0`, nên cứ
+commit rồi push, không hỏi lại**. Câu **hạn mức/ngày của OpenRouter** nay người dùng
 đã trả lời cho tuần này (D-128) — free không giới hạn tới ~30/08; sau đó lại là CHƯA ĐO
 vì API không trả header nào. Còn mở: **G2 làm lại hay thu hẹp thành gold set CÔNG THỨC**
 (xem dưới).
