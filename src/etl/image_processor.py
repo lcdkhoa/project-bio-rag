@@ -2961,6 +2961,11 @@ class ImageProcessor:
             emitted.append(bbox)
         return outputs
 
+    # Sàn chiều rộng của nhánh dự phòng trong `_build_uncovered_caption_regions`,
+    # tính theo chiều rộng trang. 0,32 là giá trị đo được (D-126), không phải chọn
+    # tay: quét 0 / 0,18 / 0,25 / 0,32 trên 8_KNTT.
+    _FALLBACK_MIN_CW_FRAC = 0.32
+
     def _build_uncovered_caption_regions(
         self,
         uncovered_caps: List[Dict[str, object]],
@@ -3039,7 +3044,16 @@ class ImageProcessor:
                 # almost text-free, a paragraph reference is not.
                 band_h = int(page_height * 0.16)
                 y0 = max(top_limit, int(cy0) - band_h)
-                cw = max(40, cx1 - cx0)
+                # Sàn chiều rộng lấy theo TRANG, không theo chú thích (D-126).
+                # Chú thích của KNTT là một pill nhỏ (`Hình 1.1` rộng ~96 px) nên
+                # `max(40, cx1 - cx0)` dựng ra một dải dọc 124 px cắt ngang giữa
+                # hình ghép; chú thích của CD/CTST là dòng chữ dài vài trăm px nên
+                # trông hợp lý. Đó chính là vì sao dải hẹp chiếm 17,5% crop KNTT mà
+                # chỉ 4,8% ở CD. Đo trên 8_KNTT (12 trang, 20 khung): 14 dải hẹp ở
+                # k=0 -> 8 ở k=0,25 -> **0 ở k=0,32**, đổi lấy đúng +2 khung nuốt
+                # chữ. Kiểm an toàn trên 6_CD (12 trang, 65 khung): 18 -> 16, không
+                # làm tệ đi (dải hẹp của CD đến từ nguyên nhân khác).
+                cw = max(40, cx1 - cx0, int(page_width * self._FALLBACK_MIN_CW_FRAC))
                 bbox = (
                     max(0, int(cx0 - cw * 0.15)), max(0, y0 - 4),
                     min(page_width, int(cx1 + cw * 0.15)),
