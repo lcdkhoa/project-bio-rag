@@ -50,14 +50,33 @@ LENH_CAN_GOI = {
 SO_CU_BI_CAM = [
     ("2.319", "trang: nay là 2 387 trang nội dung / 2 399 trang trên đĩa"),
     ("13.754", "chunk văn bản: nay là 16 393"),
-    ("2.408", "vector hình: nay đo lại theo từng lượt ETL"),
-    ("16.162", "tổng vector: phải tính lại"),
-    ("120 câu", "bộ kiểm thử: nay là 240 câu (192 văn bản + 48 hình)"),
+    ("2.408", "vector hình: nay là 3 881 (đo 2026-08-26, đủ 12 quyển)"),
+    ("3.880", "vector hình: 3 880 là số đo TRƯỚC lượt dựng lại KNTT; nay 3 881"),
+    ("16.162", "tổng vector: nay là 20 274"),
+    ("20.273", "tổng vector: sai 1 vì lấy 3 880 hình; nay là 20 274"),
+    ("120 câu", "bộ kiểm thử: nay là 231 câu (192 văn bản + 39 hình)"),
+    # 240 là số DỰ KIẾN, không phải số thật: 9/48 khung cắt bị người duyệt loại
+    # nên phần hình còn 39. Cấm cả hai chiều để không ai vô tình "làm tròn lên".
+    ("240 câu", "bộ kiểm thử: 240 là số DỰ KIẾN; số thật là 231 (192 + 39)"),
+    ("48 câu hỏi hình", "phần hình: 48 là số dự kiến, số thật là 39"),
     ("MiniLM-L12-v2 (384", "mô hình nhúng: nay là bge-m3, 1024 chiều"),
     ("A100", "môi trường: ETL chạy CPU, không GPU"),
-    ("MiMo-v2.5-pro", "LLM giám khảo đã đổi"),
+    ("MiMo-v2.5-pro", "LLM giám khảo nay là stealth/ox-alpha"),
     ("BÁO CÁO CHUYÊN ĐỀ", "loại báo cáo: nay là ĐỒ ÁN TỐT NGHIỆP"),
+    ("báo cáo chuyên đề tốt nghiệp", "loại báo cáo: nay là ĐỒ ÁN TỐT NGHIỆP"),
+    # Hai cách gọi sai loại tài liệu mà bản lint cũ KHÔNG bắt, vì nó chỉ chặn
+    # đúng cụm "BÁO CÁO CHUYÊN ĐỀ". Cả hai đều còn sống trong front matter
+    # (`hoi_dong.tex` gọi là "khoá luận" ở tiêu đề và "chuyên đề" ở mục lục).
+    ("CHUYÊN ĐỀ TỐT NGHIỆP", "loại tài liệu: ĐỒ ÁN TỐT NGHIỆP"),
+    ("KHÓA LUẬN TỐT NGHIỆP", "loại tài liệu: ĐỒ ÁN TỐT NGHIỆP"),
+    ("khóa luận tốt nghiệp", "loại tài liệu: đồ án tốt nghiệp"),
     ("MÔN SINH HỌC", "tên đề tài theo đề cương đã ký là môn KHOA HỌC TỰ NHIÊN"),
+    # Ba khẳng định SAI SỰ THẬT, không phải số cũ — nhưng cùng một hàng rào:
+    # chúng nói dối về những việc CHƯA HỀ XẢY RA, nên nguy hiểm hơn một số sai.
+    ("giáo viên bộ môn", "CHƯA có giáo viên nào đánh giá — xem CLAUDE.md, D-129"),
+    ("Vintern-1B để mô tả", "captioner TẮT (D-47), visual_caption_vi = 0/3 881"),
+    ("chú thích tiếng Việt do Vintern-1B sinh",
+     "captioner TẮT (D-47), trường này rỗng trên toàn kho"),
 ]
 
 # Chỗ được phép nhắc lại số cũ vì đang NÓI VỀ nó (so sánh với bản trước).
