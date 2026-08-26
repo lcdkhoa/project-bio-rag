@@ -142,23 +142,102 @@ def raw_recall_at_ks(question: str, src_book: str, src_page: int, ks=RAW_RECALL_
     return out
 
 
+# 429 cua OpenRouter o day KHONG phai cap/ngay ma la "temporarily rate-limited
+# upstream" - loi TAM THOI cua nha cung cap. Do duoc trong luot 231 cau ngay
+# 2026-08-26: 2/231 cau mat diem giam khao chi vi khong he co mot lan thu lai
+# nao. Mot o NaN trong cot quyet dinh chat luong dat hon vai giay cho.
+JUDGE_RETRIES = 3
+JUDGE_BACKOFF_SECONDS = (5, 20, 60)
+
+
+def _la_loi_tam_thoi(exc: Exception) -> bool:
+    """429 / 5xx / timeout = thu lai duoc. Sai API key thi thu lai vo ich."""
+    msg = str(exc).lower()
+    return any(t in msg for t in ("429", "rate", "timeout", "timed out",
+                                  "500", "502", "503", "504", "overload"))
+
+
 def judge_answer(judge_llm, question: str, ground_truth: str, context: str, answer: str) -> dict:
-    try:
-        resp = judge_llm.invoke(JUDGE_PROMPT.format(
-            question=question, ground_truth=ground_truth,
-            context=(context or "(không có)")[:6000], answer=answer,
-        ))
-        data = _parse_json(resp.content if hasattr(resp, "content") else str(resp))
-        return {
-            "judge_correctness": float(data.get("correctness", 0)),
-            "judge_faithfulness": float(data.get("faithfulness", 0)),
-            "judge_relevancy": float(data.get("relevancy", 0)),
-            "judge_reasoning": str(data.get("reasoning", "")).strip(),
-        }
-    except Exception as exc:
-        logger.warning("Judge lỗi: %s", exc)
-        return {"judge_correctness": float("nan"), "judge_faithfulness": float("nan"),
-                "judge_relevancy": float("nan"), "judge_reasoning": f"LỖI: {exc}"}
+    import time
+    loi_cuoi = None
+    for lan in range(JUDGE_RETRIES):
+        try:
+            resp = judge_llm.invoke(JUDGE_PROMPT.format(
+                question=question, ground_truth=ground_truth,
+                context=(context or "(không có)")[:6000], answer=answer,
+            ))
+            data = _parse_json(resp.content if hasattr(resp, "content") else str(resp))
+            return {
+                "judge_correctness": float(data.get("correctness", 0)),
+                "judge_faithfulness": float(data.get("faithfulness", 0)),
+                "judge_relevancy": float(data.get("relevancy", 0)),
+                "judge_reasoning": str(data.get("reasoning", "")).strip(),
+            }
+        except Exception as exc:
+            loi_cuoi = exc
+            if lan == JUDGE_RETRIES - 1 or not _la_loi_tam_thoi(exc):
+                break
+            cho = JUDGE_BACKOFF_SECONDS[min(lan, len(JUDGE_BACKOFF_SECONDS) - 1)]
+            logger.warning("Judge lỗi tạm thời (lần %d/%d), chờ %ds: %s",
+                           lan + 1, JUDGE_RETRIES, cho, exc)
+            print(f"    judge lỗi tạm thời, thử lại sau {cho}s ({lan + 1}/{JUDGE_RETRIES})")
+            time.sleep(cho)
+    logger.warning("Judge lỗi: %s", loi_cuoi)
+    return {"judge_correctness": float("nan"), "judge_faithfulness": float("nan"),
+            "judge_relevancy": float("nan"), "judge_reasoning": f"LỖI: {loi_cuoi}"}
+
+
+NUM_COLS = [
+    "precision_page", "recall_page", "mrr_page",
+    "precision_book", "recall_book", "mrr_book",
+    *[f"recall@{k}_raw" for k in RAW_RECALL_KS],
+    "judge_correctness", "judge_faithfulness", "judge_relevancy",
+]
+
+
+def result_path_for(testset_csv: str) -> str:
+    return testset_csv.replace("_testset.csv", "_result.csv")
+
+
+def book_of(testset_csv: str) -> str:
+    return os.path.basename(testset_csv).replace("_testset.csv", "")
+
+
+def summarize_result(book: str, res_df, luot_chay: str) -> dict:
+    """Tong hop mot quyen tu bang ket qua.
+
+    `luot_chay` ghi ro so nay do o LUOT NAO: "moi" = do trong lan chay nay,
+    "da_co" = doc lai tu `*_result.csv` co san. Khong duoc tron hai loai ma
+    khong noi ra (nguyen tac 5: khong im lang).
+    """
+    summary = {"book": book, "num_questions": len(res_df), "luot_chay": luot_chay}
+    for c in NUM_COLS:
+        summary[c] = round(res_df[c].mean(skipna=True), 4) if c in res_df.columns else float("nan")
+    return summary
+
+
+def chon_testsets(csv_files, books=None, bo_qua_da_co=False):
+    """Loc danh sach bo test theo `--book` / `--bo-qua-da-co`.
+
+    Tra ve (can_chay, bo_qua). Ten quyen khong khop thi NEM ValueError kem
+    danh sach that (D-84: mot co bi bo qua im lang dat hon mot loi on ao).
+    """
+    co_that = [book_of(p) for p in csv_files]
+    if books:
+        thieu = [b for b in books if b not in co_that]
+        if thieu:
+            raise ValueError(
+                "Khong co bo test cho: " + ", ".join(thieu)
+                + " | 12 quyen that su co: " + ", ".join(co_that)
+            )
+        csv_files = [p for p in csv_files if book_of(p) in set(books)]
+    can_chay, bo_qua = [], []
+    for p in csv_files:
+        if bo_qua_da_co and os.path.exists(result_path_for(p)):
+            bo_qua.append(p)
+        else:
+            can_chay.append(p)
+    return can_chay, bo_qua
 
 
 def evaluate_book(csv_path: str, judge_llm) -> dict:
@@ -197,22 +276,12 @@ def evaluate_book(csv_path: str, judge_llm) -> dict:
               f"correct={verdict['judge_correctness']:.0f}/5")
 
     res_df = pd.DataFrame(records)
-    res_df.to_csv(csv_path.replace("_testset.csv", "_result.csv"), index=False, encoding="utf-8-sig")
-
-    num_cols = [
-        "precision_page", "recall_page", "mrr_page",
-        "precision_book", "recall_book", "mrr_book",
-        *[f"recall@{k}_raw" for k in RAW_RECALL_KS],
-        "judge_correctness", "judge_faithfulness", "judge_relevancy",
-    ]
-    summary = {"book": book, "num_questions": len(res_df)}
-    summary.update({c: round(res_df[c].mean(skipna=True), 4) for c in num_cols})
-    return summary
+    res_df.to_csv(result_path_for(csv_path), index=False, encoding="utf-8-sig")
+    return summarize_result(book, res_df, luot_chay="moi")
 
 
-def run_evaluation(testsets_dir: str, report_csv: str, report_md: str):
-    judge_llm = get_eval_llm(temperature=0.0)
-
+def run_evaluation(testsets_dir: str, report_csv: str, report_md: str,
+                   books=None, bo_qua_da_co: bool = False):
     csv_files = sorted(glob.glob(os.path.join(testsets_dir, "*_testset.csv")))
     if not csv_files:
         # Thoát KHÁC 0: từ 2026-08-24 bộ test 4 quyển cũ đã bị chuyển vào
@@ -224,17 +293,49 @@ def run_evaluation(testsets_dir: str, report_csv: str, report_md: str):
         print("Không tìm thấy bộ test. Chạy generate_testsets.py trước.")
         return 2
 
-    summaries = []
-    for csv_path in csv_files:
+    try:
+        can_chay, bo_qua = chon_testsets(csv_files, books, bo_qua_da_co)
+    except ValueError as exc:
+        print(str(exc))
+        return 2
+    if bo_qua:
+        print("Bỏ qua (đã có *_result.csv): " + ", ".join(book_of(p) for p in bo_qua))
+    if not can_chay:
+        print("Không còn quyển nào cần chạy.")
+
+    judge_llm = get_eval_llm(temperature=0.0) if can_chay else None
+
+    summaries_by_book = {}
+    for csv_path in can_chay:
         try:
-            summaries.append(evaluate_book(csv_path, judge_llm))
+            s_book = evaluate_book(csv_path, judge_llm)
+            summaries_by_book[s_book["book"]] = s_book
         except Exception as exc:
             import traceback
             print(f"Lỗi khi đánh giá {csv_path}: {exc}")
             traceback.print_exc()
 
+    # Đọc lại kết quả CŨ cho những quyển không chạy ở lượt này, để bảng xếp hạng
+    # phủ đủ 12 quyển thay vì im lặng chỉ báo cáo phần vừa chạy. Quyển không có
+    # kết quả nào thì bị NÊU TÊN ra, không bị bỏ qua lặng lẽ.
+    chua_do = []
+    for csv_path in csv_files:
+        b = book_of(csv_path)
+        if b in summaries_by_book:
+            continue
+        rp = result_path_for(csv_path)
+        if os.path.exists(rp):
+            summaries_by_book[b] = summarize_result(
+                b, pd.read_csv(rp, encoding="utf-8-sig"), luot_chay="da_co")
+        else:
+            chua_do.append(b)
+
+    summaries = [summaries_by_book[book_of(p)] for p in csv_files
+                 if book_of(p) in summaries_by_book]
+    if chua_do:
+        print("CHƯA CÓ SỐ (không có *_result.csv): " + ", ".join(chua_do))
     if not summaries:
-        return
+        return 2
 
     report = pd.DataFrame(summaries)
     # Điểm tổng hợp để XẾP HẠNG: 50% chất lượng truy xuất + 50% chất lượng trả lời.
@@ -250,8 +351,17 @@ def run_evaluation(testsets_dir: str, report_csv: str, report_md: str):
     # Bảng leaderboard markdown.
     lines = [
         "# Báo cáo đánh giá RAG theo từng bộ sách\n",
-        f"Tổng số bộ sách: {len(report)} | Judge: {os.getenv('EVAL_LLM_MODEL', '?')} | "
+        f"Tổng số bộ sách: {len(report)}/{len(csv_files)} | "
+        f"Tổng số câu: {int(report['num_questions'].sum())} | "
+        f"Judge: {os.getenv('EVAL_LLM_MODEL', '?')} | "
         f"Số câu/sách: {int(report['num_questions'].mean())}\n",
+        ("- Đo ở lượt NÀY: " + ", ".join(
+            r["book"] for r in summaries if r["luot_chay"] == "moi") + "\n") if any(
+            r["luot_chay"] == "moi" for r in summaries) else "",
+        ("- Lấy từ `*_result.csv` CÓ SẴN của lượt trước: " + ", ".join(
+            r["book"] for r in summaries if r["luot_chay"] == "da_co") + "\n") if any(
+            r["luot_chay"] == "da_co" for r in summaries) else "",
+        ("- **CHƯA ĐO**: " + ", ".join(chua_do) + "\n") if chua_do else "",
         "## Xếp hạng tổng thể\n",
         "| Hạng | Sách | Overall | Recall@k(page) | MRR(page) | Precision(page) | "
         "Correct/5 | Faithful/5 | Relevancy/5 |",
@@ -312,6 +422,11 @@ if __name__ == "__main__":
     _ap.add_argument("--hau-to", default="",
                      help="hậu tố tên file báo cáo, ví dụ _240 -> "
                           "evaluation_report_240.csv (đừng ghi đè số cũ)")
+    _ap.add_argument("--book", action="append", default=None,
+                     help="chỉ chạy quyển này (khớp CHÍNH XÁC tên bộ test); lặp lại "
+                          "được. Tên không khớp -> thoát 2")
+    _ap.add_argument("--bo-qua-da-co", action="store_true",
+                     help="bỏ qua quyển đã có *_result.csv (chạy tiếp lượt dở dang)")
     _a = _ap.parse_args()
     TESTSETS_DIR = _a.testset_dir
     REPORT_CSV = os.path.join(base, f"evaluation_report{_a.hau_to}.csv")
@@ -322,4 +437,5 @@ if __name__ == "__main__":
     if not is_configured():
         print(config_help())
         raise SystemExit(1)
-    raise SystemExit(run_evaluation(TESTSETS_DIR, REPORT_CSV, REPORT_MD) or 0)
+    raise SystemExit(run_evaluation(TESTSETS_DIR, REPORT_CSV, REPORT_MD,
+                                    books=_a.book, bo_qua_da_co=_a.bo_qua_da_co) or 0)
