@@ -13,7 +13,7 @@
 
     \item \textbf{Mục tiêu 4 --- Khung đánh giá đối chiếu: đạt vế thứ nhất, chưa kết luận được vế thứ hai.} Bộ kiểm thử $231$ câu có gắn nhãn nguồn, phủ đủ 12 cuốn, cho phép đo cả hai pha. Vế \textit{truy xuất lai so với BM25 thuần} kèm nghiên cứu loại bỏ thành phần đã hoàn tất: ở đúng bề rộng production, truy xuất lai thắng ở \textit{mọi} độ đo (R@1 $0{,}740$ · R@3 $0{,}909$ · R@10 $0{,}970$ · MRR $0{,}826$). Vế \textit{đa phương thức so với chỉ văn bản} cho chênh lệch $+0{,}010$ recall, tức đúng một câu hỏi --- nhưng kết luận đúng là \textbf{``chưa đo được ưu thế''} chứ không phải ``không có ưu thế'', vì đáp án chuẩn của bộ kiểm thử được sinh từ chính văn bản trang vàng nên dư địa còn lại cho kênh hình chỉ là $0{,}104$.
 
-    \item \textbf{Mục tiêu 5 --- Giao diện web: đạt một phần.} Ứng dụng Next.js cho phép đặt câu hỏi, nhận câu trả lời theo luồng và xem hình minh hoạ kèm trang sách gốc. Hai yêu cầu của đề cương chưa đáp ứng: giao diện \textbf{chưa dựng được công thức đúng ký hiệu} (không có thư viện dựng công thức nào được nạp) và \textbf{bỏ hẳn trường trích dẫn} mà máy chủ đã trả về --- tức cơ chế truy nguyên về đúng trang sách, vốn là điểm mạnh của hệ thống, chưa tới được mắt học sinh.
+    \item \textbf{Mục tiêu 5 --- Giao diện web: đạt.} Ứng dụng Next.js cho phép đặt câu hỏi, nhận câu trả lời theo luồng, xem hình minh hoạ do máy chủ phục vụ, và --- sau lượt bổ sung cuối --- \textbf{dựng công thức đúng ký hiệu bằng KaTeX} cùng \textbf{hiển thị danh sách trích dẫn} thành một phần riêng. Trước đó cả hai yêu cầu này đều chưa đáp ứng; riêng phần trích dẫn thì lỗi nằm ở \textit{cả hai} phía chứ không chỉ ở giao diện, vì máy chủ mới chỉ chèn khối nguồn dạng chữ vào giữa câu trả lời chứ chưa trả nó thành một trường dữ liệu (Mục~\ref{sec:fe_mt5}).
 \end{enumerate}
 
 Về chất lượng câu trả lời, mô hình giám khảo độc lập chấm trên $231$ câu cho Độ liên quan $4{,}602/5$, Độ trung thực $4{,}394/5$ và Tính đúng $4{,}065/5$. Điểm Độ trung thực cao khẳng định hiệu quả của cơ chế RAG trong việc buộc mô hình bám sát sách giáo khoa chính thống; việc Tính đúng thấp hơn hai tiêu chí kia ở \textit{cả 12 cuốn} cho thấy phần cải thiện còn lại vẫn nằm ở pha truy xuất chứ không ở khả năng diễn đạt.
@@ -31,14 +31,14 @@ Các hạn chế dưới đây đều \textit{đã đo được}, kể cả nh�
     \item \textbf{Khung cắt hình ghép còn hụt.} Tỉ lệ khung cắt dạng dải dọc hẹp đã giảm từ $17{,}5\%$ xuống $1{,}7\%$ ở một bộ sách, nhưng ca gốc --- một hình ghép ba tấm --- \textbf{vẫn cắt sai}; phần hụt còn lại chưa lượng hoá được.
     \item \textbf{Cờ ``cần rà soát'' mất tác dụng phân biệt}, vì bật ở $69{,}3\%$ số đoạn.
     \item \textbf{Đoạn văn bản không giữ quan hệ hàng--cột của bảng}, nên hệ thống có thể trả lời bằng dữ liệu của sai cột.
-    \item \textbf{Giao diện web còn thiếu hai yêu cầu của Mục tiêu 5} (dựng công thức và hiển thị trích dẫn), và địa chỉ máy chủ bị ghi cứng ở địa chỉ cục bộ.
+    \item \textbf{Giao diện mới chỉ được kiểm bằng kịch bản tự động trên máy cục bộ}; chưa có học sinh hay giáo viên nào dùng thử.
 \end{itemize}
 
 \section{Hướng phát triển tương lai}
 Thứ tự dưới đây được sắp theo \textit{mức đóng góp cho các mục tiêu còn nợ}, không theo mức độ thú vị về kỹ thuật.
 
 \begin{itemize}
-    \item \textbf{Hoàn tất Mục tiêu 5 --- ba việc nhỏ, tác động lớn:} nạp một thư viện dựng công thức (KaTeX hoặc MathJax) để hiển thị đúng ký hiệu Toán/Hoá; \textbf{hiển thị lại trường trích dẫn} mà máy chủ đã trả về, để cơ chế truy nguyên về đúng trang sách đến được người học; và đưa địa chỉ máy chủ ra biến môi trường thay vì ghi cứng. Đây là hướng có tỉ lệ lợi ích trên công sức cao nhất, vì phần khó --- dựng trích dẫn xác định --- đã xong ở phía máy chủ.
+    \item \textbf{Đưa giao diện ra thử nghiệm thật.} Ba yêu cầu của Mục tiêu 5 đã xong về mặt chức năng, nhưng toàn bộ mới chỉ được kiểm bằng kịch bản tự động trên máy cục bộ. Bước còn thiếu là người dùng thật, không phải thêm tính năng.
     \item \textbf{Xử lý công thức Hoá, Lí --- Mục tiêu 1:} hướng đã có số liệu chống lưng là dùng công cụ nhận dạng đọc được chỉ số dưới \textit{chỉ cho vùng công thức}, giữ công cụ hiện tại cho văn xuôi, để không đánh đổi độ chính xác dấu tiếng Việt của toàn bộ kho lấy vài công thức. Nguyên tắc bắt buộc giữ nguyên: \textbf{không bao giờ viết lại văn bản đã nhận dạng để ``chữa'' công thức}, vì đoán lại một chỉ số dưới chính là bịa dữ liệu.
     \item \textbf{Bộ kiểm thử sinh từ hình, có người đối chiếu ảnh.} Đây là điều kiện \textit{tiên quyết} để kết luận được vế thứ hai của Mục tiêu 4: chừng nào đáp án chuẩn còn sinh từ văn bản trang vàng thì dư địa cho kênh hình còn bị chặn ở $0{,}104$, và mọi so sánh đa phương thức đều đo trong một cái trần quá thấp.
     \item \textbf{Hoàn thiện trục Bài cho tám cuốn còn lại}, qua đó mở khoá truy vấn theo Bài trên toàn kho. Việc này không đòi lập chỉ mục lại: chỉ cần sửa bộ đọc mục lục cho hai bố cục còn lại rồi nạp bù siêu dữ liệu.

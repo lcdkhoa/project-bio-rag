@@ -15,7 +15,15 @@ from .query_intent import strip_accents
 # Nhãn sách cho NGƯỜI ĐỌC. Trích dẫn hiện ra trước mắt học sinh và giáo viên, nên
 # "SGK_KHTN_6 (KNTT)" — tên thư mục lẫn viết tắt — là không đọc được. Bảng dưới
 # đây chỉ dịch phần viết tắt; không suy diễn gì thêm.
-_PUBLISHER_FULL = {"KNTT": "Kết nối tri thức"}
+# Cả BA nhà xuất bản, vì kho nay là 12 quyển / 3 bộ sách. Bảng này từng chỉ có
+# `KNTT`, nên 8/12 quyển rơi vào nhánh "không khớp thì trả nguyên văn" và hiện ra
+# trước mắt học sinh đúng tên thư mục: đo trên một câu hỏi thật ngày 2026-08-26,
+# 2/3 trích dẫn in ra `SGK_KHTN_7_CD` và `SGK_KHTN_7_CTST`.
+_PUBLISHER_FULL = {
+    "KNTT": "Kết nối tri thức",
+    "CTST": "Chân trời sáng tạo",
+    "CD": "Cánh Diều",
+}
 # `SGK_KHTN_6_KNTT` / `SGK KHTN 6 KNTT.pdf` -> lớp 6, nhà xuất bản KNTT.
 _BOOK_ID = re.compile(
     r"^SGK[\s_]+KHTN[\s_]+(\d{1,2})[\s_]+([A-Za-z]+)$", re.IGNORECASE)

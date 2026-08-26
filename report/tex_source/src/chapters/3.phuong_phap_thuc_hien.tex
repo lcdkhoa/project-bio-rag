@@ -93,13 +93,18 @@ Về mặt thẩm mỹ và tương tác:
     \item \textbf{Hiển thị hình ảnh:} Giao diện chat không chỉ in ra chữ mà còn hiển thị trực tiếp các hình ảnh minh họa (cùng trang sách gốc) được Backend trả về trong payload của API, giúp nội dung Khoa học tự nhiên trở nên trực quan và dễ hình dung hơn.
 \end{itemize}
 
-\textbf{Ba khoảng cách giữa giao diện hiện tại và Mục tiêu 5, kiểm được bằng cách đọc chính mã nguồn giao diện:}
+\subsection{Ba yêu cầu của Mục tiêu 5 và cách đáp ứng}
+\label{sec:fe_mt5}
+
+Ba yêu cầu còn thiếu của Mục tiêu 5 đã được bổ sung. Cả ba đều là những khoảng cách \textit{đo được} chứ không phải cảm nhận về giao diện, nên phần này ghi rõ trạng thái trước và sau.
+
 \begin{itemize}
-    \item \textbf{Chưa dựng được công thức.} Không có thư viện dựng công thức nào (KaTeX, MathJax hay tương đương) được nạp, nên yêu cầu ``công thức hiển thị đúng ký hiệu'' của Mục tiêu 5 chưa đáp ứng: một phương trình hoá học tới giao diện vẫn ở dạng chữ thuần.
-    \item \textbf{Trường trích dẫn bị bỏ.} Máy chủ đã đính kèm danh sách trích dẫn xác định (tên sách, số trang, nhãn mục) vào mỗi phản hồi, nhưng kiểu dữ liệu phản hồi ở giao diện chỉ giữ hai trường \textit{câu trả lời} và \textit{hình ảnh}. Nghĩa là cơ chế bảo đảm quan trọng nhất của hệ thống --- truy nguyên về đúng trang sách --- \textbf{chưa tới được mắt học sinh}, dù nó đã có sẵn ở phía sau.
-    \item \textbf{Địa chỉ máy chủ ghi cứng} ở địa chỉ cục bộ, nên chưa triển khai từ xa được.
+    \item \textbf{Hiển thị công thức đúng ký hiệu.} Trước đó không có thư viện dựng công thức nào được nạp, nên một phương trình tới giao diện vẫn là chữ thuần. Nay giao diện dựng công thức bằng \textbf{KaTeX}, kèm một bước hạ chỉ số dưới cho công thức hoá học viết phẳng (\texttt{H2SO4} $\rightarrow$ \ce{H2SO4}). Bước này \textit{tra bảng $118$ ký hiệu nguyên tố} và chỉ đổi khi cả chuỗi phân tích trọn vẹn thành ký hiệu có thật \textbf{và} có ít nhất một chỉ số lớn hơn $1$ --- nhờ vậy ``Câu 2'' không bị biến thành ``Câu\textsubscript{2}''. Cần nhấn mạnh đây là phép biến đổi \textbf{hiển thị}: văn bản trong kho không bị sửa một ký tự nào, đúng nguyên tắc không viết lại dữ liệu đã nhận dạng.
+    \item \textbf{Hiển thị trích dẫn.} Đây là chỗ chẩn đoán ban đầu \textbf{sai} và cần nói rõ, vì nó đổi cả cách sửa. Nhận định trước là ``giao diện bỏ trường trích dẫn mà máy chủ đã trả về''; gọi thử máy chủ thì thấy \textbf{máy chủ chưa bao giờ trả trường đó} --- nó \textit{chèn} khối nguồn dạng chữ vào giữa câu trả lời. Lỗi vì vậy nằm ở cả hai phía. Nay máy chủ trả thêm hai trường: \texttt{citations} có cấu trúc (sách / trang / nhãn mục) và \texttt{answer\_text} là câu trả lời không kèm khối chữ; giao diện vẽ nguồn thành một phần riêng bên dưới mỗi câu trả lời.
+    \item \textbf{Địa chỉ máy chủ.} Trước đó ghi cứng trong mã nguồn, đổi bằng cách chú thích dòng này bỏ dòng kia --- trong khi tệp cấu hình đã có sẵn một biến môi trường \textit{không dòng mã nào đọc}. Nay giao diện đọc đúng biến đó.
 \end{itemize}
-Ba điểm này được liệt kê lại trong phần hạn chế của Chương~\ref{chapter:thuc_nghiem_danh_gia} và trong hướng phát triển ở Chương~\ref{chapter:ket_luan}.
+
+\textbf{Hình minh hoạ do máy chủ phục vụ, không sao chép sang giao diện.} Bước ETL lưu đường dẫn \textit{tuyệt đối trên máy đã chạy ETL}, và trước bản này API trả nguyên đường dẫn ấy ra ngoài: trình duyệt không tải nổi hình nào, còn bố cục thư mục của máy phát triển thì bị lộ. Nay API quy nó về đường dẫn tương đối khớp với route ảnh mà chính máy chủ đã phục vụ sẵn. Phương án thay thế --- chép toàn bộ kho ảnh sang giao diện --- bị loại vì hai lý do đo được: kho nặng $4{,}6$ GB, và nó đã được dựng lại \textbf{ba lần} trong quá trình làm đồ án, nên một bản sao sẽ lệch đi sau mỗi lần mà không có dấu hiệu nào báo.
 
 \subsection{Một số giao diện tiêu biểu}
 Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tương tác của người dùng: từ đăng nhập, đặt câu hỏi, đến khung trò chuyện và câu trả lời kèm hình ảnh minh họa. Hình~\ref{fig:fe_image_detail} thể hiện tính năng đặc trưng của hệ thống đa phương thức --- khi học sinh nhấp vào một hình, giao diện hiển thị chi tiết hình minh hoạ cùng trang sách gốc của hình đó.

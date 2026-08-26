@@ -18,17 +18,32 @@ def test_format_book_name_is_readable_by_a_student():
     assert format_book_name("SGK KHTN 8 KNTT.pdf") ==         "Khoa học tự nhiên 8 (Kết nối tri thức)"
 
 
+def test_format_book_name_dich_du_ba_nha_xuat_ban():
+    """Kho là 12 quyển / 3 bộ sách, nên nhãn phải đọc được ở cả ba.
+
+    Dòng cũ ở đây khẳng định `SGK_KHTN_6_CTST` trả về NGUYÊN VĂN — nó khoá lại
+    đúng khuyết điểm chứ không phải đặc tả: bảng nhà xuất bản khi ấy chỉ có
+    `KNTT`, nên 8/12 quyển hiện ra trước mắt học sinh đúng tên thư mục. Đo trên
+    server thật ngày 2026-08-26, một câu hỏi cho ra 2/3 trích dẫn dạng
+    `SGK_KHTN_7_CD`.
+    """
+    assert format_book_name("SGK_KHTN_6_CTST") == "Khoa học tự nhiên 6 (Chân trời sáng tạo)"
+    assert format_book_name("SGK_KHTN_6_CD") == "Khoa học tự nhiên 6 (Cánh Diều)"
+    assert format_book_name("SGK_KHTN_6_KNTT") == "Khoa học tự nhiên 6 (Kết nối tri thức)"
+
+
 def test_format_book_name_never_guesses_an_unknown_book():
     """Không khớp khuôn thì trả nguyên văn — nhãn sai là chỉ học sinh sai quyển."""
-    assert format_book_name("SGK_KHTN_6_CTST") == "SGK_KHTN_6_CTST"
+    assert format_book_name("SGK_KHTN_6_XYZ") == "SGK_KHTN_6_XYZ"
     assert format_book_name("mot quyen la.pdf") == "mot quyen la"
     assert format_book_name("") == "Sách giáo khoa"
 
 
 def test_format_book_name_round_trips_for_the_g3_lookup():
     """Cổng G3 map nhãn hiển thị NGƯỢC về `source`; nhãn phải là song ánh."""
-    sources = ["SGK_KHTN_6_KNTT", "SGK_KHTN_7_KNTT",
-               "SGK_KHTN_8_KNTT", "SGK_KHTN_9_KNTT"]
+    sources = [f"SGK_KHTN_{grade}_{pub}"
+               for grade in (6, 7, 8, 9)
+               for pub in ("KNTT", "CTST", "CD")]
     labels = [format_book_name(s) for s in sources]
     assert len(set(labels)) == len(sources)
 
