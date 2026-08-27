@@ -49,6 +49,14 @@ try:
 except Exception:
     pass
 
+# Tín hiệu công thức dùng chung với gate D-144 — xem docstring của module đó.
+from src.etl.layout.formula_signals import (  # noqa: E402
+    CO_DAU_BANG,
+    CONG_THUC_HONG,
+    formula_tokens,
+    normalize_formula,
+)
+
 PAGES_FILE = Path(__file__).with_name("ocr_bakeoff_pages.json")
 
 
@@ -102,11 +110,11 @@ def group_lines(words: Sequence[dict]) -> List[dict]:
 
 # --- 2. Chỉ chọn dòng CÓ BỆNH -------------------------------------------
 
-# Chỉ số dưới bị phá thành dấu phẩy. Mẫu lấy từ chính phép đo D-56/D-73, không
-# phải từ trí tưởng tượng: `CO,` 88 lần, `CH,` 60, `SO,` 43, `H,O` 31, `H,SO,` 21.
-_CONG_THUC_HONG = re.compile(
-    r"(?:\b(?:CO|CH|SO|NO|N|O|H|Cl|Fe|Ca|Na|Mg|Cu|Zn|Al|K|S|P)\s?,"
-    r"|\bH\s?,\s?O\b|\bH\s?,\s?SO\s?,|\(\s?0\s?,|\b0\s?,(?:\s|$))")
+# Tín hiệu OCR-hỏng công thức (`CONG_THUC_HONG`/`CO_DAU_BANG`) nay sống ở
+# `formula_signals.py`, DÙNG CHUNG với gate D-144 (`formula_gate.py`) — một
+# nguồn sự thật duy nhất cho hai mẫu regex đã đo ở D-56/D-73.
+_CONG_THUC_HONG = CONG_THUC_HONG
+_CO_DAU_BANG = CO_DAU_BANG
 # Chuỗi 3 chữ số dính nhau: nghi mất dấu phẩy thập phân (`26,2` -> `262`, sai 10×).
 # 4 chữ số là NĂM, gặp khắp nơi — cờ nó thì phiếu toàn nhiễu.
 _SO_DAI = re.compile(r"(?<!\d)\d{3}(?!\d)")
@@ -114,9 +122,6 @@ _SO_DAI = re.compile(r"(?<!\d)\d{3}(?!\d)")
 # đầu tiên đã có một ô nội dung đúng là `'155'` — tìm ra bằng cách MỞ PHIẾU ra
 # đối chiếu, không bằng test.
 _CHI_CO_SO = re.compile(r"^[\d\s.,:;|]+$")
-# Công thức VẬT LÍ hầu như luôn có `=`, và nó KHÔNG có dấu phẩy-chỉ-số-dưới nên
-# bộ lọc công thức Hoá bỏ sót nó hoàn toàn: `1 J = 1 Ñm` (D-63, RAG trả lời RỖNG).
-_CO_DAU_BANG = re.compile(r"[A-Za-zÀ-ỹ0-9)\]]\s*=\s*[A-Za-zÀ-ỹ0-9(]")
 # Tiêu đề bảng phải BẮT ĐẦU bằng "Bảng N.M". Câu văn `(xem Bảng 12.1).` chỉ TRỎ
 # tới bảng; đưa nó vào phiếu thì người duyệt gõ lại một câu văn và ta không đo
 # được gì về quan hệ hàng/cột — đúng thứ đang bị mất (D-63).
@@ -169,61 +174,10 @@ def _fold(text: str) -> str:
 
 # --- 3b. Ba chỉ số chấm engine ------------------------------------------
 
-_SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
-# Chỉ số dưới đứng SAU một chữ cái hoá học và trước một chữ cái/ngoặc/kết thúc.
-# Ràng buộc đó giữ `2 H₂O` (hệ số 2 đứng trước) và `tr.154` không bị đổi.
-_CHI_SO_ASCII = re.compile(r"(?<=[A-Za-z\)\]])(\d+)")
-
-
-def normalize_formula(text: str) -> str:
-    """Chuẩn hoá CÁCH GÕ công thức, không chuẩn hoá nội dung.
-
-    `O2` và `O₂` là cùng một câu trả lời đúng — người duyệt không nên bị phạt vì
-    cách gõ. Nhưng `O,` **không** được chuẩn hoá thành `O₂`: đoán lại một chỉ số
-    đã mất là bịa (nguyên tắc 1), và chính `O,` là thứ ta đang đo.
-    """
-    s = " ".join(str(text or "").split())
-    return _CHI_SO_ASCII.sub(lambda m: m.group(1).translate(_SUB), s)
-
-
-# Công thức HOÁ: chữ cái hoa mở đầu, có ít nhất một chỉ số (Unicode hoặc ASCII).
-# `(NH₄)₂SO₄` cũng khớp nhờ nhóm ngoặc.
-_TOKEN_HOA = re.compile(
-    r"\(?[A-Z][A-Za-z]{0,2}\)?(?:[₀-₉]|\d)"
-    r"(?:\(?[A-Z][A-Za-z]{0,2}\)?(?:[₀-₉]|\d)?)*")
-# Công thức LÝ: một phương trình có `=`, ví dụ `A = Fs`, `1 J = 1 N·m`.
-# Hai bên `=` chỉ nhận ký hiệu KHÔNG DẤU (chữ Latin trần, số, đơn vị) — nếu cho
-# phép chữ có dấu thì `công thức A = Fs với F` nuốt luôn cả câu văn tiếng Việt
-# quanh phương trình, và chỉ số CT sẽ đo văn xuôi thay vì đo công thức.
-# Ranh giới `(?<![A-Za-zÀ-ỹ])` là bắt buộc: không có nó thì `công thức A = Fs
-# với` khớp thành `c A = Fs v` — chữ `c` cuối "thức" và `v` đầu "với" đều là
-# chữ Latin trần.
-_KY_HIEU = r"(?<![A-Za-zÀ-ỹ])[A-Za-z0-9][A-Za-z0-9₀-₉·./^]*(?![A-Za-zÀ-ỹ])"
-_TOKEN_LY = re.compile(
-    rf"{_KY_HIEU}(?:\s{_KY_HIEU})?\s*=\s*{_KY_HIEU}(?:\s{_KY_HIEU})?")
-
-
-def formula_tokens(text: str) -> List[str]:
-    """Các token CÔNG THỨC trong một dòng — đơn vị chấm của chỉ số CT.
-
-    Thiết kế §3.2 đòi đo **token công thức**, không phải cả dòng. So cả dòng thì
-    một dòng 15 từ chỉ sai một dấu ở chữ thường cũng bị tính là hỏng công thức,
-    và con số ra từ đó không trả lời được câu hỏi thật: *engine có đọc được `O₂`
-    không?*
-
-    Chấp nhận cả `O₂` lẫn `O2` vì người duyệt được phép gõ ASCII (§3.5 luật 3);
-    `normalize_formula` gộp hai cách gõ lại khi so.
-    """
-    s = " ".join(str(text or "").split())
-    out = [m.group(0).strip() for m in _TOKEN_LY.finditer(s)]
-    da_co = " ".join(out)
-    for m in _TOKEN_HOA.finditer(s):
-        tok = m.group(0).strip()
-        # Bỏ token chỉ là số (`2016`) hoặc đã nằm trong một phương trình đã bắt.
-        if not any(c.isalpha() for c in tok) or tok in da_co:
-            continue
-        out.append(tok)
-    return out
+# `normalize_formula`/`formula_tokens` nay sống ở `formula_signals.py` — dùng
+# CHUNG với gate D-144, một nguồn sự thật duy nhất cho đơn vị chấm CT đã khoá
+# số ở D-108. Giữ tên cũ ở đây để không phải sửa mọi chỗ gọi trong file này và
+# để `from src.test.ocr_bakeoff import formula_tokens` (tests cũ) còn dùng được.
 
 
 def diacritic_error_rate(gold: str, hyp: str) -> float:

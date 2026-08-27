@@ -30,37 +30,64 @@ chốt D-108 đã loại phương án đó. Hướng còn lại, CHƯA làm, đ�
 - `src/etl/layout/regions.py::RegionType` hiện có `BODY / FIGURE / PAGE_ARTIFACT /
   SIDEBAR / ...` — **không có loại "formula"**. Không có detector vùng công thức nào
   trong pipeline ETL.
-- `MinerUClient` / `two_step_extract()` / `json2md()` (D-104) chỉ tồn tại trong
-  **notebook Colab dùng cho bake-off**, không phải trong `src/etl/`. Cần tìm lại
-  notebook đó (hỏi người dùng đường dẫn nếu không thấy trong repo) để lấy đúng cách
-  gọi API đã verify hoạt động.
+- ~~`MinerUClient` chỉ tồn tại trong notebook Colab~~ — **SAI, sửa ở D-144**: nó đã
+  nằm trong repo ở `scripts/colab_run_ocr_engines.py::_mineru25()` (D-104), chạy
+  trên Colab bằng `python scripts/colab_run_ocr_engines.py --engine mineru25 ...`,
+  không phải trong `src/etl/`. Vẫn cần PORT logic gọi này vào `src/etl/layout/`
+  cho Bước 2/3 (ETL thật, không phải bake-off), nhưng KHÔNG cần "tìm lại notebook"
+  — API đã có sẵn, đã verify chạy thật (đọc đúng `CO₂`/`O₂`, D-104/D-108).
 - `src/etl/layout/text_extract.py` là nơi Tesseract chạy theo dòng/box
   (`SINGLE_LINE_MAX_H`, psm 6/7). Đây là điểm cần chèn logic mới.
-- Gold set công thức duy nhất đang có là 97 ô / 15 trang **CHỈ CỦA KNTT** (độ phân
-  giải THẤP NHẤT trong 3 NXB, D-65) — xem mục "G2 dùng để làm gì" trong CLAUDE.md,
-  đoạn khuyến nghị thu hẹp G2 thành gold set công thức theo NXB VẪN CHƯA LÀM.
+- ~~Gold set công thức duy nhất đang có là 97 ô / 15 trang CHỈ CỦA KNTT~~ — **SAI,
+  sửa ở D-144**: mở `src/test/ocr_bakeoff_pages.json` ra đếm thì 15 trang đã cân đối
+  **5/5/5 theo NXB** (KNTT/CTST/CD) từ lúc chọn (2026-08-25). Câu trên là suy diễn
+  chưa kiểm, không phải phép đo — đã tồn tại đủ lâu để lọt vào cả CLAUDE.md, nay đã
+  sửa ở đó (bảng tiến độ + gạch đầu dòng D-56). Đoạn khuyến nghị thu hẹp G2 thành
+  gold set công thức theo NXB trong CLAUDE.md coi như ĐÃ CÓ (gold set này vốn đã đủ
+  3 NXB), không cần làm thêm.
 
 ## 3. Việc phải làm — 3 bước, KHÔNG chạy ETL 12 quyển cho tới hết bước 1
 
-### Bước 1 — Xây + đo gate phát hiện vùng nghi công thức (RẺ, làm trước)
+### Bước 1 — Xây + đo gate phát hiện vùng nghi công thức (RẺ, làm trước) — **XONG (D-144)**
 
-Không cần detector CV mới phức tạp: dùng chính tín hiệu OCR-hỏng đã đo ở D-56 làm
-gợi ý — dòng Tesseract ra `0,`/`(0,`/mẫu chữ+số dính liền kiểu `H,O`/`CO,`, hoặc mật
-độ ký hiệu hoá học/vật lý cao trong ngữ cảnh xung quanh (`=`, số mũ, đơn vị). Đo
-ngưỡng trên gold set 97 ô — **KHÔNG đoán ngưỡng**, quét như D-57 đã làm với
-`COVERAGE_MIN` (sweep + đo agreement). Tiêu chí nghiệm thu bước này: precision/recall
-của gate đo được trên 97 ô, ghi vào decision log kèm số liệu quét.
+Đã xây `src/etl/layout/formula_gate.py::is_formula_suspect()` + module dùng chung
+`src/etl/layout/formula_signals.py` (tách từ `ocr_bakeoff.py` để một nguồn sự thật
+duy nhất với số CT đã khoá ở D-108). Đo bằng
+`python -m src.test.measure_formula_gate`, quét ngưỡng 0,00→1,04 bước 0,02 (kiểu
+D-57) trên gold set **89 ô / 3 NXB** (97 ô trừ 8 ô `bang`) — **KHÔNG chỉ KNTT như
+dòng cũ ở mục 2 tưởng, đã sửa**.
 
-Việc mở rộng gold set theo NXB (CLAUDE.md đã khuyến nghị, chưa làm) nên cân nhắc ở
-đây: gate đo trên gold set KNTT-only có nguy cơ không tổng quát cho CD/CTST (độ phân
-giải cao hơn — xem mục "KNTT is the LOWEST-resolution set" ở đầu CLAUDE.md).
+Kết quả quét: recall đạt tối đa (1,000) NGAY ở ngưỡng "có ≥1 khớp", ngưỡng cao hơn
+chỉ làm recall rơi mà precision không đổi đáng kể → **gate chốt là quy tắc NHỊ PHÂN**
+(OR của `CONG_THUC_HONG`/`CO_DAU_BANG`, hai tín hiệu D-56/D-73 đã có sẵn), không phải
+một tham số cần tinh chỉnh. Số đo: **precision 0,8654 (45 TP / 7 FP) · recall 1,0000
+(0 FN)**. Mở tay cả 7/7 ca FP (CẤM #11): 6/7 là giới hạn của cách đo (ground truth
+`formula_tokens` bỏ sót công thức có ngoặc/ký hiệu Unicode lạ, một đáp án người
+không hợp lệ, một ca dòng Tesseract dài hơn crop cho người xem), chỉ 1/7 là mơ hồ
+THẬT không phân biệt được bằng một dòng (`Mg, Al, Zn, Fe` — liệt kê nguyên tố đọc
+giống chỉ số dưới bị phá). Theo NXB: KNTT prec 1,000, CD 0,929, CTST 0,727 — recall
+1,000 đều cả 3. Chi tiết đầy đủ: `document/decision_log.html` D-144.
+
+Test khoá số liệu: `tests/layout/test_formula_gate.py`,
+`tests/layout/test_formula_signals.py`, `tests/test_measure_formula_gate.py` (17
+test mới, `pytest tests/ -q` → 732 pass / 3 skip).
+
+**Việc mở rộng gold set theo NXB coi như ĐÃ CÓ** — gold set này vốn đã cân đối
+5/5/5 theo NXB từ lúc chọn (2026-08-25), không cần làm thêm.
 
 ### Bước 2 — Gọi MinerU CHỈ trên crop vùng công thức, qua Colab GPU
 
 Không có CUDA trên máy dev (`torch 2.11.0+cpu`) — đây LÀ việc của người dùng chạy
 trên Colab, không phải việc chạy được trong phiên làm việc CLI này (giống ràng buộc
-đã ghi ở `[[ocr_bakeoff]]`/`[[colab_runbook_and_env]]`). Lấy lại API
-`MinerUClient.two_step_extract()` + `json2md()` đã verify ở D-104; ghim
+đã ghi ở `[[ocr_bakeoff]]`/`[[colab_runbook_and_env]]`).
+
+~~Lấy lại API `MinerUClient.two_step_extract()` + `json2md()` đã verify ở D-104~~ —
+**SAI, sửa ở D-144**: D-104 đo được `two_step_extract()` trả RỖNG 3/3 ô trên crop một
+dòng (bước 1 của nó phân tích bố cục CẢ TRANG, một crop một dòng không có bố cục nào
+để tìm). API đúng, đã verify chạy thật, là
+`MinerUClient(backend="transformers", model=model, processor=proc).content_extract(image, type="text"|"table")`
+— xem `scripts/colab_run_ocr_engines.py::_mineru25()` (D-104), file này ĐÃ TỒN TẠI
+trong repo, không chỉ có trong notebook như câu cũ ở đây tưởng. Ghim
 `transformers>=4.49,<5` trên Colab (D-101, tránh bẫy `lm_head.weight MISSING`).
 
 ### Bước 3 — Merge có kiểm soát vào chunk, không đụng phần còn lại
@@ -85,7 +112,7 @@ before/after trên cùng gold set trước khi coi là xong.
    `pytest tests/test_decision_log.py` sau khi sửa), cập nhật `CLAUDE.md`, cập nhật
    memory, cập nhật spec — RỒI MỚI commit (message thuần, không `Co-Authored-By`).
 
-## 5. Trạng thái file khi bàn giao (2026-08-27, khớp `git status --short`)
+## 5. Trạng thái file khi bàn giao lượt 1 (2026-08-27 sáng, khớp `git status --short`)
 
 ```
  M CLAUDE.md
@@ -95,9 +122,37 @@ before/after trên cùng gold set trước khi coi là xong.
 ```
 
 Ba thay đổi trên **không liên quan đến việc này** — đó là fix lỗi truy vấn ảnh "cho
-tôi hình con cá" (D-141..D-143), đã xong và đã kiểm bằng `pytest tests/ -q` → 715
-pass / 3 skip. Session mới nên `git add` + commit chỗ đó riêng (hoặc hỏi người dùng)
-trước khi bắt đầu việc công thức, để không lẫn hai việc trong một commit.
+tôi hình con cá" (D-141..D-143). Đã được commit (`78c501d2`) trước khi Bước 1 bắt
+đầu, nên không lẫn vào commit của việc công thức.
+
+## 6. Bàn giao tiếp (2026-08-27 chiều, sau D-144) — Bước 1 XONG, Bước 2/3 còn lại
+
+**Đã làm, đã commit:**
+- `src/etl/layout/formula_signals.py`, `src/etl/layout/formula_gate.py` (gate mới)
+- `ocr_bakeoff.py` sửa để import tín hiệu dùng chung thay vì định nghĩa lại
+- `src/test/measure_formula_gate.py` (script đo, tái lập số D-144)
+- `tests/layout/test_formula_gate.py`, `tests/layout/test_formula_signals.py`,
+  `tests/test_measure_formula_gate.py`
+- `document/decision_log.html` D-144, `CLAUDE.md` (sửa nhận định sai "gold set
+  KNTT-only", cập nhật bảng tiến độ MT1)
+
+**Việc tiếp theo (session mới, CẦN Colab GPU — không chạy được trong CLI này):**
+1. Port logic gọi MinerU từ `scripts/colab_run_ocr_engines.py::_mineru25()` vào
+   `src/etl/layout/` — gọi qua `MinerUClient.content_extract(image, type=...)`,
+   KHÔNG phải `two_step_extract()` (xem mục 3, Bước 2 đã sửa).
+2. Cần line-level bbox để crop đúng vùng nghi công thức: `text_extract.py::_ocr()`
+   hiện chỉ gọi `pytesseract.image_to_string()` (trả một khối chữ, không có bbox
+   từng dòng) — phải đổi sang `image_to_data()` (như `ocr_bakeoff._ocr_words` đã
+   làm) rồi mới áp `is_formula_suspect()` theo TỪNG DÒNG và cắt crop từ bbox dòng
+   đó. Đây là thay đổi cấu trúc, không phải chỉ thêm gọi hàm.
+3. `RegionType` (`src/etl/layout/regions.py`) chưa có biến thể "formula" — cân
+   nhắc có cần không, hay chỉ cần gắn cờ lên `TextUnit` hiện có.
+4. Bước 3 (merge): so token MinerU đọc được với `formula_tokens()` (đã có, dùng
+   chung `formula_signals.py`) — chỉ thay dòng khi MinerU trả về ≥1 token hợp lệ,
+   còn lại giữ nguyên Tesseract + `needs_review` (CẤM #2).
+5. Nếu bất kỳ bước nào chạm ETL thật → vá `document/colab_runtime_etl.ipynb` CÙNG
+   LƯỢT (CẤM #5), và gộp `TEXT_EXTRACTION_VERSION` bump với các tham số M2 khác
+   chưa hiệu chỉnh (CẤM #4).
 
 **Môi trường:** nếu gặp `ImportError: tokenizers>=0.20,<0.21 is required ... found
 tokenizers==X`, xem `[[dev_env_tokenizers_conflict]]` trong memory — đã có cách vá.
