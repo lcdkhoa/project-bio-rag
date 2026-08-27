@@ -147,3 +147,38 @@ def test_a_page_sized_tint_is_not_a_box():
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
     regs = segment_page(img, "kntt")
     assert [r.type for r in regs] == [RegionType.BODY]
+
+
+def test_params_for_reads_min_sat_from_fingerprint(tmp_path, monkeypatch):
+    import json
+    from src.etl.layout import segmenter as mod
+
+    fp_dir = tmp_path / "fingerprints"
+    fp_dir.mkdir()
+    (fp_dir / "SGK_KHTN_9_CD.json").write_text(json.dumps(
+        {"box_palette": {"sat_percentiles": {"p10": 12.0}}}), encoding="utf-8")
+    monkeypatch.setattr(mod, "FINGERPRINT_DIR", fp_dir)
+
+    params = mod._params_for(book="SGK_KHTN_9_CD")
+
+    assert params["min_sat"] == mod.MIN_SAT_FLOOR  # p10=12 duoi san -> dung san
+
+
+def test_params_for_falls_back_to_default_when_fingerprint_missing(tmp_path, monkeypatch, caplog):
+    from src.etl.layout import segmenter as mod
+
+    monkeypatch.setattr(mod, "FINGERPRINT_DIR", tmp_path)  # thu muc rong
+
+    params = mod._params_for(book="SGK_KHTN_KHONG_TON_TAI")
+
+    assert params["min_sat"] == 45
+    assert "fingerprint" in caplog.text.lower()
+
+
+def test_params_for_no_book_keeps_old_constant_behaviour():
+    from src.etl.layout import segmenter as mod
+
+    params = mod._params_for()
+
+    assert params["min_sat"] == 45
+

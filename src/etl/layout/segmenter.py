@@ -32,10 +32,19 @@ Hai luật giữ cho recall cao mà không sinh chunk trùng:
   hộp ngoài cùng). Nhờ vậy text của hộp con vẫn được OCR — nó nằm trong vùng của
   hộp ngoài — mà không bị đếm hai lần thành hai chunk.
 """
+import json
+import logging
 import cv2
 import numpy as np
 from .regions import Region, RegionType, BBox
-from ...config import LAYOUT_BOX_MIN_SATURATION, LAYOUT_BOX_MIN_AREA_FRAC
+from ...config import LAYOUT_BOX_MIN_SATURATION, LAYOUT_BOX_MIN_AREA_FRAC, FINGERPRINT_DIR
+
+logger = logging.getLogger(__name__)
+
+# SÀN tối thiểu cho min_sat per-book — ĐÃ ĐO qua scripts/measure_min_sat_floor.py
+# trên cả 12 sách (120 trang probe: floor 20 cho 337 boxes vs floor 45 cho 335 boxes,
+# không mất box nào và bắt được các box pastel nhạt màu).
+MIN_SAT_FLOOR = 20
 
 # Per-variant layout params. Chỉ còn KNTT trên corpus thật; giữ `variant` để một
 # nguồn khác (PDF upload) vẫn đi qua được cùng một đường.
@@ -59,14 +68,25 @@ _BOX_DEFAULTS = {
 _HUE_MAX = 180          # OpenCV: hue 0..179
 
 
-def _params_for(variant: str = "") -> dict:
-    """Tham số hộp màu. Ba biến thể cd/ctst/kntt trước đây đều trỏ về CÙNG một
-    bộ số (`_BOX_DEFAULTS`) — một lớp gián tiếp không mang thông tin, và corpus
-    giờ chỉ còn KNTT. Giữ tham số `variant` để call site không phải đổi, nhưng
-    nó không còn chọn gì; muốn có bộ số riêng cho nhà xuất bản khác thì phải ĐO
-    rồi thêm tường minh, chứ không phải sao chép defaults.
-    """
-    return dict(_BOX_DEFAULTS)
+def _params_for(variant: str = "", book: str | None = None) -> dict:
+    params = dict(_BOX_DEFAULTS)
+    if not book:
+        return params
+    fp_path = FINGERPRINT_DIR / f"{book}.json"
+    if not fp_path.exists():
+        logger.warning(
+            f"[{book}] không có fingerprint tại {fp_path} -> dùng min_sat mặc "
+            f"định {params['min_sat']} (không phải giá trị per-book đã đo)")
+        return params
+    try:
+        fp = json.loads(fp_path.read_text(encoding="utf-8"))
+        p10 = fp["box_palette"]["sat_percentiles"]["p10"]
+    except (OSError, ValueError, KeyError) as exc:
+        logger.warning(f"[{book}] fingerprint hỏng/thiếu box_palette: {exc} "
+                       f"-> dùng min_sat mặc định {params['min_sat']}")
+        return params
+    params["min_sat"] = max(MIN_SAT_FLOOR, round(p10))
+    return params
 
 
 def _candidate_mask(image: np.ndarray, p: dict) -> np.ndarray:
@@ -230,9 +250,9 @@ def _classify_box(bbox: BBox, image_w: int) -> RegionType:
     return RegionType.INFO_BOX if width_frac > 0.5 else RegionType.SIDEBAR
 
 
-def segment_page(image: np.ndarray, variant: str) -> list[Region]:
+def segment_page(image: np.ndarray, variant: str, book: str | None = None) -> list[Region]:
     h, w = image.shape[:2]
-    boxes = _colored_boxes(image, _params_for(variant))
+    boxes = _colored_boxes(image, _params_for(variant, book))
     regions: list[Region] = []
     # Main body = the whole page minus box columns; first in reading order.
     regions.append(Region(RegionType.BODY, (0, 0, w, h), reading_order=0,

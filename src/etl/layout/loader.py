@@ -101,7 +101,7 @@ class LayoutOCRLoader:
             return []
         variant = get_pdf_variant(source.name)
         img = source.load(page_number)
-        regions = segment_page(img, variant)
+        regions = segment_page(img, variant, book=source.name)
         formula_client = get_formula_client() if FORMULA_HYBRID_ENABLED else None
         units = extract_text_units(img, regions, variant,
                                    formula_client=formula_client)

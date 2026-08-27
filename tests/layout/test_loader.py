@@ -52,7 +52,7 @@ def _page(page_index, printed_page, role="content", bai_so=None):
 @pytest.fixture
 def stubbed_pipeline(monkeypatch):
     monkeypatch.setattr(L, "segment_page",
-                        lambda im, v: [Region(RegionType.BODY, (0, 0, 200, 200), 0, {})])
+                        lambda im, v, *args, **kwargs: [Region(RegionType.BODY, (0, 0, 200, 200), 0, {})])
     monkeypatch.setattr(L, "extract_text_units", lambda im, regs, v, **kwargs: [
         TextUnit(RegionType.BODY, "quang hợp là gì", 0, (0, 0, 1, 1))])
 
