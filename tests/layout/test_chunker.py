@@ -67,3 +67,48 @@ def test_an_ordinary_box_stays_atomic():
                    0, (0, 0, 1, 1))
     docs = chunk_units([box], "SGK_KHTN_6_KNTT", 9, "kntt", page_index=10)
     assert len(docs) == 1
+
+
+def test_formula_hybrid_status_propagates_to_body_chunk_metadata():
+    from src.etl.layout.chunker import chunk_units
+    from src.etl.layout.regions import RegionType, TextUnit
+
+    units = [
+        TextUnit(RegionType.BODY, "một đoạn văn bản đủ dài để không bị bỏ qua",
+                 0, (0, 0, 10, 10), formula_hybrid_status=["applied"]),
+    ]
+
+    docs = chunk_units(units, source="SGK_KHTN_7_KNTT", page=121, variant="kntt")
+
+    assert docs[0].metadata["formula_hybrid_status"] == "applied"
+
+
+def test_formula_hybrid_status_empty_when_no_unit_has_it():
+    from src.etl.layout.chunker import chunk_units
+    from src.etl.layout.regions import RegionType, TextUnit
+
+    units = [
+        TextUnit(RegionType.BODY, "một đoạn văn bản đủ dài để không bị bỏ qua",
+                 0, (0, 0, 10, 10)),
+    ]
+
+    docs = chunk_units(units, source="SGK_KHTN_7_KNTT", page=121, variant="kntt")
+
+    assert docs[0].metadata["formula_hybrid_status"] == ""
+
+
+def test_formula_hybrid_status_dedupes_across_body_units():
+    from src.etl.layout.chunker import chunk_units
+    from src.etl.layout.regions import RegionType, TextUnit
+
+    units = [
+        TextUnit(RegionType.BODY, "đoạn một " * 10, 0, (0, 0, 10, 10),
+                 formula_hybrid_status=["applied"]),
+        TextUnit(RegionType.BODY, "đoạn hai " * 10, 1, (0, 10, 10, 20),
+                 formula_hybrid_status=["applied", "unmatched_count"]),
+    ]
+
+    docs = chunk_units(units, source="SGK_KHTN_7_KNTT", page=121, variant="kntt")
+
+    assert docs[0].metadata["formula_hybrid_status"] == "applied,unmatched_count"
+

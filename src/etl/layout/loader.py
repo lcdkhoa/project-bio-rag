@@ -19,9 +19,11 @@ from pathlib import Path
 from .segmenter import segment_page
 from .text_extract import extract_text_units
 from .chunker import chunk_units
+from .formula_ocr import get_formula_client
 from ..book.manifest import (MANIFEST_DIR, book_id_from_source_name,
                              load_manifest)
 from ..image_processor import get_pdf_variant
+from ...config import FORMULA_HYBRID_ENABLED
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +102,9 @@ class LayoutOCRLoader:
         variant = get_pdf_variant(source.name)
         img = source.load(page_number)
         regions = segment_page(img, variant)
-        units = extract_text_units(img, regions, variant)
+        formula_client = get_formula_client() if FORMULA_HYBRID_ENABLED else None
+        units = extract_text_units(img, regions, variant,
+                                   formula_client=formula_client)
         # `bai_so` đi vào metadata chunk CHỈ KHI spine của quyển này sạch flag
         # (xem SPINE_UNTRUSTED_FLAGS). Trước D-43 spine sai nặng nên chỗ này bị
         # chặn cứng; giờ nó là điều kiện đo được, không phải một hằng số niềm tin.

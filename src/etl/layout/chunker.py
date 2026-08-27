@@ -25,11 +25,13 @@ _splitter = TextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 # mất nhãn "khung thông tin"/"mục bên lề".
 BOX_ATOMIC_MAX_CHARS = int(CHUNK_SIZE * 1.5)
 
-def _meta(source, page, variant, region_type, idx, page_index, bai_so, flags):
+def _meta(source, page, variant, region_type, idx, page_index, bai_so, flags,
+          formula_statuses):
     meta = {"source": source, "page": page, "variant": variant,
             "region_type": region_type, "chunk_index": idx,
             "needs_review": bool(flags),
-            "review_tokens": ",".join(flags)}
+            "review_tokens": ",".join(flags),
+            "formula_hybrid_status": ",".join(formula_statuses)}
     if page_index is not None:
         meta["page_index"] = page_index
     if bai_so is not None:
@@ -46,18 +48,21 @@ def chunk_units(units, source: str, page: int, variant: str,
         # splitter cắt, không còn biết token đáng ngờ rơi vào chunk nào — thà
         # gắn rộng cho người xem hơn là mất dấu.
         body_flags = _dedupe(f for u in body_units for f in u.review_flags)
+        body_formula = _dedupe(
+            s for u in body_units for s in u.formula_hybrid_status)
         base = Document(page_content=body_text)
         for piece in _splitter.split([base]):
             docs.append(Document(page_content=piece.page_content,
                                  metadata=_meta(source, page, variant, "body",
                                                 idx, page_index, bai_so,
-                                                body_flags)))
+                                                body_flags, body_formula)))
             idx += 1
     for u in units:
         if u.region_type == RegionType.BODY:
             continue
         text = u.text.strip()
         flags = _dedupe(u.review_flags)
+        formula_statuses = _dedupe(u.formula_hybrid_status)
         pieces = [text]
         if len(text) > BOX_ATOMIC_MAX_CHARS:
             pieces = [p.page_content for p in
@@ -66,7 +71,8 @@ def chunk_units(units, source: str, page: int, variant: str,
             docs.append(Document(page_content=piece,
                                  metadata=_meta(source, page, variant,
                                                 u.region_type.value, idx,
-                                                page_index, bai_so, flags)))
+                                                page_index, bai_so, flags,
+                                                formula_statuses)))
             idx += 1
     return docs
 
