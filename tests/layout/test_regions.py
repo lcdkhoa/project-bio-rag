@@ -12,3 +12,10 @@ def test_textunit_holds_region_type():
     u = TextUnit(region_type=RegionType.INFO_BOX, text="Em có biết", reading_order=3, bbox=(1,2,3,4))
     assert u.region_type is RegionType.INFO_BOX
     assert u.text == "Em có biết"
+
+
+def test_text_unit_formula_hybrid_status_defaults_to_empty_list():
+    unit = TextUnit(RegionType.BODY, "text", 0, (0, 0, 10, 10))
+
+    assert unit.formula_hybrid_status == []
+

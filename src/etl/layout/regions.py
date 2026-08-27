@@ -29,3 +29,8 @@ class TextUnit:
     # Token đáng ngờ do kiểm tra âm tiết tiếng Việt (`diacritic.py`) trả về.
     # Chỉ để người xem lại — không có bước nào được phép sửa chữ theo nó.
     review_flags: List[str] = field(default_factory=list)
+    # Trạng thái ghép hybrid MinerU (D-144 Bước 2/3), TÁCH khỏi `review_flags`
+    # vì review_flags đã đo được bật ở 69,3% chunk toàn kho (CLAUDE.md) — nhét
+    # thêm cờ mới vào đó làm tín hiệu đã loãng càng loãng hơn.
+    formula_hybrid_status: List[str] = field(default_factory=list)
+
