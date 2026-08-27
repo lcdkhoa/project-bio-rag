@@ -49,6 +49,7 @@ try:
 except Exception:
     pass
 
+from src.etl.layout.ocr_lines import group_lines  # noqa: E402
 # Tín hiệu công thức dùng chung với gate D-144 — xem docstring của module đó.
 from src.etl.layout.formula_signals import (  # noqa: E402
     CO_DAU_BANG,
@@ -67,45 +68,6 @@ class ItemKind(str, Enum):
     SO = "so"
     BANG = "bang"
     DOI_CHUNG = "doi_chung"
-
-
-# --- 1. Gom word box thành DÒNG ------------------------------------------
-
-def group_lines(words: Sequence[dict]) -> List[dict]:
-    """Gom output `image_to_data` của Tesseract thành dòng, giữ bbox hợp.
-
-    Khoá gom là `(block_num, par_num, line_num)`, **không phải `line_num` một
-    mình**: Tesseract đánh `line_num` lại từ 0 trong mỗi block, nên gom theo nó
-    sẽ dán hai cột của bố cục hai cột (CTST/CD) vào cùng một dòng.
-    """
-    theo_dong: Dict[Tuple[int, int, int], List[dict]] = {}
-    thu_tu: List[Tuple[int, int, int]] = []
-    for w in words:
-        text = str(w.get("text", "")).strip()
-        if not text:
-            continue
-        key = (int(w.get("block_num", 0)), int(w.get("par_num", 0)),
-               int(w.get("line_num", 0)))
-        if key not in theo_dong:
-            theo_dong[key] = []
-            thu_tu.append(key)
-        theo_dong[key].append(w)
-
-    out: List[dict] = []
-    for key in thu_tu:
-        ws = theo_dong[key]
-        x0 = min(int(w["left"]) for w in ws)
-        y0 = min(int(w["top"]) for w in ws)
-        x1 = max(int(w["left"]) + int(w["width"]) for w in ws)
-        y1 = max(int(w["top"]) + int(w["height"]) for w in ws)
-        confs = [float(w.get("conf", -1)) for w in ws
-                 if str(w.get("conf", "-1")) not in ("-1", "")]
-        out.append({
-            "text": " ".join(str(w["text"]).strip() for w in ws),
-            "bbox": (x0, y0, x1, y1),
-            "conf": round(sum(confs) / len(confs), 1) if confs else None,
-        })
-    return out
 
 
 # --- 2. Chỉ chọn dòng CÓ BỆNH -------------------------------------------
