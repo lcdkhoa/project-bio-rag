@@ -23,3 +23,35 @@ def test_units_sorted_by_reading_order():
     regs = segment_page(img, "ctst")
     units = extract_text_units(img, regs, "ctst")
     assert [u.reading_order for u in units] == sorted(u.reading_order for u in units)
+
+
+def test_maybe_apply_formula_hybrid_fail_safe_when_no_line_reproduces_hit(monkeypatch):
+    from src.etl.layout import text_extract as mod
+
+    # Gia lap image_to_lines tra ve cac dong KHONG co dong nao chua lo hong,
+    # trong khi text chinh (tham so `text`) CO lo hong - mo phong ca hai cot
+    # dinh dong (D-108-style).
+    monkeypatch.setattr(mod, "image_to_lines",
+                         lambda crop, psm: [{"text": "khong lien quan gi ca",
+                                              "bbox": (0, 0, 10, 10), "conf": 90}])
+
+    crop = np.zeros((80, 200, 3), dtype=np.uint8)
+    text = "hấp thụ khí 0, và thải ra khí (0,"
+
+    new_text, statuses = mod._maybe_apply_formula_hybrid(crop, text, object())
+
+    assert new_text == text
+    assert statuses == ["gate_hit_no_line_located"]
+
+
+def test_maybe_apply_formula_hybrid_returns_empty_when_not_suspect():
+    from src.etl.layout import text_extract as mod
+
+    crop = np.zeros((80, 200, 3), dtype=np.uint8)
+    text = "Tế bào là đơn vị cơ bản của sự sống"
+
+    new_text, statuses = mod._maybe_apply_formula_hybrid(crop, text, object())
+
+    assert new_text == text
+    assert statuses == []
+

@@ -14,11 +14,15 @@ import unicodedata
 
 import numpy as np
 import pytesseract
+from .formula_gate import is_formula_suspect
+from .formula_merge import apply_line_merge_to_region, merge_formula_line
+from .formula_ocr import get_formula_client
+from .ocr_lines import image_to_lines
 from .pill import bounds_for_width, read_pill_labels
 from .regions import Region, RegionType, TextUnit
 from ..cleaner import clean_vietnamese_text
 from ..diacritic import diacritic_review_flags
-from ...config import TESSERACT_CMD, DIACRITIC_REVIEW_ENABLED
+from ...config import DIACRITIC_REVIEW_ENABLED, FORMULA_HYBRID_ENABLED, TESSERACT_CMD
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
@@ -73,11 +77,61 @@ def _mask_out(img: np.ndarray, boxes) -> np.ndarray:
         out[y0:y1, x0:x1] = 255
     return out
 
-def extract_text_units(image: np.ndarray, regions: list[Region], variant: str) -> list[TextUnit]:
+
+def _maybe_apply_formula_hybrid(crop, text, formula_client):
+    """Neu `text` (da OCR xong bang duong chinh) bi gate nghi cong thuc: goi
+    them `image_to_data` (side-computation, chi khi can) de tim DONG chua lo
+    hong, crop rieng dong do, goi MinerU, ghep TOKEN vao dung vi tri.
+
+    KHONG doi `text` neu khong co gi de ghep — tra ve nguyen ban + list trang
+    thai rong. Xem thiet ke: document/specs/2026-08-27-formula-ocr-hybrid-buoc23-design.md §2.
+    """
+    if not is_formula_suspect(text):
+        return text, []
+
+    h, w = crop.shape[:2]
+    psm = _psm_for(crop)
+    lines = image_to_lines(crop, psm)
+
+    statuses: list[str] = []
+    new_text = text
+    found_candidate_line = False
+    for line in lines:
+        line_text = line["text"]
+        if not is_formula_suspect(line_text):
+            continue
+        found_candidate_line = True
+        x0, y0, x1, y1 = line["bbox"]
+        pad = 8
+        cx0, cy0 = max(0, x0 - pad), max(0, y0 - pad)
+        cx1, cy1 = min(w, x1 + pad), min(h, y1 + pad)
+        line_crop = crop[cy0:cy1, cx0:cx1]
+        if line_crop.size == 0:
+            continue
+        mineru_text = formula_client.read(line_crop, kind="text")
+        outcome = merge_formula_line(line_text, mineru_text)
+        if outcome.status == "not_suspect":
+            continue
+        statuses.append(outcome.status)
+        if outcome.n_applied > 0:
+            new_text, splice_status = apply_line_merge_to_region(
+                new_text, line_text, outcome.text)
+            statuses.append(splice_status)
+
+    if not found_candidate_line:
+        statuses.append("gate_hit_no_line_located")
+    return new_text, statuses
+
+
+def extract_text_units(image: np.ndarray, regions: list[Region], variant: str,
+                        formula_client=None) -> list[TextUnit]:
     units: list[TextUnit] = []
     # Ngưỡng pill tính MỘT LẦN theo chiều rộng TRANG, rồi truyền xuống từng crop
     # (xem `_pill_text_missing_from`).
     pill_bounds = bounds_for_width(image.shape[1])
+    client = formula_client
+    if client is None and FORMULA_HYBRID_ENABLED:
+        client = get_formula_client()
     for r in sorted(regions, key=lambda z: z.reading_order):
         if r.type in (RegionType.FIGURE, RegionType.PAGE_ARTIFACT):
             continue
@@ -93,10 +147,15 @@ def extract_text_units(image: np.ndarray, regions: list[Region], variant: str) -
             # Nối vào cuối, theo thứ tự trên->dưới. Thứ tự đọc không hoàn hảo,
             # nhưng CÓ chữ thì hơn là MẤT chữ (nguyên tắc 5).
             text = (text + "\n" + "\n".join(pills)).strip()
+        formula_statuses: list[str] = []
+        if client is not None and text:
+            text, formula_statuses = _maybe_apply_formula_hybrid(
+                crop, text, client)
         if text and len(text) > 5:
             # Không sửa ký tự nào: chỉ ghi lại token đáng ngờ để người xem
             # (nguyên tắc 5 — bước sửa tự động phải là flag-for-review).
             flags = diacritic_review_flags(text) if DIACRITIC_REVIEW_ENABLED else []
             units.append(TextUnit(r.type, text, r.reading_order, r.bbox,
-                                  review_flags=flags))
+                                  review_flags=flags,
+                                  formula_hybrid_status=formula_statuses))
     return units
