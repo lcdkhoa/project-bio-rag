@@ -45,6 +45,27 @@ def _fold_accents(text: str) -> str:
     """
     return strip_accents(text).replace("đ", "d").replace("Đ", "D")
 
+# Vietnamese is analytic: "cá" (fish) is a bare syllable that also opens
+# several multi-word terms with an unrelated referent. Measured on the real
+# index (`biology_image_metadata`, 3,881 docs, 2026-08-27): 129 docs match
+# standalone token "cá"; a 15-doc sample was only ~3 genuine fish, the rest
+# mostly "cá heo" (dolphin, mammal), "cá sấu" (crocodile, reptile), "cá cóc"
+# (newt, amphibian), "cá nhân"/"cá thể" (individual — a population-biology
+# term, unrelated to fish). Confirmed live: query "cho tôi hình con cá..."
+# gives the phrase "con cá" identical phrase_score=1.0 against BOTH a real
+# fish doc and the dolphin doc, so the dolphin ties a real fish for the top
+# slot. This is a MEASURED list, not a guess — "mập"/"ngừ"/"chép"/"rô phi"
+# stay OUT because those really are fish. Applied to DOCUMENT text only
+# (fused into one token, e.g. "cá heo" -> "cáheo") so "cá"/"con cá" no longer
+# false-matches; a query that explicitly asks for "cá heo" falls back to the
+# CLIP/metadata channels instead of this exact-lexical one — an accepted,
+# documented trade-off, not a silent gap.
+_FISH_FALSE_FRIEND_PATTERN = re.compile(r"\bcá (heo|sấu|voi|cóc|nhân|thể)\b")
+
+
+def _mask_fish_false_friends(text: str) -> str:
+    return _FISH_FALSE_FRIEND_PATTERN.sub(lambda m: f"cá{m.group(1)}", text)
+
 logger = logging.getLogger(__name__)
 
 VIETNAMESE_TO_ENGLISH_VISUAL_HINTS = {
@@ -419,18 +440,27 @@ class ImageVectorDB:
 
     def _tokenize(self, text: str) -> List[str]:
         """Tokenize keeping diacritics, but drop stopwords by their bare form."""
+        masked = _mask_fish_false_friends(self._normalize_accented(text))
         return [
             token
-            for token in self._normalize_accented(text).split()
+            for token in masked.split()
             if len(token) > 1 and _fold_accents(token) not in self._STOPWORDS
         ]
 
     def _expand_query_for_clip(self, query: str) -> str:
-        """Add lightweight English visual hints for CLIP's English-heavy text encoder."""
+        """Add lightweight English visual hints for CLIP's English-heavy text encoder.
+
+        Matches on WORD boundaries, not raw substring: the old `term in
+        normalized_query` check made key "ca" (fish) fire for any query
+        containing "các"/"cách"/"cao"/... (accent-stripped, all contain "ca"
+        as a substring), silently biasing CLIP toward fish images for
+        unrelated questions. Measured: e.g. "cách chăm sóc cây" tripped it.
+        """
         normalized_query = self._normalize_text(query)
+        padded_query = f" {normalized_query} "
         hints = []
         for vietnamese_term, english_hint in VIETNAMESE_TO_ENGLISH_VISUAL_HINTS.items():
-            if vietnamese_term in normalized_query:
+            if f" {vietnamese_term} " in padded_query:
                 hints.append(english_hint)
 
         if not hints:
@@ -486,7 +516,7 @@ class ImageVectorDB:
         )
 
         normalized_query = self._normalize_accented(query).strip()
-        direct_text = self._normalize_accented(
+        direct_text = _mask_fish_false_friends(self._normalize_accented(
             " ".join(
                 str(metadata.get(field) or "")
                 for field in (
@@ -508,7 +538,7 @@ class ImageVectorDB:
                     "context_text",
                 )
             )
-        )
+        ))
         exact_bonus = 0.15 if normalized_query and normalized_query in direct_text else 0.0
         return min(1.0, (direct_score * 0.8) + (weak_context_score * 0.2) + exact_bonus)
 
@@ -854,9 +884,9 @@ class ImageVectorDB:
         return phrases, match_tokens
 
     def _identity_text(self, metadata: Dict[str, Any], fields) -> str:
-        return self._normalize_accented(
+        return _mask_fish_false_friends(self._normalize_accented(
             " ".join(str(metadata.get(field) or "") for field in fields)
-        )
+        ))
 
     def _phrase_match_score(self, query: str, doc: Document) -> float:
         """1.0 when the query's content phrase appears in the figure's own label/caption."""
