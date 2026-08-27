@@ -94,7 +94,7 @@ IMAGE_EXTRACTION_VERSION = os.getenv(
 # Gate re-OCR cho ĐƯỜNG TEXT. Trước đây chỉ ảnh có version gate nên đổi logic
 # OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
 TEXT_EXTRACTION_VERSION = os.getenv(
-    "TEXT_EXTRACTION_VERSION", "v2_bai_spine")
+    "TEXT_EXTRACTION_VERSION", "v3_formula_hybrid")
 # Buoc 2/3 hybrid Tesseract+MinerU cho cong thuc (D-56, D-144). Mac dinh FALSE:
 # may dev khong co GPU/mineru_vl_utils. Chi bat tren Colab.
 FORMULA_HYBRID_ENABLED = os.getenv(
