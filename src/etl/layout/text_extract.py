@@ -10,6 +10,7 @@ luôn là một dòng (caption, nhãn hộp) -> `--psm 7`.
 Không upscale: đo được là CER thân bài không đổi ở 1×/2×/3×/4× trong khi `psm 6`
 + upscale 2× chỉ thêm 0,3% token với +70% thời gian (spec §1.2, CẤM #2).
 """
+import json
 import unicodedata
 
 import numpy as np
@@ -22,7 +23,7 @@ from .pill import bounds_for_width, read_pill_labels
 from .regions import Region, RegionType, TextUnit
 from ..cleaner import clean_vietnamese_text
 from ..diacritic import diacritic_review_flags
-from ...config import DIACRITIC_REVIEW_ENABLED, FORMULA_HYBRID_ENABLED, TESSERACT_CMD
+from ...config import DIACRITIC_REVIEW_ENABLED, FINGERPRINT_DIR, FORMULA_HYBRID_ENABLED, TESSERACT_CMD
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 
@@ -31,13 +32,27 @@ pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
 SINGLE_LINE_MAX_H = 60
 
 
-def _psm_for(crop: np.ndarray) -> int:
-    return 7 if crop.shape[0] < SINGLE_LINE_MAX_H else 6
+def single_line_max_h_for_book(book: str | None) -> int:
+    if not book:
+        return SINGLE_LINE_MAX_H
+    fp_path = FINGERPRINT_DIR / f"{book}.json"
+    if not fp_path.exists():
+        return SINGLE_LINE_MAX_H
+    try:
+        fp = json.loads(fp_path.read_text(encoding="utf-8"))
+        return int(fp.get("text_layout", {}).get(
+            "single_line_max_h_p90", SINGLE_LINE_MAX_H))
+    except (OSError, ValueError):
+        return SINGLE_LINE_MAX_H
 
 
-def _ocr(img: np.ndarray) -> str:
+def _psm_for(crop: np.ndarray, max_h: int = SINGLE_LINE_MAX_H) -> int:
+    return 7 if crop.shape[0] < max_h else 6
+
+
+def _ocr(img: np.ndarray, max_h: int = SINGLE_LINE_MAX_H) -> str:
     raw = pytesseract.image_to_string(
-        img, lang="vie", config=f"--psm {_psm_for(img)}")
+        img, lang="vie", config=f"--psm {_psm_for(img, max_h)}")
     return clean_vietnamese_text(raw)
 
 def _fold(text: str) -> str:
@@ -78,7 +93,7 @@ def _mask_out(img: np.ndarray, boxes) -> np.ndarray:
     return out
 
 
-def _maybe_apply_formula_hybrid(crop, text, formula_client):
+def _maybe_apply_formula_hybrid(crop, text, formula_client, book=None):
     """Neu `text` (da OCR xong bang duong chinh) bi gate nghi cong thuc: goi
     them `image_to_data` (side-computation, chi khi can) de tim DONG chua lo
     hong, crop rieng dong do, goi MinerU, ghep TOKEN vao dung vi tri.
@@ -90,7 +105,8 @@ def _maybe_apply_formula_hybrid(crop, text, formula_client):
         return text, []
 
     h, w = crop.shape[:2]
-    psm = _psm_for(crop)
+    max_h = single_line_max_h_for_book(book)
+    psm = _psm_for(crop, max_h)
     lines = image_to_lines(crop, psm)
 
     statuses: list[str] = []
@@ -124,11 +140,12 @@ def _maybe_apply_formula_hybrid(crop, text, formula_client):
 
 
 def extract_text_units(image: np.ndarray, regions: list[Region], variant: str,
-                        formula_client=None) -> list[TextUnit]:
+                        formula_client=None, book: str | None = None) -> list[TextUnit]:
     units: list[TextUnit] = []
     # Ngưỡng pill tính MỘT LẦN theo chiều rộng TRANG, rồi truyền xuống từng crop
     # (xem `_pill_text_missing_from`).
     pill_bounds = bounds_for_width(image.shape[1])
+    max_h = single_line_max_h_for_book(book)
     client = formula_client
     if client is None and FORMULA_HYBRID_ENABLED:
         client = get_formula_client()
@@ -141,7 +158,7 @@ def extract_text_units(image: np.ndarray, regions: list[Region], variant: str,
             continue
         if r.type == RegionType.BODY:
             crop = _mask_out(crop, r.meta.get("excludes", []))
-        text = _ocr(crop)
+        text = _ocr(crop, max_h)
         pills = _pill_text_missing_from(crop, text, pill_bounds)
         if pills:
             # Nối vào cuối, theo thứ tự trên->dưới. Thứ tự đọc không hoàn hảo,
@@ -150,7 +167,7 @@ def extract_text_units(image: np.ndarray, regions: list[Region], variant: str,
         formula_statuses: list[str] = []
         if client is not None and text:
             text, formula_statuses = _maybe_apply_formula_hybrid(
-                crop, text, client)
+                crop, text, client, book=book)
         if text and len(text) > 5:
             # Không sửa ký tự nào: chỉ ghi lại token đáng ngờ để người xem
             # (nguyên tắc 5 — bước sửa tự động phải là flag-for-review).

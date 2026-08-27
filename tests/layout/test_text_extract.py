@@ -55,3 +55,31 @@ def test_maybe_apply_formula_hybrid_returns_empty_when_not_suspect():
     assert new_text == text
     assert statuses == []
 
+
+def test_single_line_max_h_for_book_reads_from_fingerprint(tmp_path, monkeypatch):
+    import json
+    from src.etl.layout import text_extract as mod
+
+    fp_dir = tmp_path
+    (fp_dir / "SGK_KHTN_9_CD.json").write_text(json.dumps(
+        {"text_layout": {"single_line_max_h_p90": 118}}), encoding="utf-8")
+    monkeypatch.setattr(mod, "FINGERPRINT_DIR", fp_dir)
+
+    assert mod.single_line_max_h_for_book("SGK_KHTN_9_CD") == 118
+
+
+def test_single_line_max_h_falls_back_to_default_without_key(tmp_path, monkeypatch):
+    import json
+    from src.etl.layout import text_extract as mod
+
+    (tmp_path / "SGK_KHTN_6_KNTT.json").write_text(json.dumps({}), encoding="utf-8")
+    monkeypatch.setattr(mod, "FINGERPRINT_DIR", tmp_path)
+
+    assert mod.single_line_max_h_for_book("SGK_KHTN_6_KNTT") == mod.SINGLE_LINE_MAX_H
+
+
+def test_single_line_max_h_none_book_keeps_default():
+    from src.etl.layout import text_extract as mod
+
+    assert mod.single_line_max_h_for_book(None) == mod.SINGLE_LINE_MAX_H
+

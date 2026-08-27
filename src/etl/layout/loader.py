@@ -104,7 +104,7 @@ class LayoutOCRLoader:
         regions = segment_page(img, variant, book=source.name)
         formula_client = get_formula_client() if FORMULA_HYBRID_ENABLED else None
         units = extract_text_units(img, regions, variant,
-                                   formula_client=formula_client)
+                                   formula_client=formula_client, book=source.name)
         # `bai_so` đi vào metadata chunk CHỈ KHI spine của quyển này sạch flag
         # (xem SPINE_UNTRUSTED_FLAGS). Trước D-43 spine sai nặng nên chỗ này bị
         # chặn cứng; giờ nó là điều kiện đo được, không phải một hằng số niềm tin.
