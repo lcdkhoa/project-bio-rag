@@ -242,6 +242,54 @@
    "dap_an": "Khe có hình chữ F và được đánh số thứ tự (5).",
    "bo": false,
    "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p9_04": {
+   "cau_hoi": "Quan sát Hình 2.9 (con gà) và Hình 2.11 (đá sỏi), hãy cho biết hình nào thể hiện vật sống, hình nào thể hiện vật không sống? Vì sao?",
+   "dap_an": "Hình 2.9 (con gà) là vật sống vì có các đặc trưng của sự sống như sinh trưởng, sinh sản, cần thức ăn; Hình 2.11 (đá sỏi) là vật không sống vì không có các đặc trưng đó.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p8_01": {
+   "cau_hoi": "Quan sát Hình 1.1 (mục c và d), hãy cho biết mỗi thí nghiệm minh hoạ điều gì.",
+   "dap_an": "Mục c) chiếc đũa nhúng vào cốc nước trông như bị gãy ở mặt nước — minh hoạ hiện tượng ánh sáng bị khúc xạ khi truyền qua hai môi trường trong suốt khác nhau. Mục d) cây được chụp kín bằng bình thuỷ tinh — thí nghiệm kiểm tra cây có tiếp tục phát triển bình thường khi bị cách li với không khí bên ngoài hay không.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p10_03": {
+   "cau_hoi": "",
+   "dap_an": "",
+   "bo": true,
+   "ly_do_bo": "AI best-effort: hình minh hoạ trang trí (con tem có phi hành gia, chủ đề khoa học vũ trụ) — không đủ nội dung khoa học cụ thể trong ảnh để đặt câu hỏi trực tiếp, cần người xem lại."
+  },
+  "SGK_KHTN_6_KNTT_p11_04": {
+   "cau_hoi": "Quan sát Hình 2.1, hãy kể tên hai kí hiệu an toàn trong phòng thực hành được thể hiện trong hình và nêu ý nghĩa mỗi kí hiệu.",
+   "dap_an": "Hình 2.1 thể hiện các kí hiệu an toàn, ví dụ: kí hiệu đeo kính bảo hộ và găng tay (yêu cầu dùng thiết bị bảo hộ cá nhân khi làm thí nghiệm) và kí hiệu cấm đưa tay lên miệng/ăn uống (cảnh báo không ăn uống trong phòng thực hành).",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p6_01": {
+   "cau_hoi": "Quan sát nhãn hoá chất bên phải trong Hình 1.1, kí hiệu hình thoi màu đỏ trên nhãn có ý nghĩa gì?",
+   "dap_an": "Kí hiệu hình thoi màu đỏ trên nhãn hoá chất là kí hiệu cảnh báo nguy hiểm (hoá chất có tính ăn mòn/gây hại), nhắc người sử dụng phải cẩn thận và tuân thủ quy tắc an toàn khi tiếp xúc.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p8_03": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy kể tên các mẫu chất lỏng được đo pH trong hình.",
+   "dap_an": "Các mẫu được đo pH trong Hình 1.3 gồm: a) nước máy; b) nước mưa; ... g) nước vôi trong.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p6_01": {
+   "cau_hoi": "Quan sát Hình 1.1, hãy kể tên hai loại nguồn sáng được giới thiệu trong hình.",
+   "dap_an": "Hai nguồn sáng trong Hình 1.1 là: a) đèn chiếu sáng 12V–21W (nối với nguồn điện); b) đèn laser.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_9_KNTT_p8_03": {
+   "cau_hoi": "Quan sát Hình 1.10, đây là dụng cụ gì và có công dụng gì trong phòng thí nghiệm?",
+   "dap_an": "Hình 1.10 là lưới tản nhiệt (lưới thép), dùng để phân tán nhiệt đều khi đun/đốt bằng đèn cồn, tránh làm vỡ dụng cụ thuỷ tinh do nhiệt tập trung tại một điểm.",
+   "bo": false,
+   "ly_do_bo": ""
   }
  }
 }
