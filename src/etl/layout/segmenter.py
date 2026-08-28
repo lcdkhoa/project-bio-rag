@@ -41,10 +41,22 @@ from ...config import LAYOUT_BOX_MIN_SATURATION, LAYOUT_BOX_MIN_AREA_FRAC, FINGE
 
 logger = logging.getLogger(__name__)
 
-# SÀN tối thiểu cho min_sat per-book — ĐÃ ĐO qua scripts/measure_min_sat_floor.py
-# trên cả 12 sách (120 trang probe: floor 20 cho 337 boxes vs floor 45 cho 335 boxes,
-# không mất box nào và bắt được các box pastel nhạt màu).
-MIN_SAT_FLOOR = 20
+# SÀN an toàn cho min_sat per-book — KHÔNG phải giá trị điển hình, chỉ là chặn
+# dưới cho trường hợp suy biến (fingerprint hỏng cho ra p10 âm/bằng 0).
+# D-146 (2026-08-28) SỬA D-145: bản trước ghi "p10 đo được trải 22,0-71,0, sàn
+# 20 nằm dưới p10 thấp nhất (7_CD)" — con số đó SAI, không khớp
+# `database/fingerprints/*.json` khi đọc lại. p10 THẬT trải **9,0 (6_CD) đến
+# 28,9 (6_KNTT)**. Với sàn 20 (giá trị cũ), `max(20, round(p10))` cho đúng 20 ở
+# **11/12 quyển** — nghĩa là "per-book" thực chất chỉ là hằng số 20 phủ gần hết
+# corpus, đúng cái lỗi mà M0 đã phê phán ở LAYOUT_BOX_MIN_SATURATION=45 (ngưỡng
+# cao hơn phân bố thật, làm mất hộp tông nhạt — xem CLAUDE.md mục M0 điểm 2).
+# Hạ sàn xuống 9 (đúng bằng p10 thấp nhất đã đo) để `round(p10)` của TỪNG quyển
+# luôn thắng — sàn chỉ còn là lưới an toàn, không còn là giá trị chi phối.
+# CHƯA đo lại chất lượng box-detection ở sàn mới này (script
+# `measure_min_sat_floor.py` để so số hộp theo từng sàn CHƯA chạy xong hết 12
+# quyển) — nếu ETL lại mà thấy hộp tông nhạt bị bỏ sót hoặc quá nhiều nhiễu, đo
+# lại bằng script đó trước khi đổi số này lần nữa.
+MIN_SAT_FLOOR = 9
 
 # Per-variant layout params. Chỉ còn KNTT trên corpus thật; giữ `variant` để một
 # nguồn khác (PDF upload) vẫn đi qua được cùng một đường.

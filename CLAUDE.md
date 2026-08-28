@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+File này hướng dẫn Claude Code (claude.ai/code) khi làm việc với code trong repo.
 
 ## RULE #0 — nguồn yêu cầu duy nhất là `document/goal.docx` (đọc trước mọi việc)
 
@@ -28,11 +28,11 @@ Tóm tắt yêu cầu chốt (chi tiết đọc thẳng file, đừng nhớ qua 
 
 | # | Yêu cầu trong đề cương | Trạng thái trong code |
 |---|---|---|
-| MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **BƯỚC 2+3/3 — CODE XONG, CHƯA CHẠY ETL THẬT** (D-145). Pipeline hybrid Tesseract + MinerU patch, `single_line_max_h` & `min_sat` per-book, notebook Colab an toàn; chờ chạy Colab GPU |
-| MT2 | Kho vector phủ **toàn bộ KHTN Lý–Hoá–Sinh, 12 quyển / 3 bộ sách, ~2 319 trang** | **XONG**: 2 387/2 399 trang lập chỉ mục, 16 393 chunk + 3 881 vector hình (dòng "mới 4 quyển KNTT / 801 trang" ở đây là của tháng 8 đầu, đã bị lật) |
+| MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **BƯỚC 2+3/3 — CODE XONG, CHƯA CHẠY ETL THẬT** (D-145, D-146). Pipeline hybrid Tesseract + MinerU patch, `single_line_max_h` & `min_sat` per-book, notebook Colab an toàn; chờ chạy Colab GPU |
+| MT2 | Kho vector phủ **toàn bộ KHTN Lý–Hoá–Sinh, 12 quyển / 3 bộ sách, ~2 319 trang** | **XONG**: 2 387/2 399 trang lập chỉ mục, 16 393 chunk + 3 881 vector hình |
 | MT3 | Tối ưu truy xuất: định tuyến ý định + **truy xuất lai BM25 + dense** + rerank + cổng lọc | **XONG**. Mặc định `hybrid` + rerank BẬT + cổng lọc TẮT (D-82). Đo trên 231 câu ở bề rộng production: MRR **0,8255** · R@1 0,7403 · R@10 **0,9697**, thắng bm25 và dense ở MỌI cột. **Khoảng cách recall của đề cương đã bị xoá** — prod 0,9091 > 0,8961 là trần của riêng kênh dense (D-132) |
 | MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | (i)+(iii) **XONG** trên bộ 231 câu/12 quyển (D-127); (ii) **CHƯA KẾT LUẬN ĐƯỢC** — 100 câu/4 quyển KNTT (D-87) cho delta +0,010 nhưng trần bộ test chỉ 0,104, nên phải nói "chưa đo được ưu thế", KHÔNG phải "vô ích" |
-| MT5 | Web UI (Next.js) hiển thị công thức Toán/Hoá + hình sắc nét | FE **có** (repo khác) nhưng **thiếu 2 thứ đề cương đòi**: không có KaTeX/MathJax, và bỏ hẳn trường `citations` — xem dòng MT5 ở bảng tiến độ |
+| MT5 | Web UI (Next.js) hiển thị công thức Toán/Hoá + hình sắc nét | **XONG** (D-137..D-139) — xem dòng MT5 ở bảng tiến độ |
 
 Mốc thời gian trong đề cương: 15/07/2026 → 23/09/2026, năm giai đoạn. Giai đoạn 1
 (số hoá đủ 12 quyển) đáo hạn **29/07/2026**; Giai đoạn 3 (thực nghiệm đối chiếu
@@ -41,61 +41,63 @@ BM25/Hybrid và Text-only/Multi-modal) chạy **14/08 → 28/08/2026**. Khi báo
 
 **Hệ quả trực tiếp phải nhớ:** phạm vi đã **mở lại** thành 3 nhà xuất bản, nên nguyên
 tắc 7 ("xoá code mạnh tay khi phạm vi hẹp lại") **đã bị đảo chiều** cho phần xử lý
-theo nhà xuất bản — xem mục "What this is".
+theo nhà xuất bản — xem mục "Repo này là gì".
 
-## What this is
+## Repo này là gì
 
-A Vietnamese-language **RAG system over image-only Vietnamese science textbook pages (SGK KHTN, THCS)**. The pipeline OCRs Vietnamese text and crops figures, then serves hybrid text+image retrieval with a local Qwen2.5 LLM answering in Vietnamese with citations.
+Một hệ thống **RAG tiếng Việt trên trang SGK KHTN THCS chỉ có ảnh** (không có lớp
+text). Pipeline OCR chữ tiếng Việt + crop hình, rồi phục vụ truy xuất lai văn bản +
+hình bằng Qwen2.5 chạy local, trả lời tiếng Việt kèm trích dẫn.
 
-**Scope per `goal.docx` (RULE #0): the whole KHTN subject — Physics, Chemistry AND Biology — over 12 books / 3 publishers (KNTT, CTST, Cánh Diều), ~2,319 pages.** (2,319 is `goal.docx`'s estimate; the **measured** count on disk is **2,399** — D-65. When the two differ, the disk wins for engineering, the đề cương wins for the report's scope statement.) The "Biology-focused" framing of the old chuyên-đề report is dead: a Physics or Chemistry question is now **in scope by contract**, not a distraction. Chemistry/Physics formulas (`O₂`, `H₂SO₄`, `A = Fs`) are a *named deliverable* ("bổ sung bước xử lý đặc thù cho công thức Hoá, Lý"), which promotes D-56/D-63 from tech debt to contracted work.
+**Phạm vi theo `goal.docx` (RULE #0): toàn bộ môn KHTN — Lý, Hoá VÀ Sinh — trên 12
+quyển / 3 nhà xuất bản (KNTT, CTST, Cánh Diều), ~2 319 trang.** (2 319 là số ước của
+`goal.docx`; số **đo được** trên đĩa là **2 399** — D-65. Khi hai số khác nhau: đĩa
+thắng cho kỹ thuật, đề cương thắng cho câu chữ về phạm vi trong báo cáo.) Khung "trọng
+tâm Sinh học" của báo cáo chuyên đề cũ đã hết hiệu lực: một câu hỏi Lý hoặc Hoá nay
+**nằm trong phạm vi theo hợp đồng**, không phải ngoài lề. Công thức Hoá/Lý (`O₂`,
+`H₂SO₄`, `A = Fs`) là **hạng mục có tên trong đề cương** ("bổ sung bước xử lý đặc thù
+cho công thức Hoá, Lý"), nên D-56/D-63 từ nợ kỹ thuật trở thành việc có hợp đồng.
 
-**Corpus on disk (re-measured 2026-08-23, D-65): 12 quyển / 3 NXB / 2 399 trang.** `database/` was deleted — there is nothing to resume, the whole ETL is a fresh run. (The "2 403 trang" and the CD counts `172 / 208 / 217` written here on 2026-08-22 were **wrong**; the numbers below come from `page_numbers()` on disk.)
+**Corpus trên đĩa (đo lại 2026-08-23, D-65): 12 quyển / 3 NXB / 2 399 trang.**
+`database/` đã bị xoá — không có gì để resume, cả ETL là một lượt chạy mới.
 
 ```
-datasources/SGK_KHTN_{6,7,8,9}_{KNTT,CTST,CD}/page_NNN.png    12 folders, 0 gaps
+datasources/SGK_KHTN_{6,7,8,9}_{KNTT,CTST,CD}/page_NNN.png    12 thư mục, 0 khoảng trống
 CD   179 + 171 + 207 + 215 = 772 | CTST 204 + 188 + 223 + 215 = 830
 KNTT 195 + 179 + 196 + 227 = 797                        tổng 2 399
 ```
 
-Three measured facts that overturn earlier design notes — full table in
+Ba sự thật đo được, lật lại thiết kế cũ — bảng đầy đủ trong
 `document/specs/2026-08-22-12books-3publishers-etl-rebuild.md`:
 
-1. **KNTT is the LOWEST-resolution set, not the reference.** KNTT 1094×1536 vs CTST/CD
-   **2280×3201** (6_CD is 2480×3480) — ~2.1× per edge, ~3.5× the area. Every OCR
-   conclusion in this file (CER 0.0048, "upscaling changes nothing", and **D-56 subscript
-   loss**) was measured *only on KNTT at 1094×1536*. Whether `O₂`/`H₂SO₄` survive at
-   CD/CTST resolution is **unmeasured and must be tested early** — D-56 may be a
-   resolution artefact rather than a Tesseract limit.
-2. **SETTLED (D-65): every book starts at `page_001` and `printed_page == filenum`
-   (offset 0) on all 12.** Measured with `src/etl/book/fingerprint.py` over 40 pages/book:
-   offset **0** in 12/12, hit rate **39/40** in eleven books and **38/40** in 9_CD, winner
-   margin 36–39. The paragraph that used to stand here — "7_CD and 8_CD start at
-   `page_000`", "6_CD and 6_CTST read 0/4" — was a coarse first probe and is **void**.
-   Kept for the lesson only: page-number position is still per-book (measured
-   `x ≈ 0.104 / 0.894` CD, `0.112 / 0.889` CTST, `0.074 / 0.928` KNTT), so never assume
-   a zone — measure it, flag it, never guess (principle 5).
+1. **KNTT là bộ ẢNH ĐỘ PHÂN GIẢI THẤP NHẤT, không phải bộ chuẩn.** KNTT 1094×1536
+   so với CTST/CD **2280×3201** (6_CD là 2480×3480) — ~2,1× mỗi cạnh, ~3,5× diện
+   tích. Mọi kết luận OCR trong file này (CER 0,0048, "upscale không đổi gì", và
+   **D-56 mất chỉ số dưới**) chỉ đo *trên KNTT ở 1094×1536*. Việc `O₂`/`H₂SO₄` có
+   sống sót ở độ phân giải CD/CTST hay không **đã được đo (D-73): KHÔNG** — chỉ số
+   dưới không sống ở bất kỳ NXB nào, xem bảng tiến độ.
+2. **CHỐT (D-65): mọi quyển bắt đầu từ `page_001` và `printed_page == filenum`
+   (offset 0) trên cả 12.** Đo bằng `src/etl/book/fingerprint.py` trên 40 trang/quyển:
+   offset **0** ở 12/12, tỉ lệ khớp **39/40** ở mười một quyển và **38/40** ở 9_CD.
+   Vị trí số trang vẫn là **theo từng quyển** (đo được `x ≈ 0,104/0,894` CD,
+   `0,112/0,889` CTST, `0,074/0,928` KNTT) — đừng bao giờ giả định một vùng, phải đo,
+   gắn cờ, không đoán (nguyên tắc 5).
+3. **Mọi thứ suy ra từ corpus cũ đều vô hiệu:** `database/` đã xoá, mọi
+   `database/manifests/*` cũ, bộ test 100 câu/4 quyển cũ, gold set G2 24 trang cũ
+   (số trang đã đổi), và mọi số G1/G3/G4/G5 đo trên corpus cũ.
 
-   Historical note: the paragraph replaced here claimed 7_CD and 8_CD started at
-   `page_000`. They do not — there is no `page_000` anywhere on disk, and the earlier
-   `0/4` reading for 6_CD / 6_CTST came from a coarse top/bottom-band probe, not from a
-   missing page number. Both were superseded by the 40-page/book measurement above.
+**Xử lý theo từng nhà xuất bản nay là bắt buộc** (RULE #0 đảo ngược D-50):
+`LAYOUT_VARIANT = "kntt"` cứng và `make_image_processor()` luôn-KNTT phải bỏ. **Không**
+khôi phục `CtsstImageProcessor` cũ (`git show 75b8377^:src/etl/image_processor.py`) —
+nó viết cho bản PDF render 150-DPI cũ, chưa từng QA trên nguồn pixel này. Mỗi quyển
+khai báo một **fingerprint layout đã đo** (M0); quyển nào chưa có thì ETL phải raise,
+không được mượn tham số của quyển khác.
 
-3. **Everything derived from the old corpus is void:** the deleted `database/`, all
-   `database/manifests/*`, the 4-book 100-question testset, the 24-page G2 gold set (page
-   numbers moved), and every G1/G3/G4/G5 number quoted below.
+### M0 fingerprint layout — ĐÃ ĐO theo từng NXB (2026-08-23, D-65)
 
-**Per-publisher handling is now mandatory** (RULE #0 reversed D-50): `LAYOUT_VARIANT =
-"kntt"` and the always-KNTT `make_image_processor()` must go. Do **not** restore
-`CtsstImageProcessor` (`git show 75b8377^:src/etl/image_processor.py`) — it was written
-for the old 150-DPI PDF render and never QA'd on this pixel source. Each book declares a
-**measured** layout fingerprint (M0 in the spec); a book without one makes the ETL raise
-rather than borrow another book's parameters.
-
-### M0 layout fingerprint — MEASURED per publisher (2026-08-23, D-65)
-
-Artefact: `database/fingerprints/{book}.json`, 12/12 books complete. Full report:
-`document/specs/2026-08-23-m0-report.md`. **These three tables overturn assumptions that
-are still baked into `toc.py`, `pill.py` and `config.py`.**
+Artefact: `database/fingerprints/{book}.json`, đủ 12/12 quyển. Báo cáo đầy đủ:
+`document/specs/2026-08-23-m0-report.md`. **Ba bảng dưới đây lật lại giả định vẫn
+đang nằm cứng trong `toc.py`, `pill.py` và `config.py`.**
 
 | | KNTT (4 quyển) | CTST (4 quyển) | Cánh Diều (4 quyển) |
 |---|---|---|---|
@@ -112,33 +114,38 @@ are still baked into `toc.py`, `pill.py` and `config.py`.**
 Ba hệ quả trực tiếp, phải nhớ trước khi sửa code:
 
 1. **Trục anchor bằng pill là chuyện RIÊNG của KNTT.** CD/CTST đọc được **0** nhãn từ
-   kênh pill nhưng 30–65 nhãn từ OCR thường. Nên **D-45 / D-51** (psm và kernel CLOSE của
-   pill) và **D-40** (ba nhãn ô so sánh chưa đọc được) chỉ áp cho 4 quyển KNTT, không phải
-   12 — và 8/12 quyển có anchor *dễ hơn* KNTT.
-2. **`LAYOUT_BOX_MIN_SATURATION = 45` cao hơn thực tế của MỌI quyển** — nó nằm trên p50
-   của 11/12 quyển (chỉ 6_KNTT đạt 51), và nhánh tông nhạt `pale_sat_min = 12` còn cao hơn
-   p10 của 6_CD (9). Ngưỡng hộp màu phải là **per-book, lấy từ phân bố đã đo**.
-3. **Chạy bộ đọc MỤC LỤC một cột lên bố cục hai cột sinh ra số SAI MÀ TRÔNG HỢP LÝ.** Đo
-   trên 7_CTST: `Bài 1 → trang 144` (thật là trang 6), rồi ràng buộc đơn điệu giết 31 Bài
-   còn lại. Luật "bỏ entry chứ không đoán" chặn 31 số sai nhưng **không chặn số sai đầu
-   tiên**. Bộ đọc cell nay chỉ chạy khi `entry_style == "bai"`, và spine không liền mạch bị
-   gắn cờ `KHONG_dang_tin`.
+   kênh pill nhưng 30–65 nhãn từ OCR thường. Nên **D-45/D-51** (psm và kernel CLOSE của
+   pill) và **D-40** (ba nhãn ô so sánh chưa đọc được) chỉ áp cho 4 quyển KNTT, không
+   phải 12 — và 8/12 quyển có anchor *dễ hơn* KNTT.
+2. **`LAYOUT_BOX_MIN_SATURATION = 45` cao hơn thực tế của MỌI quyển** — nó nằm trên
+   p50 của 11/12 quyển (chỉ 6_KNTT đạt 51). Ngưỡng hộp màu **đã được làm per-book**
+   (D-145 Task 7, sửa lại ở D-146): `segmenter._params_for(variant, book)` tra
+   `sat_percentiles.p10` của chính fingerprint quyển đó, sàn an toàn `MIN_SAT_FLOOR =
+   9` (đúng bằng p10 thấp nhất đo được, 6_CD) chỉ chặn trường hợp suy biến chứ không
+   còn đè lên số đo như bản D-145 ban đầu (bản đó dùng sàn 20 — cao hơn p10 thật của
+   11/12 quyển, D-146 đã sửa). Số hộp đo lại trên 11/12 quyển ở sàn 45→15 **gần như
+   không đổi** (biên độ 0-2 hộp/quyển) — củng cố nhưng CHƯA XÁC NHẬN sàn 9, vì 9 nằm
+   ngoài dải đã quét và `9_CD` chưa có số (D-146). Xem bảng tiến độ, dòng `min_sat`.
+3. **Chạy bộ đọc MỤC LỤC một cột lên bố cục hai cột sinh ra số SAI MÀ TRÔNG HỢP LÝ.**
+   Đo trên 7_CTST: `Bài 1 → trang 144` (thật là trang 6), rồi ràng buộc đơn điệu giết
+   31 Bài còn lại. Luật "bỏ entry chứ không đoán" chặn 31 số sai nhưng **không chặn số
+   sai đầu tiên**. Bộ đọc cell nay chỉ chạy khi `entry_style == "bai"`, và spine không
+   liền mạch bị gắn cờ `KHONG_dang_tin`.
 
 Ngưỡng px của `toc.py` và `pill.py` nay tỉ lệ theo chiều rộng trang
-(`toc.geom_for_width(w)`, `pill.bounds_for_width(w)`, tham chiếu 1094 px) — ở đúng 1094 px
-chúng trả lại y nguyên bộ số cũ, có test chốt. **Còn một hằng số KNTT chưa xử lý:**
-`text_extract.SINGLE_LINE_MAX_H = 60` px (chọn psm 7 vs psm 6); trên CD một dòng cao
-~136 px nên sẽ ăn psm 6 — cố ý chưa sửa vì chưa đo trên CD (việc của M2, kèm before/after).
+(`toc.geom_for_width(w)`, `pill.bounds_for_width(w)`, tham chiếu 1094 px) — ở đúng
+1094 px chúng trả lại y nguyên bộ số cũ, có test chốt. **`text_extract.
+SINGLE_LINE_MAX_H = 60` px (chọn psm 7 vs psm 6) đã được làm per-book** (D-145 Task 8,
+`single_line_max_h_for_book(book)`), nhưng phép đo trên cả 12 quyển đều cho **n < 5
+mẫu dòng đơn cô lập** nên KHÔNG quyển nào ghi được giá trị riêng vào fingerprint —
+mọi quyển (kể cả CD, dòng cao ~136 px) vẫn chạy với **60px mặc định y hệt trước khi
+có D-145**. Nghĩa là cơ chế đã nối dây nhưng **hành vi thực tế chưa đổi cho quyển
+nào** — đây vẫn là một câu hỏi mở, không phải đã đóng; xem bảng tiến độ.
 
-**Numbers below marked "measured" were measured on the OLD 4-book KNTT corpus at
-1094×1536 and are historical until re-measured.** In particular the page-identity bullet
-below says `printed_page == filenum − 1` on 801 pages — that was the OLD corpus; today it
-is `printed_page == filenum` on all 12 books (D-65), and the *mechanism* (manifest is the
-single truth source, no `index + 1` fallback) is what still stands.
+Triết lý, bảng "Kế hoạch tới" và "Trạng thái tiến độ" bên dưới là nơi cập nhật liên
+tục — phần trên chỉ là bối cảnh corpus, không cần đọc lại mỗi lượt.
 
-Most docs (`README.md`, `document/`) are in Vietnamese; code and comments mix English/Vietnamese. Match the surrounding language when editing.
-
-## Philosophy — tư tưởng của repo (đọc trước khi viết bất kỳ dòng code nào)
+## Triết lý — tư tưởng của repo (đọc trước khi viết bất kỳ dòng code nào)
 
 Đây là **sách giáo khoa cho học sinh**. Một câu trích sai dấu, một số trang sai, một
 hình gán sai bài — là dạy sai một đứa trẻ. Toàn bộ repo được thiết kế quanh một câu
@@ -162,7 +169,9 @@ trước thắng.
 4. **Phản biện chính code của mình (adversarial self-review).** Test pass ≠ đúng. Với
    mỗi thay đổi: truy edge case, off-by-one, lệch hệ toạ độ/hệ chỉ số (0-based vs
    1-based), cache cũ, fallback âm thầm. Chủ động đi tìm trang làm mình sai — QA thật
-   trên trang thật, không chỉ unit test trên fixture tổng hợp.
+   trên trang thật, không chỉ unit test trên fixture tổng hợp. **Kể cả số đo trong
+   chính decision log/CLAUDE.md cũng phải bị nghi ngờ và đối chiếu lại với artefact
+   thật** (D-146: một con số p10 bịa đã nằm trong log một lượt trước khi bị bắt).
 5. **Fail loudly, never silently.** Một trang OCR lỗi phải được **để lại chưa xử lý**
    và log ra, để lần chạy sau làm lại — không được ghi vào index một nửa dữ liệu. Một
    fallback im lặng (ví dụ đoán số trang = index+1) tệ hơn một lỗi ồn ào, vì nó đẩy
@@ -182,75 +191,80 @@ Hệ quả vận hành: mỗi quyết định ghi vào `document/decision_log.ht
 đúng-sai được đo bằng eval trong `src/test/`; test nhỏ và nhắm đúng chỗ (đừng chạy cả
 suite khi đang lặp); và khi báo cáo, nói thẳng cái gì đã verify, cái gì chưa.
 
-## Active redesign (2026-08) — read this first
+## Redesign đang chạy (2026-08) — đọc trước
 
-A layout-aware ETL + retrieval-reranking rebuild is **in progress** (deadline-driven). Source of truth:
-- **Decisions:** `document/decision_log.html` (data-driven `DECISIONS[]` log; every decision is recorded here — currently **D-01…D-136**). **It broke silently once (D-136)** — a `notes` string wrapped onto a second physical line, which is a JS SyntaxError, so the page rendered *nothing* for a day while the file still looked fine in an editor. `tests/test_decision_log.py` now lexes every string the way JS does; run it after editing this file.
-- **What to do next (updated 2026-08-26, sau khi BÁO CÁO viết xong):**
-  `document/specs/2026-08-26-bao-cao-viet-lai-report.md` §8 — thứ tự đề xuất là
-  **MT5 (FE: KaTeX + `citations` + URL)** → **MT1 (MinerU chỉ cho vùng công thức)** →
-  **`bai_so` cho 8 quyển CD/CTST** (không cần chạy lại ETL, xem §6 của
-  `2026-08-26-bao-cao-viet-lai-prompt.md`) → **bộ câu hỏi sinh từ HÌNH có người đối chiếu
-  ảnh** (điều kiện tiên quyết để kết luận vế (ii) của MT4 — trần 0,104 đang chặn).
-  **Cập nhật 2026-08-27:** MT5 nay XONG (D-137..D-139) nên **MT1 (MinerU chỉ cho vùng
-  công thức) là việc tiếp theo, đã được người dùng CHỐT bắt đầu** (D-141..D-143, chấp
-  nhận du di deadline cho ETL lại 12 quyển) — xem gạch đầu dòng D-56 phía dưới và
-  `[[ocr_bakeoff]]` trong memory. Cùng lượt phát hiện và vá xong một lỗi KHÔNG nằm
-  trong kế hoạch này: truy vấn ảnh "cho tôi hình con cá" trả hình không liên quan
-  (D-141..D-143, phần "Retrieval flow" điểm 3 phía dưới) — không cần ETL lại.
-  **Cập nhật 2026-08-27 (lượt 2, D-144):** Bước 1/3 của MT1 (gate phát hiện vùng nghi
-  công thức) đã XONG, đo trên gold set thật — xem `document/specs/2026-08-27-formula-
-  ocr-hybrid-prompt.md` đã cập nhật §"Bàn giao tiếp". **Việc tiếp theo là Bước 2 (gọi
-  MinerU thật qua Colab GPU) rồi Bước 3 (merge vào chunk)** — cả hai KHÔNG chạy được
-  trong phiên CLI này vì máy dev không có CUDA.
-- **Nền cũ, chỉ đọc như tư liệu (M2 đã xong):**
-  `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` — prompt M2 đầy đủ: trích nguyên văn
-  hợp đồng của `goal.docx` (Nội dung 2 và 4), mọi số đã đo (index 16 393 chunk, chỉ số dưới
-  CD 256:3 / CTST 377:3 / KNTT 408:4), **ba mâu thuẫn giữa đề cương và số đo phải HỎI chứ
-  không tự xử** (384 chiều vs bge-m3, Vintern, chunk), 6 việc M2 kèm tiêu chí nghiệm thu đo
-  được, 11 điều CẤM. **§2 chứa 10 quyết định người dùng đã chốt (D-74)** — trong đó bỏ
-  Vintern-1B và chẩn đoán lại đúng bệnh: vấn đề không phải thiếu caption mà là **kênh ảnh
-  không truy vấn được bằng tiếng Việt** (`CLIP_MODEL` là CLIP tiếng Anh, cầu Việt–Anh chỉ là
-  từ điển **14 mục** viết cứng; đo được `cá mập` có **5 lần** trong chữ đã index). Bắt đầu
-  từ **D-76** (D-75 = kế hoạch M2 hai track). **Đang chạy HAI SESSION song song** —
-  prompt của Track B (BM25 + hợp nhất) ở
-  `document/specs/2026-08-24-m2-track-b-bm25-prompt.md`, kèm **bảng quyền sở hữu file**
-  để hai session không đụng nhau. Nền cũ:
-  `document/specs/2026-08-23-m0-toc-and-layout-prompt.md` §4
-  (thứ tự M1→M5) + `document/specs/2026-08-23-m0-report.md` §7 (5 việc còn lại của M0/M1),
-  trên nền thiết kế `document/specs/2026-08-22-12books-3publishers-etl-rebuild.md`. Bảng
-  tiến độ tóm tắt: mục "Trạng thái tiến độ" ngay dưới. **Stale, chỉ đọc như tư liệu:**
-  `2026-08-21-eval-numbers-to-report-prompt.md` và `2026-08-21-pending-to-report-prompt.md`
-  — cả hai viết cho corpus 4 quyển KNTT đã bị `database/` xoá và corpus 12 quyển thay thế;
-  giữ lại vì (a) mọi số G3/G5 đã đo nằm trong đó (mốc lịch sử, KHÔNG phải mục tiêu so sánh)
-  và (b) hai cái bẫy còn nguyên giá trị: image doc mồ côi (D-52) và rerank tắt âm thầm khi
-  `RERANK_MODEL` là HF id dưới `HF_HUB_OFFLINE=1`.
-- **What was already done and measured:** `document/specs/2026-08-21-png-source-etl-report.md`. The prompt that produced it: `document/specs/2026-08-21-png-source-etl-prompt.md` — the PNG-source migration, with every measured number so nothing needs re-measuring. Earlier: `2026-08-20-kntt-only-etl-rebuild-design.md`, `2026-08-18-rag-etl-retrieval-redesign-design.md`, `2026-08-19-m2-*`, `2026-08-19-m3-*`. Implementation plans live alongside in `document/specs/`.
+Một đợt viết lại ETL theo layout + rerank truy xuất đang **chạy dở** (chạy theo
+deadline). Nguồn sự thật:
 
-Still locked from the earlier design: full clean rebuild of `database/`; classical-CV layout segmenter spine; text embedding → `BAAI/bge-m3`; `BAAI/bge-reranker-v2-m3` cross-encoder; sidebar/info-box as separate labeled chunks; checkpoint keyed on **content hash** not filename. (Dropped: "Vietnamese diacritic post-correction" — measured useless and it rewrote text, see D-34.)
+- **Quyết định:** `document/decision_log.html` (log `DECISIONS[]`, hiện **D-01…D-146**).
+  **Nó từng hỏng âm thầm một lần (D-136)** — một chuỗi `notes` xuống dòng vật lý giữa
+  chừng là lỗi cú pháp JS, nên trang render ra **trống trơn** cả một ngày dù file vẫn
+  trông ổn trong editor. `tests/test_decision_log.py` nay lex mọi chuỗi giống hệt JS;
+  chạy nó sau khi sửa file này.
+- **Việc tiếp theo (cập nhật 2026-08-28, sau D-145/D-146):** Việc còn lại DUY NHẤT
+  của MT1 là **chạy `document/colab_runtime_etl.ipynb` trên Colab GPU** (code Bước
+  2+3 hybrid Tesseract+MinerU đã xong, xem bảng tiến độ dòng "Xử lý công thức
+  Hoá/Lý"). Sau đó theo `document/specs/2026-08-26-bao-cao-viet-lai-report.md` §8:
+  `bai_so` cho 8 quyển CD/CTST (không cần chạy lại ETL) → bộ câu hỏi sinh từ HÌNH có
+  người đối chiếu ảnh (điều kiện tiên quyết để kết luận vế (ii) của MT4 — trần 0,104
+  đang chặn).
+- **Spec cũ, chỉ đọc như tư liệu (đã hoàn thành hoặc bị corpus sau đè lên):**
+  `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` (M2: BM25 + hợp nhất, D-74..D-82),
+  `2026-08-23-m0-toc-and-layout-prompt.md` + `2026-08-23-m0-report.md` (M0/M1),
+  `2026-08-22-12books-3publishers-etl-rebuild.md` (thiết kế nền 12 quyển),
+  `2026-08-21-png-source-etl-report.md` (migration sang nguồn PNG, mọi số đã đo).
+  **Stale, chỉ đọc như tư liệu:** `2026-08-21-eval-numbers-to-report-prompt.md` và
+  `2026-08-21-pending-to-report-prompt.md` — viết cho corpus 4 quyển KNTT cũ đã bị
+  `database/` xoá; giữ lại vì hai cái bẫy trong đó còn nguyên giá trị: image doc mồ
+  côi (D-52) và rerank tắt âm thầm khi `RERANK_MODEL` là HF id dưới `HF_HUB_OFFLINE=1`.
 
-Measured on the PNG corpus (2026-08-21). Everything marked DONE below is implemented and verified on the real corpus (D-33…D-39); the rest is still open.
+Vẫn giữ nguyên từ thiết kế trước: dựng lại sạch `database/`; segmenter layout bằng CV
+cổ điển; embedding text → `BAAI/bge-m3`; cross-encoder `BAAI/bge-reranker-v2-m3`;
+sidebar/info-box là chunk riêng có nhãn; checkpoint khoá theo **content hash**, không
+theo tên file. (Đã bỏ: "sửa dấu tiếng Việt tự động sau OCR" — đo được là vô dụng và
+còn ghi đè text gốc, xem D-34.)
 
-- **DONE — page identity is verified, never guessed:** `printed_page == (number in the filename) − 1`. `page_001.png` = printed 0 = front cover. Measured over all 801 pages: offset **−1** in all 4 books (the model *derives* it), parity (even value → left margin, odd → right) with zero exceptions, and `ocr_confirmed` **793/793 = 100.0%** of the pages that print a number (194/194, 178/178, 195/195, 226/226); the unconfirmed set is exactly `{page_001, page_002}` per book, which genuinely print no number. Filenames carry the source's own page index, not download order, so a re-downloaded page slots straight back in. The `BookManifest` JSON per book is the single source of truth and `LayoutOCRLoader` **raises** without it — there is no `index + 1` fallback anywhere any more (`layout/page_number.py` was deleted). Never renumber or delete source PNGs — cover pages get `role="cover"` and are skipped at chunk time.
-- **DONE — page-number reading = union of the 1× and 3× corner crops.** The corner crop is 153×115 px at native size, where Tesseract clips digits (`"11"→"1"` conf 83, `"110"→"10"` conf 45). 3× fixes those but is *not* strictly better (`page_165` of book 9 reads only at 1×), so both scales are read and the candidates unioned, deduped by `(value, side)`. **This is the only place upscaling is allowed** — body text CER is identical at 1×/2×/3×/4×.
-- **DONE — preprocessing: none.** `preprocess_page` is deleted, not stubbed. Otsu/binarization measurably *hurts* (conf 93.4 → 92.0); the left-6% wipe had no stamp to remove on this source (median of 100 pages/book: 0% pixels < 200) and destroyed real content, including the left-margin page number of every even page. `RENDER_DPI` is gone from config; the legacy PDF path keeps its own `PDF_RENDER_DPI` constant.
-- **DONE — region OCR states its psm:** `--psm 6`, or `--psm 7` for crops under 60 px tall. Default psm 3 lost 3.8% of tokens (6293 → 6535 on 14 pages). Whole-page OCR (`RobustOCRLoader`, image-side context only) also moved to `--psm 6`: on a real page psm 3 = 134 words, psm 11 = 150, psm 6 = 194.
-- **DONE — `segment_page` recall was the top defect and is rebuilt: 2.17 → 4.10 regions/page** on the same 40-page/4-book sample, 0 pages regressed. Two root causes, both design errors: a single mask + `CLOSE(25)` glued the question box, the panel and every photo into one 39%-of-page blob that then failed the flatness test (so `page_010` yielded **0 boxes**), and flatness was measured over the *bbox* instead of the region's own pixels (the lavender sidebar scored 0.42 vs a 0.45 floor because its bbox included white gaps). Now: small close, flatness over the component's own pixels, and hue-band splitting of a component that fails — hue bands derived from the region's pixels, no hard-coded publisher palette. Verified on `page_010`: the yellow question box comes out in full and the right sidebar reads `"Chỉ ra những lợi ích…"` with its head intact (the exact head-truncation defect of D-32).
-- **DONE — checkpoint is keyed on the hash of EACH PAGE plus `TEXT_EXTRACTION_VERSION`** (`page_key = {book}#{md5 of the page}`), so re-downloading 19 pages re-processes 19 pages and changing OCR logic can finally force a re-OCR. Chunks of a page are deleted before the page is re-indexed, so a version bump leaves no orphans.
-- **DONE — automatic "fixes" never rewrite text.** `diacritic.py` now only sets `needs_review` / `review_tokens` on the chunk (`DIACRITIC_REVIEW_ENABLED`). It catches structural impossibilities (letter+digit tokens, invalid onsets/codas, two tone marks, a stop-coda syllable with no sắc/nặng such as `mat`); it cannot catch `chế`→`ché` and does not pretend to.
-- **OPEN — tables lose their row/column structure, so a question can be answered from the WRONG COLUMN (D-63).** Measured on `Bảng 12.1` (book 6, printed p.44): the text *is* indexed but the cells interleave — `"Nhựa được dùng làm ghế ngồi, ống dẫn . Dẻo, nhẹ, không dẫn điện, dẫn nhiệt kém, nước, tắm lợp,..."` — mixing the *uses* column into the *properties* column. Qwen answered the properties question with the uses. Same class as `Bảng 35.1` (book 9, **p.154** — the "p.155" written here until 2026-08-25 was the 801-page corpus's number; measured on today's index the caption is on 154 and p.155 has no table at all, D-91) which lost its entire year header row **and** all 8 decimal commas (`26,2`→`262`, a 10× error). A chunk currently preserves no row/column relation at all. This is distinct from the subscript defect and needs its own fix.
-- **OPEN — the subscript defect PRODUCES WRONG ANSWERS, not just bad matching (D-63).** Book 7 printed p.121 is indexed as `"hấp thụ khí 0, và thải ra khí (0,"` — O₂ and CO₂ both collapse to `0,`-shaped tokens, so Qwen inverted the answer ("absorbs CO₂, releases O₂"). Retrieval was correct (p.121 ×3); the *text* was unusable. A damaged formula gives the other failure mode: book 9 p.21 indexes `"1 J = 1 Ñm"`, `"(M]"`, and the RAG answer came back **empty** — a silent failure with nothing in the log saying the formula was unreadable. **4 of the 6 evaluator failures trace to ETL/OCR, only 2 to the LLM: the bottleneck is extracted-text quality, not retrieval** (recall@10 = 1.00).
-- **OPEN — OCR destroys subscripts in formulas, and this is a real retrieval limit (D-56).** `O₂`→`0,`, `CO₂`→`CO,`/`(0,`, `H₂O`→`H,O`, `O₁,O₂`→`O,,`, `F₁,F₂`→`F,`. Measured across the whole indexed text: **281 subscript-loss occurrences in 147/4934 chunks vs only 4 formulas read correctly** (`CO,` 88×, `CH,` 60×, `SO,` 43×, `H,O` 31×, `H,SO,` 21×) — so subscripts are essentially *never* captured (281:4). Consequence: a student typing `CO2` will not lexically match a page storing `CO,`; the dense bge-m3 channel may partly bridge it, the lexical channel cannot. This was found by opening the G3 fail cases, and it is the sole cause of every G3 `cited_wrong` (the cited page was correct and contained the answer verbatim). **Do not "fix" it by rewriting text** (CẤM #5 — re-guessing a subscript is fabrication). The two legitimate routes, both requiring before/after measurement: normalise subscripts *inside the matcher/query only* (never in stored text), or re-OCR formula regions with a different config. **2026-08-27: user confirmed the second route — hybrid Tesseract (văn xuôi) + MinerU (chỉ vùng công thức), and accepted a deadline extension to re-run the 12-book ETL for it (D-141..D-143).** **Bước 1 (gate phát hiện vùng nghi công thức) XONG (D-144):** `src/etl/layout/formula_gate.py::is_formula_suspect()` — precision 0,8654 / recall 1,0000 trên gold set **89 ô, đủ cả 3 NXB** (SỬA nhận định cũ: gold set này KHÔNG phải KNTT-only, 15 trang đã cân đối 5/5/5 theo NXB từ 2026-08-25 — dòng cũ ở đây và ở spec bàn giao là suy diễn chưa kiểm). Quét ngưỡng (kiểu D-57) cho thấy gate tốt nhất là quy tắc NHỊ PHÂN (OR của `CONG_THUC_HONG`/`CO_DAU_BANG`, giờ sống ở `src/etl/layout/formula_signals.py` dùng chung với `ocr_bakeoff.py`), không phải một ngưỡng liên tục cần tinh chỉnh. Đo lại bằng `python -m src.test.measure_formula_gate`. **Bước 2 (gọi MinerU thật qua Colab GPU) và Bước 3 (merge có kiểm soát vào chunk) CHƯA làm** — máy dev không có CUDA (`torch 2.11.0+cpu`), đây là việc của một phiên chạy trên Colab. `MinerUClient` không còn chỉ sống trong notebook — nó đã có ở `scripts/colab_run_ocr_engines.py` (D-104), dùng qua `MinerUClient(backend="transformers", ...).content_extract(image, type="text"|"table")`, **không phải `two_step_extract()`** (câu đó ở spec bàn giao đã lỗi thời — `two_step_extract` rỗng 3/3 ô trên crop một dòng, D-104). `RegionType` vẫn chưa có loại "formula" — Bước 3 sẽ cần nó khi tích hợp thật vào `text_extract.py`.
-- **OPEN — OCR junk from figure areas is kept on purpose.** Both candidate filters were measured to delete real text: a per-line confidence floor kills `"Em có biết?"` (conf 56) and `"Gai glycoprotein"` (54); "drop lines with no 3+-letter word" kills `"e Ở 20 °C, 100 mL"`. Junk is noise, not fabrication — the chunk carrying it is flagged `needs_review` instead (D-38).
-- **DONE (partly) — white-on-colour labels: `src/etl/layout/pill.py`.** Crop the pill → invert → OCR `--psm 7` → accept only what matches `Hình N.M`; wired into both the text units and the image-side anchors. This is **not** a resolution problem: the labels read at no scale (1×, 1.134× = the old 150-DPI render size, 1.5×, 2×) and inverting a whole crop does not help either (Tesseract binarizes locally). Measured: 32 sample pages / 4 books → **13 pages, 17 `Hình N.M` labels** where there were essentially none, and the Bài numbers cross-check against page position. Candidates are unioned over **`CLOSE_KERNELS = (3, 5, 9)`** because one kernel is not enough (D-51 — see the G4 bullet). **Still unread:** a pill nested inside a cell tinted in the *same hue family* (the three comparison labels) — no saturation threshold separates it (`page_010`: the pill is sat **82** on a sat **157** purple band), hue-band splitting was tried and is not better, and no CLOSE kernel helps either. Needs a local-contrast design (D-40).
-- **DONE — the Bài spine is complete and contiguous on all 4 books: 55 / 42 / 47 / 51 = 195 Bài, G1 PASS everywhere** (D-43). `MỤC LỤC` is now read as a **table** (`book/toc.py`): find the table geometry with CV first — the page-number column is the band between the last two vertical rules (books 6/9, which are ruled) or the rightmost ink group behind an ≥8 px gutter (books 7/8, which use tinted bands) — then OCR one cell at a time. The old whole-page `--psm 4` regex returned **0 entries for book 6** because no line ever ends with the page number. Three measured traps, all fixed: `TOC_PAGE_NUMBERS = (5, 6)` was **wrong** — book 6 has THREE TOC pages (5–7), so the constant silently lost Bài 40–55; the TOC page range is now discovered per book. Book 8's number column is only **29 px** wide, so the *crop* clipped the leading digit of 3-digit numbers (`180`→`80`, `191`→`9`) — pad the crop 6 px, but **only** when the column came from a gutter, because padding a ruled column licks the rule and an empty chương cell then OCRs as a phantom `149`. No single psm wins: `56` only reads at psm 6, `169` only at psm 8/13, `166` only at psm 7 — so the candidates are unioned over pad × scale × psm and resolved by a **monotonic** constraint (page numbers never decrease); nothing fits → drop the entry and flag, never guess. `bai_so` **can now be written into chunk metadata** — the D-39 block is lifted, verified visually on book 8 (Bài 30 at `page_124`, Bài 47 at `page_192`, titles matching).
-- **DONE — M3 figures: G4 PASSES at 100%. Coverage 72/72 figure numbers have a crop, 0 figures assigned to the wrong Bài, no half-page over-crops (D-45, D-46, D-51).** Progression across the fixes: 88.6% → 90.0% → 95.7% → 97.1% → 98.6% → **100.0%**, with mis-assignment at 0 throughout. `IMAGE_EXTRACTION_VERSION` → `v19_pill_kernels`. The gate is `src/test/qa_figures.py` and needs **no hand-labelled pages**: `Hình A.B` means figure B of **Bài A**, so a contiguous spine lets you check both "A equals the page's Bài" and "the B values form 1..max". Treat the missing-count as a **lower bound** — a Bài's last figure going missing drops `max` with it. Seven defects were fixed, each found by opening the page that was wrong: `read_pill` used psm 7 only (`Hình 1.2` needs psm 8/13, `Hình 1.3` needs 7 — same page); `_extract_figure_label` ranked box titles above `Hình N.M`; a caption read twice (pill `Hình 1.9` vs OCR `Hình 19`) survived dedupe-by-number with the broken copy winning; bridging thresholds 0.25 → 0.15 (a 5-config sweep over 24 pages — better on **both** axes); two OCR "words" **54–62 px tall** (real text 18–24) bridged the 60 px column gutter and made a line box cover 51.6% of a photo cell, so the cell was dropped as text; a body reference `Hình 1.1.` on its own line outranked the real pill caption; and an activity box swallowed a figure inside it **twice** (exclusion zone, then 0.85 containment suppression). Two rules now encode real hierarchy: a cell with a `Hình N.M` caption within 6% of page height is **immune to exclusion zones**, and a labelled figure nested in a box is **legitimate nesting**, like sub_figure in composite. **Crop size is not crop error:** both remaining crops above 40% were opened and verified — `Hình 1.12` really is a full-page figure of 8 slides. **`Hình 2.3` is now solved, and D-46 had the cause wrong (D-51).** It was never local contrast: `pill.py` hard-coded a single `CLOSE_KERNEL = 9`. Measured on the component that actually contains the pill — `k=3` gives a clean **113×30, solidity 0.882** component that reads `Hình2.3`, while `k≥5` fuses it into a **505×286, solidity 0.50** blob wider than `MAX_W`, so it was dropped. D-46's "morphology ruled out" test had run at the *segmenter* layer, not in `find_pill_boxes` — when you say a hypothesis is eliminated, say at which layer you measured it. Candidates are now unioned over `CLOSE_KERNELS = (3, 5, 9)` and deduped by IoU (smallest kernel first, so the tightest bbox wins). `k=0` is excluded **structurally**, not by measurement: without a close, `closed == mask` so `holes` is always empty and `hole_frac = 0 < HOLE_FRAC_MIN` rejects every pill. Comparing the *lists* rather than the totals (the D-46 lesson) shows it gained **two** figures and lost none: `Hình 2.3` plus **`Hình 2.5` of book 8, which was missing without the gate ever reporting a gap** because it is the last figure of its Bài — concrete proof that the missing-count really is only a lower bound. **Still open and genuinely D-40:** the three comparison-cell labels, where the pill sits on a band of the *same hue family* (`page_010`: pill sat **82** on a sat **157** purple band) — no kernel separates that. Visual QA `src/test/test_image_extraction_full.py` is ported to `PageSource` (it used to render at poppler 150 DPI while the ETL reads native 1094×1536 — different coordinate spaces, so its overlays said nothing about production).
-- **DONE — G3 exists: `src/test/qa_citation_page.py` measures whether the *cited* page really contains the answer (D-49).** Runs production's own text retriever + `build_citations`, then re-reads each cited page's indexed text. It deliberately does **not** use the gold key — that's recall, which `recall_at_k.py` already covers. Reports `ok` / `cited_wrong` / `no_citation` separately, with `G3 = ok/(ok+cited_wrong)` and `no_citation` kept *outside* the fraction because it is a recall failure, not a citation failure. The matcher is IDF-weighted token coverage with IDF **measured on the index itself** — a folded-form stopword list was tried and measurably wrong, because accent folding collides function words with the corpus's most important content words (`khí`→`khi`, `đo`/`độ`→`do`, `lá`→`la`, `tai`, `đá`→`da`, `nguyên tử`→`tu`, `cân`→`can`). It also self-reports whether reranking was actually in effect, which is how the `RERANK_ENABLED=true` + `HF_HUB_OFFLINE=1` + model-not-downloaded silent degradation was caught. **Measured on the full 4-book index + the 100-question testset (2026-08-22): G3 = 0.9900** (99 ok / 1 cited_wrong / **0 no_citation**) at the calibrated threshold, 0.9800 at the old 0.60, and **1.0000** with the judge rescue. `COVERAGE_MIN` is now **0.50, calibrated by measurement, not typed** (D-57): swept 0.25–0.65 against the judge on only the citations the threshold actually governs (`informative_tokens > 3` — short answers take a different branch, so the threshold never applies to them), giving 86.5% agreement at 0.50 vs 75.7% at 0.60, with the error shape at 0.60 being **9 too-strict / 0 too-lenient**. Do **not** lower it further to make G3 look like 1.0000: judge agreement *drops* below 0.50, and every failure at every threshold was already citing the correct page. Raising it above 0.60 is **unmeasured** (134 citations above 0.60 never went to the judge). The remaining 1 failure, and both failures at 0.60, have one shared cause — **OCR destroys subscripts** (D-56). G1 PASSes page identity on all 4 books, spine contiguous 195/195 (D-43). **G2 is half-done** (`qa_ocr_gold.py` built, 24 pages exported, awaiting the human pass; the consensus half needs PaddleOCR, never installed — D-55). G5 still open.
-- **The Bài banner reads only book 6, and the number is published rather than hidden (D-44).** The badge is a **white disc with coloured "Bài N"** in book 6 (the old detector assumed the opposite and got 3 hits / 196 pages) but a **solid coloured hexagon with white "Bài N"** in books 7/8/9. Book 6: badge independently confirms **43/55** TOC-derived start pages, with 1 flagged `banner_toc_mismatch` (page 166, badge read 40 where the TOC says 47 — the TOC is right). Books 7/8/9: **0/k**, measured, after three attempts (corner OCR in both polarities 0/48; shape-masked inverted OCR à la `pill.py` **0/24** — the hexagon is *found* reliably at 241×207 px, so the failure is in reading, not locating; same unsolved class as D-40). The manifest carries `banner_votes = [confirmed, total]` and the G1 report prints it, so a `0/k` is visible, not a silent fallback. **The TOC drives the spine; the badge only corroborates and never overrides** — the old "banner wins" rule is reversed, because the TOC now reads 195/195 while the badge reads ~2/3 of one book with self-contradicting cases.
-- **DONE (measured, then switched off) — image captioning is `IMAGE_CAPTION_ENABLED=false` by default (D-47).** The InternVL path is now *correct* — `AutoModel` + `AutoTokenizer`, InternVL dynamic-patch preprocessing, and repo-side `_chat`/`_generate_ids` because the vendored `chat()` hardcodes `input_ids.cuda()` and its `generate()` forwards `return_dict` into `forward()` twice on transformers 4.46.3. D-42's diagnosis was right but it was one of **three** stacked failures. Proof it had never run once: `database/image_caption_cache.json` did not exist. Measured on **12 real crops** (4 books, CPU float32, `max_patches=6`, 100 tokens, greedy): **17.6 s/crop** → ~4.8 h for ~976 crops (basis: 39 crops / 32 sample pages = 1.22 crops/page × 801), ~4× the cost of the whole image side; JSON parses **6/12** (prose prompt: 0/12); quality by opening every crop = correct 2/12, partial 6/12, **fabricated 4/12** — a suction-cup hook became "a surgeon … ear surgery", the Hoà Bình dam grew "small lighthouses", plus invented formulas and stray Russian/Chinese tokens. The decisive number: **it volunteers a figure number and is wrong 4/4 times** (1.1→1.3, 2.2→2.1, 16.11→16.3 ×2) — precisely what `layout/pill.py` already reads correctly (D-45). Its only trustworthy output is text it OCRs back off the crop, which the deterministic pipeline already has. So the code stays (re-enabling is one flag) but the default is off, `_load_model` **raises** instead of self-disabling, and `caption()` no longer swallows errors. Re-enabling requires a new measurement on these same 12 crops, not intuition.
-- Cost, measured on the dev box (16 cores, 68 GB RAM, **torch 2.11.0+cpu — no CUDA at all**): text OCR ~1.6 s/page → ~21 min for 801 pages; **bge-m3 embedding on CPU 251 ms/chunk** → ~16 min for ~3800 chunks, so a full `--text-only` is **~37–40 min with no GPU**. Image side (OWL-ViT + CLIP on CPU) ~5 s/page → ~70 min. So Colab is optional for ETL; a GPU only really matters for **serving** Qwen2.5-3B. **End-to-end per page is higher than the sum of those parts (measured 2026-08-22, D-53):** the text loop runs at **3.56 s/page** (39 pages of book 6 → ~11–12 min/book, ~47 min for all 4) and the image loop at **8.86 s/page** (4 figure-rich pages, small sample). Trust the progress log's own `s/trang`, not these estimates.
-- **DONE — the ETL prints progress, so "running" is distinguishable from "hung" (D-53).** `src/utils/progress.py::ProgressLogger` logs every `PROGRESS_LOG_EVERY_PAGES` pages **or** `PROGRESS_LOG_EVERY_SECONDS` seconds (10 / 30 by default) on the three slow loops — per-page text indexing, the whole-page OCR that anchors figure captions, and figure cropping — with done/total, measured s/page, elapsed, ETA and caller-supplied counters (`chunks`, `trang_rong`, `fail`, `hinh`, `bo_qua`). `tqdm` is **gone from all three ETL entrypoints**: a stderr bar with no timestamp gets shredded by the log lines it shares a terminal with. It reports only measured numbers — unknown rate prints ETA `?`, never a guess. Adding it exposed that `_load_ocr_text_per_page` OCRs **every** page needing images before the first crop (~5 min of former silence per book).
-- **Embedding model: `.env` now sets `EMBEDDING_MODEL=BAAI/bge-m3`**, matching the Colab notebook (verified 2026-08-21). The old 384-dim MiniLM/1024-dim bge-m3 split is resolved; if you ever switch back, the index must be rebuilt — the two dimensionalities cannot share a collection.
+**Tóm tắt các mốc DONE/OPEN quan trọng nhất còn chưa nằm trong bảng "Trạng thái tiến
+độ" bên dưới** (đo trên corpus PNG 2026-08-21, D-33…D-39, chi tiết đầy đủ ở
+`document/specs/2026-08-21-png-source-etl-report.md`):
+
+- **Danh tính trang không đoán:** `BookManifest` là nguồn sự thật duy nhất cho số
+  trang in; `LayoutOCRLoader` **raise** nếu thiếu, không có fallback `index+1`.
+- **Không tiền xử lý ảnh:** `preprocess_page` đã xoá hẳn — Otsu/binarize đo được là
+  *hại* (conf 93,4 → 92,0); không có "vệt mực" nào ở lề trái 6% để xoá.
+  `region OCR` luôn nói rõ psm đang dùng (`--psm 6`, hoặc `7` cho crop dưới 60px).
+- **`segment_page` đã dựng lại, recall 2,17 → 4,10 vùng/trang** (cùng mẫu 40
+  trang/4 quyển) nhờ tách "flatness" đo trên pixel của chính vùng thay vì trên bbox,
+  và close-kernel nhỏ thay vì một mask dán chết mọi hộp lại với nhau.
+- **Checkpoint khoá theo hash TỪNG TRANG + `TEXT_EXTRACTION_VERSION`**; đổi version
+  ép re-OCR toàn bộ, chunk cũ của trang bị xoá trước khi ghi chunk mới (không rác).
+- **Sửa tự động không bao giờ ghi đè text** — `diacritic.py` chỉ gắn cờ
+  `needs_review`/`review_tokens`, không tự đoán lại một âm tiết.
+- **OPEN — bảng mất cấu trúc hàng/cột, có thể trả lời SAI CỘT (D-63).** Đo trên
+  `Bảng 12.1` (quyển 6, tr.44): cột "công dụng" và "tính chất" bị trộn vào nhau khi
+  OCR tuần tự theo dòng; `Bảng 35.1` (quyển 9, tr.154) mất cả hàng tiêu đề năm và
+  8/8 dấu phẩy thập phân (`26,2`→`262`, sai 10×). Một chunk hiện không giữ quan hệ
+  hàng/cột nào — khác lớp lỗi với chỉ số dưới công thức, cần hướng sửa riêng, **chưa
+  làm**.
+- **Nhãn hình chữ trắng trên nền màu (`pill.py`):** crop → đảo màu → OCR `--psm 7` →
+  chỉ nhận khớp `Hình N.M`. Không phải vấn đề độ phân giải (đọc được ở mọi scale) mà
+  là polarity + binarize cục bộ của Tesseract. **Còn chưa đọc được:** pill lồng trong
+  ô cùng họ màu (D-40, ví dụ `page_010`: pill sat 82 trên nền sat 157).
+- **G3 (`qa_citation_page.py`) đo trang được trích dẫn có thực sự chứa câu trả lời
+  không** — IDF-weighted token coverage, ngưỡng `COVERAGE_MIN=0,50` hiệu chỉnh bằng
+  số trên judge LLM (D-49, D-57). G1 (spine Bài liền mạch) PASS 195/195 trên 4 quyển
+  KNTT cũ (D-43); G2 (gold set OCR) nửa chừng, đang đề xuất thu hẹp thành gold set
+  công thức (xem cuối bảng tiến độ).
+- **`IMAGE_CAPTION_ENABLED=false` mặc định (D-47), đã đo rồi mới tắt, không phải tắt
+  theo cảm tính:** InternVL trên 12 crop thật — bịa 4/12 (móc treo thành "bác sĩ phẫu
+  thuật tai"), và khi tự nêu số hình thì SAI 4/4 lần trên chính thứ `pill.py` đã đọc
+  đúng. Không dùng làm caption cho tới khi có phép đo mới trên đúng 12 crop đó.
+- **Progress logging có ETA thật** (`src/utils/progress.py`), không dùng `tqdm` (bar
+  không timestamp bị log dòng khác xé nát). Tốc độ đo được trên máy dev (16 core,
+  không GPU): text OCR ~3,56 s/trang, ảnh ~8,86 s/trang — coi log thật hơn ước tính
+  này (D-53).
+- **`EMBEDDING_MODEL=BAAI/bge-m3`** trong `.env`, khớp Colab notebook; đổi model là
+  đổi chiều vector, phải build lại toàn bộ index.
 
 ## Kế hoạch tới (chốt 2026-08-23) — và CHÍNH XÁC khi nào chạy lại ETL toàn bộ
 
@@ -261,7 +275,7 @@ phải sở thích tổ chức công việc.
 |---|---|---|---|
 | **M1** | Bộ đọc MỤC LỤC cho CTST (hai cột) + CD (`style = so_thu_tu`, MỤC LỤC ở cuối sách); hợp nhất `toc._BAI` (đang phân biệt hoa/thường) với `fp_toc.ROW_PATTERNS` (đã `IGNORECASE`); cho `toc.py` đọc `entry_style`/`toc_pages` từ fingerprint thay vì hằng số | `--build-manifests` chạy hết **12/12 quyển**, G1 PASS, spine Bài liền mạch từng quyển, manifest được **commit** | **mọi thứ** — đường text `raise ManifestMissing` khi thiếu manifest |
 | ~~**M1.5**~~ | **XONG 2026-08-23 (D-73)** | chỉ số dưới **không sống ở đâu cả** (CD 256:3, CTST 377:3, KNTT 408:4) → một luật chung; `s/trang` thật = **5,0** end-to-end, manifest 1,79 s/trang | — |
-| **M2** | Text ETL 12 quyển: `min_sat` per-book từ fingerprint, xử lý `SINGLE_LINE_MAX_H = 60` (hằng số KNTT; dòng CD cao ~136 px) kèm before/after, **dựng chỉ mục BM25 cùng lượt** (cùng chunk id) | index text đủ 12 quyển + BM25 song song | MT3, và mọi phép đo eval |
+| ~~**M2**~~ | **XONG** — BM25 (D-77..D-79), `min_sat` per-book (D-145 Task 7, sửa D-146), `single_line_max_h` per-book đã nối dây nhưng chưa có quyển nào đủ mẫu để ghi giá trị riêng (D-145 Task 8, xem mục M0 phía trên) | index text đủ 12 quyển + BM25 song song | MT3, và mọi phép đo eval |
 | **M3** | Hình ảnh theo từng NXB. Gỡ `LAYOUT_VARIANT` **XONG** (D-111). Kênh pill đọc **0** ở 8/12 quyển nhưng **kênh anchor chữ đen đọc tốt** nên không phải viết bộ đọc mới (D-110) | G4 theo từng NXB — **chạy được ngay**, xem dòng dưới | MT1 phần hình, MT4 multi-modal |
 | **M4** | Bộ test 12 quyển có nhãn `phan_mon`/`khoi`/`bo_sach`/`do_kho`, phân bố đều | testset mới + gold key khớp index | MT4 |
 | ~~**M5**~~ | **XONG 2026-08-25** phần đối chiếu: BM25/dense/hybrid × rerank × cổng lọc trên 300 câu/12 quyển (D-82); text-only vs multi-modal trên 100 câu/4 quyển KNTT (D-87) | hai bảng: `src/test/ablation_report_12books.csv` và `src/test/ablation_mm_report.csv` | báo cáo — **còn nợ**: bộ câu hỏi sinh từ HÌNH (trần bộ test hiện tại chỉ 0,104) và chất lượng câu trả lời có LLM chấm |
@@ -269,33 +283,20 @@ phải sở thích tổ chức công việc.
 **Khi nào chạy lại ETL toàn bộ — ba mốc, không phải một.** Đừng chạy 2 399 trang
 trước khi qua mốc trước đó, vì mỗi lần chạy lại tốn nhiều giờ:
 
-1. **Ngay hôm nay chạy được:** `--build-manifests --book SGK_KHTN_{6,7,8,9}_KNTT`
-   rồi `--text-only` cho **4 quyển KNTT** (~797 trang, đo được 3,56 s/trang ≈ 47
-   phút). Mục đích **không** phải dựng DB cuối cùng, mà là (a) xác minh đường ống
-   còn chạy sau khi corpus đổi `offset −1 → 0`, (b) có một `s/trang` thật để so.
-2. **Lượt text toàn bộ 12 quyển: SAU M2** (M1 xong + `min_sat` per-book + BM25).
-   Chạy sớm hơn thì phải chạy lại, vì `TEXT_EXTRACTION_VERSION` sẽ bump ở M2 và
-   version gate sẽ OCR lại **toàn bộ** — đúng theo thiết kế.
+1. **Lượt xác minh 4 quyển KNTT (đã chạy).** Mục đích không phải dựng DB cuối cùng,
+   mà xác minh đường ống còn chạy và có `s/trang` thật để so.
+2. **Lượt text toàn bộ 12 quyển với hybrid công thức: SAU KHI CHẠY COLAB.**
+   `TEXT_EXTRACTION_VERSION` đã bump lên `v3_formula_hybrid` (D-145 Task 9) — version
+   gate sẽ OCR lại **toàn bộ** 2 399 trang ở lượt chạy Colab tới, đúng theo thiết kế.
+   Đừng bump thêm lần nữa trước khi lượt này chạy xong, kẻo tốn thêm một lượt OCR đầy đủ.
 3. **Lượt ảnh: 4 quyển KNTT ĐÃ CHẠY (2026-08-25, D-87) — 2 h 24, 938 doc, G4 gán
-   sai 0 / thiếu 0. 8 quyển CD/CTST: ĐO XONG Bước 0 (D-110), sẵn sàng chạy sau
-   khi gỡ `LAYOUT_VARIANT`.** Kênh pill đọc **0 nhãn** trên 8 quyển đó, **nhưng
-   kênh anchor chữ đen thì đọc tốt** — đo 15 trang/quyển: `6_CD` 35/38 doc có
-   `figure_label`, `7_CTST` 11/13, `8_CD` 20/21, `9_CTST` 11/12. **ETA ≈ 4 h 13**,
-   tức ước "~4 giờ" vốn viết ở đây là ĐÚNG: `6_CD` 22,44 s/trang nhưng nó là
-   **ngoại lệ** (2480×3480 + 2,53 crop/trang), còn `8_CD` **7,59** · `7_CTST`
-   **7,70** · `9_CTST` **8,27** s/trang. (`7_CD`/`9_CD` chưa đo, giả định như
-   `8_CD`.) `--book` nay lọc được (D-84) nên chạy đúng phần cần chạy là một
-   lệnh, không phải một bản vá.
-
-   **Bẫy khi tự đo lại (D-110):** OWL-ViT nạp từ `./models/owlvit-base-patch32`,
-   đường dẫn **TƯƠNG ĐỐI** — chạy từ cwd khác repo root thì nó **fail-open im
-   lặng** và mọi `s/trang` đo được đều thiếu. Kiểm `OWL-ViT detection failed` = 0
-   trong log trước khi tin bất kỳ con số nào.
+   sai 0 / thiếu 0. 8 quyển CD/CTST ĐÃ CHẠY** (xem bảng tiến độ, dòng "Kho ảnh 12/12
+   quyển").
 
 **Một lần chạy lại rẻ hơn ba lần:** cả hai `*_EXTRACTION_VERSION` nên bump **một
-lần** khi M2/M3 xong, không bump mỗi lần sửa một tham số.
+lần** khi các tham số đã chốt xong, không bump mỗi lần sửa một tham số.
 
-## Trạng thái tiến độ (quét lại 2026-08-23, đối chiếu code + log + memory)
+## Trạng thái tiến độ (quét lại 2026-08-28, đối chiếu code + log + memory)
 
 Mốc đề cương: GĐ1 số hoá 12 quyển đáo hạn **29/07/2026**; GĐ3 thực nghiệm đối chiếu
 **14/08 → 28/08/2026**. Bảng này là **trạng thái đã kiểm chứng trên code hôm nay**, không
@@ -305,76 +306,64 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 |---|---|---|
 | Corpus 12 quyển trên đĩa | **XONG**, và **cố ý không nằm trong git** | 12 folder, 2 399 trang, 0 khoảng trống (D-65); 4,1 GB nên `.gitignore` bỏ qua `datasources/*` (D-68) — chạy bằng `RAG_DATA_DIR` trỏ sang Drive, xem `datasources/README.md` |
 | M0 fingerprint 12/12 | **XONG** | `database/fingerprints/*.json` đủ 12 file, 5 khoá mỗi file |
-| Test suite | **XANH** | `pytest tests/ -q` → **761 pass, 3 skip** (2026-08-28 sau D-145; các con số **686**, **488**, **584**, **617**, **732** ghi ở đây trước đó đã cũ) |
+| Test suite | **XANH** | `pytest tests/ -q` → **761+ pass, 3 skip** (2026-08-28 sau D-146; các con số **686**, **488**, **584**, **617**, **732** ghi ở đây trước đó đã cũ) |
 | Commit công việc M0 | **CHƯA** | `fingerprint.py`, `fp_*.py`, 2 file test, 12 JSON, 3 spec, `goal.docx` còn untracked; `master` **không ahead** origin → chưa có gì được ghi lại |
 | M1 manifest 12 quyển | **GỠ CHẶN**, spine chưa nghiệm thu | `book/toc_lines.py` (D-70): `read_toc` chọn bộ đọc theo fingerprint, nên `--build-manifests` **chạy được cả 12 quyển** (đo: 1,27–1,46 s/trang → ~50 phút). Nhưng spine Bài của 8 quyển CTST/CD **chưa liền mạch** — đọc được CTST 23/17/17/21 và CD 32/24/23/29 mục, gần nhất là 6_CD (thiếu Bài 3, 4, 34) → G1 vẫn FAIL cho 8 quyển và `bai_so` **không** đi vào metadata chunk (đúng thiết kế: thiếu thì im, không đoán). Cờ trội còn lại: `toc_page_unreadable` ~20/quyển ở CTST |
 | Tỉ lệ đọc số trang ở đường manifest | **CHƯA**, và nguyên nhân KHÔNG phải scale | Đo 30 trang/quyển với `(1,3)` / `(1,2,3)` / `(2,)` → **cùng một con số**: 6_CD **40%**, 9_CD 87%, 6_CTST 87%, 6_KNTT **100%**. Giả thuyết "thiếu scale 2×" **bị bác bỏ** (D-72). Khác biệt thật: fingerprint đọc trong **dải zone đo được của chính quyển** (`zone_read.band_even`), còn `page_number_ocr` dùng hằng số góc của KNTT. Hệ quả hiện tại: 6_CD có `ocr_confirmed` **37,1%**, 112 trang lấy `printed_page` suy từ offset đã đo, mỗi trang một cờ `page_number_not_read` → G1 FAIL đúng như phải fail |
 | Manifest cho quyển có đồng thuận offset yếu | **XONG** | `build_manifest` đối chứng với offset đã đo ở fingerprint: trùng → đi tiếp + gắn cờ, khác → vẫn raise, không có fingerprint → vẫn raise. `MIN_OFFSET_RATIO = 0.8` **không** bị nới (D-72). Chạy thật: `KHTN6-CD.json` 179 trang / offset 0 / 32 Bài, 1,79 s/trang |
 | `book_id` theo nhà xuất bản | **XONG** | `book_id_from_source_name` từng nối cứng `-KNTT` nên `SGK_KHTN_6_CTST` ra `KHTN6-KNTT` và **ghi đè manifest của 6_CD** — ba NXB cùng lớp dùng chung một file, im lặng hoàn toàn. Bắt được bằng cách **mở artefact đầu tiên ra đối chiếu** (`n_pages: 204` không thể là của quyển 195 trang), không bằng test: 158 test vẫn xanh khi bug còn sống (D-71) |
-| Fingerprint được code sản xuất ĐỌC | **GẦN NHƯ HẾT** | Đường MỤC LỤC/manifest **có đọc**: `book/toc.py:418 load_fingerprint`, `toc.py:488` (chọn `toc_pages` + `entry_style`), `toc_lines.py:394`, `manifest.py:77 _fingerprint_offset`. `min_sat` per-book **ĐÃ NỐI** (D-145 Task 7: `MIN_SAT_FLOOR = 20`, `segmenter._params_for(variant, book)`). `single_line_max_h` per-book **ĐÃ NỐI** (D-145 Task 8: `single_line_max_h_for_book(book)`). Phần duy nhất còn nợ: vùng số trang của `page_number_ocr` |
-| ETL text bằng MODEL đọc cả trang | **BƯỚC 0 XONG — có BASELINE** (D-91, D-92) | người dùng chốt 2026-08-25: bake-off trước, model đọc **cả trang**, Colab GPU, phạm vi cuối 12 quyển. Đo được **0/4 model ứng viên** nhắc tiếng Việt trong model card → phải bake-off. Phiếu **97 ô / 15 trang** đã NGƯỜI duyệt xong (97/97, `document/review/ocr_gold/phieu_nguoi.json`). **BASELINE Tesseract: công thức `CT = 0,048` (4,8% token đúng / 45 ô) · lỗi dấu `DẤU = 0,016` (1,6%) · bảng `BẢNG = 0,000` (0/8)**. Còn lại: chạy **3 engine** trên Colab (`nanonets_ocr2_3b` → `mineru25` → `dots_ocr`; `paddleocr_vl` là ô tuỳ chọn cuối notebook — D-94). Crop 8,3 MB nay **nằm trong git** ở `document/review/ocr_gold/` nên Colab chỉ cần `git clone` (D-93). **Engine 1/3 đã chạy được trên Colab** (2026-08-26): `nanonets_ocr2_3b`, `transformers 5.15.1`, nạp bằng `AutoModelForImageTextToText`, **~29,5 s/ô → ~48 phút cho 97 ô**; mới là lượt thử `--limit 3` nên **chưa có số**. **Bảng `--compare` đã vá (D-96):** engine thiếu ô nay in `—` và bị chặn công bố — trước đó engine chạy 3/97 ô ra `DẤU = 0,000`, tức điểm HOÀN HẢO ở đúng cột quyết định thắng/thua, và luật chốt KHÔNG loại nó (một từ mất hẳn không phải "lỗi dấu"). **`nanonets_ocr2_3b` ĐÃ BỊ LOẠI (D-102) vì lý do MÔI TRƯỜNG — chất lượng đọc của nó CHƯA TỪNG được đo, đừng viết "đọc kém tiếng Việt" vào báo cáo.** Bốn lượt trên T4 đều nạp với `lm_head.weight MISSING` và sinh token ngẫu nhiên, mỗi lượt một chuỗi khác nhau dù `do_sample=False` (bằng chứng là XÁC ĐỊNH TÍNH, D-101). `--compare` nay tự phát hiện engine sinh rác (không trùng một từ nào **và** dài gấp >3 lần) rồi từ chối tuyên thắng/loại. **`mineru25` ĐỌC ĐƯỢC và GIỮ chỉ số dưới (D-104)** — tín hiệu thật đầu tiên: ô 1 cho `hấp thụ CO₂ và tạo ra khí O₂` đúng bản người, nơi Tesseract cho `(0,`/`0,`; lỗi của nó là lỗi **DẤU** (`phúc`/`phú`, `hỗ`/`hổ`). Hai ô kia hỏng vì **giao diện sai** — MinerU2.5 không nhận prompt tự do, phải qua `MinerUClient.two_step_extract()` + `json2md`; đã đổi. **BAKE-OFF XONG (D-108): `mineru25` 97/97 ô → CT **0,441** (gấp 9,2× Tesseract) nhưng DẤU **0,037** > 0,016 → **LOẠI theo luật chốt §3.2. GIỮ TESSERACT.** Không OCR lại 12 quyển. **Hai sai lệch của bộ chấm đều CỦNG CỐ kết luận:** CT bị đánh giá thấp (engine xuất LaTeX, `formula_tokens` không khớp → đo được CT 0,000 dù đọc đúng) và DẤU cũng bị đánh giá thấp (so theo vị trí từ, LaTeX chèn giữa câu làm lỗi dấu thật bị bỏ sót) — tức MinerU thắng công thức mạnh hơn và thua dấu nặng hơn con số. `BẢNG 0,000` của MinerU **CHƯA đáng tin** (8 ô bảng chưa đọc bằng mắt; engine xuất LaTeX/Markdown còn bộ chấm tách theo `|`) — đừng trích như phép đo năng lực. **D-56 vẫn chưa giải, nhưng nay biết CÓ model đọc được `CO₂`/`O₂`** → hướng mở: dùng MinerU CHỈ cho vùng công thức, giữ Tesseract cho văn xuôi (chưa đo). |
+| Fingerprint được code sản xuất ĐỌC | **GẦN NHƯ HẾT** | Đường MỤC LỤC/manifest **có đọc**: `book/toc.py:418 load_fingerprint`, `toc.py:488` (chọn `toc_pages` + `entry_style`), `toc_lines.py:394`, `manifest.py:77 _fingerprint_offset`. `min_sat` per-book **ĐÃ NỐI** (D-145 Task 7, sàn sửa lại D-146: `MIN_SAT_FLOOR = 9`, `segmenter._params_for(variant, book)`). `single_line_max_h` per-book **đã nối dây nhưng chưa đổi hành vi cho quyển nào** (D-145 Task 8 — n<5 mẫu ở cả 12 quyển nên mọi quyển vẫn dùng 60px mặc định). Phần duy nhất còn nợ hoàn toàn: vùng số trang của `page_number_ocr` |
+| ETL text bằng MODEL đọc cả trang (bake-off OCR) | **XONG, GIỮ TESSERACT** (D-91..D-108) | Bake-off đo trên gold set **97 ô / 15 trang / cả 3 NXB**: baseline Tesseract `CT=0,048 · DẤU=0,016 · BẢNG=0,000`. `nanonets_ocr2_3b` loại vì lý do MÔI TRƯỜNG (transformers 5.x nạp hỏng lm_head, sinh token rác — D-101/D-102, KHÔNG phải đọc kém tiếng Việt). `mineru25` (`opendatalab/MinerU2.5-Pro-2605-1.2B`) đọc được và giữ chỉ số dưới: `CT=0,441` (gấp 9,2× Tesseract) nhưng `DẤU=0,037 > 0,016` → **LOẠI theo luật chốt §3.2, giữ Tesseract, không OCR lại 12 quyển** (D-108). Hướng mở đã CHỌN: dùng MinerU **chỉ cho vùng công thức**, giữ Tesseract cho văn xuôi — xem dòng "Xử lý công thức Hoá/Lý" |
 | `--book` lọc được cả ba đường ETL | **XONG** (D-84) | trước đó `--book` chỉ nối vào `--build-manifests`, nên `--image-only --book X` **im lặng bỏ qua cờ** và sẽ chạy cả 12 quyển ≈ 6 giờ (8 quyển biết trước là sai). Tên quyển không khớp nay **thoát mã 2** kèm danh sách 12 quyển thật — thử trên CLI thật: `--book SGK_KHTN_6_KNT` → exit 2. 7 test |
-| Gỡ `LAYOUT_VARIANT = "kntt"` | **XONG** (D-111) — nhưng **dữ liệu cũ vẫn mang nhãn sai** | Hằng số đã **xoá**; `get_pdf_variant()` đọc hậu tố tên quyển (`KNTT`/`CTST`/`CD`, phải ở CUỐI) và **ném `UnknownPublisher`** khi không khớp — không có mặc định. Chạy thật: 12/12 quyển ra đúng biến thể, 598 test xanh. Bảng lớp là số đo D-110: `cd`+`ctst` → lớp **cơ sở**, `kntt` → `KnttImageProcessor`. Kiểm chốt trước khi sửa: `segmenter._params_for()` bỏ qua `variant` hoàn toàn (`segmenter.py:62-71`) nên đổi giá trị **không** đổi hành vi segment/extract. ▸ **Còn nợ:** 11 459 chunk CD/CTST đã dựng vẫn mang `variant='kntt'` (D-109) cho tới lượt bump `TEXT_EXTRACTION_VERSION`. ▸ **Đổi hành vi có chủ ý:** upload PDF tên lạ qua `/api/etl` nay ném thay vì xử lý như KNTT |
-| `text_extract.SINGLE_LINE_MAX_H` theo từng sách | **XONG** (D-145 Task 8) | Đo `measure_single_line_height.py` trên 12 quyển với bounding box thực và trần 85px; n < 5 mẫu -> giữ 60px an toàn; hàm `single_line_max_h_for_book(book)` nối từ `loader.py` -> `extract_text_units` -> `_ocr` |
+| Gỡ `LAYOUT_VARIANT = "kntt"` | **XONG** (D-111) — nhưng **dữ liệu cũ vẫn mang nhãn sai** | Hằng số đã **xoá**; `get_pdf_variant()` đọc hậu tố tên quyển (`KNTT`/`CTST`/`CD`, phải ở CUỐI) và **ném `UnknownPublisher`** khi không khớp — không có mặc định. Chạy thật: 12/12 quyển ra đúng biến thể. Bảng lớp là số đo D-110: `cd`+`ctst` → lớp **cơ sở**, `kntt` → `KnttImageProcessor`. ▸ **Còn nợ:** 11 459 chunk CD/CTST đã dựng vẫn mang `variant='kntt'` (D-109) cho tới lượt bump `TEXT_EXTRACTION_VERSION` (đã bump — xong ở lượt Colab tới). ▸ **Đổi hành vi có chủ ý:** upload PDF tên lạ qua `/api/etl` nay ném thay vì xử lý như KNTT |
 | Phép đo chỉ số dưới ở CD/CTST | **XONG, và nó BÁC BỎ giả thuyết** | đo trên chính index (không cần OCR lại): hỏng:đúng = **CD 256:3, CTST 377:3, KNTT 408:4**, `₂` Unicode **0 lần ở cả ba**. Chỉ số dưới **không sống sót ở đâu cả**, nên D-56 KHÔNG phải artefact của KNTT 1094×1536 → bước xử lý công thức Hoá/Lý là **một luật chung**, không chia theo NXB (D-73) |
 | BM25 (MT3) | **XONG** (D-77, D-78, D-79) | `python main.py --build-bm25` -> `database/sparse/`: **16 393 chunk / 19 727 từ vựng / 5,5 s**, khoá là chính `chunk_id` của `biology_text`. Tự cài Okapi BM25 (`src/rag/bm25.py`) thay vì `rank_bm25`, vì `k1`/`b` phải là tham số lúc TRUY VẤN thì quét 5×5 mới rẻ. Dấu vân 6 trường -> chỉ mục cũ hơn index thì `SparseIndexStale`, không có fallback. **Đã quét bằng số:** `k1=0.7, b=0.75`, `BM25_TOKENIZER=plain` — GIỮ dấu thắng BỎ dấu (MRR 0,820 vs 0,755), **lật giả định ban đầu**. Chuẩn hoá công thức (`CO2` ↔ `CO,`) chỉ ở phía truy vấn/chỉ mục thưa, **không sửa một ký tự nào** trong `biology_text`: đo trên 12 công thức, chunk đúng ở top-10 đi từ **6 lên 97**, số truy vấn tìm được từ **1/12 lên 11/12** |
-| Hợp nhất thưa+dày (MT3) | **XONG** (D-80) | `src/rag/hybrid_text_retriever.py` (đừng nhầm với `hybrid_retriever.py` = lai text+ảnh). Thứ tự **hợp nhất -> cổng lọc -> rerank**; `RETRIEVAL_MODE` ∈ {dense, bm25, hybrid} × `RERANK_ENABLED` × `RELEVANCE_GATE_ENABLED` = **12 cấu hình**. Phát hiện: trước M2 cổng lọc và rerank **loại trừ nhau** (`RERANK_ENABLED=true` khiến `RelevanceGatedRetriever` không bao giờ chạy -> `RETRIEVER_DISTANCE_MARGIN` là **số chết**). **Mặc định nay là `hybrid`, cổng lọc TẮT** (D-82), chốt bằng bảng **300 câu / 12 quyển** ở ĐÚNG bề rộng production (20 ứng viên/kênh): hybrid R@1 0,717 · R@3 0,887 · R@10 **0,977** · MRR **0,808**, thắng bm25 (0,796) và dense (0,794) ở mọi cột. Ở bề rộng ĐO (50) biên độ chỉ +0,005 MRR = nhiễu; ở bề rộng THẬT (20) là +0,014 MRR / +0,020 R@10 |
-| **Vá crop dải hẹp (D-126) + dựng lại 4 quyển KNTT** | **XONG** (D-131) | `_FALLBACK_MIN_CW_FRAC = 0.32` ở `image_processor.py` (sàn chiều rộng lấy theo TRANG, không theo chú thích) + `reset_image_books.py --nxb KNTT` + `--image-only --book` ×4, **10:32→12:31 = 1 h 59**, 4/4 exit 0. ▸ Cổng mới `python -m src.test.qa_crop_shape` (thoát 1 khi >10%): KNTT **17,5% → 1,7%** (164/938 → 16/939), toàn kho **8,4% → 4,6%**; CD/CTST không đổi. ▸ Không hồi quy: phủ nhãn 95/95/96/95% → **96/95/97/95%**, G4 **0 gán sai / 0 thiếu** ở cả 4 quyển, doc 938 → 939. ▸ **PHẢI NÓI THẲNG: ca gốc VẪN CẮT SAI.** `8_KNTT` tr.6 `Hình 1.1` (hình ghép 3 panel, rộng thật ~640 px) đi từ 135×289 lên **209×289** — vẫn cắt ngang giữa panel a và b; nó chỉ thoát *định nghĩa* dải hẹp vì vế `cao > 1,5× rộng` không còn thoả. **1,7% nghĩa là hết dải HẸP, không phải hết cắt SAI.** Phần hụt còn lại **chưa lượng hoá được** (chỉ số `rộng < 30% trang` không phân biệt nổi: KNTT 29--40%, CD 33%, CTST 45%). Gốc rễ là detector không thấy cụm ba panel — việc khác, chưa đo |
-| Kho ảnh **12/12 quyển** | **XONG — 3 881 doc** (D-110, D-111, D-121, D-124, D-131) | (Con số **3 880** ghi ở đây trước 2026-08-26 là số TRƯỚC lượt dựng lại KNTT của D-131; đo lại hôm nay bằng `qa_crop_shape` và `report_numbers` đều ra **3 881**, KNTT `6/7/8/9` = **286/203/216/234**.) Lượt 1: 15:33→20:35 = **5 h 01**, 12/12 quyển, 3 143 doc. Rồi phát hiện **lỗi ▲ của CTST** (xem dòng dưới) nên dựng lại 4 quyển CTST 20:46→23:17. ▸ **Độ phủ nhãn hình, đo bằng `python -m src.test.qa_figure_coverage`:** CD **92/92/96/97%** · KNTT **95/95/96/95%** · CTST **72/83/88/89%**. Chỉ `6_CTST` (72%) dưới ngưỡng 0,80. ▸ doc/quyển: `6_CD` 418 · `6_CTST` **470** · `6_KNTT` 285 · `7_CD` 269 · `7_CTST` **335** · `7_KNTT` 203 · `8_CD` 324 · `8_CTST` **423** · `8_KNTT` 215 · `9_CD` 379 · `9_CTST` **324** · `9_KNTT` 235 |
-| **Lỗi ▲ của CTST** | **ĐÃ VÁ** — thu thêm **737 hình (+90%)** (D-121, D-123, D-124) | CTST in `▲` trước MỌI chú thích hình; Tesseract đọc thành `À`/`A`/`AÀ`/`Á`; `FIG_CAPTION_STRICT_REGEX` neo `^\s*Hình` nên **loại sạch 49%**. Đo được 873/1796 dòng CTST có tiền tố đó, CD/KNTT **không dùng ▲**. Sau vá: CTST **815 → 1 552 doc**, phủ 51–65% → 72–89%. ▸ **Bản chất thiếu sót đổi hẳn:** trước là *mù cả trang* (`7_CTST` 45/90 trang không crop nào), nay còn 3/54 ở `6_CTST`. ▸ **Hai biến thể còn sót, đã đo, CỐ Ý chưa sửa:** `▶` → OCR `)>` (7 lần CTST) và `Hình16.6` dính liền (19 lần KNTT) — chỉ nâng `6_CTST` lên ~75%, không bù nổi 2 h CPU; gộp vào lần bump version sau |
-| Kho ảnh 4 quyển KNTT | **XONG** (D-87) | `--image-only --book` bốn lượt, **20:40 → 23:04 = 2 h 24**, 4/4 exit 0 → **938 doc** (285/203/215/235). Pha crop **6,51–11,11 s/trang** (biên độ 1,7× giữa các quyển!), khớp ~8,86 s/trang của D-53. `figure_label` 891/938 · `crop_text` 806 · `figure_caption` 557 · `visual_caption_vi` **0/938** (captioner tắt, đúng D-47) · **578/797 trang có hình = 72,5%**. **8 quyển CD/CTST vẫn KHÔNG dựng được** (kênh pill đọc 0 nhãn — M3), nên mọi số phía ảnh phải kèm chữ “4/12 quyển” |
-| Cổng G4 cho CD/CTST | **CHẠY ĐƯỢC** — giả định "bị chặn" là SAI (D-114) | G4 đọc `bai_so` từ **manifest**, mà manifest CÓ `bai_so` cho cả 12 quyển; thứ bị chặn là việc GHI `bai_so` vào metadata chunk (`spine_is_trusted`), hai chuyện khác nhau. Nhưng spine CD/CTST mang cờ `bai_numbers_not_contiguous` nên `Hình 7.4 ở trang manifest ghi Bài 6` **không quy được lỗi cho ai** (crop sai hay manifest sai?). Cổng nay tự đổi nhãn thành `G4 (SPINE CHƯA TIN ĐƯỢC)` + `lệch Bài (KHÔNG quy được lỗi cho ai)` thay vì in con số đọc như đã kiểm — cùng bẫy D-96. Thêm `--trang-mau N`; ở chế độ đó cột "thiếu" in `KHÔNG ĐỌC ĐƯỢC` vì mẫu trang rời làm `max(B)` tụt. Số thăm dò: `6_CTST` 6 nhãn/6 không nhãn, `6_CD` 9/1 |
-| Cổng G4 trên corpus MỚI (KNTT) | **PASS** (D-87) | chạy lại hôm nay, 4 Bài/quyển: **gán sai Bài 0/0/0/0, thiếu (cận dưới) 0/0/0/0**, 72 hình có nhãn / 12 không nhãn. Con số 72 **trùng** corpus 801 trang cũ là trùng hợp (cùng 4 Bài đầu), không được trích như cùng điều kiện. Cột đáng xem: **`crop nghi cắt lấn` 30/86 = 34,9%** — là CỜ cho người, phần lớn là `activity_box` vốn nhiều chữ; ca cần mở ra xem là `9_KNTT` tr.12 `Hình 1.12` dt = **0,749** |
-| Định tuyến `is_image_only_query` | **ĐÃ VÁ** (D-88) | đo được **3/300 câu cần chữ bị định tuyến thành CHỈ ẢNH → 0/300** sau bản vá. `HybridRetriever.search` bỏ HẲN phía text khi cờ bật, nên ba câu đó nhận “Mình tìm thấy N hình ảnh liên quan” thay vì câu trả lời — im lặng hoàn toàn. Một ca là bẫy phạm vi KHTN: trong **Vật lí** “ảnh” là ảnh quang học. Luật mới so trên dạng **còn dấu** vì bỏ dấu thì `nào` đụng `não` (D-49). `query_intent.py` trước đó **không có test nào**; nay 9 |
-| Caption deterministic vào prompt (MT4) | **XONG** (D-85) | `src/rag/multimodal_context.py` nối `figure_label` + `figure_caption` + `crop_text` (ba trường đọc lại từ pixel) vào ngữ cảnh LLM; **không** đọc `visual_caption_vi`/`final_caption_vi`/`caption`/`caption_vi` vì bốn trường đó do model **sinh** (D-47). Bật/tắt bằng `MULTIMODAL_CONTEXT_ENABLED`, **mặc định false** cho tới khi có số. Tự kiểm đã chạy khi kho ảnh còn **0 doc**: `delta_R` **0,000**, ngữ cảnh dài thêm **0,0 ký tự** → không có nhánh ẩn. `api.py:95` nay gọi `build_context(...)` |
-| Bảng đối chiếu MT4 | **XONG CẢ HAI CẤU HÌNH** (D-82, D-87) | **Cấu hình 1** (BM25 thuần vs dense thuần vs hybrid × rerank × cổng lọc) trên **300 câu / 12 quyển**, `scripts/run_ablation.ps1`, 0 lượt gọi LLM. Ở bề rộng production (20 ứng viên/kênh): **hybrid R@1 0,717 · R@3 0,887 · R@10 0,977 · MRR 0,808** > bm25 0,796 > dense 0,794. **Cấu hình 2** (text-only vs multi-modal) trên **100 câu / 4 quyển KNTT**, `python -m src.test.ablation_multimodal`, 0 lượt gọi LLM, 21,17 s/câu: text_R **0,930** → mm_R **0,940** (**delta +0,010 = ĐÚNG 1 câu**), hình đúng trang vàng **42** vs hình sai trang **93**, độ phủ token đáp án 0,896 → 0,900 (tăng ở 14 câu, **giảm ở 0**), **+492 ký tự/câu**. → `MULTIMODAL_CONTEXT_ENABLED` **giữ false**. **Giới hạn lớn hơn con số:** `cov_txt` đã 0,896 vì `ground_truth` sinh từ chính văn bản trang vàng, nên trần còn lại cho kênh hình chỉ 0,104 — kết luận đúng là “CHƯA đo được ưu thế”, KHÔNG phải “đa phương thức vô ích”. Việc chặn: bộ câu hỏi **sinh từ HÌNH**. **Hai điều bảng 4 quyển nói SAI và đã bị lật:** (a) “BM25 thuần thắng dense” — trên 300 câu là **hoà** (0,804 vs 0,805); (b) “cổng lọc trung tính” — thật ra **có hại** (hybrid R@10 0,977 → 0,930). Bộ test do **LLM sinh**, và từ 2026-08-25 có **mẫu 50 câu người duyệt tay: gold key sai 2/49 = 4,1%, KTC 95% Wilson 1,1–13,7%, 1 câu không quyết được** (D-90) — cận trên 13,7% nghĩa là tới ~41/300 câu vẫn có thể sai mà mẫu không thấy. **Con số 0/50 = 0,0% của D-89 là SAI** (phiếu điền hàng loạt trong 38 s), đừng trích lại. **Cả 2 ca sai cùng một ô `hoa × suy_luan`** — câu đòi tự viết phương trình nên đáp án không nằm nguyên văn ở trang vàng: lỗi **sinh câu hỏi**, không phải lỗi chọn trang. Mẫu **cố ý lệch** về `suy_luan` (25/50 = 50% vs 96/300 = 32%) nên 4,1% là con số **bi quan**; hiệu chỉnh theo trọng số cả bộ ≈ **2,7%**. `_generation_meta.json` **vẫn** ghi `human_reviewed: false` vì đó là trường của cả bộ 300 câu |
-| Index text 12 quyển | **XONG** (D-73) | lượt chạy thật 2026-08-23: manifest 49 phút, `--text-only` **3 giờ 20**, **0/2 399 trang còn thiếu**, **16 393 chunk**, 5,0 s/trang end-to-end (cao hơn 3,56 s/trang đo trên KNTT — đúng như đã cảnh báo). Dựng với `SINGLE_LINE_MAX_H = 60` và `LAYOUT_BOX_MIN_SATURATION = 45` **chưa hiệu chỉnh**, nên M2 bump version sẽ OCR lại toàn bộ — hãy gom mọi thay đổi tham số vào MỘT lượt |
-| `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT 1 086/1 037/1 212/1 522 chunk có `bai_so`; 8 quyển CTST/CD **không chunk nào** (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế). Nghĩa là truy vấn theo Bài chỉ chạy trên 1/3 kho |
-| `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở **57–84% chunk** theo quyển (9_CD 1 339/1 590 = 84%); **gộp toàn kho 11 362/16 393 = 69,3%** (đo 2026-08-26). Ở mức đó cờ này gần như không mang tin — việc của M2 (D-73) |
-| LLM đánh giá (OpenRouter) | **CHẠY ĐƯỢC**; hạn mức **không chặn trong tuần này** (D-128) | `stealth/ox-alpha` qua `https://openrouter.ai/api/v1` (D-67). **Người dùng xác nhận 2026-08-26: free không giới hạn hết tuần (tới ~30/08), không rate limit** — đây là thông tin người dùng, KHÔNG phải phép đo: API vẫn không trả header `x-ratelimit-*` nào. Bằng chứng gián tiếp cùng ngày: **233 lượt chấm, chỉ 2 lần 429** — và 2 lần đó là `temporarily rate-limited upstream` (nghẽn tạm thời phía nhà cung cấp), **không phải cap/ngày** (D-130). Sau tuần này quay lại trạng thái CHƯA ĐO |
-| Bộ test **240 câu** (CBHD kê, 3 bộ × 80) | **PHẦN VĂN BẢN XONG** (D-112) | `python -m src.test.build_testset_240` → `src/test/testsets_240/`: **192 câu (16/quyển)**, **0 lượt gọi LLM** vì rút mẫu từ pool 300 sẵn có thay vì sinh mới. Chia 20/quyển = **16 văn bản + 4 hình**. Chọn theo kiểu **trải đều trang vàng** (pool tự cảnh báo "3 câu chung một trang thì tương quan") → 16 câu phủ **9/9 trang** ở cả 12 quyển. Kiểm thật: **192/192 gold key khớp index**. Cột mới `nguon_cau_hoi`/`figure_label`. ▸ **48 câu HÌNH: quy trình đã dựng xong, chờ ETL** — `build_image_questions.py` (`--chon` → `--nhap` → `--phieu` → `--ap-dung`). **Đo được là KHÔNG tự động hoá được** (D-113): `figure_caption` trùng chữ đã index của chính trang đó ở **trung vị 0,958**, `crop_text` độc lập thì OCR vỡ → người phải mở ảnh ra xem. Nháp của LLM **không bao giờ tự vào bộ test**, có test khoá |
-| **Đánh giá đầu-cuối bộ 231 câu / 12 quyển** | **XONG** (D-130) | `python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240`, **231/231 câu có điểm giám khảo**. Gộp trên 231 câu: `Recall(prod,page)` **0,9091** · `MRR(page)` **0,8153** · `Precision(page)` 0,4113 · thô `R@3` 0,7706 → `R@5` 0,8225 → `R@10` **0,8961** · `Correct` **4,065/5** · `Faithful` **4,394/5** · `Relevancy` **4,602/5**. Trung bình theo quyển `overall` 0,7924. Cao nhất `8_KNTT` 0,879, thấp nhất `7_CTST` 0,697 — thấp vì **truy xuất** (R 0,65), không phải vì trả lời (Correct 4,10). ▸ **Hai cờ mới của `evaluator.py`:** `--book` (tên sai → **thoát 2**) và `--bo-qua-da-co` (chạy tiếp lượt dở dang; khâu báo cáo đọc lại `*_result.csv` cũ nên dựng lại bảng 12 quyển tốn **0 lượt LLM**, cột `luot_chay` ghi rõ quyển nào đo ở lượt nào). ▸ `judge_answer` nay **thử lại 3 lần** với lỗi tạm thời — trước đó 1 lần 429 là mất điểm vĩnh viễn, chữa được chỉ bằng cách chạy lại cả quyển 40 phút |
-| Bộ test 100 câu (4 quyển KNTT) | **CÒN DÙNG ĐƯỢC** (D-76 lật ngược) | Số cũ "gold key trỏ vào index đã xoá" là **SAI**: đo được **99/100 gold key khớp index 12 quyển ở offset 0** (offset −1 chỉ 31/100), và `recall_at_k.py` cho **R@10 = 0,98**. Cơ chế: corpus mới ít hơn đúng 1 trang/quyển (bỏ trang bìa) nên **số trang IN không đổi**, mà gold key ghi theo `source_page` = số trang in. Vẫn phải sinh bộ 12 quyển vì bộ này chỉ phủ **4/12 quyển** và thiếu nhãn `phan_mon`/`khoi`/`bo_sach`/`do_kho`. Track A đã chuyển vào `src/test/testsets/_archive_4books_kntt_offset_minus1/` — tên thư mục mô tả sai thực tế |
-| G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); nếu làm lại phải sửa cảnh báo `sua_tay*3 < may2` (23/24 file gold trùng từng chữ với `read_claude.txt`) |
-| Xử lý công thức Hoá/Lý (MT1) | **BƯỚC 2+3/3 — CODE XONG, CHỜ CHẠY COLAB** (D-145) | Kiến trúc Hybrid Tesseract + MinerU patch: `ocr_lines.py` (tách dòng), `formula_signals.py` & `formula_gate.py` (bắt dòng nghi), `formula_ocr.py` (MinerU client), `formula_merge.py` (merge cục bộ từng dòng theo nguyên tắc Không bịa), wiring vào `text_extract.py`/`chunker.py`/`loader.py` qua `formula_hybrid_status`. Sàn `MIN_SAT_FLOOR = 20` (Task 7), `single_line_max_h` per-book (Task 8), bump `TEXT_EXTRACTION_VERSION = "v3_formula_hybrid"` & đo 2 132 dòng nghi / ~92,4 phút (Task 9), vá Colab ETL notebook tuần tự theo quyển (Task 10). Việc còn lại DUY NHẤT: chạy `document/colab_runtime_etl.ipynb` trên Colab GPU |
-| **Báo cáo (`report/tex_source/`)** | **XONG cả 5 chương + Tóm tắt + front matter, và ĐÃ DỊCH RA PDF THẬT** (D-132…D-135, D-140) | `python report/kiem_tra_tex.py` **thoát 0** (13 tệp) — nhưng lint **không** trả lời được câu "dịch ra được không". Đo thật 2026-08-26 (D-140): `report/tex_source/build.ps1 -Clean` → `build/main.pdf` **72 trang**, **60 mục tham khảo**, log cuối sạch `undefined references`/`Please rerun`/`Empty bibliography`. Script trước đó hỏng vì **hai** lỗi: dò `latexmk` bằng sự tồn tại của tệp (MiKTeX cần Perl, máy không có → `latexmk -v` thoát 1), và PowerShell **không nội suy biến trong đối số bắt đầu bằng `-`** nên PDF rơi vào thư mục tên đúng nghĩa đen `$OutputDir`. ▸ **Lập luận trung tâm ĐẢO CHIỀU (D-132):** cái báo cáo cũ gọi là *trần recall* thực ra là trần của **RIÊNG kênh ngữ nghĩa** — `evaluator.raw_recall_at_ks` gọi thẳng `similarity_search_with_score`, và ba giá trị 0,7706/0,8225/0,8961 trùng **tới chữ số thứ tư** với hàng `dense rerank=off gate=off`. Cấu hình thật **0,9091 VƯỢT** nó; phần hụt do cắt-k nay là **0,061** (R@3 0,9091 vs R@10 0,9697), không phải 0,21. ▸ **5 hình nay sinh lại được:** `python report/ve_hinh_chuong4.py` đọc `evaluation_report_240.csv`, gộp theo **CÂU** (`_gop`) không phải theo quyển. ▸ **Rà lại Ch.1–3 + front matter tìm thêm lỗi lint KHÔNG bắt (D-134):** `hoi_dong.tex` gọi tài liệu là *khoá luận*/*chuyên đề*; `loi_cam_on.tex` *báo cáo chuyên đề*; Ch.2 nói *Colab Pro/GPU*; Ch.3 ghi *caption tiếng Việt* trong metadata ảnh và *Next.js 14* (thật **16.2.6/React 19.2.4**). Số hình **3.880 → 3.881**, tổng vector **20.273 → 20.274**, KNTT 285/215/235 → **286/216/234**. ▸ **`tests/test_bao_cao_so_lieu.py` (5 test)** so 11 độ đo gộp với chuỗi trong `.tex` — bắt ngay được Precision 0,4113 (số của bảng ablation) lẫn vào chỗ phải là **0,4112** (số của evaluator). ▸ **`_selection_meta.json` ghi sai '6/9 khung loại thuộc KNTT'** — đếm lại là **7/9** (D-135); báo cáo suy từ phân bố cuối (KNTT 9/16, CD 15/16, CTST 15/16) chứ không trích lại phiếu |
-| Web UI Next.js (MT5) | **XONG** (D-137, D-138, D-139) | repo `D:\personal_repo\project_rag_fe` (Next 16.2.6 / React 19.2.4). ▸ **Công thức:** `katex@0.18.4` + `src/lib/formula.ts` + `RichText.tsx` — tách LaTeX TRƯỚC rồi mới hạ chỉ số dưới cho phần chữ; bộ hạ chỉ số **tra bảng 118 nguyên tố**, chỉ đổi khi token phân tích trọn vẹn VÀ có chỉ số > 1 (nên `Câu 2` không thành `Câu₂`). Đây là biến đổi **HIỂN THỊ**, văn bản trong kho không bị đụng. ▸ **Trích dẫn:** `Citations.tsx` vẽ nguồn thành phần riêng. **Dòng cũ ở đây SAI:** nó nói *FE bỏ trường `citations` mà api.py đã gắn sẵn* — đo lại thì **API CHƯA BAO GIỜ trả trường đó**, nó chèn khối `📚 Nguồn:` vào giữa `answer`; lỗi ở CẢ HAI phía (D-138). Nay API trả `citations` + `answer_text`. ▸ **URL:** đọc `NEXT_PUBLIC_API_HOST` (biến này đã có sẵn trong `.env` mà **không dòng mã nào đọc**; dòng cũ ghi *hardcode localhost:5000* cũng ngược — dòng đang dùng là URL HF Space). ▸ **Ảnh:** API trả `/images/<sách>/<tệp>` và tự phục vụ; **không chép 4,6 GB sang FE** (D-137). ▸ Kiểm: `python scripts/smoke_demo.py` → 13/13 đạt, ảnh tải thật 200/image-png |
+| Hợp nhất thưa+dày (MT3) | **XONG** (D-80) | `src/rag/hybrid_text_retriever.py` (đừng nhầm với `hybrid_retriever.py` = lai text+ảnh). Thứ tự **hợp nhất -> cổng lọc -> rerank**; `RETRIEVAL_MODE` ∈ {dense, bm25, hybrid} × `RERANK_ENABLED` × `RELEVANCE_GATE_ENABLED` = **12 cấu hình**. Phát hiện: trước M2 cổng lọc và rerank **loại trừ nhau** (`RERANK_ENABLED=true` khiến `RelevanceGatedRetriever` không bao giờ chạy -> `RETRIEVER_DISTANCE_MARGIN` là **số chết**). **Mặc định nay là `hybrid`, cổng lọc TẮT** (D-82), chốt bằng bảng **300 câu / 12 quyển** ở ĐÚNG bề rộng production (20 ứng viên/kênh): hybrid R@1 0,717 · R@3 0,887 · R@10 **0,977** · MRR **0,808**, thắng bm25 (0,796) và dense (0,794) ở mọi cột |
+| Vá crop dải hẹp (D-126) + dựng lại 4 quyển KNTT | **XONG** (D-131) | `_FALLBACK_MIN_CW_FRAC = 0.32` ở `image_processor.py` (sàn chiều rộng lấy theo TRANG, không theo chú thích) + `reset_image_books.py --nxb KNTT` + `--image-only --book` ×4, **1 h 59**, 4/4 exit 0. ▸ Cổng `python -m src.test.qa_crop_shape`: KNTT **17,5% → 1,7%** dải hẹp. ▸ Không hồi quy: phủ nhãn 95/95/96/95% → **96/95/97/95%**, G4 **0 gán sai / 0 thiếu**. ▸ **Ca gốc VẪN CẮT SAI** — 1,7% nghĩa là hết dải HẸP, không phải hết cắt SAI; gốc rễ (detector không thấy cụm nhiều panel) chưa xử lý |
+| Kho ảnh **12/12 quyển** | **XONG — 3 881 doc** (D-110, D-111, D-121, D-124, D-131) | KNTT `6/7/8/9` = 286/203/216/234. Độ phủ nhãn hình (`qa_figure_coverage`): CD 92-97% · KNTT 95-96% · CTST 72-89% (chỉ 6_CTST dưới ngưỡng 0,80) |
+| Lỗi ▲ của CTST | **ĐÃ VÁ** — thu thêm 737 hình (+90%) (D-121, D-123, D-124) | CTST in `▲` trước mọi chú thích hình, Tesseract đọc thành `À`/`A`, regex neo `^\s*Hình` loại sạch 49% dòng đó. Sau vá: CTST 815 → 1 552 doc |
+| Cổng G4 cho CD/CTST | **CHẠY ĐƯỢC** (D-114) | G4 đọc `bai_so` từ manifest (có cho cả 12 quyển) chứ không từ metadata chunk. Spine CD/CTST mang cờ `bai_numbers_not_contiguous` nên lệch Bài hiện KHÔNG quy được lỗi cho crop hay cho manifest — cổng tự đổi nhãn thành "SPINE CHƯA TIN ĐƯỢC" thay vì in số đọc như đã kiểm |
+| Định tuyến `is_image_only_query` | **ĐÃ VÁ** (D-88) | đo được 3/300 câu cần chữ bị định tuyến sai thành CHỈ ẢNH → 0/300 sau vá. So trên dạng còn dấu (bỏ dấu thì `nào` đụng `não`, D-49) |
+| Caption deterministic vào prompt (MT4) | **XONG, mặc định TẮT** (D-85) | `src/rag/multimodal_context.py` nối `figure_label`+`figure_caption`+`crop_text` (đọc lại từ pixel, không phải model sinh) vào ngữ cảnh LLM. `MULTIMODAL_CONTEXT_ENABLED=false` cho tới khi có số đủ thuyết phục — xem dòng ablation |
+| Bảng đối chiếu MT4 | **XONG CẢ HAI CẤU HÌNH** (D-82, D-87) | Cấu hình 1 (300 câu/12 quyển): hybrid thắng bm25 và dense ở mọi cột. Cấu hình 2 (100 câu/4 quyển KNTT): delta +0,010 (đúng thêm 1 câu) nhưng trần đo được cho kênh hình chỉ 0,104 (vì `ground_truth` sinh từ chính văn bản trang vàng) → kết luận đúng là "CHƯA đo được ưu thế", không phải "vô ích". `MULTIMODAL_CONTEXT_ENABLED` giữ false. Bộ test do LLM sinh, mẫu 50 câu người duyệt tay: gold key sai 2/49 = 4,1% (D-90) |
+| Index text 12 quyển | **XONG, chờ OCR lại cho hybrid công thức** (D-73) | Lượt chạy 2026-08-23: manifest 49 phút, `--text-only` 3 giờ 20, 0/2 399 trang thiếu, 16 393 chunk. Dựng với `SINGLE_LINE_MAX_H=60` và `LAYOUT_BOX_MIN_SATURATION=45` (chưa hiệu chỉnh per-book) — `TEXT_EXTRACTION_VERSION` đã bump (D-145) nên lượt Colab tới sẽ OCR lại toàn bộ với tham số mới |
+| `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT có `bai_so`; 8 quyển CTST/CD không chunk nào (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế) |
+| `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở 57–84% chunk theo quyển, gộp toàn kho 69,3% — ở mức đó cờ gần như không mang tin |
+| LLM đánh giá (OpenRouter) | **CHẠY ĐƯỢC**; hạn mức CHƯA ĐO lại từ sau ~30/08 | `stealth/ox-alpha` qua `https://openrouter.ai/api/v1` (D-67). Free không giới hạn tới ~30/08 theo xác nhận người dùng (D-128), sau đó quay lại trạng thái chưa đo (API không trả header `x-ratelimit-*`) |
+| Bộ test 240 câu (CBHD kê, 3 bộ × 80) | **PHẦN VĂN BẢN XONG** (D-112) | 192 câu (16/quyển) rút mẫu từ pool 300, 0 lượt LLM, 192/192 gold key khớp index. 48 câu HÌNH: quy trình dựng xong nhưng KHÔNG tự động hoá được (D-113) — người phải mở ảnh ra xem |
+| Đánh giá đầu-cuối bộ 231 câu / 12 quyển | **XONG** (D-130) | `Recall(prod,page)` 0,9091 · `MRR(page)` 0,8153 · `R@10` 0,8961 · `Correct` 4,065/5 · `Faithful` 4,394/5 · `Relevancy` 4,602/5. Thấp nhất `7_CTST` 0,697 — do truy xuất, không do trả lời |
+| G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); khuyến nghị thu hẹp thành gold set CÔNG THỨC thay vì làm lại bản tổng quát — xem cuối phần này |
+| Xử lý công thức Hoá/Lý (MT1) | **BƯỚC 2+3/3 — CODE XONG, CHỜ CHẠY COLAB** (D-145, D-146) | Kiến trúc Hybrid Tesseract + MinerU patch: `ocr_lines.py` (tách dòng), `formula_signals.py` & `formula_gate.py` (bắt dòng nghi — precision 0,8654/recall 1,0000 trên gold set 89 ô/3 NXB, D-144), `formula_ocr.py` (client MinerU `opendatalab/MinerU2.5-Pro-2605-1.2B`), `formula_merge.py` (merge cục bộ từng dòng theo nguyên tắc Không bịa — chỉ ghép khi số "hole" khớp đúng số token MinerU đọc, sai số thì bỏ qua), wiring vào `text_extract.py`/`chunker.py`/`loader.py` qua `formula_hybrid_status`. Đã kiểm bằng test end-to-end trên trang thật đã biết hỏng (`SGK_KHTN_7_KNTT` tr.121, D-63) với client MinerU giả — merge CO₂/O₂ chạy đúng cơ chế. `MIN_SAT_FLOOR=9` (Task 7, sửa D-146), `single_line_max_h` per-book chưa đổi hành vi cho quyển nào (Task 8, xem mục M0), bump `TEXT_EXTRACTION_VERSION="v3_formula_hybrid"` & đo 2 132 dòng nghi/~92,4 phút GPU T4 (Task 9), notebook Colab chạy tuần tự từng quyển + tải zip sau mỗi quyển (Task 10). **Việc còn lại DUY NHẤT: chạy `document/colab_runtime_etl.ipynb` trên Colab GPU.** Chưa đo lại chất lượng box-detection ở `MIN_SAT_FLOOR` mới (D-146) |
+| Báo cáo (`report/tex_source/`) | **XONG cả 5 chương + Tóm tắt + front matter, đã dịch ra PDF thật** (D-132…D-135, D-140) | `report/tex_source/build.ps1 -Clean` → `build/main.pdf` **72 trang**, 60 mục tham khảo (MiKTeX 25.12, D-140). Lập luận trung tâm ĐẢO CHIỀU (D-132): "trần recall" cũ là trần của RIÊNG kênh dense — cấu hình thật 0,9091 VƯỢT nó. 5 hình Ch.4 sinh lại bằng `report/ve_hinh_chuong4.py` từ `evaluation_report_240.csv`. `tests/test_bao_cao_so_lieu.py` khoá 11 độ đo gộp trong `.tex` khớp CSV |
+| Web UI Next.js (MT5) | **XONG** (D-137, D-138, D-139) | repo `D:\personal_repo\project_rag_fe` (Next 16.2.6/React 19.2.4). KaTeX + `src/lib/formula.ts` hạ chỉ số dưới cho Hoá/Lý (chỉ biến đổi HIỂN THỊ, không đụng text lưu trữ); API trả `citations` + `answer_text` riêng; ảnh phục vụ qua `/images/<sách>/<tệp>`, không chép corpus sang FE. Smoke test 13/13 đạt |
 
-Bốn câu của m0-prompt §6 nay **đã có ba câu trả lời** (2026-08-23): frontend là
-`D:\personal_repo\project_rag_fe` (xem dòng MT5); LLM đánh giá đổi sang OpenRouter và **đã
-gọi thật** (D-67); người dùng đã cho phép commit + push `master` — **xác nhận lại 2026-08-26:
-đã push hết, `git rev-list --left-right --count origin/master...master` = `0 0`, nên cứ
-commit rồi push, không hỏi lại**. Câu **hạn mức/ngày của OpenRouter** nay người dùng
-đã trả lời cho tuần này (D-128) — free không giới hạn tới ~30/08; sau đó lại là CHƯA ĐO
-vì API không trả header nào. Còn mở: **G2 làm lại hay thu hẹp thành gold set CÔNG THỨC**
-(xem dưới).
+**G2 dùng để làm gì, và bỏ nó thì mất gì.** G2 **không gate bất kỳ đường chạy nào** —
+nó là dụng cụ đo CER/WER/tỉ lệ lỗi DẤU trên trang người đã xác nhận, không phải điều
+kiện để ETL/retrieval chạy. Bỏ G2 không làm hỏng MT2/MT3/MT5 (có cổng đo riêng: G1,
+recall@k, bảng ablation), nhưng MT1 thì có ảnh hưởng — "bổ sung bước xử lý đặc thù
+cho công thức Hoá, Lý" là hạng mục hợp đồng, và không có phép đo OCR thì không có số
+để nói "bước xử lý công thức đã cải thiện được X" (vi phạm nguyên tắc 3).
+**Khuyến nghị: đừng làm lại gold set 24 trang tổng quát; thu hẹp thành gold set CÔNG
+THỨC theo NXB** — vài trang Hoá/Lý mỗi NXB, chỉ chấm token công thức (`O₂`, `H₂SO₄`,
+`A = Fs`). Rẻ hơn nhiều cho người duyệt và trả lời thẳng câu "chỉ số dưới có sống ở
+độ phân giải CD/CTST không" — thứ có thể đổi thiết kế. Nếu làm, phải sửa trước cảnh
+báo `sua_tay*3 < may2` (23/24 file gold cũ trùng từng chữ với `read_claude.txt` nên
+không bao giờ kích hoạt được).
 
-**G2 dùng để làm gì, và bỏ nó thì mất gì** — trả lời bằng chỗ code thật, không bằng cảm
-tính. G2 **không gate bất kỳ đường chạy nào**: `grep -rn qa_ocr_gold src/ main.py` ngoài
-chính nó = **0**, nên ETL và retrieval chạy y nguyên khi không có G2. Nó là **dụng cụ đo**
-CER/WER/tỉ lệ lỗi DẤU của OCR trên trang người đã xác nhận. Vì vậy:
+## Quy tắc làm việc (luôn áp dụng)
 
-- Bỏ G2 **không** làm hỏng MT2/MT3/MT5 (corpus, hybrid, UI) — những cái đó có cổng đo riêng
-  (G1, recall@k, bảng ablation).
-- Nhưng **MT1 thì có**: "bổ sung bước xử lý đặc thù cho công thức Hoá, Lý" là hạng mục hợp
-  đồng, và D-63 đã đo rằng **4/6 ca fail là do chất lượng chữ trích xuất, không phải
-  retrieval** (recall@10 = 1,00). Không có phép đo OCR thì câu "bước xử lý công thức đã cải
-  thiện được X" **không có số để nói** — vi phạm nguyên tắc 3.
-- **Khuyến nghị: đừng làm lại gold set 24 trang tổng quát; thu hẹp thành gold set CÔNG THỨC
-  theo NXB.** Chỉ cần vài trang Hoá/Lý mỗi NXB, chỉ chấm token công thức (`O₂`, `H₂SO₄`,
-  `A = Fs`), vì (a) nó trả lời trực tiếp câu "chỉ số dưới có sống ở độ phân giải CD/CTST
-  không" (m0-report §7.5) — thứ **có thể đổi thiết kế**; (b) rẻ hơn nhiều lần cho người
-  duyệt; (c) bộ 24 trang cũ là **KNTT-only**, tức đo đúng bộ có độ phân giải THẤP NHẤT. Nếu
-  làm lại theo hướng nào cũng phải sửa cảnh báo `sua_tay*3 < may2` trước, vì 23/24 file gold
-  cũ trùng từng chữ với `read_claude.txt` nên cảnh báo đó không bao giờ kích hoạt được.
-
-## Working rules (always)
-
-- **Adversarially review every code change for hidden bugs before claiming done** — trace edge cases, off-by-ones, coordinate/index mismatches, stale caches; don't trust that a passing test means correct.
-- **Do NOT run the full test suite while iterating.** Run only the focused test(s) for the code you changed (e.g. `python -m pytest tests/layout/test_segmenter.py -v`). Run the whole suite only when explicitly asked or right before finishing a milestone.
-- **Keep tests small and targeted.** Avoid large/slow/expensive tests unless they're truly necessary; prefer focused unit tests with synthetic fixtures over heavy end-to-end runs.
-- **Commit messages: NO `Co-Authored-By` trailer** (and no "Generated with" lines). Plain messages only.
-- Log each decision in `document/decision_log.html`; keep spec/plan in `document/specs/`; keep CLAUDE.md + memory current.
+- **Phản biện mọi thay đổi code tìm bug ẩn trước khi báo xong** — truy edge case,
+  off-by-one, lệch toạ độ/chỉ số, cache cũ, fallback âm thầm; test xanh không có
+  nghĩa là đúng.
+- **KHÔNG chạy cả bộ test khi đang lặp.** Chỉ chạy test nhắm đúng file vừa sửa (ví
+  dụ `python -m pytest tests/layout/test_segmenter.py -v`). Chạy cả suite khi được
+  yêu cầu rõ hoặc ngay trước khi chốt một mốc.
+- **Test nhỏ và nhắm đúng chỗ.** Tránh test nặng/chậm/tốn trừ khi thật cần; ưu tiên
+  unit test có fixture tổng hợp hơn end-to-end nặng nề.
+- **Commit message: KHÔNG có dòng `Co-Authored-By`** (và không có dòng "Generated
+  with"). Chỉ message thuần.
+- Ghi mỗi quyết định vào `document/decision_log.html`; giữ spec/plan trong
+  `document/specs/`; giữ CLAUDE.md + memory luôn khớp thực tế.
 
 ### Định nghĩa "xong" — ghi log & memory NGAY trong lượt phát hiện
 
@@ -390,8 +379,8 @@ một dòng CLAUDE.md sai đang chỉ đạo lượt sau.
 2. **`CLAUDE.md`** — dòng nào bị phép đo mới làm sai thì sửa **trong cùng lượt**, và nói rõ
    con số cũ đã bị lật (nguyên tắc 2). Cập nhật luôn bảng "Trạng thái tiến độ" ở trên:
    `XONG` chỉ được viết khi có bằng chứng chạy được dán kèm; `CHƯA`/`BỊ CHẶN` phải nêu chỗ
-   chặn cụ thể (file:dòng, hoặc lệnh grep tái lập được). Đổi cả `DONE`/`OPEN` của gạch đầu
-   dòng tương ứng trong "Active redesign".
+   chặn cụ thể (file:dòng, hoặc lệnh grep tái lập được). Đổi cả các gạch đầu dòng tương ứng
+   trong "Redesign đang chạy" nếu chúng cũng mô tả cùng việc đó.
 3. **Memory** (`C:\Users\lcdkhoa\.claude\projects\D--personal-repo-project-rag\memory\`) —
    chỉ ghi thứ **không suy được từ code/git**: phạm vi & mốc hợp đồng, ràng buộc môi trường
    (quota LLM, không có GPU), lựa chọn người dùng đã chốt, và **phép đo đắt** (một lượt M0
@@ -407,69 +396,81 @@ một dòng CLAUDE.md sai đang chỉ đạo lượt sau.
 Rồi mới **commit** (message thuần, không `Co-Authored-By`). Chưa commit thì công việc vẫn
 là "chưa có gì được ghi lại" — xem dòng "Commit công việc M0" trong bảng tiến độ.
 
-## Commands
+## Lệnh
 
-All commands run through `main.py` (from repo root). There is no build step — it's a Python app.
+Mọi lệnh chạy qua `main.py` (từ repo root). Không có bước build — đây là app Python.
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env          # then set HF_TOKEN (required) and USE_GPU
+cp .env.example .env          # rồi set HF_TOKEN (bắt buộc) và USE_GPU
 
-# STEP 0 — page map + Bài spine per book. REQUIRED before any text indexing:
-# the text loader refuses to guess a printed page number and raises without it.
-# Prints the G1 report and exits nonzero when G1 fails.
+# BƯỚC 0 — bản đồ trang + spine Bài cho từng quyển. BẮT BUỘC trước khi index text:
+# đường text từ chối đoán số trang in và raise nếu thiếu. In báo cáo G1, thoát mã
+# khác 0 khi G1 fail.
 python main.py --build-manifests
-python main.py --build-manifests --book SGK_KHTN_6_KNTT   # one book only
+python main.py --build-manifests --book SGK_KHTN_6_KNTT   # chỉ một quyển
 
-# ONE COMMAND, run-unattended (Windows/PowerShell): manifests 12 books -> text
-# ETL -> "what's left" report, all into one timestamped log. It reads
-# --build-manifests' exit code, PRINTS it, and continues: G1 FAIL is EXPECTED
-# today (CTST/CD spines are not contiguous, D-70) while `save_manifest` still
-# wrote every book that built, and --text-only only needs the manifests to exist.
-# Chaining the two with `&&` would block step 2 for no reason.
+# MỘT LỆNH, chạy không cần canh (Windows/PowerShell): manifest 12 quyển -> ETL
+# text -> báo cáo "còn lại gì", gộp vào một log có timestamp. Nó đọc mã thoát của
+# --build-manifests, IN RA, rồi vẫn chạy tiếp: G1 FAIL là chuyện BÌNH THƯỜNG hôm
+# nay (spine CTST/CD chưa liền mạch, D-70) trong khi `save_manifest` vẫn ghi mọi
+# quyển dựng được, và --text-only chỉ cần manifest tồn tại. Đừng nối hai lệnh
+# bằng `&&` — mã thoát 1 của G1 sẽ chặn bước 2 một cách vô lý.
 powershell -ExecutionPolicy Bypass -File scripts\run_etl_local.ps1
 
-# STEP -1 (M0) — measure each book's own layout fingerprint. Writes/merges
-# database/fingerprints/{book}.json; a failed stage never overwrites a good one.
+# BƯỚC -1 (M0) — đo fingerprint layout riêng của từng quyển. Ghi/hợp nhất vào
+# database/fingerprints/{book}.json; một stage lỗi không bao giờ ghi đè lên một
+# stage đã tốt.
 python -m src.etl.book.fingerprint --all --verbose > fp.log 2>&1 &
-python -m src.etl.book.fingerprint --all --stages toc --verbose     # one stage only
+python -m src.etl.book.fingerprint --all --stages toc --verbose     # chỉ một stage
 python -m src.etl.book.fingerprint --book SGK_KHTN_6_CD --sample 40 --verbose
 
-# ETL (offline indexing) — checkpoint resume is per PAGE, keyed on page content
-python main.py --text-only    # layout-aware OCR + chunk + index text → ChromaDB
-python main.py --image-only   # crop figures + caption + index images
-# `--book` works on ALL THREE ETL paths since D-84 — it used to be honoured
-# only by --build-manifests, so `--image-only --book X` silently ran all 12
-# books (~6 h, 8 of them known-wrong). A name that matches nothing EXITS 2.
+# ETL (index offline) — checkpoint resume theo TỪNG TRANG, khoá theo nội dung trang
+python main.py --text-only    # OCR theo layout + chunk + index text -> ChromaDB
+python main.py --image-only   # crop hình + caption + index ảnh
+# `--book` lọc được cả BA đường ETL từ D-84 — trước đó chỉ --build-manifests nghe
+# theo, nên `--image-only --book X` từng ÂM THẦM bỏ qua cờ và chạy cả 12 quyển
+# (~6 giờ, 8 quyển biết trước là sai). Tên quyển không khớp nay THOÁT MÃ 2.
 python main.py --image-only --book SGK_KHTN_6_KNTT
-python main.py --etl          # both (same text path as --text-only)
+python main.py --etl          # cả hai (đường text giống --text-only)
 
-# Image metadata human-review cycle (see README §6 for exact JSON semantics)
+# Chu trình người duyệt metadata ảnh (xem README §6 để biết đúng ngữ nghĩa JSON)
 python main.py --export-image-review database/review_images.json
-python main.py --apply-image-review database/review_images.json --review-user <name>   # upsert-by-item, NOT full sync
-python main.py --replace-image-db database/snapshot.json --review-user <name>          # JSON is source of truth (deletes missing)
+python main.py --apply-image-review database/review_images.json --review-user <ten>   # upsert-tung-item, KHÔNG đồng bộ toàn bộ
+python main.py --replace-image-db database/snapshot.json --review-user <ten>          # JSON là nguồn sự thật (xoá cái gì thiếu trong file)
 
 # Serve
 python main.py --api --port 5000
 ```
 
-### Evaluation (in `src/test/`)
+### Đánh giá (trong `src/test/`)
 
-Requires `EVAL_LLM_*` in `.env` (any OpenAI-compatible endpoint). **`.env` now points at OpenRouter — `EVAL_LLM_BASE_URL=https://openrouter.ai/api/v1`, `EVAL_LLM_MODEL=stealth/ox-alpha` (D-67, tested live 2026-08-23).** Two traps, both measured: the URL must **stop at `/v1`** — the value copied from OpenRouter's docs (`.../v1/chat/completions`) makes the OpenAI client append `/chat/completions` a second time and returns **404**; and **never set `max_tokens`** — `completion_tokens` measured ~5× the visible text (139 tokens for an 81-char answer) even though the API reports `reasoning_tokens: 0`. Latency 4.4–6 s/call with **outliers at 59 s and 63 s**, so keep timeouts ≥ 120 s. Cost 0, key `is_free_tier: true`, and the response carries **no `x-ratelimit-*` header at all**. **The user confirmed on 2026-08-26 that the account is on unlimited free access until roughly 30/08, with no rate limit (D-128)** — user-supplied, not measured. Measured corroboration the same day: **155 consecutive judge calls, zero 429s**. After that week it is **unmeasured again**, so re-check before scheduling a long run. Diacritics survive round-trip (`"Quang hợp diễn ra chủ yếu ở lá"`), and `_parse_json` already strips the ```json fences this model emits. **Historical, for the report only (D-54):** the earlier Gemini endpoint `https://generativelanguage.googleapis.com/v1beta/openai` — model choice there was made by measuring the quota error's own `quotaValue`: `gemini-2.5-flash` 404 "no longer available to new users"; `gemini-3.6-flash` **20 requests per DAY**, which killed a 112-request run after exactly 20; `gemini-3.5-flash-lite` **15 per MINUTE**, 1.1 s/call. Split cleanly into deterministic IR metrics vs. LLM-judged answer quality:
+Cần `EVAL_LLM_*` trong `.env` (endpoint tương thích OpenAI bất kỳ). **`.env` hiện
+trỏ vào OpenRouter — `EVAL_LLM_BASE_URL=https://openrouter.ai/api/v1`,
+`EVAL_LLM_MODEL=stealth/ox-alpha` (D-67, đã test thật 2026-08-23).** Hai bẫy đã đo:
+URL phải **dừng ở `/v1`** (copy nguyên `.../v1/chat/completions` từ docs OpenRouter
+làm client OpenAI nối thêm `/chat/completions` lần hai, ra lỗi 404); và **đừng bao
+giờ set `max_tokens`** — `completion_tokens` đo được ~5× phần chữ nhìn thấy dù
+`reasoning_tokens: 0`. Độ trễ 4,4–6 s/lượt, có ngoại lệ 59 s/63 s nên giữ timeout
+≥ 120 s. Free, `is_free_tier: true`, không có header `x-ratelimit-*` nào. **Người
+dùng xác nhận 2026-08-26: free không giới hạn tới ~30/08, không rate limit (D-128)**
+— thông tin người dùng, không phải phép đo; sau mốc đó lại là CHƯA ĐO. Dấu tiếng
+Việt sống sót qua round-trip; `_parse_json` đã tự bóc fence ```json``` model này hay
+in ra.
 
 ```bash
-python src/test/generate_testsets.py --dry-run  # pick pages + print stats, NO LLM calls
-python src/test/generate_testsets.py            # 25 questions/book via PageSource; gold keys come from real chunk metadata (D-48)
+python src/test/generate_testsets.py --dry-run  # chọn trang + in thống kê, KHÔNG gọi LLM
+python src/test/generate_testsets.py            # 25 câu/quyển qua PageSource; gold key từ metadata chunk thật (D-48)
 python -m src.test.ablation_multimodal          # Cấu hình 2: text-only vs multi-modal (0 LLM)
 python -m src.test.prompt_scope_probe           # before/after câu Lý + câu Hoá khi sửa prompt
-python -m src.test.qa_citation_page             # G3 gate: does the CITED page contain the answer (no LLM needed, D-49)
-python -m src.test.qa_citation_page --judge     # + LLM rescue pass, calibrates the coverage threshold
+python -m src.test.qa_citation_page             # cổng G3: trang được TRÍCH DẪN có chứa câu trả lời không (không cần LLM, D-49)
+python -m src.test.qa_citation_page --judge     # + lượt LLM cứu xét, hiệu chỉnh ngưỡng coverage
 python -m src.test.ocr_bakeoff --compare        # bảng bake-off; engine thiếu ô -> in `—`, không in số (D-96)
 python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằng mắt: NGƯỜI · engine · tesseract (D-98)
-python -m src.test.qa_ocr_gold --export         # G2: build 24-page gold set for a HUMAN to correct (D-55)
-python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/diacritic-ER once corrected
-python src/test/evaluator.py                    # run real RAG, measure P/R/MRR + LLM judge (1–5)
-python -m src.test.recall_at_k                  # fast recall benchmark, no LLM calls; reports baseline vs rerank in ONE pass
+python -m src.test.qa_ocr_gold --export         # G2: dựng gold set 24 trang cho NGƯỜI sửa (D-55)
+python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/tỉ lệ lỗi dấu sau khi đã sửa
+python src/test/evaluator.py                    # chạy RAG thật, đo P/R/MRR + LLM chấm (1-5)
+python -m src.test.recall_at_k                  # benchmark recall nhanh, không gọi LLM; in cả baseline lẫn rerank MỘT lượt
 python -m src.test.recall_at_k --testset-dir src/test/testsets_240   # bộ 240 câu (CBHD kê)
 python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240
 python -m src.test.build_testset_240            # 192 câu văn bản, rút mẫu từ pool 300, 0 LLM
@@ -480,77 +481,179 @@ python scripts/reset_image_books.py --nxb CTST  # chạy lại luồng ẢNH cho
 python report/kiem_tra_tex.py                   # lint .tex: ref/cite/gói/ký tự điều khiển/SỐ CŨ (KHÔNG dịch, chỉ lint)
 powershell -File report/tex_source/build.ps1 -Clean   # dịch THẬT ra PDF (MiKTeX 25.12 đã cài, D-140); latexmk hỏng vì thiếu Perl nên script tự rơi về pdflatex+biber
 python report/ve_hinh_chuong4.py                # sinh lại 5 hình Ch.4 từ evaluation_report_240.csv (đừng vẽ tay)
-python src/test/test_image_extraction_full.py   # canonical VISUAL QA for image cropping (draws boxes on pages)
+python src/test/test_image_extraction_full.py   # QA thị giác chuẩn cho crop hình (vẽ box lên trang)
 ```
 
-`src/test/testsets/` now holds a **real 4-book testset: 100 questions, 25/25 per book** (generated
-2026-08-22 with `gemini-3.5-flash-lite`, seed 42). Verified against the built index: **0/100 gold keys
-point at a page with no chunk**, and `tests/test_eval_gold_keys.py` (5 tests) passes. The 12-book ones live in
-`testsets/_archive_12books_2026_07/` (outside the `*_testset.csv` glob) because both their gold keys
-mismatch today's chunk metadata. **Testsets are LLM-generated and not human-reviewed** —
-`_generation_meta.json` records `human_reviewed: false`, and any report using these numbers must say so.
-`metrics.PAGE_TOLERANCE` is **0**: chunks never span pages, so a ±1 window only credits a chunk from a
-*different* page and inflates recall (it also masked the old off-by-one gold key).
+`src/test/testsets/` giữ **bộ test 4 quyển thật: 100 câu, 25/25 mỗi quyển** (sinh
+2026-08-22 bằng `gemini-3.5-flash-lite`, seed 42). Kiểm chứng trên index đã dựng:
+**0/100 gold key trỏ vào trang không có chunk**. Bộ 12 quyển cũ nằm ở
+`testsets/_archive_12books_2026_07/` (ngoài glob `*_testset.csv`) vì gold key không
+khớp metadata chunk hôm nay. **Bộ test do LLM sinh, chưa người duyệt** —
+`_generation_meta.json` ghi `human_reviewed: false`, báo cáo dùng số này phải nói rõ
+điều đó. `metrics.PAGE_TOLERANCE` là **0**: chunk không bao giờ tràn trang, nên cửa
+sổ ±1 chỉ tính điểm cho chunk ở trang KHÁC và thổi phồng recall.
 
-## Architecture
+## Kiến trúc
 
-Two phases: **ETL (offline)** builds the indexes; **query (online)** serves via Flask.
+Hai pha: **ETL (offline)** dựng index; **truy vấn (online)** phục vụ qua Flask.
 
-### Storage — four ChromaDB collections (`src/config.py`)
-- `biology_text` — OCR'd text chunks (bge-m3 embeddings, `CHUNK_SIZE=400/overlap=120`)
-- `biology_images` — figure crops (CLIP embeddings)
-- `biology_image_metadata` — caption/keyword metadata for figures (separately searchable)
-- `processing_status` — per-page checkpoint state enabling resumable ETL
+### Lưu trữ — bốn collection ChromaDB (`src/config.py`)
+- `biology_text` — chunk text đã OCR (embedding bge-m3, `CHUNK_SIZE=400/overlap=120`)
+- `biology_images` — crop hình (embedding CLIP)
+- `biology_image_metadata` — caption/từ khoá của hình (tìm kiếm riêng được)
+- `processing_status` — trạng thái checkpoint theo trang, cho phép ETL resume
 
-**Checkpoint semantics (all three ETL entrypoints agree):** `processing_status` is the single truth source. Every record is keyed on **`page_key` = `{book name}#{md5 of that page's bytes}`** (`page_source.page_checkpoint_key`) plus a version — `TEXT_EXTRACTION_VERSION` for text, `IMAGE_EXTRACTION_VERSION` for images. So: replacing one page file re-processes **only that page**; bumping either version re-processes everything on that side. Chunk ids are `{page_key}_p{page_number}_c{chunk_index}`, and `_index_source_pages` deletes a page's existing text chunks before writing the new ones, so a version bump never leaves orphaned chunks behind. **The image side needed the same thing and did not have it (D-52):** an image doc's id is `image_id` = the hash of the *crop*, so a changed crop gets a new id and the old doc survives instead of being upserted over. Measured on a 12-page scratch DB: swapping one page's bytes left that page with **3** image docs (one stale). `ImageVectorDB.delete_page_documents(source, pages)` now clears both image collections for the pages about to be rewritten, called from `run_etl` and `run_etl_image_only` *after* extraction succeeds (so a crash deletes nothing) and *even when the page yields no figures* (a page that lost its figure must lose its docs too). `database/processed_files.txt` / `processed_images.txt` are **advisory progress logs only** — nothing skips work because of them. Each entrypoint queries the checkpoint *before* doing any OCR, so a book with nothing left to do costs one md5 per page.
+**Ngữ nghĩa checkpoint (cả ba đường ETL thống nhất):** `processing_status` là nguồn
+sự thật duy nhất. Mỗi record khoá theo **`page_key` = `{tên sách}#{md5 bytes của
+trang đó}`** (`page_source.page_checkpoint_key`) cộng một version —
+`TEXT_EXTRACTION_VERSION` cho text, `IMAGE_EXTRACTION_VERSION` cho ảnh. Nên: thay
+một file trang chỉ re-process **đúng trang đó**; bump version thì re-process lại
+toàn bộ bên đó. Chunk id là `{page_key}_p{page_number}_c{chunk_index}`, và
+`_index_source_pages` xoá chunk text cũ của trang trước khi ghi chunk mới, nên bump
+version không để lại chunk mồ côi. **Phía ảnh từng thiếu cơ chế này (D-52):** id của
+doc ảnh là hash của CROP, nên đổi crop ra id mới và doc cũ tồn tại song song thay vì
+bị ghi đè. `ImageVectorDB.delete_page_documents(source, pages)` nay xoá cả hai
+collection ảnh cho các trang sắp ghi lại, gọi từ `run_etl`/`run_etl_image_only`
+**sau khi** extract thành công (crash giữa chừng không xoá gì) và **kể cả khi trang
+không cho ra hình nào** (trang mất hình phải mất luôn doc). `database/
+processed_files.txt`/`processed_images.txt` chỉ là log tiến độ THAM KHẢO — không gì
+bỏ qua công việc vì chúng.
 
-Everything writable lives under `database/` (`PERSIST_DIR`), overridable via `RAG_DATABASE_DIR` (point at Google Drive on Colab). `database/manifests/{book_id}.json` holds the per-book `BookManifest`, overridable **separately** via `RAG_MANIFEST_DIR` so manifests can travel with the repo while the index sits on Drive. `database/fingerprints/{book}.json` (the M0 layout measurement, 12/12 books) works the same way via **`RAG_FINGERPRINT_DIR`**, defaulting to `<repo>/database/fingerprints` — it is a *measurement* that cost ~70 min of OCR, so it belongs to the repo, not to the Drive index. It used to be `Path("database/fingerprints")` hard-coded in `book/fingerprint.py`, a **relative** path that silently read/wrote the wrong place from any cwd but the repo root (D-69). `datasources/` holds the input page PNGs, one folder per book (see "What this is") — no PDFs; override with `RAG_DATA_DIR`. **The PNGs are NOT in git (D-68):** measured 4.1 GB / 2 399 pages against an already-11 GB `.git`, and the CD/CTST batch alone (~3.4 GB) exceeds GitHub's 2 GB per-push limit — PNGs were never LFS-tracked (`.gitattributes` covers only `datasources/*.pdf`). `.gitignore` now ignores `datasources/*` except `datasources/README.md`, which documents the expected layout. Untracking does **not** shrink `.git`: the 801 KNTT PNGs stay in history until someone rewrites it, which nobody has. Consequence to remember: a fresh clone has **no data**, so all four data entrypoints now **exit nonzero** instead of logging and returning 0 — measured `--text-only`/`--image-only`/`--etl` → **2**, `--build-manifests` → **1**.
+Mọi thứ có thể ghi nằm dưới `database/` (`PERSIST_DIR`), override qua
+`RAG_DATABASE_DIR` (trỏ Google Drive trên Colab). `database/manifests/{book_id}.json`
+giữ `BookManifest` từng quyển, override RIÊNG qua `RAG_MANIFEST_DIR` để manifest đi
+theo repo trong khi index nằm trên Drive. `database/fingerprints/{book}.json` (đo M0,
+đủ 12/12 quyển) cũng vậy qua **`RAG_FINGERPRINT_DIR`**, mặc định
+`<repo>/database/fingerprints` — đây là một **phép đo** tốn ~70 phút OCR nên thuộc về
+repo, không thuộc về index trên Drive. `datasources/` chứa PNG trang gốc, mỗi quyển
+một thư mục (không có PDF); override bằng `RAG_DATA_DIR`. **PNG KHÔNG nằm trong git
+(D-68):** đo được 4,1 GB/2 399 trang trong khi `.git` đã 11 GB, riêng lô CD/CTST
+(~3,4 GB) vượt trần 2 GB/lượt push của GitHub. `.gitignore` bỏ qua `datasources/*`
+trừ `datasources/README.md` (mô tả cấu trúc mong đợi). Hệ quả cần nhớ: clone mới
+**không có data**, nên cả bốn entrypoint dữ liệu nay **thoát mã khác 0** thay vì log
+rồi trả về 0 — đo được `--text-only`/`--image-only`/`--etl` → **2**,
+`--build-manifests` → **1**.
 
 ### Page source (`src/etl/page_source.py`)
-`PageSource` is the only way page pixels enter the system: `page_numbers()` (the numbers **in the filenames**, never `enumerate` order), `load(page_number)` → BGR uint8, `content_hash(page_number)`. `PngFolderPageSource` is the real corpus; `PdfPageSource` exists only for the legacy `/api/etl` upload. `discover_page_sources(DATA_DIR)` returns every book (PNG folders first, then any legacy PDFs). Anything that needs a page must go through this — do not re-add `fitz`/poppler calls to the ETL.
+`PageSource` là đường DUY NHẤT để pixel trang đi vào hệ thống: `page_numbers()` (số
+**trong tên file**, không phải thứ tự `enumerate`), `load(page_number)` → mảng BGR
+uint8, `content_hash(page_number)`. `PngFolderPageSource` là corpus thật;
+`PdfPageSource` chỉ còn phục vụ upload `/api/etl` cũ. `discover_page_sources
+(DATA_DIR)` trả về mọi quyển (thư mục PNG trước, PDF cũ sau). Bất cứ chỗ nào cần
+đọc trang phải đi qua đây — đừng thêm lại lời gọi `fitz`/poppler vào ETL.
 
 ### Text ETL (`src/etl/layout/loader.py`)
-`LayoutOCRLoader.load_page(source, page_number)` is the layout spine and the **only** text path: manifest lookup (printed page + role) → `source.load()` → `segment_page` → `extract_text_units` → `chunk_units`. There is no preprocess step and no page-number detection here: the **printed page number comes from the `BookManifest`**, and a missing manifest / unknown page / absent `printed_page` raises `ManifestMissing` rather than guessing. Pages with `role="cover"` return no chunks (the source file is never touched or deleted).
+`LayoutOCRLoader.load_page(source, page_number)` là xương sống layout và là đường
+text **DUY NHẤT**: tra manifest (trang in + role) → `source.load()` → `segment_page`
+→ `extract_text_units` → `chunk_units`. Không có bước tiền xử lý, không có phát hiện
+số trang ở đây — **số trang in lấy từ `BookManifest`**, thiếu manifest/trang lạ/thiếu
+`printed_page` thì raise `ManifestMissing` chứ không đoán. Trang có `role="cover"`
+trả về không chunk nào (file nguồn không bị đụng hay xoá).
 
-Chunks carry `source`/`page` (printed) /`page_index` (source page number) /`variant`/`region_type`/`chunk_index`/`needs_review`/`review_tokens`. `page` and `page_index` are **equal on today's corpus** (offset 0 — D-65; re-measured 2026-08-25: 0/16 393 chunks differ), so never conflate them *by design* even though they now coincide: citations use `page`, tracing back to a file uses `page_index`. The old "differ by exactly 1" note was measured on the 801-page KNTT corpus and is void. `citations.py` reads `region_type` for the section label, so a chunk missing it silently degrades to a body-only citation. Body text is split by `TextSplitter`; a sidebar/info-box stays atomic unless it exceeds `BOX_ATOMIC_MAX_CHARS` (1.5 × `CHUNK_SIZE`), in which case it is split but keeps its `region_type`.
+Chunk mang `source`/`page` (số in)/`page_index` (số trang nguồn)/`variant`/
+`region_type`/`chunk_index`/`needs_review`/`review_tokens`. `page` và `page_index`
+**bằng nhau trên corpus hôm nay** (offset 0 — D-65; đo lại 2026-08-25: 0/16 393
+chunk khác nhau), nhưng vẫn KHÔNG được gộp chung theo thiết kế: citation dùng
+`page`, truy ngược về file dùng `page_index`. `citations.py` đọc `region_type` để
+gắn nhãn mục — chunk thiếu trường này tự động rớt xuống citation chỉ-thân-bài. Thân
+bài do `TextSplitter` cắt; sidebar/info-box giữ nguyên một khối trừ khi vượt
+`BOX_ATOMIC_MAX_CHARS` (1,5 × `CHUNK_SIZE`), lúc đó bị cắt nhưng vẫn giữ
+`region_type`.
 
-`--etl` and `--text-only` both go through `_index_source_pages()` in `main.py`, one page at a time; a page that raises is logged, left unmarked, and retried next run. The legacy whole-page `RobustOCRLoader` is **not** a text path any more — `ocr_image()` survives only to supply full-page OCR text for figure-caption anchoring on the image side.
+`--etl` và `--text-only` đều qua `_index_source_pages()` trong `main.py`, từng trang
+một; trang nào raise thì được log, để lại chưa đánh dấu, chạy lại lượt sau.
+`RobustOCRLoader` cũ (OCR cả trang) **không còn** là đường text — `ocr_image()` chỉ
+còn phục vụ OCR cả trang để làm anchor cho chú thích hình ở phía ảnh.
 
-### Retrieval flow (`src/rag/`)
-1. `hybrid_retriever.py::HybridRetriever.search()` is the entry. It calls `query_intent.py::is_image_only_query()` to **route**: image-only queries (e.g. "cho tôi hình con X") skip text retrieval entirely.
-2. Text side: `RETRIEVAL_MODE=dense` (mặc định) giữ nguyên hai lớp cũ — `RerankedRetriever` khi `RERANK_ENABLED`, **RelevanceGatedRetriever** (relative-distance gate `RETRIEVER_DISTANCE_MARGIN`) khi không. Hai nhánh **loại trừ nhau**, nên cổng khoảng cách chưa từng chạy trong cấu hình thật (D-80). `bm25`/`hybrid` đi qua `HybridTextRetriever`: hợp nhất → cổng lọc → rerank, ba công tắc rời nhau. **Đã đo (D-81): cổng lọc TƯƠNG ĐỐI không mua được gì** — dưới `rrf` trung tính ±0,007 MRR, dưới `norm` nó **cắt mất đáp án thật** (R@10 1,000 → 0,890). Cổng lọc thực sự hoạt động là sàn tuyệt đối `RERANK_SCORE_MIN`.
-3. Image side combines CLIP similarity + metadata search + a **lexical phrase channel** (accent-sensitive; distinguishes e.g. "trâu" vs "trầu") + rerank, gated by `IMAGE_RELEVANCE_THRESHOLD`. **The phrase channel's document-side text is masked against a measured false-friend list before matching (D-141..D-143):** Vietnamese is analytic, so a bare "cá" (fish) also opens "cá heo" (dolphin), "cá sấu" (crocodile), "cá cóc" (newt), "cá nhân"/"cá thể" (individual) — the +0.45 phrase weight used to match "con cá" as a raw substring inside "con cá heo" with no boundary check, tying a dolphin photo with a real fish photo for top rank. Measured on the live index: 129→87 docs still match bare "cá" after the fix. `_expand_query_for_clip`'s English-hint lookup was fixed the same day from raw substring (`"ca" in query`, which fired on "các"/"cách"/"cao") to word-boundary matching.
-4. `chain.py::BiologyRAG` builds the prompt and calls the Qwen2.5 LLM (`llm.py`), returning answer + image gallery.
+### Luồng truy xuất (`src/rag/`)
+1. `hybrid_retriever.py::HybridRetriever.search()` là điểm vào. Nó gọi
+   `query_intent.py::is_image_only_query()` để **định tuyến**: câu hỏi chỉ-cần-ảnh
+   (vd "cho tôi hình con X") bỏ qua truy xuất text hoàn toàn.
+2. Phía text: `RETRIEVAL_MODE=dense` (mặc định) giữ nguyên hai lớp cũ —
+   `RerankedRetriever` khi `RERANK_ENABLED`, **`RelevanceGatedRetriever`** (cổng
+   khoảng cách tương đối `RETRIEVER_DISTANCE_MARGIN`) khi không. Hai nhánh **loại
+   trừ nhau**, nên cổng khoảng cách chưa từng chạy trong cấu hình thật (D-80).
+   `bm25`/`hybrid` đi qua `HybridTextRetriever`: hợp nhất → cổng lọc → rerank, ba
+   công tắc rời nhau. **Đã đo (D-81): cổng lọc TƯƠNG ĐỐI không mua được gì** — dưới
+   `rrf` trung tính ±0,007 MRR, dưới `norm` nó **cắt mất đáp án thật** (R@10
+   1,000 → 0,890). Cổng lọc thực sự hoạt động là sàn tuyệt đối `RERANK_SCORE_MIN`.
+3. Phía ảnh kết hợp CLIP similarity + tìm theo metadata + một **kênh cụm từ lexical**
+   (nhạy dấu; phân biệt "trâu" với "trầu") + rerank, gate bằng
+   `IMAGE_RELEVANCE_THRESHOLD`. **Text phía document của kênh cụm từ được che theo
+   danh sách "false-friend" đã đo trước khi so khớp (D-141..D-143):** tiếng Việt là
+   ngôn ngữ phân tích, nên "cá" trần cũng mở luôn "cá heo"/"cá sấu"/"cá cóc"/"cá
+   nhân" — trọng số +0,45 của kênh cụm từ từng khớp "con cá" như substring thô bên
+   trong "con cá heo", kéo ảnh cá heo lên ngang ảnh cá thật. Đo trên index thật:
+   129→87 doc còn khớp "cá" trần sau khi vá.
+4. `chain.py::BiologyRAG` dựng prompt và gọi LLM Qwen2.5 (`llm.py`), trả về câu trả
+   lời + gallery ảnh.
 
-### Image ETL — the complex, actively-evolving part (`src/etl/image_processor.py`, ~4000 lines)
-- **Entry point is `extract_images_from_source(source, ocr_text_per_page, pages=…)`** — it takes a `PageSource` and a list of **source page numbers**, and loads each page via `_load_page_image()` (PNG → RGB array + PIL image). No poppler, no DPI: the detector now sees the native 1094×1536 pixels instead of a 150-DPI render, which is why `IMAGE_EXTRACTION_VERSION` was bumped to `v17_png_source`. **The crop geometry has not been re-QA'd on this source** — run the visual QA tool before trusting it.
-- **One publisher, no variant dispatch (D-50).** `CtsstImageProcessor` (335 lines) is **deleted**; `make_image_processor(name)` always returns `KnttImageProcessor` — the only class QA'd on this corpus — and `get_pdf_variant()` is now the constant `LAYOUT_VARIANT = "kntt"`, not a filename guess (guessing was a silent fallback: any unrecognised name used to fall through to the never-QA'd base class). A second publisher means **re-measuring** captions/boxes/pills, not adding a regex keyword. `segmenter._VARIANT_PARAMS` is gone too — its three keys all pointed at the same numbers. Verified with the G4 gate before/after: **70/71 = 98.59%, 0 misassigned — identical**, same single gap (`Hình 2.3`). Comments in the base class still cite CTST pages as *evidence* for constants; those stay, because deleting them deletes the rationale.
-- Detection is **anchor-first + deterministic** (find figure-caption text anchors, then crop the band above), with OWL-ViT as a secondary detector. When touching this, verify against the visual QA tool above, not just unit output.
-- **M3 layout reconcile**: right after `detect_regions_anchor_first`, `extract_images_from_pdf` runs `src/etl/layout/figure_bridge.py::reconcile_with_layout` — a **drop-only** step that removes a region sitting ≥`FIGURE_IN_BOX_DROP_RATIO` (0.80) inside a segmenter colour box (sidebar/info-box false positive). It runs `segment_page` on the detector's **own 150-DPI RGB array (converted to BGR)** so bboxes share one coordinate space; it never clips/grows a figure. **Only generic/unanchored types (`panel`/`figure`) are drop-eligible** — caption/label-anchored figures (`single_figure`/`composite_figure`/`sub_figure`) are trusted and never dropped (real-page QA showed a legit coloured sub-figure was otherwise eaten when its flat background tripped the box detector), and `textbook_info_box`/`activity_box`/`tool_group` are legit boxes, also never dropped. Fail-open on segmentation error. QA overlay `04_reconciled.png` shows kept=green / dropped=red.
-- **Entrypoints use `make_image_processor(filename)` per book** (`run_etl`/`run_etl_image_only`) so CTST/KNTT get their subclasses — previously the batch path used base `ImageProcessor()` for every book.
-- `IMAGE_EXTRACTION_VERSION` in `.env` gates the crop cache: **bump it to force re-extraction** after changing crop logic (otherwise the per-page checkpoint skips already-processed pages). Current default `v16_layout_reconcile` (M3). A bump is honoured by `--etl` and `--image-only` alike — see the checkpoint-semantics note under Storage.
+### Image ETL — phần phức tạp, đang đổi liên tục (`src/etl/image_processor.py`, ~4000 dòng)
+- **Điểm vào là `extract_images_from_source(source, ocr_text_per_page, pages=…)`** —
+  nhận một `PageSource` và danh sách **số trang nguồn**, nạp từng trang qua
+  `_load_page_image()` (PNG → mảng RGB + ảnh PIL). Không poppler, không DPI: detector
+  nay thấy đúng pixel gốc 1094×1536 thay vì bản render 150-DPI, nên
+  `IMAGE_EXTRACTION_VERSION` đã bump lên `v17_png_source`.
+- **Một nhà xuất bản, không còn dispatch theo variant (D-50) — NAY ĐÃ ĐẢO NGƯỢC LẠI
+  (D-110, D-111):** mỗi NXB có class xử lý riêng thật sự, xem dòng "Gỡ
+  `LAYOUT_VARIANT`" ở bảng tiến độ.
+- Phát hiện là **anchor-first + deterministic** (tìm anchor chữ chú thích hình rồi
+  crop dải phía trên), OWL-ViT là detector phụ. Khi đụng vào chỗ này, verify bằng
+  công cụ QA thị giác, không chỉ bằng output unit test.
+- **M3 layout reconcile**: ngay sau `detect_regions_anchor_first`,
+  `extract_images_from_pdf` chạy `src/etl/layout/figure_bridge.py::
+  reconcile_with_layout` — bước **chỉ xoá, không sửa** loại bỏ một vùng nằm
+  ≥`FIGURE_IN_BOX_DROP_RATIO` (0,80) bên trong một hộp màu của segmenter (false
+  positive dạng sidebar/info-box). Chỉ loại vùng dạng generic/không anchor
+  (`panel`/`figure`) — vùng có caption/nhãn (`single_figure`/`composite_figure`/
+  `sub_figure`) luôn được tin, không bao giờ bị xoá.
+- `IMAGE_EXTRACTION_VERSION` trong `.env` gate cache crop: **bump để ép crop lại**
+  sau khi đổi logic crop (không thì checkpoint theo trang sẽ bỏ qua trang đã xử lý).
 
 ### API + app (`src/app/`)
-- `dependencies.py::AppServices` is a **singleton** that loads all heavy models once (VectorDB, HybridRetriever, LLM, RAG chain). Never instantiate models per-request; go through this.
-- `api.py` exposes chat (+SSE stream at `/api/chat/stream`), background ETL upload, and image-metadata CRUD for the review UI.
+- `dependencies.py::AppServices` là **singleton** nạp mọi model nặng một lần
+  (VectorDB, HybridRetriever, LLM, RAG chain). Không bao giờ khởi tạo model theo
+  từng request — đi qua đây.
+- `api.py` expose chat (+SSE stream tại `/api/chat/stream`), ETL upload nền, và CRUD
+  metadata ảnh cho UI review.
 
-## Key conventions
+## Quy ước quan trọng
 
-- **Models are configured via `.env` / `src/config.py`**, not hardcoded. Defaults: `BAAI/bge-m3` (text embeddings, M2), Qwen2.5-3B-Instruct (LLM), CLIP-ViT (image), OWL-ViT (detection), Vintern-1B (captioning — **off by default**, D-47). `src/utils/download_models.py` pre-fetches them for offline runs.
-- **Cross-encoder reranker** `BAAI/bge-reranker-v2-m3` (`src/rag/reranker.py::CrossEncoderReranker`/`get_reranker()`, shared singleton, GPU/CPU-safe) reranks both sides: text via `RerankedRetriever` (`src/rag/vectorstore.py`, toggle `RERANK_ENABLED`, fetch width `RERANK_FETCH_K`, absolute floor `RERANK_SCORE_MIN`) and images as an additive scoring term (`src/rag/image_vectorstore.py`, toggle `IMAGE_RERANK_ENABLED`, `IMAGE_RERANK_TOP_N`, `IMAGE_RERANK_WEIGHT`) — never a replacement for the existing image fusion.
-- **Citations are deterministic, not LLM-generated**: `src/rag/citations.py` builds them from real chunk metadata (page/section, including sidebar labels) and `src/app/api.py` attaches them to chat + stream responses — the LLM never invents page numbers. `format_book_name` renders a **reader-facing** name — `SGK_KHTN_6_KNTT` → `Khoa học tự nhiên 6 (Kết nối tri thức)` — reading the publisher off the book id itself, and returns the raw stem unchanged when the name doesn't match the pattern (a wrong label sends a student to the wrong book). The label must stay a **bijection**: the G3 gate maps display labels back to `source`.
-- **Windows is the primary dev environment.** OCR needs Tesseract (`vie`) via `TESSERACT_CMD`; Poppler (`POPPLER_PATH`) is only still needed by the legacy PDF paths. Prebuilt zips are in `windows_tools/`.
-- **Visual QA for layout**: `python -m src.test.qa_layout --book SGK_KHTN_6_KNTT --page 10` draws the segmented regions; `--pages 10,11,12 --report` prints regions-per-page (the recall metric). `SGK_KHTN_6_KNTT/page_010.png` is the reference page — a human counts ≥4 coloured boxes on it.
-- **Running the ETL on Colab — `document/colab_runtime_etl.ipynb` IS THE RUNBOOK, and the user
-  confirmed on 2026-08-23 that it stays the one file they run.** 40 cells, Vietnamese, the user's
-  own working notebook. **Never start a parallel runbook doc, and never let it drift**: when the ETL
-  CLI, an env var, or a measured number changes, patch this notebook **in the same turn** — it is the
-  4th place in the "Định nghĩa xong" checklist for anything that touches the ETL. It carries the
-  mandatory `--build-manifests` step, the four path env vars, version-gate semantics, the caption-off
-  rationale, and which side of the pipeline is trustworthy today. Updated to lượt 3 (2026-08-23):
-  header now says 12 quyển / 2 399 trang and opens with a **⛔ blocked** banner, cell 5 points
-  `RAG_DATA_DIR` at Drive and adds `RAG_FINGERPRINT_DIR`, cell 5b lists the per-publisher page counts
-  and sizes, and §7 **reverses** lượt 2's "skip `--build-manifests`" into "bắt buộc" with a
-  per-publisher can/cannot table.
-- **Image-review JSON semantics are subtle and easy to get wrong**: `--apply-image-review` upserts per-item (removing an item from the array does NOT delete it from the DB); only `--replace-image-db` treats the file as the full source of truth. To remove a figure from retrieval, set `review_status=rejected|deleted` / `is_active=false` / `delete=true`. See README §6.
-- Detailed per-variant image-ETL runbook: `skills/etl-textbook-images/runbook.md`.
+- **Model cấu hình qua `.env`/`src/config.py`**, không hardcode. Mặc định:
+  `BAAI/bge-m3` (embedding text), Qwen2.5-3B-Instruct (LLM), CLIP-ViT (ảnh), OWL-ViT
+  (phát hiện), Vintern-1B (caption — **tắt mặc định**, D-47).
+  `src/utils/download_models.py` tải trước để chạy offline.
+- **Reranker cross-encoder** `BAAI/bge-reranker-v2-m3`
+  (`src/rag/reranker.py::CrossEncoderReranker`/`get_reranker()`, singleton dùng
+  chung, an toàn CPU/GPU) rerank cả hai phía: text qua `RerankedRetriever`
+  (`RERANK_ENABLED`, `RERANK_FETCH_K`, sàn tuyệt đối `RERANK_SCORE_MIN`) và ảnh như
+  một số hạng cộng thêm (`IMAGE_RERANK_ENABLED`, `IMAGE_RERANK_TOP_N`,
+  `IMAGE_RERANK_WEIGHT`) — không bao giờ thay thế hợp nhất ảnh hiện có.
+- **Citation là deterministic, không do LLM sinh**: `src/rag/citations.py` dựng từ
+  metadata chunk thật (trang/mục, cả nhãn sidebar) và `src/app/api.py` gắn vào
+  response chat + stream — LLM không bao giờ tự bịa số trang. `format_book_name`
+  render tên **cho người đọc** (`SGK_KHTN_6_KNTT` → `Khoa học tự nhiên 6 (Kết nối
+  tri thức)`) và trả lại nguyên tên khi không khớp mẫu. Nhãn phải là **song ánh**:
+  cổng G3 map ngược nhãn hiển thị về `source`.
+- **Windows là môi trường dev chính.** OCR cần Tesseract (`vie`) qua
+  `TESSERACT_CMD`; Poppler (`POPPLER_PATH`) chỉ còn cần cho đường PDF cũ. Zip dựng
+  sẵn nằm ở `windows_tools/`.
+- **QA thị giác cho layout**: `python -m src.test.qa_layout --book SGK_KHTN_6_KNTT
+  --page 10` vẽ vùng đã segment; `--pages 10,11,12 --report` in số vùng/trang (độ đo
+  recall). `SGK_KHTN_6_KNTT/page_010.png` là trang tham chiếu — người đếm được
+  ≥4 hộp màu trên đó.
+- **Chạy ETL trên Colab — `document/colab_runtime_etl.ipynb` LÀ RUNBOOK**, người
+  dùng xác nhận đây là file duy nhất họ chạy. **Đừng bao giờ mở một runbook song
+  song, và đừng để nó trôi**: khi CLI ETL, một biến env, hay một số đã đo thay đổi,
+  vá notebook này **trong cùng lượt** — đây là chỗ thứ 4 trong checklist "Định nghĩa
+  xong" cho bất cứ gì đụng tới ETL. Bản mới nhất (lượt 4, 2026-08-28, D-145/D-146):
+  bật `FORMULA_HYBRID_ENABLED=true` + `TEXT_EXTRACTION_VERSION=v3_formula_hybrid`,
+  cài `mineru_vl_utils` ghim `transformers>=4.49,<5`, DB chuyển session-local
+  `/content/database` (Drive đầy) với vòng lặp chạy từng quyển + tải zip sau mỗi
+  quyển để rớt phiên chỉ mất tối đa 1 quyển.
+- **Ngữ nghĩa JSON review ảnh dễ hiểu nhầm**: `--apply-image-review` upsert theo
+  từng item (xoá một item khỏi mảng KHÔNG xoá nó khỏi DB); chỉ
+  `--replace-image-db` coi file là nguồn sự thật đầy đủ. Để loại một hình khỏi
+  truy xuất: set `review_status=rejected|deleted`/`is_active=false`/`delete=true`.
+  Xem README §6.
+- Runbook ETL ảnh chi tiết theo từng NXB: `skills/etl-textbook-images/runbook.md`.

@@ -161,7 +161,23 @@ def test_params_for_reads_min_sat_from_fingerprint(tmp_path, monkeypatch):
 
     params = mod._params_for(book="SGK_KHTN_9_CD")
 
-    assert params["min_sat"] == mod.MIN_SAT_FLOOR  # p10=12 duoi san -> dung san
+    # p10=12 > MIN_SAT_FLOOR(9) -> gia tri RIENG cua quyen thang, khong phai san
+    assert params["min_sat"] == 12
+
+
+def test_params_for_clamps_to_floor_when_p10_below_it(tmp_path, monkeypatch):
+    import json
+    from src.etl.layout import segmenter as mod
+
+    fp_dir = tmp_path / "fingerprints"
+    fp_dir.mkdir()
+    (fp_dir / "SGK_KHTN_9_CD.json").write_text(json.dumps(
+        {"box_palette": {"sat_percentiles": {"p10": 3.0}}}), encoding="utf-8")
+    monkeypatch.setattr(mod, "FINGERPRINT_DIR", fp_dir)
+
+    params = mod._params_for(book="SGK_KHTN_9_CD")
+
+    assert params["min_sat"] == mod.MIN_SAT_FLOOR  # p10=3 duoi san -> dung san
 
 
 def test_params_for_falls_back_to_default_when_fingerprint_missing(tmp_path, monkeypatch, caplog):
