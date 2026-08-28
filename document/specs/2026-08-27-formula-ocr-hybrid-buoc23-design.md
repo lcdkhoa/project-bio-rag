@@ -239,3 +239,22 @@ công thức tuyến tính SINGLE_LINE_MAX_H chưa đo); (D) rủi ro mất chec
 ở session Colab; (E) thiếu singleton model, thiếu ước lượng chi phí trước khi
 chạy, thiếu `chunker.py`, nhét metadata vào `review_flags` đã loãng. Bản này là
 kết quả sau khi sửa cả 5 nhóm.
+
+## Trạng thái implement (2026-08-28)
+
+Toàn bộ 11 task theo kế hoạch `2026-08-28-formula-ocr-hybrid-buoc23-plan.md` đã
+**HOÀN THÀNH 100%** và xác nhận bằng test suite (**761 passed, 3 skipped**, D-145):
+
+1. **Task 1** (`245f910a`): `ocr_lines.py` (`group_lines`, `image_to_lines`)
+2. **Task 2** (`93727ab6`): `formula_signals.py` & `formula_merge.py` (`merge_formula_line`, `apply_line_merge_to_region`)
+3. **Task 3** (`a1d1acfb`): `vlm_loader.py` & `formula_ocr.py` (`FormulaMinerUClient`)
+4. **Task 4** (`29059ac2`): `src/config.py` & `regions.py` (`FORMULA_HYBRID_ENABLED`, `TextUnit.formula_hybrid_status`)
+5. **Task 5** (`7556f367`): `text_extract.py` `_maybe_apply_formula_hybrid` + wiring
+6. **Task 6** (`d8f397a0`): `chunker.py` & `loader.py` metadata propagation
+7. **Task 7** (`29432d27`): `segmenter.py` `MIN_SAT_FLOOR = 20` & `_params_for(variant, book)` (đo trên 12 quyển)
+8. **Task 8** (`98e2dd08`): `text_extract.py` `single_line_max_h_for_book(book)` & wiring (đo trên 12 quyển)
+9. **Task 9** (`d9c05ffe`): `TEXT_EXTRACTION_VERSION = "v3_formula_hybrid"` & `estimate_formula_hybrid_cost.py` (2 132 dòng nghi / ~92,4 phút GPU)
+10. **Task 10** (`97fb5e90`): `document/colab_runtime_etl.ipynb` session-local + vòng lặp tuần tự từng quyển + tự động tải về sau mỗi quyển
+11. **Task 11**: Decision log D-145 + `CLAUDE.md` + memory docs + tổng kết
+
+**Việc còn lại DUY NHẤT:** Chạy notebook `document/colab_runtime_etl.ipynb` đã vá trên môi trường Colab GPU thật. Máy dev CPU không chạy ETL 12 quyển.

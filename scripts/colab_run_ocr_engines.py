@@ -72,7 +72,21 @@ def load_crops(crops_dir: Path):
 # Mỗi engine là một hàm nhận (đường dẫn PNG, prompt) -> chuỗi. Thêm engine mới
 # thì thêm một hàm và một dòng trong ENGINES; không sửa vòng chạy.
 
-from src.etl.layout.vlm_loader import _load_vlm
+from src.etl.layout import vlm_loader as _vlm_loader_mod
+from src.etl.layout.vlm_loader import (
+    _AUTO_CLASSES,
+    _khai_bao_tie,
+    _lm_head_sau,
+    _tie_da_xay_ra,
+)
+
+
+def _load_vlm(model_id: str, torch):
+    return _vlm_loader_mod._load_vlm(
+        model_id, torch,
+        fn_khai_bao_tie=globals().get("_khai_bao_tie", _khai_bao_tie),
+        fn_tie_da_xay_ra=globals().get("_tie_da_xay_ra", _tie_da_xay_ra),
+    )
 
 
 def _qwen_style(model_id: str):

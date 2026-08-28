@@ -91,7 +91,7 @@ def _khai_bao_tie(model_id: str) -> bool:
     return False
 
 
-def _load_vlm(model_id: str, torch):
+def _load_vlm(model_id: str, torch, fn_khai_bao_tie=None, fn_tie_da_xay_ra=None):
     """Nạp VLM bằng auto-class ĐÚNG cho model đó, và NÓI RA dùng class nào.
 
     Không thử-rồi-nuốt: mọi lỗi được giữ lại, và nếu không class nào nạp được thì
@@ -100,18 +100,19 @@ def _load_vlm(model_id: str, torch):
     """
     import transformers
 
+    check_tie = fn_tie_da_xay_ra or _tie_da_xay_ra
+    check_khai_bao = fn_khai_bao_tie or _khai_bao_tie
+
     # `torch_dtype` bị bỏ ở transformers 5.x, `dtype` chỉ có từ 4.56. Chọn theo
     # phiên bản THẬT trên Colab thay vì đoán.
     major = int(str(transformers.__version__).split(".")[0])
     dtype_kw = ({"dtype": torch.bfloat16} if major >= 5
                 else {"torch_dtype": torch.bfloat16})
-    if major >= 5:
-        # ĐO ĐƯỢC trên T4, ba lượt: transformers 5.15.1 nạp Nanonets-OCR2-3B với
-        # `lm_head.weight MISSING` và model sinh token ngẫu nhiên — BA LƯỢT CHO BA
-        # CHUỖI KHÁC HẲN NHAU dù `do_sample=False`. Greedy mà output đổi giữa các
-        # lượt nạp nghĩa là TRỌNG SỐ đổi, tức lm_head khởi tạo ngẫu nhiên.
-        # `tie_weights()` ở dưới chạy sau khi model đã dựng nên không cứu được.
-        print(f"!! transformers {transformers.__version__} (>=5) — bản 5.x ĐÃ ĐO "
+
+    # CẢNH BÁO SỚM: transformers 5.x nạp hỏng lm_head của Nanonets (D-101)
+    if transformers.__version__.startswith("5."):
+        print("[CẢNH BÁO] Bạn đang dùng transformers "
+              f"{transformers.__version__} (5.x). Phiên bản này ĐÃ ĐO ĐƯỢC "
               "là nạp hỏng lm_head của Nanonets-OCR2-3B (model sinh RÁC, không "
               "phải đọc kém).", flush=True)
         print("!! Nếu chữ đọc ra là token ngẫu nhiên: "
@@ -143,11 +144,11 @@ def _load_vlm(model_id: str, torch):
         # `lm_head.weight` nào trong 824 key (checkpoint TIED), và
         # `tie_word_embeddings: true` chỉ khai trong `text_config` — top-level là
         # `None`. transformers 5.x không buộc trọng số, lm_head thành ngẫu nhiên.
-        if not _tie_da_xay_ra(model) and _khai_bao_tie(model_id):
+        if not check_tie(model) and check_khai_bao(model_id):
             print("[vá] lm_head CHƯA được buộc với embedding dù model khai "
                   "tie_word_embeddings=True -> gọi tie_weights()", flush=True)
             model.tie_weights()
-            if not _tie_da_xay_ra(model):
+            if not check_tie(model):
                 raise RuntimeError(
                     f"{model_id}: lm_head vẫn KHÔNG được buộc sau tie_weights() "
                     f"trên transformers {transformers.__version__}. Model sẽ sinh "
