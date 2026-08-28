@@ -1290,3 +1290,57 @@ class TestDuoiThua:
 
         assert DUOI_THUA_MAX < 1.31      # bắt được ca sát nhất đã đo
         assert DUOI_THUA_MAX > 1.02      # tha ô đọc đúng đã đo
+
+
+class TestNxbOf:
+    """`nxb_of` suy NXB từ hậu tố tên quyển, không đoán khi không khớp."""
+
+    def test_recognises_all_three_publishers(self):
+        from src.test.ocr_bakeoff import nxb_of
+
+        assert nxb_of("SGK_KHTN_7_KNTT") == "KNTT"
+        assert nxb_of("SGK_KHTN_9_CTST") == "CTST"
+        assert nxb_of("SGK_KHTN_6_CD") == "CD"
+
+    def test_raises_on_unknown_suffix(self):
+        from src.test.ocr_bakeoff import nxb_of
+
+        with pytest.raises(ValueError):
+            nxb_of("SGK_KHTN_6_KNT")
+
+
+class TestScoreByNxb:
+    """Cắt lát `score_engine` theo NXB trên gold set đã có — không OCR lại."""
+
+    ITEMS = [
+        {"id": "k1", "quyen": "SGK_KHTN_7_KNTT", "kind": "cong_thuc",
+         "may_doc": "khí O2 và CO2"},
+        {"id": "c1", "quyen": "SGK_KHTN_9_CTST", "kind": "cong_thuc",
+         "may_doc": "khí 0, và (0,"},
+        {"id": "d1", "quyen": "SGK_KHTN_6_CD", "kind": "doi_chung",
+         "may_doc": "Tế bào nhân thực"},
+    ]
+    GOLD = {"k1": "khí O₂ và CO₂", "c1": "khí O₂ và CO₂",
+            "d1": "Tế bào nhân thực"}
+
+    def test_groups_are_disjoint_and_cover_every_publisher_present(self):
+        from src.test.ocr_bakeoff import score_by_nxb
+
+        got = score_by_nxb(self.ITEMS, self.GOLD, dict(self.GOLD))
+
+        assert got["KNTT"]["n_cong_thuc"] == 1
+        assert got["CTST"]["n_cong_thuc"] == 1
+        assert got["CD"]["n_cong_thuc"] == 0    # CD chỉ có ô đối chứng ở đây
+
+    def test_a_book_only_failing_at_cd_shows_up_only_in_the_cd_row(self):
+        """Đúng câu hỏi CLAUDE.md mở: CD có tệ hơn KNTT/CTST không — phải thấy
+        được TRONG bảng cắt lát, không bị số KNTT/CTST tốt che lấp khi gộp."""
+        from src.test.ocr_bakeoff import score_by_nxb
+
+        hyp = {**self.GOLD, "k1": "khí O2 và CO2",     # KNTT đọc đúng
+               "c1": "khí 0, và (0,"}                  # CTST đọc hỏng
+
+        got = score_by_nxb(self.ITEMS, self.GOLD, hyp)
+
+        assert got["KNTT"]["cong_thuc"] == 1.0
+        assert got["CTST"]["cong_thuc"] == 0.0

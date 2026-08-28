@@ -388,6 +388,32 @@ def table_cell_accuracy(gold_row: str, hyp_row: str) -> float:
     return dung / len(g)
 
 
+_NXB_HAU_TO = ("KNTT", "CTST", "CD")
+
+
+def nxb_of(quyen: str) -> str:
+    """Suy NXB từ tên quyển (`SGK_KHTN_7_CTST` -> `CTST`). Không đoán khi không
+    khớp hậu tố nào — sai tên quyển thì raise, giống `get_pdf_variant` (D-111).
+    """
+    for hau_to in _NXB_HAU_TO:
+        if str(quyen).endswith(f"_{hau_to}"):
+            return hau_to
+    raise ValueError(f"Không nhận ra NXB từ tên quyển: {quyen!r}")
+
+
+def score_by_nxb(items: Sequence[dict], gold: Dict[str, str],
+                 hyp: Dict[str, str]) -> Dict[str, dict]:
+    """`score_engine` cắt lát theo từng NXB — dùng dữ liệu gold set 97 ô/15
+    trang ĐÃ CÓ (5/5/5 trang/NXB, D-144), không OCR lại, không cần người duyệt
+    thêm. Trả lời câu hỏi CLAUDE.md để mở: 'chỉ số dưới có sống ở độ phân giải
+    CD/CTST không', bằng số Tesseract THẬT theo từng NXB thay vì gộp chung.
+    """
+    theo_nxb: Dict[str, List[dict]] = {"KNTT": [], "CTST": [], "CD": []}
+    for it in items:
+        theo_nxb[nxb_of(it["quyen"])].append(it)
+    return {nxb: score_engine(nhom, gold, hyp) for nxb, nhom in theo_nxb.items()}
+
+
 def _giong_nhau(a: str, b: str) -> bool:
     """So sau khi chuẩn hoá khoảng trắng — khác dấu vẫn tính là KHÁC."""
     return " ".join(str(a or "").split()) == " ".join(str(b or "").split())
@@ -866,7 +892,7 @@ def dump_crops(items: Sequence[dict], out_dir: Path) -> int:
     return len(man)
 
 
-def cmd_compare(out_dir: Path) -> int:
+def cmd_compare(out_dir: Path, theo_nxb: bool = False) -> int:
     """Bảng so các engine trên gold set người duyệt.
 
     Đọc `engine_*.json` — mỗi file là `{"<id ô>": "<chữ engine đọc được>"}` do
@@ -987,6 +1013,15 @@ def cmd_compare(out_dir: Path) -> int:
         print(f"\n{goc['n_khong_doc_duoc']} ô người ghi `???` (không ai đọc "
               "được) -> loại khỏi mọi trục, không tính cho ai cả.")
 
+    if theo_nxb:
+        print("\nTesseract theo từng NXB (5/5/5 trang, D-144) — trả lời "
+              "'chỉ số dưới có sống ở độ phân giải CD/CTST không':")
+        print(f"{'NXB':6s} {'CT↑':>6s} {'DẤU↓':>6s} {'BẢNG↑':>6s}   n")
+        for nxb, st in score_by_nxb(items, gold, tesseract).items():
+            print(f"{nxb:6s} {o(st['cong_thuc'])} {o(st['loi_dau'])} "
+                  f"{o(st['bang'])}   ct={st['n_cong_thuc']} "
+                  f"dc={st['n_doi_chung']} b={st['n_bang']}")
+
     p_csv = out_dir / "bakeoff.csv"
     with io.open(p_csv, "w", encoding="utf-8-sig", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=["engine"] + list(bang[0][1].keys()))
@@ -1061,6 +1096,10 @@ def main() -> int:
     ap.add_argument("--compare", action="store_true",
                     help="Bảng so các engine (engine_*.json) trên gold set người "
                          "duyệt. Từ chối in bảng nếu phiếu chưa dùng được.")
+    ap.add_argument("--theo-nxb", action="store_true",
+                    help="Kèm --compare: in thêm bảng Tesseract cắt lát theo "
+                         "NXB (KNTT/CTST/CD) từ đúng gold set đã có, không OCR "
+                         "lại, không cần người duyệt thêm.")
     # Mặc định là thư mục NẰM TRONG GIT, không phải `database/` (bị gitignore).
     # Nhờ vậy Colab chỉ cần `git clone` là có đủ crop + phiếu người + baseline —
     # không phải upload gì lên Drive, không phải nhớ đường dẫn nào. Toàn bộ
@@ -1083,7 +1122,7 @@ def main() -> int:
     if args.score:
         return cmd_score(out_dir)
     if args.compare:
-        return cmd_compare(out_dir)
+        return cmd_compare(out_dir, theo_nxb=args.theo_nxb)
     if args.doi_chieu:
         return cmd_doi_chieu(out_dir, args.doi_chieu, args.so_o, args.loai)
     ap.print_help()
