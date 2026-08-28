@@ -82,6 +82,28 @@ def test_page_search_stops_at_next_entry():
     assert any(f["kind"] == "toc_page_unreadable" for f in result.flags)
 
 
+def test_garbled_trailing_token_is_rescued_from_its_own_bbox(monkeypatch):
+    """Ca đo trên 8_CTST: `Bài 16. Áp suất.......(dot-leader)... "Ố"` — token số
+    trang bị OCR ra rác nên không token nào khớp `_NUMBER`, cả nó lẫn từ tiêu đề
+    cuối đều rơi vào `title_tokens`. `after_title` tính bằng
+    `segment.tokens[len(title_tokens)]` lệch chỉ số (không tính hai token
+    "Bài"/"16." nằm ngoài title) nên trỏ GIỮA từ cuối của tiêu đề thay vì đúng
+    sau nó — vùng rescue đó không chứa số thật. Số trang luôn nằm ở TOKEN CUỐI
+    CÙNG của segment; rescue phải thử lại đúng bbox đó khi crop đầu bị hụt."""
+    text = "Bài 16. Áp suất....... rac"
+    s = seg(text)
+    last_x0 = s.tokens[-1][0]
+
+    def fake_rescue(image, scan_line, x0, x1):
+        return {76} if x0 == last_x0 else set()
+
+    monkeypatch.setattr(TL, "rescue_number", fake_rescue)
+
+    _, seen = parse([line(s)], "bai")
+
+    assert seen[16] == (76, "Áp suất....... rac")
+
+
 def test_page_on_continuation_line_is_found():
     """CTST: tiêu đề tràn dòng nên số trang nằm ở DÒNG KẾ của cùng cột."""
     _, seen = parse([line(seg("Bài 1. Phương pháp và kĩ năng học tập")),

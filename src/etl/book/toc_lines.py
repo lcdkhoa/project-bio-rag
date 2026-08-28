@@ -318,6 +318,21 @@ def parse_page(image, lines, style: str, result: TocResult,
                                if len(title_tokens) < len(segment.tokens)
                                else segment.x1)
                 candidates = rescue_number(image, scan_line, after_title, limit)
+                # `after_title` được tính bằng cách đếm token TRONG title đã
+                # tách (title_tokens), rồi lấy `segment.tokens[len(title_tokens)]`
+                # — nhưng `segment.tokens` còn chứa cả token "Bài"/"16." nằm
+                # NGOÀI title, nên chỉ số này lệch và `after_title` có thể rơi
+                # vào GIỮA từ cuối của tiêu đề (ví dụ "suất..." bị OCR dính dot
+                # leader) thay vì đúng SAU nó. Hệ quả đo được: vùng rescue quá
+                # RỘNG, lẫn cả chữ thật của tiêu đề, và số trang bị OCR ra rác
+                # (`"Ố"`, `"ø"`) không đọc lại được. Số trang thật luôn nằm ở
+                # TOKEN CUỐI CÙNG của segment (dot-leader luôn kết bằng số ở
+                # bên phải) — thử thêm một crop HẸP đúng vùng token đó.
+                if not candidates and segment.tokens:
+                    x0_token_cuoi = segment.tokens[-1][0]
+                    if x0_token_cuoi != after_title:
+                        candidates = rescue_number(
+                            image, scan_line, x0_token_cuoi, limit)
                 if len(candidates) == 1:
                     page = candidates.pop()
                 elif candidates:
