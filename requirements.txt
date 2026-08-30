@@ -12,15 +12,17 @@ langchain>=0.2.0
 langchain-core>=0.2.0
 langchain-community>=0.1.0
 langchain-text-splitters>=0.2.0
-# Pin a compatible langchain-chroma / chromadb pair: unbounded upper limits let a
-# fresh install resolve an incompatible pair (langchain-chroma needing a chromadb
-# `Search` API absent in older chromadb -> KeyError '_type' when opening the DB).
-# Known-good combo used to build the current DB: langchain-chroma 0.2.6 + chromadb 1.5.9.
-langchain-chroma>=0.2.6,<0.3
+# Ghim CHÍNH XÁC (không phải khoảng): DB seed hiện tại (kể cả bản đưa lên Drive
+# cho Colab, D-152) được dựng bằng đúng combo này. Một fresh install trong
+# khoảng >=0.2.6,<0.3 / >=1.5.0,<2.0 có thể resolve ra bản khác không đọc được
+# schema on-disk của DB cũ (langchain-chroma đòi API `Search` không có ở
+# chromadb cũ hơn -> KeyError '_type' khi mở DB). Đổi bản thì phải build lại DB
+# từ đầu, không chỉ đổi số ở đây.
+langchain-chroma==0.2.6
 langchain-huggingface
 
 # Vector Database
-chromadb>=1.5.0,<2.0
+chromadb==1.5.9
 
 # PDF & OCR
 pypdf>=4.2.0
