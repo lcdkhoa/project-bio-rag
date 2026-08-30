@@ -141,6 +141,11 @@ src/test/gold_ocr/**/page.png
 datasources/*
 !datasources/README.md
 
+# Slice tạm của database/ (~470 MB, D-152) chuẩn bị để upload thủ công lên
+# Google Drive làm seed checkpoint cho document/colab_runtime_etl.ipynb — không
+# phải source, không cần track.
+database_seed_for_drive/
+
 # scratch của phiên M3 (đường dẫn log đang chạy) + log ETL cục bộ
 .m3_current_log
 logs/
