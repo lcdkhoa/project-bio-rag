@@ -47,6 +47,39 @@ def test_formula_hybrid_applies_on_real_broken_page():
         "phai co it nhat mot trang thai hybrid duoc ghi lai")
 
 
+class _CrashingClient:
+    """Mo phong MinerU hong giua chung (mang/GPU/model) - dung cho test D-154:
+    mot dong hong KHONG duoc keo sap ca trang."""
+
+    def read(self, crop_bgr, kind="text"):
+        raise RuntimeError("mo phong MinerU sap (timeout/OOM/mang)")
+
+
+def test_formula_hybrid_mineru_crash_does_not_kill_the_whole_page():
+    """D-154: truoc ban va nay, exception trong `formula_client.read()` vang
+    thang len `extract_text_units` -> `_index_source_pages` bat duoc o muc
+    TRANG, bo het ca trang (ke ca cac vung KHONG lien quan cong thuc). Sau ban
+    va, mot dong MinerU hong chi bi bo qua DONG do, van tra ve unit + text OCR
+    Tesseract binh thuong cho ca vung."""
+    pytest.importorskip("cv2")
+    try:
+        source = find_page_source(DATA_DIR, "SGK_KHTN_7_KNTT")
+        img = source.load(121)
+    except Exception as exc:
+        pytest.skip(f"trang mau khong co tren may nay: {exc}")
+
+    h, w = img.shape[:2]
+    region = Region(RegionType.BODY, (0, int(h * 0.2), w, int(h * 0.6)),
+                     reading_order=0, meta={"excludes": []})
+
+    units = extract_text_units(img, [region], "kntt",
+                                formula_client=_CrashingClient())
+
+    assert len(units) == 1, "khong duoc de exception vang len lam mat ca unit"
+    assert "mineru_call_failed" in units[0].formula_hybrid_status
+    assert units[0].text, "text Tesseract goc van phai con, khong bi xoa"
+
+
 def test_formula_hybrid_off_by_default_leaves_text_untouched():
     """`formula_client=None` va `FORMULA_HYBRID_ENABLED=false` (mac dinh may
     dev) -> hanh vi y het truoc khi co hybrid, khong goi gi ca."""

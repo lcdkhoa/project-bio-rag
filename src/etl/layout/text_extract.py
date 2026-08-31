@@ -11,6 +11,7 @@ Không upscale: đo được là CER thân bài không đổi ở 1×/2×/3×/4�
 + upscale 2× chỉ thêm 0,3% token với +70% thời gian (spec §1.2, CẤM #2).
 """
 import json
+import logging
 import unicodedata
 
 import numpy as np
@@ -26,6 +27,7 @@ from ..diacritic import diacritic_review_flags
 from ...config import DIACRITIC_REVIEW_ENABLED, FINGERPRINT_DIR, FORMULA_HYBRID_ENABLED, TESSERACT_CMD
 
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+logger = logging.getLogger(__name__)
 
 # Chiều cao box chữ thân bài đo được là 19 px (p10 16, p90 20) -> 60 px là "một
 # dòng cộng lề", đủ rộng để không nhận nhầm khối hai dòng thành dòng đơn.
@@ -124,7 +126,21 @@ def _maybe_apply_formula_hybrid(crop, text, formula_client, book=None):
         line_crop = crop[cy0:cy1, cx0:cx1]
         if line_crop.size == 0:
             continue
-        mineru_text = formula_client.read(line_crop, kind="text")
+        try:
+            mineru_text = formula_client.read(line_crop, kind="text")
+        except Exception as exc:
+            # D-154: một lần gọi MinerU hỏng (mạng/GPU/model) KHÔNG được kéo
+            # sập toàn bộ trang — trước bản vá này, exception ở đây văng thẳng
+            # lên `_index_source_pages`, trang bị bỏ dở HOÀN TOÀN (mất luôn
+            # phần Tesseract đã OCR đúng của mọi vùng khác). Log để lượt sau
+            # biết ĐÚNG dòng nào hỏng, rồi bỏ qua CHỈ dòng này (nguyên tắc 5:
+            # ồn ào nhưng hẹp, không được im lặng và cũng không được vơ đũa
+            # cả nắm).
+            logger.warning("MinerU read() lỗi trên một dòng nghi công thức "
+                            "(bỏ qua dòng này, giữ nguyên phần còn lại của "
+                            "trang): %s", exc)
+            statuses.append("mineru_call_failed")
+            continue
         outcome = merge_formula_line(line_text, mineru_text)
         if outcome.status == "not_suspect":
             continue

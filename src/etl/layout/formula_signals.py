@@ -48,6 +48,16 @@ _KY_HIEU = r"(?<![A-Za-zÀ-ỹ])[A-Za-z0-9][A-Za-z0-9₀-₉·./^]*(?![A-Za-zÀ-
 TOKEN_LY = re.compile(
     rf"{_KY_HIEU}(?:\s{_KY_HIEU})?\s*=\s*{_KY_HIEU}(?:\s{_KY_HIEU})?")
 
+# Khoảng trắng CÙNG DÒNG, không nhận `\n` — dùng riêng cho CO_DAU_BANG (D-154):
+# `\s*`/`\s?` chuẩn của Python khớp cả `\n`, nên khi is_formula_suspect() chạy
+# trên text CẢ VÙNG (nhiều dòng, không phải một ô/dòng đơn như gold set D-144
+# đã đo), nó có thể "=" nối rác OCR cuối một dòng với rác đầu dòng kế tiếp —
+# đo trên DB thật (D-154): CẢ 158/158 nhóm chunk rơi vào `gate_hit_no_line_located`
+# đều do khớp xuyên dòng kiểu này (vd `SGK_KHTN_6_KNTT` tr.8: `” Sq=\n3) b)`,
+# nhãn hình a)/b), không phải công thức). Một dòng OCR thật KHÔNG BAO GIỜ cần
+# `=` cách xa quá một khoảng trắng-cùng-dòng.
+_WS_SAME_LINE = r"[ \t]*"
+
 
 def formula_tokens(text: str) -> List[str]:
     """Các token CÔNG THỨC trong một dòng — đơn vị chấm của chỉ số CT (D-108).
@@ -79,4 +89,6 @@ CONG_THUC_HONG = re.compile(
     r"|\bH\s?,\s?O\b|\bH\s?,\s?SO\s?,|\(\s?0\s?,|\b0\s?,(?=\s|$))")
 # Công thức VẬT LÍ hầu như luôn có `=`, và nó KHÔNG có dấu phẩy-chỉ-số-dưới nên
 # bộ lọc công thức Hoá bỏ sót nó hoàn toàn: `1 J = 1 Ñm` (D-63, RAG trả lời RỖNG).
-CO_DAU_BANG = re.compile(r"[A-Za-zÀ-ỹ0-9)\]]\s*=\s*[A-Za-zÀ-ỹ0-9(]")
+# `[ \t]*` (KHÔNG phải `\s*`) quanh `=` — xem lý do ở `_WS_SAME_LINE` (D-154).
+CO_DAU_BANG = re.compile(
+    rf"[A-Za-zÀ-ỹ0-9)\]]{_WS_SAME_LINE}={_WS_SAME_LINE}[A-Za-zÀ-ỹ0-9(]")
