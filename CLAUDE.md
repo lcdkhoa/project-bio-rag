@@ -648,11 +648,18 @@ còn phục vụ OCR cả trang để làm anchor cho chú thích hình ở phí
   dùng xác nhận đây là file duy nhất họ chạy. **Đừng bao giờ mở một runbook song
   song, và đừng để nó trôi**: khi CLI ETL, một biến env, hay một số đã đo thay đổi,
   vá notebook này **trong cùng lượt** — đây là chỗ thứ 4 trong checklist "Định nghĩa
-  xong" cho bất cứ gì đụng tới ETL. Bản mới nhất (lượt 4, 2026-08-28, D-145/D-146):
-  bật `FORMULA_HYBRID_ENABLED=true` + `TEXT_EXTRACTION_VERSION=v3_formula_hybrid`,
-  cài `mineru_vl_utils` ghim `transformers>=4.49,<5`, DB chuyển session-local
-  `/content/database` (Drive đầy) với vòng lặp chạy từng quyển + tải zip sau mỗi
-  quyển để rớt phiên chỉ mất tối đa 1 quyển.
+  xong" cho bất cứ gì đụng tới ETL. Bản mới nhất (lượt 7, 2026-08-31, D-153): DB
+  local đo trực tiếp trước khi vá — **0/2 399 trang có `v3_formula_hybrid`**
+  (100% còn `v2_bai_spine`, `formula_hybrid_status` vắng mặt ở cả 16 393 chunk) →
+  việc chính của lượt Colab là OCR lại TOÀN BỘ text; **ảnh đã 2 399/2 399 trang ở
+  `v19_pill_kernels`** → mục ảnh của notebook đổi từ chạy cứng "chỉ 4 quyển KNTT"
+  (lỗi thời từ khi 8 quyển CD/CTST xong 2026-08-25..28, chưa từng được vá) sang
+  tự kiểm tra + chỉ chạy lại quyển thực sự thiếu. DB + datasources nay nằm trên
+  Drive của **chính tài khoản Colab Pro đang chạy** (không phải tài khoản mượn
+  của lượt 6, đã bỏ) — không còn bước tải zip về máy cuối phiên, đồng bộ Drive
+  luôn bật, `gpuType` mặc định đổi `T4` → `L4`. Việc trong `/content/database`
+  (đĩa cục bộ suốt phiên) + đồng bộ phần nhẹ lên Drive sau mỗi quyển giữ nguyên
+  từ lượt 5 (D-152).
 - **Ngữ nghĩa JSON review ảnh dễ hiểu nhầm**: `--apply-image-review` upsert theo
   từng item (xoá một item khỏi mảng KHÔNG xoá nó khỏi DB); chỉ
   `--replace-image-db` coi file là nguồn sự thật đầy đủ. Để loại một hình khỏi
