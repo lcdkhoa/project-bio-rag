@@ -348,7 +348,7 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 | Index text 12 quyển | **XONG, đã OCR lại với hybrid công thức** (D-162, 2026-09-01) | Lượt Colab 8: 2 399/2 399 trang, 16 515 chunk, `TEXT_EXTRACTION_VERSION=v4_formula_hybrid_fix`. Dựng với `SINGLE_LINE_MAX_H=60` và `LAYOUT_BOX_MIN_SATURATION` per-book (`MIN_SAT_FLOOR=9`, D-146) — thay bản 2026-08-23 (16 393 chunk, `v2_bai_spine`, chưa có hybrid công thức) |
 | `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT có `bai_so`; 8 quyển CTST/CD không chunk nào (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế) |
 | `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở 57–84% chunk theo quyển, gộp toàn kho 69,3% — ở mức đó cờ gần như không mang tin |
-| LLM đánh giá (OpenRouter) | **CHẠY ĐƯỢC**; hạn mức CHƯA ĐO lại từ sau ~30/08 | `stealth/ox-alpha` qua `https://openrouter.ai/api/v1` (D-67). Free không giới hạn tới ~30/08 theo xác nhận người dùng (D-128), sau đó quay lại trạng thái chưa đo (API không trả header `x-ratelimit-*`) |
+| LLM đánh giá (Groq, đổi từ OpenRouter D-163) | **CHẠY ĐƯỢC, đo tới ô đơn lẻ** — chưa đo trên 231 câu liên tục | `qwen/qwen3.8-27b` + `openai/gpt-oss-120b` xoay vòng qua `JudgePool`, `https://api.groq.com/openai/v1`. Mỗi model **8000 token/phút riêng** (đo bằng header thật 2026-09-01, D-163), không phải tài liệu. `stealth/ox-alpha`/OpenRouter (D-67, D-128) **ngừng dùng vì hết free** |
 | Bộ test 240 câu (CBHD kê, 3 bộ × 80) | **ĐỦ 240 CÂU, nhưng 46 câu HÌNH CHƯA QUA NGƯỜI DUYỆT ĐỘC LẬP** (D-112, D-148) | 192 câu văn bản (16/quyển) rút mẫu từ pool 300, 0 lượt LLM, 192/192 gold key khớp index. 48 câu HÌNH: `--ap-dung` đã trộn **46 câu** vào `testsets_240/` (2 bị bỏ vì crop không dùng được), phân bố 3-4 câu/quyển. **CẢNH BÁO:** toàn bộ câu hỏi/đáp án HÌNH do AI tự mở crop ra xem rồi viết (D-113: không tự động hoá được bằng pixel-derived fields; D-148: AI làm best-effort thay vì để trống) — CHƯA có người thật duyệt độc lập, cần xem lại trước khi trích dẫn trong báo cáo như số liệu chuẩn |
 | Đánh giá đầu-cuối bộ 231 câu / 12 quyển | **ĐO TRÊN INDEX CŨ (D-130), CHƯA ĐO LẠI sau lượt hybrid công thức D-162** | `Recall(prod,page)` 0,9091 · `MRR(page)` 0,8153 · `R@10` 0,8961 · `Correct` 4,065/5 · `Faithful` 4,394/5 · `Relevancy` 4,602/5 — đo trên index 16 393 chunk (`v2_bai_spine`, trước hybrid). Index nay là 16 515 chunk (`v4_formula_hybrid_fix`, D-162); phải chạy lại `evaluator.py`/`recall_at_k` trước khi trích số này vào báo cáo như số liệu cuối cùng. Thấp nhất `7_CTST` 0,697 (số cũ) — do truy xuất, không do trả lời |
 | G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); khuyến nghị thu hẹp thành gold set CÔNG THỨC thay vì làm lại bản tổng quát — xem cuối phần này |
@@ -467,17 +467,26 @@ python main.py --api --port 5000
 ### Đánh giá (trong `src/test/`)
 
 Cần `EVAL_LLM_*` trong `.env` (endpoint tương thích OpenAI bất kỳ). **`.env` hiện
-trỏ vào OpenRouter — `EVAL_LLM_BASE_URL=https://openrouter.ai/api/v1`,
-`EVAL_LLM_MODEL=stealth/ox-alpha` (D-67, đã test thật 2026-08-23).** Hai bẫy đã đo:
-URL phải **dừng ở `/v1`** (copy nguyên `.../v1/chat/completions` từ docs OpenRouter
-làm client OpenAI nối thêm `/chat/completions` lần hai, ra lỗi 404); và **đừng bao
-giờ set `max_tokens`** — `completion_tokens` đo được ~5× phần chữ nhìn thấy dù
-`reasoning_tokens: 0`. Độ trễ 4,4–6 s/lượt, có ngoại lệ 59 s/63 s nên giữ timeout
-≥ 120 s. Free, `is_free_tier: true`, không có header `x-ratelimit-*` nào. **Người
-dùng xác nhận 2026-08-26: free không giới hạn tới ~30/08, không rate limit (D-128)**
-— thông tin người dùng, không phải phép đo; sau mốc đó lại là CHƯA ĐO. Dấu tiếng
-Việt sống sót qua round-trip; `_parse_json` đã tự bóc fence ```json``` model này hay
-in ra.
+trỏ vào Groq (D-163, 2026-09-01 — OpenRouter `stealth/ox-alpha` hết free):
+`EVAL_LLM_BASE_URL=https://api.groq.com/openai/v1`, HAI model xoay vòng qua
+`EVAL_LLM_MODELS=qwen/qwen3.8-27b,openai/gpt-oss-120b`** (`EVAL_LLM_MODEL` chỉ còn
+là model đầu danh sách, giữ cho tương thích code cũ). `get_eval_llm()`
+(`src/test/eval_llm.py`) trả về `JudgePool` khi có ≥2 model trong `EVAL_LLM_MODELS`
+— `.invoke()` cùng chữ ký `ChatOpenAI` nên mọi nơi gọi không đổi code; khi model
+đang active bị 429/5xx thì xoay NGAY sang model kế (không sleep, khác lớp với
+backoff 5/20/60s sẵn có trong `evaluator.py::judge_answer`), lỗi 401/400 thì raise
+ngay không xoay. Bẫy URL **vẫn y hệt OpenRouter cũ**: phải dừng ở `/v1`, đưa nguyên
+`.../v1/chat/completions` sẽ bị client nối lần hai, ra 404. **Đo thật 2026-09-01
+(D-163):** cả hai model id tồn tại đúng chữ (`GET /v1/models`), mỗi model có hạn
+mức TPM RIÊNG `8000 token/phút` (không dùng chung bucket) — đo bằng header
+`x-ratelimit-limit-tokens` trên chính lượt gọi thật, không phải tra docs. Vẫn giữ
+**đừng bao giờ set `max_tokens`** (bẫy đã đo trên OpenRouter, chưa kiểm lại trên
+Groq nhưng an toàn hơn để giữ nguyên). **Chưa đo trên 231 câu thật** liệu 8000
+TPM/model có đủ hay không — ước tính dựa trên nhịp gọi cũ (Qwen local sinh câu trả
+lời chiếm phần lớn thời gian giữa hai lượt gọi judge) chứ chưa phải phép đo. Dấu
+tiếng Việt sống sót qua round-trip; `_parse_json` đã tự bóc fence ```json``` model
+này hay in ra (đã kiểm cả `openai/gpt-oss-120b`, model này trả `reasoning` tách
+khỏi `content` nên không làm hỏng parse).
 
 ```bash
 python src/test/generate_testsets.py --dry-run  # chọn trang + in thống kê, KHÔNG gọi LLM
@@ -494,6 +503,10 @@ python src/test/evaluator.py                    # chạy RAG thật, đo P/R/MRR
 python -m src.test.recall_at_k                  # benchmark recall nhanh, không gọi LLM; in cả baseline lẫn rerank MỘT lượt
 python -m src.test.recall_at_k --testset-dir src/test/testsets_240   # bộ 240 câu (CBHD kê)
 python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240
+# 231 cau tren may dev (GPU 4 GB) do duoc ~3-3,5 phut/cau (D-164) -> 5-12 gio.
+# Neu can nhanh hon: document/colab_runtime_eval.ipynb chay ca ba script tren
+# (recall_at_k/ablation/evaluator) tren Colab, chi khoi phuc INDEX tu checkpoint
+# `final_with_bm25`, khong can RAG_DATA_DIR/manifest/fingerprint.
 python -m src.test.build_testset_240            # 192 câu văn bản, rút mẫu từ pool 300, 0 LLM
 python -m src.test.build_image_questions --chon # 48 câu HÌNH: máy chọn crop -> --nhap -> người duyệt
 python -m src.test.report_numbers [--latex]     # số liệu Bảng 4.2/4.3 đọc thẳng từ index
@@ -507,10 +520,14 @@ python src/test/test_image_extraction_full.py   # QA thị giác chuẩn cho cro
 ```
 
 `src/test/testsets/` giữ **bộ test 4 quyển thật: 100 câu, 25/25 mỗi quyển** (sinh
-2026-08-22 bằng `gemini-3.5-flash-lite`, seed 42). Kiểm chứng trên index đã dựng:
-**0/100 gold key trỏ vào trang không có chunk**. Bộ 12 quyển cũ nằm ở
-`testsets/_archive_12books_2026_07/` (ngoài glob `*_testset.csv`) vì gold key không
-khớp metadata chunk hôm nay. **Bộ test do LLM sinh, chưa người duyệt** —
+2026-08-22 bằng `gemini-3.5-flash-lite`, seed 42) — đây là **pool nguồn** mà
+`build_testset_240.py` rút mẫu ra 192 câu văn bản của bộ `testsets_240/`, và là
+`--testset-dir` mặc định của `ablation.py`/`evaluator.py`/`recall_at_k.py` khi
+không truyền cờ. Kiểm chứng trên index đã dựng: **0/100 gold key trỏ vào trang
+không có chunk**. Hai bộ cũ hơn (12 quyển 2026-07, 4 quyển KNTT offset −1) đã
+**xoá** (2026-09-01) — gold key không khớp metadata chunk từ lâu, không script nào
+còn đọc tới (0 tham chiếu, đã grep xác nhận trước khi xoá), lịch sử xem
+`document/decision_log.html`. **Bộ test do LLM sinh, chưa người duyệt** —
 `_generation_meta.json` ghi `human_reviewed: false`, báo cáo dùng số này phải nói rõ
 điều đó. `metrics.PAGE_TOLERANCE` là **0**: chunk không bao giờ tràn trang, nên cửa
 sổ ±1 chỉ tính điểm cho chunk ở trang KHÁC và thổi phồng recall.
