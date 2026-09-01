@@ -8,8 +8,13 @@ import pytest
 from src.utils.download_models import MODELS, PROFILES, select_models
 
 
-def test_text_etl_profile_only_needs_the_text_embedder():
-    assert select_models(profile="text-etl") == ["BAAI/bge-m3"]
+def test_text_etl_profile_needs_the_text_embedder_and_the_formula_ocr_model():
+    # D-158: "text-etl" tung CHI co bge-m3 trong khi `--text-only` da can MinerU
+    # cho buoc hybrid cong thuc tu D-56/D-144 - thieu no la nguyen nhan 100%
+    # `mineru_call_failed` o luot Colab 7 (lazy-load lan dau duoi HF_HUB_OFFLINE=1
+    # ma model chua tung duoc tai truoc).
+    assert select_models(profile="text-etl") == [
+        "BAAI/bge-m3", "opendatalab/MinerU2.5-Pro-2605-1.2B"]
 
 
 def test_image_etl_profile_has_no_llm_and_no_text_embedder():

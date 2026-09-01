@@ -93,8 +93,13 @@ IMAGE_EXTRACTION_VERSION = os.getenv(
     "IMAGE_EXTRACTION_VERSION", "v19_pill_kernels")
 # Gate re-OCR cho ĐƯỜNG TEXT. Trước đây chỉ ảnh có version gate nên đổi logic
 # OCR không ép re-OCR được (spec Task 1). Bump giá trị này = ép OCR lại tất cả.
+# D-158 (2026-09-01): bump v3->v4 vì lượt Colab 7 chạy dưới `v3_formula_hybrid`
+# nhưng model MinerU chưa từng tải được (thiếu trong `download_models.py` +
+# thiếu trỏ local trong notebook) — mọi trang stamp v3 trước bản vá này đều
+# KHÔNG đáng tin, dù version-gate coi chúng "đã xong". Bump buộc OCR lại toàn
+# bộ bằng code+model đã đúng. Xem D-157/D-158, `scripts/reset_text_all_books.py`.
 TEXT_EXTRACTION_VERSION = os.getenv(
-    "TEXT_EXTRACTION_VERSION", "v3_formula_hybrid")
+    "TEXT_EXTRACTION_VERSION", "v4_formula_hybrid_fix")
 # Buoc 2/3 hybrid Tesseract+MinerU cho cong thuc (D-56, D-144). Mac dinh FALSE:
 # may dev khong co GPU/mineru_vl_utils. Chi bat tren Colab.
 FORMULA_HYBRID_ENABLED = os.getenv(

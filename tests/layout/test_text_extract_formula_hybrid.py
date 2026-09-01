@@ -77,6 +77,10 @@ def test_formula_hybrid_mineru_crash_does_not_kill_the_whole_page():
 
     assert len(units) == 1, "khong duoc de exception vang len lam mat ca unit"
     assert "mineru_call_failed" in units[0].formula_hybrid_status
+    # D-157: nhan chung khong phan biet duoc OOM/timeout/loi model - phai co
+    # them ten lop exception de doc lai duoc sau khi tai DB ve (log Colab bi
+    # cat khi luu .ipynb).
+    assert "mineru_call_failed_type:RuntimeError" in units[0].formula_hybrid_status
     assert units[0].text, "text Tesseract goc van phai con, khong bi xoa"
 
 

@@ -140,6 +140,12 @@ def _maybe_apply_formula_hybrid(crop, text, formula_client, book=None):
                             "(bỏ qua dòng này, giữ nguyên phần còn lại của "
                             "trang): %s", exc)
             statuses.append("mineru_call_failed")
+            # D-157: nhãn chung "mineru_call_failed" không phân biệt được
+            # OOM/timeout/lỗi model — log Colab bị cắt khi lưu .ipynb nên đây
+            # là nơi DUY NHẤT loại lỗi còn sống sót tới khi tải DB về. Ghi kèm
+            # tên lớp exception (ngắn, không PII) để chẩn đoán được mà không
+            # cần chạy lại Colab lần nữa chỉ để xem log.
+            statuses.append(f"mineru_call_failed_type:{type(exc).__name__}")
             continue
         outcome = merge_formula_line(line_text, mineru_text)
         if outcome.status == "not_suspect":
