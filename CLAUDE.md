@@ -28,7 +28,7 @@ Tóm tắt yêu cầu chốt (chi tiết đọc thẳng file, đừng nhớ qua 
 
 | # | Yêu cầu trong đề cương | Trạng thái trong code |
 |---|---|---|
-| MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **BƯỚC 2+3/3 — CODE XONG, CHƯA CHẠY ETL THẬT** (D-145, D-146). Pipeline hybrid Tesseract + MinerU patch, `single_line_max_h` & `min_sat` per-book, notebook Colab an toàn; chờ chạy Colab GPU |
+| MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **XONG — ETL THẬT ĐÃ CHẠY, ĐO XÁC NHẬN** (D-162). Lượt Colab 8: 4293/16515 chunk merge MinerU thành công (`applied`+`unmatched_count`), 0 lỗi gọi model, đủ 12/12 quyển, BM25 dựng lại khớp. Còn nợ: đo lại `recall_at_k`/báo cáo trên corpus mới |
 | MT2 | Kho vector phủ **toàn bộ KHTN Lý–Hoá–Sinh, 12 quyển / 3 bộ sách, ~2 319 trang** | **XONG**: 2 387/2 399 trang lập chỉ mục, 16 393 chunk + 3 881 vector hình |
 | MT3 | Tối ưu truy xuất: định tuyến ý định + **truy xuất lai BM25 + dense** + rerank + cổng lọc | **XONG**. Mặc định `hybrid` + rerank BẬT + cổng lọc TẮT (D-82). Đo trên 231 câu ở bề rộng production: MRR **0,8255** · R@1 0,7403 · R@10 **0,9697**, thắng bm25 và dense ở MỌI cột. **Khoảng cách recall của đề cương đã bị xoá** — prod 0,9091 > 0,8961 là trần của riêng kênh dense (D-132) |
 | MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | (i)+(iii) **XONG** trên bộ 231 câu/12 quyển (D-127); (ii) **CHƯA KẾT LUẬN ĐƯỢC** — 100 câu/4 quyển KNTT (D-87) cho delta +0,010 nhưng trần bộ test chỉ 0,104, nên phải nói "chưa đo được ưu thế", KHÔNG phải "vô ích" |
@@ -201,72 +201,32 @@ deadline). Nguồn sự thật:
   chừng là lỗi cú pháp JS, nên trang render ra **trống trơn** cả một ngày dù file vẫn
   trông ổn trong editor. `tests/test_decision_log.py` nay lex mọi chuỗi giống hệt JS;
   chạy nó sau khi sửa file này.
-- **Việc tiếp theo (cập nhật 2026-09-01, sau D-157+D-158) — MT1 VẪN CHƯA XONG,
-  nhưng root cause CUỐI CÙNG đã tìm ra và SỬA:** lượt Colab 7 báo 12/12 quyển
-  exit code 0, 2399/2399 trang lên `v3_formula_hybrid`, nhưng đo trực tiếp trên
-  `database/` local cho thấy **0/16513 chunk có status `applied`** — 0 lần merge
-  MinerU. D-157 tìm ra lớp lỗi thứ nhất: checkpoint (mục 5c) kéo về một bản
-  đã-xong-cả-12-quyển từ LƯỢT TRƯỚC D-155 (còn bug `CO_DAU_BANG`), nên vòng lặp
-  ETL của chính session này chỉ OCR nốt 866/2399 trang còn thiếu (36,1%), không
-  đụng lại 1533 trang cũ (63,9%) vì `text_extraction_version` đã khớp bị coi là
-  "đã xong". Trong 866 trang MỚI (có fix D-155): `gate_hit_no_line_located` giảm
-  còn đúng 1 (fix hoạt động đúng), nhưng CẢ 3714/3714 lần gọi `formula_client.
-  read()` còn lại đều THẤT BẠI (100%, không phải flakiness ngẫu nhiên).
-  **D-158 xác nhận root cause của con số 100% đó bằng thực nghiệm trực tiếp**
-  (gọi `get_formula_client().read(crop)` trong một session KHÔNG bật
-  `HF_HUB_OFFLINE` — model tải và đọc đúng `CO₂`/`O₂`, không lỗi gì): KHÔNG phải
-  OOM/GPU, mà là `download_models.py --profile text-etl` **chưa từng tải model
-  MinerU** (`MODELS`/`PROFILES` không hề liệt kê nó), cộng với notebook mục 6
-  **chưa từng trỏ `FORMULA_MINERU_MODEL` sang bản local** như mọi model khác —
-  dưới `HF_HUB_OFFLINE=1`, lần lazy-load đầu tiên LUÔN raise. **Đã sửa (`master`):**
-  `download_models.py` (`text-etl` nay tải thêm `opendatalab/MinerU2.5-Pro-2605-
-  1.2B`) + notebook mục 4/6 (trỏ `FORMULA_MINERU_MODEL` local) + nhãn chẩn đoán
-  `mineru_call_failed_type:<TenLopException>` (`text_extract.py`, D-157) cho lần
-  hỏng kế tiếp (nếu còn) dễ đọc hơn. **D-159 (cùng ngày): viết lại SẠCH
-  `document/colab_runtime_etl.ipynb`** (57→35 cell, bỏ bake-off/demo serve/recall
-  không liên quan) thay vì vá thêm — bump `TEXT_EXTRACTION_VERSION` sang
-  `v4_formula_hybrid_fix` NGAY TRONG `src/config.py` (không chỉ notebook), thêm
-  `scripts/reset_text_all_books.py --all` (hạ cờ checkpoint TEXT, mặc định
-  resume-safe theo version, KHÔNG đụng cờ ẢNH — xem `tests/
-  test_reset_text_all_books.py`), sửa `download_models.py` thoát mã khác 0 khi
-  tải model hỏng (trước đây nuốt lỗi — chính lỗ hổng gây ra D-158), và thêm một
-  mục "XÁC NHẬN kết quả" cuối notebook đo trực tiếp trên DB vừa dựng (version
-  coverage, ảnh không mất, `applied`>0) thay vì chỉ tin exit code. `pytest
-  tests/ -q` xanh: 779 passed, 3 skipped. **Bài học lật ngược một giả định ngầm
-  của checkpoint (nguyên tắc 6):** sửa CODE mà không bump version thì trang
-  cũ-có-bug không bao giờ được OCR lại — nay version đã bump đúng cách, gắn
-  liền với reset script resume-safe. **D-160 (cùng ngày): thêm hiển thị % SỐNG
-  khi ETL đang chạy** — mọi bước gọi qua `subprocess.run` là MỘT PYTHON MỚI, bị
-  CPython chặn block-buffer `stdout` khi fd không phải tty thật (nguyên nhân %
-  im lặng cả phút); sửa bằng `PYTHONUNBUFFERED=1` (kế thừa tự động qua env) +
-  cờ `-u` trực tiếp trên mọi lệnh gọi + rút nhịp `ProgressLogger` từ 10 trang/
-  30s xuống 2 trang/8s. Đồng thời dọn rác cục bộ theo yêu cầu người dùng (đã tự
-  xoá `database/` local để chạy lại sạch): xoá `document/colab_runtime_etl_
-  done.ipynb` (bản tải về, hết giá trị — mọi phát hiện đã vào D-154..D-159), ba
-  thư mục scratch không track git (`scripts/_out_g3`/`_out_g4`/
-  `_out_test_etl_full`), và `scripts/run_image_etl_kntt.sh` (script ETL ảnh
-  chỉ-KNTT từ milestone hẹp đã bị đảo ngược, ảnh 12/12 quyển đã xong nên hết
-  use-case — xác nhận không còn tham chiếu nào ngoài spec lịch sử trước khi
-  xoá). Người dùng sau đó xác nhận đã xoá CẢ checkpoint Drive, upload lại một bản
-  seed (`database_checkpoints/seed_local/`, chỉ `chroma.sqlite3` + 4 thư mục
-  UUID index — không cần `images/` 4,6 GB vì bị `EXCLUDE_ON_RESTORE` loại).
-  **D-161 (cùng ngày): mục 6 gặp `OSError: [Errno 107] Transport endpoint is
-  not connected`** khi `shutil.copytree` đang đọc `link_lists.bin` qua
-  Drive-FUSE — bằng chứng thật (không phải giả thuyết): lỗi kép trên CÙNG thư
-  mục UUID (ENOTCONN rồi "No such file or directory" ngay sau), cho thấy FUSE
-  rớt kết nối tạm thời làm cả cây con "biến mất", và `shutil.copytree` là
-  all-or-nothing nên mất luôn phần đã copy được. Đã sửa: thay mọi
-  `shutil.copytree` bằng `_copy_resilient()` (đệ quy từng file, retry 5
-  lần/file, 5s nghỉ) ở CẢ hướng đọc (mục 6) lẫn ghi (`dong_bo_len_drive()` ở
-  mục 10/13) — một file lỗi không huỷ phần cây đã xong, và raise kèm hướng dẫn
-  cụ thể (`force_remount=True`) nếu hết lần thử. **Việc kế tiếp DUY NHẤT: bấm
-  Run all trên `document/colab_runtime_etl.ipynb`**, đọc mục 11 ("XÁC NHẬN kết
-  quả") — ĐẠT thì tiếp tục mục 12/13, THẤT BẠI thì dán nguyên output lại để
-  chẩn đoán. Xem
-  D-157/D-158/D-159/D-160/D-161. Sau khi có merge thật + đủ 12/12 quyển: theo
-  `document/specs/2026-08-26-bao-cao-viet-lai-report.md` §8: `bai_so` cho 8 quyển
-  CD/CTST (không cần chạy lại ETL) → bộ câu hỏi sinh từ HÌNH có người đối chiếu ảnh
-  (điều kiện tiên quyết để kết luận vế (ii) của MT4 — trần 0,104 đang chặn).
+- **MT1 XONG (cập nhật 2026-09-01, D-162) — lượt Colab 8 chạy thật, đo xác nhận
+  trên `database/` local, không chỉ tin log.** Ba lượt trước (5,6,7) đều báo
+  "xong" (exit code 0) mà vẫn hỏng — chuỗi bug: D-154/D-155 (gate `CO_DAU_BANG`
+  khớp xuyên dòng, đã sửa regex), D-157 (checkpoint khôi phục kéo về bản CŨ có
+  bug, version-gate coi 63,9% trang cũ là "đã xong" nên không OCR lại), D-158
+  (root cause cuối: `download_models.py --profile text-etl` chưa từng tải model
+  MinerU + notebook chưa trỏ `FORMULA_MINERU_MODEL` local → 100% lượt gọi MinerU
+  thất bại dưới `HF_HUB_OFFLINE=1` — đã sửa cả hai trong `master`), D-159 (viết
+  lại sạch notebook, bump `TEXT_EXTRACTION_VERSION` → `v4_formula_hybrid_fix`,
+  `scripts/reset_text_all_books.py --all` resume-safe), D-160 (% tiến độ sống),
+  D-161 (`_copy_resilient()` chịu Drive-FUSE rớt kết nối). **D-162: người dùng
+  chạy Run all, đo lại độc lập trên `database/` local tải về** — `processing_
+  status` 2399/2399 trang đúng version mới (cả text lẫn ảnh); `biology_images`
+  3881 doc, không mất; `biology_text` 16515 chunk, `formula_hybrid_status`:
+  `applied` 1063 + `unmatched_count` 3230 = **4293 lần merge MinerU thành công**
+  (so với 0/16513 ở D-157/D-158), `mineru_call_failed*` = 0,
+  `gate_hit_no_line_located` = 1; BM25 (`database/sparse/`) 16515 id khớp đúng
+  `biology_text`. Khớp chính xác với output cell mục 11 của notebook — không
+  phải checkpoint cũ lẫn vào. Đã xoá `document/colab_runtime_etl_done.ipynb`
+  (bản tải về, hết giá trị). Việc tiếp theo (ngoài ETL, xem
+  `document/specs/2026-08-26-bao-cao-viet-lai-report.md` §8): `bai_so` cho 8
+  quyển CD/CTST (không cần chạy lại ETL) → bộ câu hỏi sinh từ HÌNH có người đối
+  chiếu ảnh (điều kiện tiên quyết cho vế (ii) của MT4 — trần 0,104 đang chặn);
+  đo lại `recall_at_k`/`evaluator.py` trên corpus hybrid công thức mới và cập
+  nhật báo cáo (`report/tex_source/` hiện build trên số liệu TRƯỚC lượt này).
+  Xem D-154..D-162.
 - **Spec cũ, chỉ đọc như tư liệu (đã hoàn thành hoặc bị corpus sau đè lên):**
   `document/specs/2026-08-24-m2-bm25-hybrid-prompt.md` (M2: BM25 + hợp nhất, D-74..D-82),
   `2026-08-23-m0-toc-and-layout-prompt.md` + `2026-08-23-m0-report.md` (M0/M1),
@@ -344,10 +304,10 @@ trước khi qua mốc trước đó, vì mỗi lần chạy lại tốn nhiều
 
 1. **Lượt xác minh 4 quyển KNTT (đã chạy).** Mục đích không phải dựng DB cuối cùng,
    mà xác minh đường ống còn chạy và có `s/trang` thật để so.
-2. **Lượt text toàn bộ 12 quyển với hybrid công thức: SAU KHI CHẠY COLAB.**
-   `TEXT_EXTRACTION_VERSION` đã bump lên `v3_formula_hybrid` (D-145 Task 9) — version
-   gate sẽ OCR lại **toàn bộ** 2 399 trang ở lượt chạy Colab tới, đúng theo thiết kế.
-   Đừng bump thêm lần nữa trước khi lượt này chạy xong, kẻo tốn thêm một lượt OCR đầy đủ.
+2. **Lượt text toàn bộ 12 quyển với hybrid công thức: ĐÃ CHẠY (2026-09-01, D-162).**
+   `TEXT_EXTRACTION_VERSION=v4_formula_hybrid_fix`, 2399/2399 trang, 4293/16515 chunk
+   merge MinerU thành công (`applied`+`unmatched_count`), 0 lỗi gọi model. Đừng bump
+   version thêm lần nữa trước khi có lý do đo được, kẻo tốn thêm một lượt OCR đầy đủ.
 3. **Lượt ảnh: 4 quyển KNTT ĐÃ CHẠY (2026-08-25, D-87) — 2 h 24, 938 doc, G4 gán
    sai 0 / thiếu 0. 8 quyển CD/CTST ĐÃ CHẠY** (xem bảng tiến độ, dòng "Kho ảnh 12/12
    quyển").
@@ -385,15 +345,15 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 | Định tuyến `is_image_only_query` | **ĐÃ VÁ** (D-88) | đo được 3/300 câu cần chữ bị định tuyến sai thành CHỈ ẢNH → 0/300 sau vá. So trên dạng còn dấu (bỏ dấu thì `nào` đụng `não`, D-49) |
 | Caption deterministic vào prompt (MT4) | **XONG, mặc định TẮT** (D-85) | `src/rag/multimodal_context.py` nối `figure_label`+`figure_caption`+`crop_text` (đọc lại từ pixel, không phải model sinh) vào ngữ cảnh LLM. `MULTIMODAL_CONTEXT_ENABLED=false` cho tới khi có số đủ thuyết phục — xem dòng ablation |
 | Bảng đối chiếu MT4 | **XONG CẢ HAI CẤU HÌNH** (D-82, D-87) | Cấu hình 1 (300 câu/12 quyển): hybrid thắng bm25 và dense ở mọi cột. Cấu hình 2 (100 câu/4 quyển KNTT): delta +0,010 (đúng thêm 1 câu) nhưng trần đo được cho kênh hình chỉ 0,104 (vì `ground_truth` sinh từ chính văn bản trang vàng) → kết luận đúng là "CHƯA đo được ưu thế", không phải "vô ích". `MULTIMODAL_CONTEXT_ENABLED` giữ false. Bộ test do LLM sinh, mẫu 50 câu người duyệt tay: gold key sai 2/49 = 4,1% (D-90) |
-| Index text 12 quyển | **XONG, chờ OCR lại cho hybrid công thức** (D-73) | Lượt chạy 2026-08-23: manifest 49 phút, `--text-only` 3 giờ 20, 0/2 399 trang thiếu, 16 393 chunk. Dựng với `SINGLE_LINE_MAX_H=60` và `LAYOUT_BOX_MIN_SATURATION=45` (chưa hiệu chỉnh per-book) — `TEXT_EXTRACTION_VERSION` đã bump (D-145) nên lượt Colab tới sẽ OCR lại toàn bộ với tham số mới |
+| Index text 12 quyển | **XONG, đã OCR lại với hybrid công thức** (D-162, 2026-09-01) | Lượt Colab 8: 2 399/2 399 trang, 16 515 chunk, `TEXT_EXTRACTION_VERSION=v4_formula_hybrid_fix`. Dựng với `SINGLE_LINE_MAX_H=60` và `LAYOUT_BOX_MIN_SATURATION` per-book (`MIN_SAT_FLOOR=9`, D-146) — thay bản 2026-08-23 (16 393 chunk, `v2_bai_spine`, chưa có hybrid công thức) |
 | `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT có `bai_so`; 8 quyển CTST/CD không chunk nào (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế) |
 | `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở 57–84% chunk theo quyển, gộp toàn kho 69,3% — ở mức đó cờ gần như không mang tin |
 | LLM đánh giá (OpenRouter) | **CHẠY ĐƯỢC**; hạn mức CHƯA ĐO lại từ sau ~30/08 | `stealth/ox-alpha` qua `https://openrouter.ai/api/v1` (D-67). Free không giới hạn tới ~30/08 theo xác nhận người dùng (D-128), sau đó quay lại trạng thái chưa đo (API không trả header `x-ratelimit-*`) |
 | Bộ test 240 câu (CBHD kê, 3 bộ × 80) | **ĐỦ 240 CÂU, nhưng 46 câu HÌNH CHƯA QUA NGƯỜI DUYỆT ĐỘC LẬP** (D-112, D-148) | 192 câu văn bản (16/quyển) rút mẫu từ pool 300, 0 lượt LLM, 192/192 gold key khớp index. 48 câu HÌNH: `--ap-dung` đã trộn **46 câu** vào `testsets_240/` (2 bị bỏ vì crop không dùng được), phân bố 3-4 câu/quyển. **CẢNH BÁO:** toàn bộ câu hỏi/đáp án HÌNH do AI tự mở crop ra xem rồi viết (D-113: không tự động hoá được bằng pixel-derived fields; D-148: AI làm best-effort thay vì để trống) — CHƯA có người thật duyệt độc lập, cần xem lại trước khi trích dẫn trong báo cáo như số liệu chuẩn |
-| Đánh giá đầu-cuối bộ 231 câu / 12 quyển | **XONG** (D-130) | `Recall(prod,page)` 0,9091 · `MRR(page)` 0,8153 · `R@10` 0,8961 · `Correct` 4,065/5 · `Faithful` 4,394/5 · `Relevancy` 4,602/5. Thấp nhất `7_CTST` 0,697 — do truy xuất, không do trả lời |
+| Đánh giá đầu-cuối bộ 231 câu / 12 quyển | **ĐO TRÊN INDEX CŨ (D-130), CHƯA ĐO LẠI sau lượt hybrid công thức D-162** | `Recall(prod,page)` 0,9091 · `MRR(page)` 0,8153 · `R@10` 0,8961 · `Correct` 4,065/5 · `Faithful` 4,394/5 · `Relevancy` 4,602/5 — đo trên index 16 393 chunk (`v2_bai_spine`, trước hybrid). Index nay là 16 515 chunk (`v4_formula_hybrid_fix`, D-162); phải chạy lại `evaluator.py`/`recall_at_k` trước khi trích số này vào báo cáo như số liệu cuối cùng. Thấp nhất `7_CTST` 0,697 (số cũ) — do truy xuất, không do trả lời |
 | G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); khuyến nghị thu hẹp thành gold set CÔNG THỨC thay vì làm lại bản tổng quát — xem cuối phần này |
-| Xử lý công thức Hoá/Lý (MT1) | **ROOT CAUSE ĐÃ TÌM RA + SỬA, NOTEBOOK VIẾT LẠI SẠCH + % SỐNG + CHỊU FUSE RỚT (D-159/D-160/D-161) — CHƯA XONG, còn đúng MỘT việc: bấm Run all trên Colab** | Kiến trúc Hybrid Tesseract + MinerU patch: `ocr_lines.py` (tách dòng), `formula_signals.py` & `formula_gate.py` (bắt dòng nghi — precision 0,8654/recall 1,0000 trên gold set 89 ô/3 NXB, D-144, KHÔNG đổi sau D-155), `formula_ocr.py` (client MinerU `opendatalab/MinerU2.5-Pro-2605-1.2B`), `formula_merge.py` (merge cục bộ từng dòng). D-154 đo được bug gốc (527 `gate_hit_no_line_located`, 100% miss); D-155 sửa `CO_DAU_BANG` (`\s*`→`[ \t]*`) + bọc try/except quanh `formula_client.read()`. **D-157 (2026-09-01)**, đo trực tiếp trên `database/` local sau khi tải kết quả Colab lượt 7 về: 12/12 quyển exit code 0, 2399/2399 trang lên `v3_formula_hybrid` — NHƯNG **0/16513 chunk toàn kho có status `applied`**. Nguyên nhân lớp 1: mục 5c khôi phục checkpoint `after_12_SGK_KHTN_9_CD` — một bản đã-xong-cả-12-quyển từ LƯỢT TRƯỚC D-155 (code còn bug `\s*`) — nên vòng lặp ETL của session này chỉ OCR nốt 866/2399 trang còn thiếu (36,1%), KHÔNG đụng lại 1533 trang cũ (63,9%) vì version đã khớp bị coi là "đã xong" (527/528 chunk `gate_hit_no_line_located` cũ test lại bằng regex hiện tại đều KHÔNG còn khớp — hoá thạch, chưa OCR lại thật). Trong 866 trang MỚI (có fix D-155): `gate_hit_no_line_located` giảm còn đúng 1 (fix đúng), nhưng CẢ 3714/3714 lần gọi `formula_client.read()` còn lại đều THẤT BẠI (100%, không phải flakiness — xác nhận bằng 0/2446 chunk status-rỗng thực sự formula-suspect). **D-158 xác nhận root cause của con số 100% đó bằng thực nghiệm trực tiếp:** gọi `get_formula_client().read(crop)` trong một session KHÔNG bật `HF_HUB_OFFLINE` — model tải từ HF Hub thành công (2,31 GB), nạp đúng (tie lm_head xác nhận), đọc đúng `CO₂`/`O₂` — KHÔNG lỗi gì, bác bỏ hẳn giả thuyết OOM/GPU. Đối chiếu code: `src/utils/download_models.py` — `MODELS`/`PROFILES['text-etl']` **chưa từng liệt kê model MinerU**; notebook mục 6 (env runtime) đặt `HF_HUB_OFFLINE=1` nhưng **chưa từng trỏ `FORMULA_MINERU_MODEL` sang bản local** như mọi model khác — nên lần lazy-load đầu tiên của MỌI process luôn raise (2 lỗi cộng dồn: thiếu tải + thiếu trỏ local). **Đã sửa (`master`):** `download_models.py` (`text-etl` nay tải thêm `opendatalab/MinerU2.5-Pro-2605-1.2B`, test cập nhật), notebook mục 4+6 (`FORMULA_MINERU_MODEL` trỏ local), nhãn chẩn đoán `mineru_call_failed_type:<TenLopException>` (`text_extract.py`, D-157) cho lần hỏng kế tiếp (nếu còn) dễ đọc hơn. **D-159 (cùng ngày): viết lại SẠCH `document/colab_runtime_etl.ipynb`** (57→35 cell) — bump `TEXT_EXTRACTION_VERSION`→`v4_formula_hybrid_fix` NGAY trong `src/config.py`, thêm `scripts/reset_text_all_books.py --all` (hạ cờ checkpoint TEXT, mặc định resume-safe theo version, KHÔNG đụng cờ ẢNH), sửa `download_models.py` thoát mã khác 0 khi tải model hỏng (trước đây nuốt lỗi — chính lỗ hổng gây D-158), thêm mục "XÁC NHẬN kết quả" cuối notebook đo trực tiếp trên DB (version coverage, ảnh không mất, `applied`>0) thay vì chỉ tin exit code. `pytest tests/ -q`: 779 passed, 3 skipped. **Bài học lật ngược một giả định ngầm của checkpoint (nguyên tắc 6):** sửa CODE mà không bump version thì trang cũ-có-bug không bao giờ được OCR lại. **Việc còn lại DUY NHẤT:** bấm Run all trên `document/colab_runtime_etl.ipynb`, đọc mục 11. **D-161:** người dùng gặp `OSError: [Errno 107] Transport endpoint is not connected` ở mục 6 (Drive-FUSE rớt kết nối giữa chừng khi `shutil.copytree` đọc file HNSW index) — đã sửa bằng `_copy_resilient()` (đệ quy từng file, retry 5 lần) thay mọi `shutil.copytree`, áp cho cả chiều đọc (mục 6) lẫn ghi (`dong_bo_len_drive` ở mục 10/13). `MIN_SAT_FLOOR=9` (Task 7, sửa D-146), `single_line_max_h` per-book chưa đổi hành vi cho quyển nào (Task 8, xem mục M0). Box-detection ở `MIN_SAT_FLOOR=9` đã đo đủ 12/12 quyển (D-150): 10/12 không đổi số hộp trong dải 9-15; `6_CD` tăng 21→23, `7_CD` giảm 11→9 (CHƯA xem bằng mắt để xác nhận) |
-| Báo cáo (`report/tex_source/`) | **XONG cả 5 chương + Tóm tắt + front matter, đã dịch ra PDF thật, đã cập nhật theo MT1 hybrid** (D-132…D-135, D-140, D-151) | `report/tex_source/build.ps1 -Clean` → `build/main.pdf` **73 trang** (72→73 sau D-151), 60 mục tham khảo (MiKTeX 25.12, D-140). Lập luận trung tâm ĐẢO CHIỀU (D-132): "trần recall" cũ là trần của RIÊNG kênh dense — cấu hình thật 0,9091 VƯỢT nó. 5 hình Ch.4 sinh lại bằng `report/ve_hinh_chuong4.py` từ `evaluation_report_240.csv`. `tests/test_bao_cao_so_lieu.py` khoá 11 độ đo gộp trong `.tex` khớp CSV. **D-151:** thêm `\S formula\_hybrid` vào Ch.3 mô tả kiến trúc Hybrid Tesseract+MinerU (gate, bake-off, chi phí); sửa Ch.0/4/5 từ "chưa thực hiện" sang "cài đặt xong, chờ chạy sản xuất"; bỏ câu SAI đã lỗi thời "giao diện web chưa dựng được công thức" (MT5 xong từ D-137). Không đụng số Recall/MRR/Precision nào |
+| Xử lý công thức Hoá/Lý (MT1) | **XONG (D-162, 2026-09-01) — ETL thật đã chạy, đo xác nhận trên `database/` local, không chỉ tin log Colab** | Kiến trúc Hybrid Tesseract + MinerU patch: `ocr_lines.py` (tách dòng), `formula_signals.py` & `formula_gate.py` (bắt dòng nghi — precision 0,8654/recall 1,0000 trên gold set 89 ô/3 NXB, D-144, KHÔNG đổi sau D-155), `formula_ocr.py` (client MinerU `opendatalab/MinerU2.5-Pro-2605-1.2B`), `formula_merge.py` (merge cục bộ từng dòng). **Chuỗi bug đã tìm ra và sửa hết, theo thứ tự:** D-154 (bug gốc: gate khớp xuyên dòng, 527 `gate_hit_no_line_located`) → D-155 (sửa `CO_DAU_BANG` `\s*`→`[ \t]*`) → D-157 (checkpoint khôi phục kéo về bản CŨ trước D-155, version-gate coi 63,9% trang cũ là "đã xong" nên không OCR lại — 0/16513 chunk `applied`) → D-158 (root cause cuối: `download_models.py --profile text-etl` chưa từng tải model MinerU + notebook chưa trỏ `FORMULA_MINERU_MODEL` local → 100%/3714 lượt gọi MinerU thất bại dưới `HF_HUB_OFFLINE=1`; đã sửa cả hai trong `master`) → D-159 (viết lại sạch notebook 57→35 cell, bump `TEXT_EXTRACTION_VERSION`→`v4_formula_hybrid_fix`, `scripts/reset_text_all_books.py --all` resume-safe, mục "XÁC NHẬN kết quả" đo trực tiếp trên DB) → D-160 (% tiến độ sống qua `PYTHONUNBUFFERED=1`) → D-161 (`_copy_resilient()` chịu Drive-FUSE rớt kết nối ENOTCONN, thay mọi `shutil.copytree`). **D-162: lượt Colab 8 chạy thành công, đo lại độc lập trên `database/` local tải về** (không chỉ tin cell mục 11 của chính notebook): `processing_status` 2399/2399 trang đúng version mới (text `v4_formula_hybrid_fix`, ảnh `v19_pill_kernels`); `biology_images` 3881 doc không mất; `biology_text` 16515 chunk, `formula_hybrid_status`: `applied` 1063 + `unmatched_count` 3230 = **4293 lần merge MinerU thành công**, `mineru_call_failed*` = 0, `gate_hit_no_line_located` = 1 (đúng kỳ vọng D-155); BM25 (`database/sparse/`) 16515 id khớp đúng `biology_text`. Bốn con số khớp chính xác output notebook — không phải checkpoint cũ lẫn vào. **Phát hiện phụ:** `.env` local từng có dòng `TEXT_EXTRACTION_VERSION=v3_formula_hybrid` cũ đè lên default, gây phép đo đầu tiên báo sai — đã xoá, không phải bug repo (`.env` không nằm trong git). `MIN_SAT_FLOOR=9` (Task 7, sửa D-146), `single_line_max_h` per-book chưa đổi hành vi cho quyển nào (Task 8, xem mục M0). Box-detection ở `MIN_SAT_FLOOR=9` đã đo đủ 12/12 quyển (D-150): 10/12 không đổi số hộp trong dải 9-15; `6_CD` tăng 21→23, `7_CD` giảm 11→9 (CHƯA xem bằng mắt để xác nhận). **Còn nợ:** đo lại `recall_at_k`/`evaluator.py` trên corpus hybrid công thức mới, cập nhật báo cáo (số hiện tại trong `report/tex_source/` là TRƯỚC lượt này) |
+| Báo cáo (`report/tex_source/`) | **XONG cả 5 chương + Tóm tắt + front matter, đã dịch ra PDF thật, đã cập nhật theo MT1 hybrid** (D-132…D-135, D-140, D-151) | `report/tex_source/build.ps1 -Clean` → `build/main.pdf` **73 trang** (72→73 sau D-151), 60 mục tham khảo (MiKTeX 25.12, D-140). Lập luận trung tâm ĐẢO CHIỀU (D-132): "trần recall" cũ là trần của RIÊNG kênh dense — cấu hình thật 0,9091 VƯỢT nó. 5 hình Ch.4 sinh lại bằng `report/ve_hinh_chuong4.py` từ `evaluation_report_240.csv`. `tests/test_bao_cao_so_lieu.py` khoá 11 độ đo gộp trong `.tex` khớp CSV. **D-151:** thêm `\S formula\_hybrid` vào Ch.3 mô tả kiến trúc Hybrid Tesseract+MinerU (gate, bake-off, chi phí); sửa Ch.0/4/5 từ "chưa thực hiện" sang "cài đặt xong, chờ chạy sản xuất"; bỏ câu SAI đã lỗi thời "giao diện web chưa dựng được công thức" (MT5 xong từ D-137). Không đụng số Recall/MRR/Precision nào. **CẦN SỬA TIẾP sau D-162:** lượt chạy sản xuất mà Ch.0/4/5 đang "chờ" đã XONG (2026-09-01) — nhưng mọi số Recall/MRR/Precision trong báo cáo vẫn đo trên index CŨ (16 393 chunk, trước hybrid); phải chạy lại `evaluator.py`/`recall_at_k` trên index mới (16 515 chunk) rồi cập nhật số + câu "chờ chạy sản xuất" trước khi nộp báo cáo |
 | Web UI Next.js (MT5) | **XONG** (D-137, D-138, D-139) | repo `D:\personal_repo\project_rag_fe` (Next 16.2.6/React 19.2.4). KaTeX + `src/lib/formula.ts` hạ chỉ số dưới cho Hoá/Lý (chỉ biến đổi HIỂN THỊ, không đụng text lưu trữ); API trả `citations` + `answer_text` riêng; ảnh phục vụ qua `/images/<sách>/<tệp>`, không chép corpus sang FE. Smoke test 13/13 đạt |
 
 **G2 dùng để làm gì, và bỏ nó thì mất gì.** G2 **không gate bất kỳ đường chạy nào** —
