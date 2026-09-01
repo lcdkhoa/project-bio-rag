@@ -505,8 +505,13 @@ python -m src.test.recall_at_k --testset-dir src/test/testsets_240   # bộ 240 
 python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240
 # 231 cau tren may dev (GPU 4 GB) do duoc ~3-3,5 phut/cau (D-164) -> 5-12 gio.
 # Neu can nhanh hon: document/colab_runtime_eval.ipynb chay ca ba script tren
-# (recall_at_k/ablation/evaluator) tren Colab, chi khoi phuc INDEX tu checkpoint
-# `final_with_bm25`, khong can RAG_DATA_DIR/manifest/fingerprint.
+# (recall_at_k/ablation/evaluator) tren Colab, doc DB da upload thu cong len
+# Drive (`database_png`, D-165), khong can RAG_DATA_DIR/manifest/fingerprint.
+# D-166: LUOT DAU chay notebook nay BI BUG - git clone mang theo *_result.csv
+# CU (2026-08-26) nen --bo-qua-da-co tuong nham 12/12 quyen da xong, khong tinh
+# lai cau nao (da vao muc 1b). Sau ban va: LUON kiem cot `luot_chay` = `moi`
+# trong evaluation_report_240.csv truoc khi tin so - `da_co` nghia la doc lai
+# du lieu CU, khong phai phep do moi.
 python -m src.test.build_testset_240            # 192 câu văn bản, rút mẫu từ pool 300, 0 LLM
 python -m src.test.build_image_questions --chon # 48 câu HÌNH: máy chọn crop -> --nhap -> người duyệt
 python -m src.test.report_numbers [--latex]     # số liệu Bảng 4.2/4.3 đọc thẳng từ index
