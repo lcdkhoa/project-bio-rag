@@ -15,7 +15,14 @@ Người ta sử dụng kí hiệu biểu thị các bộ phận của mạch đ
 "So sánh nguyên nhân gây bệnh viêm tai giữa và bệnh ù tai về thính giác, hai bệnh này có nguyên nhân gây bệnh chung nào?","Thiếu máu não (cùng với các nguyên nhân khác như nước bẩn lọt vào tai, ráy tai nhiễm khuẩn, nhiễm lạnh, biến chứng từ bệnh vùng mũi họng đối với viêm tai giữa; tiếng ồn lớn, ráy tai nhiều gây tắc nghẽn, dị vật ở tai đối với ù tai).",SGK_KHTN_8_KNTT,156,156,37,sinh,suy_luan,8,KNTT,10,2144,van_ban,
 "Hiện tượng truyền nhiệt nhờ các dòng nước nóng, lạnh di chuyển ngược chiều nhau (dòng đối lưu) được gọi là gì?",Sự đối lưu.,SGK_KHTN_8_KNTT,114,114,28,ly,truc_tiep,8,KNTT,6,1733,van_ban,
 Đòn bẩy loại 1 có đặc điểm gì về vị trí của điểm tựa O so với điểm đặt của hai lực?,"Điểm tựa O nằm trong khoảng giữa điểm đặt O1, O2 của các lực F1 và F2.",SGK_KHTN_8_KNTT,80,80,19,ly,truc_tiep,8,KNTT,5,1080,van_ban,
+"Quan sát nhãn hoá chất bên phải trong Hình 1.1, kí hiệu hình thoi màu đỏ trên nhãn có ý nghĩa gì?","Cảnh báo hoá chất có tính ăn mòn (ăn mòn kim loại, gây bỏng da, tổn thương mô)",SGK_KHTN_8_KNTT,6,6,,,truc_tiep,,,,,hinh,Hình 1.1
 "Quan sát Hình 1.2, hãy cho biết dụng cụ thí nghiệm được đánh dấu e) trong hình có tên gọi là gì?",Ống đong (bình chia độ).,SGK_KHTN_8_KNTT,7,7,,,truc_tiep,,,,,hinh,Hình 1.2
-"Quan sát Hình 1.5, hãy cho biết trên biến áp nguồn có bộ phận nào dùng để chọn điện áp đầu ra phù hợp với thí nghiệm, và các chốt cắm dây của nguồn có màu gì?",Có nút vặn (núm xoay) để chọn/chỉnh điện áp đầu ra một chiều (DC); các chốt cắm gồm chốt màu đỏ (cực dương) và chốt màu đen (cực âm).,SGK_KHTN_8_KNTT,9,9,,,truc_tiep,,,,,hinh,Hình 1.5
-"Quan sát nhãn hoá chất bên phải trong Hình 1.1, kí hiệu hình thoi màu đỏ trên nhãn có ý nghĩa gì?","Kí hiệu hình thoi màu đỏ trên nhãn hoá chất là kí hiệu cảnh báo nguy hiểm (hoá chất có tính ăn mòn/gây hại), nhắc người sử dụng phải cẩn thận và tuân thủ quy tắc an toàn khi tiếp xúc.",SGK_KHTN_8_KNTT,6,6,,,truc_tiep,,,,,hinh,Hình 1.1
-"Quan sát Hình 1.3, hãy kể tên các mẫu chất lỏng được đo pH trong hình.",Các mẫu được đo pH trong Hình 1.3 gồm: a) nước máy; b) nước mưa; ... g) nước vôi trong.,SGK_KHTN_8_KNTT,8,8,,,truc_tiep,,,,,hinh,Hình 1.3
+Nội dung hình ảnh dưới hình 1.3 là gì,"ảnh chụp thao tác đo huyết áp bằng huyết áp kế cơ (áp kế đồng hồ):
+Một người đang quấn băng bao cao su quanh bắp tay người bệnh.
+Đang dùng tay bóp quả bóng cao su để bơm khí và theo dõi mặt đồng hồ áp kế.
+Đi kèm là ống nghe y tế để nghe nhịp tim/mạch đập khi đo.",SGK_KHTN_8_KNTT,8,8,,,truc_tiep,,,,,hinh,Hình 1.3
+"Quan sát Hình 1.5, hãy cho biết trên biến áp nguồn có bộ phận nào dùng để chọn điện áp đầu ra phù hợp với thí nghiệm, và các chốt cắm dây của nguồn có màu gì?","Bộ phận chọn điện áp đầu ra: Núm xoay (nút vặn) chọn thang điện áp với các nấc chỉ thị giá trị điện áp (từ 3V đến 24V).
+
+Màu sắc các chốt cắm dây:
+- Cặp chốt nguồn xoay chiều (AC): Hai chốt màu đỏ.
+- Cặp chốt nguồn một chiều (DC): Một chốt màu đen (cực âm) và một chốt màu đỏ (cực dương).",SGK_KHTN_8_KNTT,9,9,,,truc_tiep,,,,,hinh,Hình 1.5

@@ -1,29 +1,41 @@
 {
  "_huong_dan": "Điền qua phieu.html",
- "_bat_dau": 1787683282628,
- "_ket_thuc": 1787683479898,
+ "_bat_dau": 1788318790083,
+ "_ket_thuc": 1788321260760,
  "traloi": {
   "SGK_KHTN_6_CD_p9_04": {
    "cau_hoi": "Quan sát Hình 1.4, hãy nêu tên hai vật sống và hai vật không sống được vẽ trong hình.",
-   "dap_an": "Học sinh ghi đúng tên các vật sống và vật không sống xuất hiện trong Hình 1.4 (ví dụ: vật sống như cây, con vật; vật không sống như đá, nước... tùy theo nội dung thực tế của hình).",
+   "dap_an": "Hai vật sống : chim, cá. Hai vật không sống : giày, xe",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p10_03": {
+   "cau_hoi": "Quan sát Hình 1.4 (trang 10), em hãy cho biết hình ảnh trong hình minh họa cho sự kiện hay thành tựu nào được kể trong phần chữ xung quanh về việc con người chinh phục vũ trụ?",
+   "dap_an": "bay ra ngoài vũ trụ",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p12_01": {
+   "cau_hoi": "Trong Hình 2.2, kí hiệu nào đại diện cho cảnh báo chất độc sinh học?",
+   "dap_an": "hình d)",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_6_KNTT_p9_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy kể tên MỘT cặp phương tiện (xưa – nay) mà hình vẽ dùng để so sánh và cho biết cặp phương tiện đó thuộc lĩnh vực nào của đời sống.",
-   "dap_an": "Học sinh phải nêu đúng một cặp phương tiện thực tế có trong hình kèm lĩnh vực tương ứng (ví dụ cần đối chiếu lại với ảnh: giao thông – xe ngựa/đi bộ → ô tô/máy bay; liên lạc – thư tay → điện thoại).",
+   "dap_an": "giao thông – xe ngựa/đi bộ → ô tô/máy bay",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CTST_p11_02": {
    "cau_hoi": "Quan sát Hình 1.3, hãy cho biết các đồ thị tín hiệu âm được vẽ trong hình giống và khác nhau như thế nào?",
-   "dap_an": "Chúng đều là các đường cong dạng sóng biến đổi theo thời gian, nhưng các đồ thị không giống hệt nhau mà có dạng khác nhau.",
+   "dap_an": "Giống: đều thể hiện tính chất tuần hoàn, nghĩa là hình dạng của đồ thị lặp đi lặp lại sau những khoảng thời gian bằng nhau (chu kì). Đều biểu diễn sự biến thiên của tín hiệu (biên độ dao động) theo trục thời gian. Khác : Đồ thị bên trái là một đường cong hình sin đơn giản và mượt mà, đặc trưng cho một âm thuần (âm cơ bản).\n\nĐồ thị của đàn Violin và Piano ở bên phải có dạng phức tạp hơn nhiều. Mặc dù vẫn lặp lại theo chu kì, nhưng đường nét của chúng gấp khúc và mang hình thái đặc trưng hoàn toàn khác nhau. Sự khác biệt về dạng đồ thị này chính là nguyên nhân tạo ra âm sắc khác biệt giữa các loại nhạc cụ, giúp tai người phân biệt được tiếng đàn violin và tiếng đàn piano dù chúng có thể đang chơi cùng một nốt nhạc.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_KNTT_p10_03": {
    "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguồn phát thải khí nhà kính nào chiếm tỉ lệ lớn nhất trong biểu đồ.",
-   "dap_an": "Theo số liệu OCR, nhiều khả năng là \"Sản xuất điện và nhiệt\" (25%), nhưng cần mở hình để xác nhận vì biểu đồ có thể còn nguồn khác chiếm tỉ lệ cao hơn chưa đọc được.",
+   "dap_an": "\"Sản xuất điện và nhiệt\" (25%)",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -33,21 +45,27 @@
    "bo": false,
    "ly_do_bo": ""
   },
+  "SGK_KHTN_9_KNTT_p8_03": {
+   "cau_hoi": "Quan sát Hình 1.10, đây là dụng cụ gì và có công dụng gì trong phòng thí nghiệm?",
+   "dap_an": "Lưới tản nhiệt (lưới thép), dùng để phân tán nhiệt đều khi đun/đốt bằng đèn cồn, tránh làm vỡ dụng cụ thuỷ tinh do nhiệt tập trung tại một điểm.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
   "SGK_KHTN_6_CD_p5_01": {
    "cau_hoi": "Quan sát Hình 1.1, hãy cho biết những hoạt động nào được minh họa trong hình là hoạt động nghiên cứu khoa học tự nhiên?",
-   "dap_an": "Các hoạt động: tìm hiểu vi khuẩn bằng kính hiển vi, tìm hiểu vũ trụ, tìm kiếm và thăm dò dầu khí ở vùng biển Việt Nam, lai tạo giống cây trồng mới là hoạt động nghiên cứu khoa học tự nhiên; còn tập thể dục và vận chuyển xăng, dầu thì không phải.",
+   "dap_an": "a) Tìm hiểu vi khuẩn bằng kính hiển vi: Nghiên cứu về thế giới sinh vật vi mô (Sinh học).\n\nb) Tìm hiểu vũ trụ: Khám phá các quy luật và hiện tượng trong không gian (Thiên văn học/Vật lí).\n\nc) Tìm kiếm và thăm dò dầu khí ở vùng biển Việt Nam: Ứng dụng khoa học Trái Đất để khảo sát tài nguyên thiên nhiên (Địa chất học).\n\ng) Lai tạo giống cây trồng mới: Ứng dụng Sinh học và di truyền học để tạo ra các giống mới.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_6_CD_p6_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy kể tên các vai trò của khoa học tự nhiên trong cuộc sống mà sơ đồ trong hình thể hiện.",
-   "dap_an": "Khoa học tự nhiên giúp: cung cấp thông tin và nâng cao hiểu biết của con người; bảo vệ môi trường (ví dụ: nghiên cứu xử lí ô nhiễm nước); bảo vệ sức khoẻ và cuộc sống của con người; ứng dụng trong sản xuất và phát triển.",
+   "dap_an": "- Cung cấp thông tin và nâng cao hiểu biết của con người (minh họa qua sách vở, máy tính, mô hình não bộ và các biểu tượng khoa học).\n\n- Mở rộng sản xuất và phát triển kinh tế (minh họa qua nông nghiệp, nhà máy, kho vận và năng lượng điện gió).\n\n- Bảo vệ sức khoẻ và cuộc sống của con người (minh họa qua hoạt động khám chữa bệnh, chăm sóc y tế).\n\n- Bảo vệ môi trường; Ứng phó với biến đổi khí hậu (minh họa qua hoạt động trồng và chăm sóc cây xanh).",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_6_CD_p7_03": {
    "cau_hoi": "Quan sát Hình 1.3, hãy cho biết từng nhánh a), b), c), đ), e) trong hình tương ứng với lĩnh vực chủ yếu nào của khoa học tự nhiên?",
-   "dap_an": "a) Sinh học; b) Thiên văn học; c) Khoa học Trái Đất; đ) Vật lí; e) Hoá học.",
+   "dap_an": "a) Lĩnh vực Sinh học (nghiên cứu về các sinh vật và sự sống trên Trái Đất).\n\nb) Lĩnh vực Thiên văn học (nghiên cứu về vũ trụ: các hành tinh, các ngôi sao,...).\n\nc) Lĩnh vực Khoa học Trái Đất (nghiên cứu về Trái Đất).\n\nd) Lĩnh vực Vật lí (nghiên cứu về vật chất, năng lượng và sự vận động của chúng).\n\ne) Lĩnh vực Hóa học (nghiên cứu về các chất và sự biến đổi của các chất).",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -59,49 +77,73 @@
   },
   "SGK_KHTN_6_CTST_p7_02": {
    "cau_hoi": "Quan sát Hình 1.8, em hãy cho biết vai trò của khoa học tự nhiên được thể hiện qua thiết bị trong hình là gì?",
-   "dap_an": "Khoa học tự nhiên được ứng dụng vào sản xuất dược phẩm, góp phần bảo vệ và nâng cao sức khoẻ con người.",
+   "dap_an": "Vai trò của khoa học tự nhiên được thể hiện qua các điểm chính sau:\n\nChăm sóc, bảo vệ sức khỏe con người: Nghiên cứu và chế tạo các loại thuốc, vắc xin, dược phẩm để phòng và chữa bệnh.\nỨng dụng công nghệ vào sản xuất: Đưa các thành tựu khoa học (hóa học, sinh học, công nghệ tự động hóa) vào quy trình sản xuất quy mô lớn nhằm tối ưu năng suất và chất lượng sản phẩm.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_6_CTST_p8_03": {
-   "cau_hoi": "Quan sát Hình 2.1, em hãy mô tả sự thay đổi của hạt đậu qua các giai đoạn nảy mầm được thể hiện trong hình.",
-   "dap_an": "Hạt đậu hút nước và trương lên, vỏ hạt bị vỡ; rễ mầm nhô ra trước và phát triển thành rễ, sau đó thân mầm cùng lá mầm mọc lên dần thành cây con.",
+   "cau_hoi": "Quan sát Hình 2.2, em hãy cho biết khi chiếu đèn pin vào quả địa cầu, toàn bộ bề mặt quả địa cầu có được chiếu sáng cùng một lúc hay không? Phần được chiếu sáng và phần không được chiếu sáng đại diện cho hiện tượng tự nhiên nào?",
+   "dap_an": "Khi chiếu đèn pin, ánh sáng chỉ chiếu tới một nửa bề mặt quả địa cầu, nửa còn lại ở phía sau không nhận được ánh sáng và chìm trong bóng tối.\n\nPhần được chiếu sáng tượng trưng cho ban ngày, còn phần không được chiếu sáng tượng trưng cho ban đêm trên Trái Đất.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_CTST_p9_04": {
+   "cau_hoi": "Quan sát Hình 2.9 (con gà) và Hình 2.11 (đá sỏi), hãy cho biết hình nào thể hiện vật sống, hình nào thể hiện vật không sống? Vì sao?",
+   "dap_an": "Hình 2.9 (con gà) là vật sống vì có các đặc trưng của sự sống như sinh trưởng, sinh sản, cần thức ăn; Hình 2.11 (đá sỏi) là vật không sống vì không có các đặc trưng đó.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p11_04": {
+   "cau_hoi": "Quan sát Hình 2.1, hãy kể tên hai kí hiệu an toàn trong phòng thực hành được thể hiện trong hình và nêu ý nghĩa mỗi kí hiệu.",
+   "dap_an": "- Kí hiệu kính bảo hộ và găng tay: Bắt buộc đeo kính bảo hộ và mang găng tay bảo hộ khi làm thí nghiệm để tránh hóa chất hoặc mảnh vỡ bắn vào mắt và tay.\n\n- Kí hiệu áo bảo hộ (áo blouse): Bắt buộc mặc áo bảo hộ chuyên dụng của phòng thực hành để bảo vệ cơ thể và quần áo khỏi hóa chất hoặc chất bẩn.\n\n- Kí hiệu cấm ăn uống (vòng tròn gạch chéo đỏ qua đồ ăn, nước uống): Cấm mang thức ăn, đồ uống vào phòng thực hành và không được ăn uống tại đây để tránh ngộ độc hóa chất.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p8_01": {
+   "cau_hoi": "Quan sát Hình 1.1 (mục c và d), hãy cho biết mỗi thí nghiệm minh hoạ điều gì.",
+   "dap_an": "Hình c (Cắm đũa vào cốc nước): Minh họa cho hiện tượng khúc xạ ánh sáng (thuộc lĩnh vực Vật lí). Hiện tượng các tia sáng bị đổi hướng (gãy khúc) khi truyền qua mặt phân cách giữa hai môi trường trong suốt khác nhau (không khí và nước) làm cho mắt ta quan sát thấy chiếc đũa như bị gấp khúc hoặc gãy tại mặt nước.\nHình d (Úp bình thuỷ tinh kín lên cây xanh): Minh họa cho vai trò của không khí đối với sự sống và sinh trưởng của thực vật (thuộc lĩnh vực Sinh học). Khi bị chụp kín, lượng dưỡng khí O2 cho hô hấp và khí carbon dioxide CO2 cần cho quang hợp bị cạn kiệt dần, khiến cây không thể tiếp tục phát triển bình thường và sẽ héo úa.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CD_p10_04": {
    "cau_hoi": "Quan sát Hình 1.1, sơ đồ này mô tả quá trình gì và khi chia nhỏ nhiều lần đến mức 'không thể phân chia được nữa' thì thu được hạt gọi là gì?",
-   "dap_an": "Sơ đồ mô tả quá trình chia nhỏ đồng tiền vàng nhiều lần; kết quả cuối cùng thu được hạt gọi là nguyên tử (atomos – nghĩa là 'không chia nhỏ hơn được nữa').",
-   "bo": true,
+   "dap_an": "Quá trình được mô tả: Quá trình chia nhỏ đồng tiền vàng.\n\nTên loại hạt thu được: Sau nhiều lần chia đến mức không thể chia nhỏ hơn nữa, hạt thu được gọi là Nguyên tử (theo quan điểm sơ khai của các nhà triết học cổ đại như Đơ-mô-crit).",
+   "bo": false,
    "ly_do_bo": "crop hỏng"
+  },
+  "SGK_KHTN_7_CD_p11_01": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguyên tử lithium được vẽ gồm bao nhiêu proton, bao nhiêu neutron và bao nhiêu electron?",
+   "dap_an": "Số proton: 3 hạt (các hạt màu đỏ trong hạt nhân).\nSố neutron: 4 hạt (các hạt màu xanh lá trong hạt nhân).\nSố electron: 3 hạt (các hạt màu xanh lam ở lớp vỏ: 2 hạt ở vòng trong và 1 hạt ở vòng ngoài).",
+   "bo": false,
+   "ly_do_bo": ""
   },
   "SGK_KHTN_7_CD_p4_01": {
    "cau_hoi": "Quan sát Hình 1, hãy cho biết hạt đỗ có thể nằm ở những kiểu nào khi rơi xuống mặt đất?",
-   "dap_an": "Hạt đỗ có ba kiểu nằm: nằm ngửa, nằm nghiêng và nằm ngang.",
+   "dap_an": "Nằm ngửa (rốn hạt quay lên trên)\nNằm nghiêng (rốn hạt quay sang bên)\nNằm ngang (hạt nằm sấp/úp, rốn hạt áp xuống mặt đất)",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CD_p8_02": {
    "cau_hoi": "Quan sát Hình 4, hãy cho biết cổng quang điện gồm những bộ phận nào và mỗi bộ phận được kí hiệu bằng chữ cái gì trên hình? Chùm tín hiệu chiếu theo hướng nào?",
-   "dap_an": "Cổng quang điện gồm bộ phận phát tín hiệu (kí hiệu P) và bộ phận thu tín hiệu (kí hiệu T); chùm tín hiệu chiếu từ bộ phát (P) sang bộ thu (T).",
+   "dap_an": "Các bộ phận và kí hiệu:\nBộ phận phát tín hiệu: kí hiệu bằng chữ P (nhánh bên trái).\nBộ phận thu tín hiệu: kí hiệu bằng chữ T (nhánh bên phải).\nNgoài ra, phía dưới còn có bộ phận Đầu nối dây dẫn tín hiệu sang đồng hồ đo thời gian.\n\nHướng chiếu của chùm tín hiệu: Chiếu theo phương ngang từ bộ phận phát sang bộ phận thu (chiều từ P -> T).",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CD_p9_03": {
    "cau_hoi": "Quan sát Hình 5, hãy kể tên các bộ phận có gắn nhãn trong bộ thí nghiệm dùng để đo thời gian chuyển động của xe giữa hai vị trí.",
-   "dap_an": "Máng nhôm; xe có gắn tấm chắn sáng; hai cổng quang điện (cổng quang điện 1 và cổng quang điện 2); đồng hồ đo thời gian hiện số.",
+   "dap_an": "Đồng hồ đo thời gian hiện số (đặt ở phía trên).\nCổng quang điện 1 (gắn tại vị trí A) và Cổng quang điện 2 (gắn tại vị trí B).\nMáng nhôm (thanh ray dẫn hướng có chia vạch đo độ dài).\nXe (xe thí nghiệm đặt trên máng).\nTấm chắn sáng (gắn trên thân xe để ngắt chùm sáng khi đi qua hai cổng quang điện).\nHai vị trí đo được đánh dấu A và B.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CTST_p12_03": {
    "cau_hoi": "Quan sát Hình 1.5: đồng hồ đo thời gian hiện số được trình bày qua những góc nhìn nào? Hãy kể tên.",
-   "dap_an": "Hai góc nhìn: a) Mặt trước và b) Mặt sau của đồng hồ đo thời gian hiện số.",
+   "dap_an": "a) Mặt trước (hiển thị màn hình số điện tử và các nút chức năng/núm chọn thang đo).\n\nb) Mặt sau (hiển thị công tắc nguồn, dây cắm điện và các cổng cắm A, B, C kết nối với cổng quang điện).",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_CTST_p14_04": {
-   "cau_hoi": "Quan sát Hình 2.1, hãy cho biết trong các vật thể được nêu kèm kích thước, vật thể nào có kích thước lớn nhất?",
-   "dap_an": "Ruột bút chì, với kích thước 0,5 mm (lớn hơn hạt bụi trong không khí, tế bào máu và vi khuẩn).",
+   "cau_hoi": "Quan sát Hình 2.2, hãy cho biết trong ba chất (oxygen, sắt, than chì), chất nào có các hạt cấu tạo sắp xếp cách xa nhau và chất nào có các hạt sắp xếp khít nhau nhất?",
+   "dap_an": "Chất có các hạt sắp xếp cách xa nhau: Khí oxygen (các hạt rời rạc, phân tán tự do trong không gian).\nChất có các hạt sắp xếp khít nhau nhất: Sắt và Than chì (các hạt liên kết chặt chẽ và xếp sát khít nhau thành khối hoặc lớp).",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -113,43 +155,43 @@
   },
   "SGK_KHTN_7_KNTT_p11_04": {
    "cau_hoi": "Quan sát Hình 1.5 (mặt trước của đồng hồ đo thời gian hiện số): hãy kể tên các nút được ghi chú trên mặt trước của đồng hồ.",
-   "dap_an": "Các nút: THANG ĐO, MODE và RESET.",
+   "dap_an": "MODE (nút gạt/chọn chế độ đo, đánh số (2))\nRESET (nút bấm màu đỏ để thiết lập lại/về 0, đánh số (3))\nTHANG ĐO (s) (núm xoay chọn giới hạn đo và độ chia nhỏ nhất)",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_KNTT_p7_01": {
    "cau_hoi": "Quan sát Hình 1.1a và Hình 1.1b: trong hai lần đo, miếng gỗ được đặt nằm sao cho mặt nào tiếp xúc với mặt bàn?",
-   "dap_an": "Ở Hình 1.1a, miếng gỗ nằm trên mặt có kích thước 12 cm × 6 cm; ở Hình 1.1b, miếng gỗ nằm trên mặt có kích thước 12 cm × 3 cm.",
+   "dap_an": "Ở Hình 1.1a, miếng gỗ nằm trên mặt có kích thước 12 cm × 6 cm;\nỞ Hình 1.1b, miếng gỗ nằm trên mặt có kích thước 12 cm × 3 cm.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_7_KNTT_p8_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy nêu tên từng hiện tượng tự nhiên được thể hiện ở các ảnh a), b) và c).",
-   "dap_an": "a) Cháy rừng; b) Hạn hán; c) Mưa to kèm theo sấm, sét.",
+   "dap_an": "a) Cháy rừng\nb) Hạn hán (đất đai khô cằn, nứt nẻ)\nc) Mưa to kèm theo sấm, sét",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_8_CD_p4_01": {
    "cau_hoi": "Quan sát Hình 1, cho biết thể tích của dung dịch copper(II) sulfate trong ống đong là bao nhiêu?",
-   "dap_an": "Là giá trị đọc được tại mực dung dịch trên vạch chia của ống đong ở Hình 1 (người duyệt xem hình và điền số mL cụ thể).",
+   "dap_an": "55",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_8_CD_p5_02": {
-   "cau_hoi": "Quan sát Hình 4, hãy cho biết dụng cụ được vẽ ở hình 4a là dụng cụ gì và nó dùng để làm gì?",
-   "dap_an": "Đèn cồn – dùng để đun nóng.",
+   "cau_hoi": "Quan sát Hình 2, em hãy cho biết khi đọc thể tích chất lỏng trong ống đong, tầm mắt phải đặt như thế nào để kết quả đo được chính xác?\nQuan sát Hình 3, hãy kể tên các dụng cụ đựng hoá chất được minh hoạ lần lượt ở các mục a), b) và c).\nQuan sát Hình 4, hãy kể tên 4 dụng cụ dùng để đun nóng tương ứng với các mục a), b), c) và d).",
+   "dap_an": "Hình 2: Đặt tầm mắt ngang bằng với phần đáy lõm của mặt thoáng chất lỏng.\nHình 3: a) Lọ đựng hoá chất; b) Ống nghiệm; c) Mặt kính đồng hồ.\nHình 4: a) Đèn cồn; b) Bát sứ; c) Lưới thép; d) Kiềng đun.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_8_CD_p6_03": {
    "cau_hoi": "Quan sát Hình 5, hãy cho biết hai dụng cụ được ghi chú ở 5a và 5b lần lượt là gì và mỗi dụng cụ dùng để làm gì?",
-   "dap_an": "5a: Thìa thuỷ tinh – dùng để lấy từng lượng nhỏ chất rắn dạng bột; 5b: Đũa thuỷ tinh – dùng để khuấy khi hoà tan chất rắn hoặc pha trộn các dung dịch với nhau.",
+   "dap_an": "5a) Thìa thuỷ tinh: Dùng để lấy từng lượng nhỏ hoá chất rắn (dạng bột hoặc hạt nhỏ).\n\n5b) Đũa thuỷ tinh: Dùng để khuấy khi hoà tan chất rắn hoặc dùng để trộn các dung dịch với nhau.",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_8_CD_p7_04": {
    "cau_hoi": "Quan sát Hình 7, em hãy cho biết trên nhãn dán của lọ đựng dung dịch có ghi những thông tin gì?",
-   "dap_an": "Nhãn ghi đầy đủ thông tin về hoá chất, bao gồm tên hoá chất và công thức hoá học (có thể là dung dịch copper(II) sulfate – CuSO₄, người duyệt kiểm tra lại chữ trên nhãn trong hình).",
+   "dap_an": "Nhãn ghi đầy đủ thông tin về hoá chất, bao gồm tên hoá chất và công thức hoá học (có thể là dung dịch copper(II) sulfate – CuSO₄, nồng độ dung dịch: 5%",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -173,7 +215,13 @@
   },
   "SGK_KHTN_8_CTST_p9_04": {
    "cau_hoi": "Quan sát Hình 1.6, hãy liệt kê các hoá chất được trình bày trong hình theo từng thể: rắn, lỏng và khí.",
-   "dap_an": "Thể rắn: kẽm (Zinc, Zn), lưu huỳnh (Sulfur, S), calcium carbonate (CaCO3); thể lỏng: dung dịch copper(II) sulfate (CuSO4) 10%, dung dịch bromine (Br2); thể khí: oxygen (O2).",
+   "dap_an": "Thể rắn: kẽm (Zinc, Zn), lưu huỳnh (Sulfur, S), calcium carbonate (CaCO3); \nThể lỏng: dung dịch copper(II) sulfate (CuSO4) 10%;\nDung dịch bromine (Br2); thể khí: oxygen (O2).",
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_8_KNTT_p6_01": {
+   "cau_hoi": "Quan sát nhãn hoá chất bên phải trong Hình 1.1, kí hiệu hình thoi màu đỏ trên nhãn có ý nghĩa gì?",
+   "dap_an": "Cảnh báo hoá chất có tính ăn mòn (ăn mòn kim loại, gây bỏng da, tổn thương mô)",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -183,15 +231,21 @@
    "bo": false,
    "ly_do_bo": ""
   },
+  "SGK_KHTN_8_KNTT_p8_03": {
+   "cau_hoi": "Nội dung hình ảnh dưới hình 1.3 là gì",
+   "dap_an": "ảnh chụp thao tác đo huyết áp bằng huyết áp kế cơ (áp kế đồng hồ):\nMột người đang quấn băng bao cao su quanh bắp tay người bệnh.\nĐang dùng tay bóp quả bóng cao su để bơm khí và theo dõi mặt đồng hồ áp kế.\nĐi kèm là ống nghe y tế để nghe nhịp tim/mạch đập khi đo.",
+   "bo": false,
+   "ly_do_bo": ""
+  },
   "SGK_KHTN_8_KNTT_p9_04": {
    "cau_hoi": "Quan sát Hình 1.5, hãy cho biết trên biến áp nguồn có bộ phận nào dùng để chọn điện áp đầu ra phù hợp với thí nghiệm, và các chốt cắm dây của nguồn có màu gì?",
-   "dap_an": "Có nút vặn (núm xoay) để chọn/chỉnh điện áp đầu ra một chiều (DC); các chốt cắm gồm chốt màu đỏ (cực dương) và chốt màu đen (cực âm).",
+   "dap_an": "Bộ phận chọn điện áp đầu ra: Núm xoay (nút vặn) chọn thang điện áp với các nấc chỉ thị giá trị điện áp (từ 3V đến 24V).\n\nMàu sắc các chốt cắm dây:\n- Cặp chốt nguồn xoay chiều (AC): Hai chốt màu đỏ.\n- Cặp chốt nguồn một chiều (DC): Một chốt màu đen (cực âm) và một chốt màu đỏ (cực dương).",
    "bo": false,
    "ly_do_bo": ""
   },
   "SGK_KHTN_9_CD_p10_03": {
    "cau_hoi": "Quan sát Hình 1.1: bộ đội đang tác dụng lực để kéo di chuyển vật gì, và vì sao ta nói rằng họ đã thực hiện công cơ học?",
-   "dap_an": "Bộ đội đang kéo các khẩu pháo (trong chiến dịch Điện Biên Phủ). Vì lực của bộ đội tác dụng lên pháo làm pháo dịch chuyển theo hướng của lực, nên ta nói lực đó đã thực hiện công cơ học (sinh công).",
+   "dap_an": "Vật được kéo di chuyển: Các khẩu pháo (pháo quân sự).\n\nVì sao nói họ đã thực hiện công cơ học: Vì lực kéo do bộ đội tác dụng lên khẩu pháo đã làm cho khẩu pháo dịch chuyển theo hướng của lực (thỏa mãn hai điều kiện: có lực tác dụng và vật dịch chuyển theo phương của lực).",
    "bo": false,
    "ly_do_bo": ""
   },
@@ -237,71 +291,15 @@
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_9_KNTT_p7_02": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết khe tạo ra vật sáng có hình dạng chữ cái gì và được đánh số thứ tự bao nhiêu trong bộ dụng cụ?",
-   "dap_an": "Khe có hình chữ F và được đánh số thứ tự (5).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_CTST_p9_04": {
-   "cau_hoi": "Quan sát Hình 2.9 (con gà) và Hình 2.11 (đá sỏi), hãy cho biết hình nào thể hiện vật sống, hình nào thể hiện vật không sống? Vì sao?",
-   "dap_an": "Hình 2.9 (con gà) là vật sống vì có các đặc trưng của sự sống như sinh trưởng, sinh sản, cần thức ăn; Hình 2.11 (đá sỏi) là vật không sống vì không có các đặc trưng đó.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_KNTT_p8_01": {
-   "cau_hoi": "Quan sát Hình 1.1 (mục c và d), hãy cho biết mỗi thí nghiệm minh hoạ điều gì.",
-   "dap_an": "Mục c) chiếc đũa nhúng vào cốc nước trông như bị gãy ở mặt nước — minh hoạ hiện tượng ánh sáng bị khúc xạ khi truyền qua hai môi trường trong suốt khác nhau. Mục d) cây được chụp kín bằng bình thuỷ tinh — thí nghiệm kiểm tra cây có tiếp tục phát triển bình thường khi bị cách li với không khí bên ngoài hay không.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_KNTT_p10_03": {
-   "cau_hoi": "",
-   "dap_an": "",
-   "bo": true,
-   "ly_do_bo": "AI best-effort: hình minh hoạ trang trí (con tem có phi hành gia, chủ đề khoa học vũ trụ) — không đủ nội dung khoa học cụ thể trong ảnh để đặt câu hỏi trực tiếp, cần người xem lại."
-  },
-  "SGK_KHTN_6_KNTT_p11_04": {
-   "cau_hoi": "Quan sát Hình 2.1, hãy kể tên hai kí hiệu an toàn trong phòng thực hành được thể hiện trong hình và nêu ý nghĩa mỗi kí hiệu.",
-   "dap_an": "Hình 2.1 thể hiện các kí hiệu an toàn, ví dụ: kí hiệu đeo kính bảo hộ và găng tay (yêu cầu dùng thiết bị bảo hộ cá nhân khi làm thí nghiệm) và kí hiệu cấm đưa tay lên miệng/ăn uống (cảnh báo không ăn uống trong phòng thực hành).",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_8_KNTT_p6_01": {
-   "cau_hoi": "Quan sát nhãn hoá chất bên phải trong Hình 1.1, kí hiệu hình thoi màu đỏ trên nhãn có ý nghĩa gì?",
-   "dap_an": "Kí hiệu hình thoi màu đỏ trên nhãn hoá chất là kí hiệu cảnh báo nguy hiểm (hoá chất có tính ăn mòn/gây hại), nhắc người sử dụng phải cẩn thận và tuân thủ quy tắc an toàn khi tiếp xúc.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_8_KNTT_p8_03": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy kể tên các mẫu chất lỏng được đo pH trong hình.",
-   "dap_an": "Các mẫu được đo pH trong Hình 1.3 gồm: a) nước máy; b) nước mưa; ... g) nước vôi trong.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
   "SGK_KHTN_9_KNTT_p6_01": {
    "cau_hoi": "Quan sát Hình 1.1, hãy kể tên hai loại nguồn sáng được giới thiệu trong hình.",
    "dap_an": "Hai nguồn sáng trong Hình 1.1 là: a) đèn chiếu sáng 12V–21W (nối với nguồn điện); b) đèn laser.",
    "bo": false,
    "ly_do_bo": ""
   },
-  "SGK_KHTN_9_KNTT_p8_03": {
-   "cau_hoi": "Quan sát Hình 1.10, đây là dụng cụ gì và có công dụng gì trong phòng thí nghiệm?",
-   "dap_an": "Hình 1.10 là lưới tản nhiệt (lưới thép), dùng để phân tán nhiệt đều khi đun/đốt bằng đèn cồn, tránh làm vỡ dụng cụ thuỷ tinh do nhiệt tập trung tại một điểm.",
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_6_KNTT_p12_01": {
-   "cau_hoi": "Trong Hình 2.2, kí hiệu nào đại diện cho cảnh báo chất độc sinh học?",
-   "dap_an": "Kí hiệu có hình sinh vật (thường là vi khuẩn hoặc tế bào) bên trong tam giác hoặc hình vuông cảnh báo.",
-   "nhap_chac_chan": false,
-   "bo": false,
-   "ly_do_bo": ""
-  },
-  "SGK_KHTN_7_CD_p11_01": {
-   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguyên tử lithium được vẽ gồm bao nhiêu proton, bao nhiêu neutron và bao nhiêu electron?",
-   "dap_an": "3 proton, 4 neutron và 2 electron.",
-   "nhap_chac_chan": true,
+  "SGK_KHTN_9_KNTT_p7_02": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết khe tạo ra vật sáng có hình dạng chữ cái gì và được đánh số thứ tự bao nhiêu trong bộ dụng cụ?",
+   "dap_an": "Hình dạng của khe tạo ra vật sáng: Hình chữ cái F.\nSố thứ tự trong bộ dụng cụ: Được đánh số thứ tự (5).",
    "bo": false,
    "ly_do_bo": ""
   }
