@@ -178,17 +178,18 @@
   "image_per_book": 4,
   "seed": 42,
   "nguon": "rút mẫu từ src/test/testsets/ (pool 300 câu), KHÔNG sinh mới",
-  "human_reviewed": false,
-  "human_review_note": "Phần văn bản: rút từ pool 300 câu do LLM sinh; mẫu 50 câu đã được người duyệt (D-90) cho tỉ lệ nhãn nguồn sai 2/49 = 4,1%, KTC Wilson 95% 1,1-13,7%. Phần hình: người duyệt KHUNG CẮT (loại 9/48), KHÔNG duyệt nội dung câu hỏi -- xem `cau_hoi_hinh`.",
+  "human_reviewed": "một phần -- xem human_review_note",
+  "human_review_note": "Phần văn bản (192 câu): rút từ pool 300 câu do LLM sinh, CHƯA duyệt toàn bộ; mẫu 50 câu đã được người duyệt (D-90) cho tỉ lệ nhãn nguồn sai 2/49 = 4,1%, KTC Wilson 95% 1,1-13,7%. Phần hình (48 câu): ĐÃ duyệt cả khung cắt LẪN nội dung câu hỏi/đáp án, đối chiếu trực tiếp với ảnh hiển thị trên phiếu HTML (D-170, 2026-09-02) -- xem `cau_hoi_hinh`.",
   "chien_luoc_chon": "Trải đều trên trang vàng trước (vòng 1 mỗi trang 1 câu), rồi mới lấy câu thứ 2 của một trang. Giảm tương quan mà _generation_meta.json của pool đã cảnh báo.",
-  "n_hinh_thuc_te": 39,
-  "n_tong_thuc_te": 231,
+  "n_hinh_thuc_te": 48,
+  "n_tong_thuc_te": 240,
+  "_lich_su_so_cau_hinh": "Lộ trình đo được: 39 (2026-08-25, 9/48 khung bị loại ở lượt duyệt khung cắt) -> 50 (D-169, 2026-09-02, bù 2 khung dự phòng cho SGK_KHTN_6_KNTT/SGK_KHTN_7_CD) -> người duyệt nội dung XONG cả 50 ô, GIỮ LẠI cả 2 khung từng bị coi hỏng vì viết được câu hỏi dùng tốt -> 242 thực tế (D-170) -> chốt bỏ 2 khung dự phòng nay dư (D-172) -> 48 cuối cùng, đều 4/quyển.",
   "cau_hoi_hinh": {
-    "quy_trinh": "Máy chọn 48 khung cắt (4/quyển) -> LLM viết nháp câu hỏi + đáp án từ chú thích và chữ OCR quanh hình -> người duyệt qua phiếu HTML.",
-    "nguoi_da_lam": "Loại 9/48 khung cắt hỏng, ghi lý do: 7 'cắt thiếu', 1 'cắt lấn', 1 khác. SỬA 2026-08-26: dòng cũ ghi '6/9 thuộc bộ Kết nối tri thức' là SAI. Đếm lại trên chính các tệp *_testset.csv: KNTT còn 9/16 ô hình, CD 15/16, CTST 15/16 -> 7/9 ô bị loại thuộc KNTT, không phải 6/9. Con số 7 khớp với 7 ca 'cắt thiếu' và với lỗi crop dải dọc hẹp của KNTT (D-125/D-126/D-131).",
-    "nguoi_CHUA_lam": "Không sửa nội dung câu hỏi nào: 39/39 câu còn lại giữ nguyên 100% bản nháp của mô hình. Đo trên chính tệp phiếu: lượt 1 duyệt 48 ô trong 2,3 phút; lượt 2 duyệt 40 ô trong 3,3 phút (4,9 giây/ô).",
-    "he_qua": "Mô hình sinh nháp KHÔNG nhìn thấy hình -- nó suy từ chú thích và chữ OCR quanh hình. Vì vậy 39 câu hỏi hình phải được coi là DO LLM SINH, chưa được người kiểm chứng đối chiếu ảnh. Báo cáo dùng số đo trên bộ này phải ghi rõ điều đó.",
-    "gia_tri_van_con": "Khung cắt của 39 câu này ĐÃ được người xem và xác nhận không hỏng -- đó là phần bảo đảm thật, và nó chính là thứ đã lộ ra lỗi crop dải hẹp 17,5% ở Kết nối tri thức (D-125).",
-    "_sua_2026_08_26": "Phân bố hình thật, đếm được: 6_CD 4 · 6_CTST 3 · 6_KNTT 1 · 7_CD 3 · 7_CTST 4 · 7_KNTT 4 · 8_CD 4 · 8_CTST 4 · 8_KNTT 2 · 9_CD 4 · 9_CTST 4 · 9_KNTT 2 = 39."
+    "quy_trinh": "Máy chọn 48 khung cắt (4/quyển) -> LLM viết nháp câu hỏi + đáp án từ chú thích và chữ OCR quanh hình, KHÔNG nhìn thấy ảnh -> người duyệt qua phiếu HTML có hiển thị khung ảnh -> duyệt cả khung cắt lẫn nội dung (D-170).",
+    "nguoi_da_lam_luot_1_khung_cat": "Lượt duyệt khung cắt (2026-08-25): 9/48 khung ban đầu bị đánh dấu nghi hỏng (7 'cắt thiếu', 1 'cắt lấn', 1 khác), tập trung ở Kết nối tri thức (7/9 ca) -- tín hiệu này dẫn tới việc tìm ra và sửa lỗi crop dải dọc hẹp của KNTT (D-125/D-126/D-131). 48 khung xử lý trong 2,3 phút, 40 khung kiểm tra chéo trong 3,3 phút (~4,9 giây/khung).",
+    "nguoi_da_lam_luot_2_noi_dung": "Lượt duyệt nội dung (D-170, 2026-09-02): đọc cả câu hỏi lẫn đáp án, đối chiếu trực tiếp với ảnh hiển thị trên phiếu -- 50 ô (48 gốc + 2 dự phòng) trong 41 phút (~49 giây/ô, chậm hơn lượt 1 khoảng 10 lần). Kết quả đo trên tệp phiếu: 34/48 câu cuối cùng (70,8%) bị sửa lại nội dung (10 sửa cả câu hỏi lẫn đáp án, 24 chỉ sửa đáp án), 14/48 (29,2%) giữ nguyên bản nháp AI. Cả 2 khung từng bị coi hỏng ở lượt 1 được GIỮ LẠI (viết được câu hỏi dùng tốt sau khi đọc nội dung), nên 2 khung dự phòng chuẩn bị thay chúng trở nên dư và bị loại (D-172) -- về đúng 48 khung gốc, không khung nào bị loại khỏi bộ cuối cùng.",
+    "he_qua": "48/48 câu hỏi hình trong bộ kiểm thử cuối cùng đã được người đối chiếu trực tiếp với ảnh và phần lớn (70,8%) bị sửa nội dung -- KHÔNG còn ở trạng thái 'do mô hình sinh, chưa ai kiểm chứng' như ghi nhận cũ (2026-08-25). Phần chưa đo được: tỉ lệ lỗi còn sót lại sau khi sửa (không có mẫu đối chứng độc lập thứ hai kiểu Wilson như phần văn bản).",
+    "vi_du_loi_llm_bi_bat": "SGK_KHTN_8_KNTT_p8_03: LLM đoán ảnh minh hoạ 'hai loại thiết bị đo pH' (suy luận hợp lý từ chữ xung quanh nhưng SAI hoàn toàn) -- ảnh thật chụp thao tác đo huyết áp bằng huyết áp kế cơ. Chỉ lộ ra khi người nhìn trực tiếp ảnh trên phiếu.",
+    "_sua_2026_09_02": "Phân bố hình CUỐI CÙNG, đếm được trên *_testset.csv: đều 4/quyển ở cả 12 quyển = 48, đều 16/NXB-quyển * 3 NXB nên hình 4*12=48, theo NXB (gộp cả văn bản) CD 80 / CTST 80 / KNTT 80 = 240."
   }
 }
