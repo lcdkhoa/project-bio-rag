@@ -92,6 +92,14 @@ class JudgePool:
         self._clients = list(clients)
         self._idx = 0
 
+    def force_rotate(self):
+        """Xoay sang model kế BẤT KỂ lý do — dùng khi lỗi không đến từ chính
+        lệnh gọi API (vd JSON hỏng cú pháp ở lớp gọi), nên `.invoke()` không tự
+        biết mà xoay. Cần thiết vì `temperature=0.0` khiến CÙNG model trả lại
+        NGUYÊN VĂN cùng một JSON hỏng nếu thử lại mà không đổi model."""
+        if len(self._clients) > 1:
+            self._idx = (self._idx + 1) % len(self._clients)
+
     def invoke(self, prompt, **kwargs):
         last_exc = None
         n = len(self._clients)

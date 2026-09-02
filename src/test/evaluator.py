@@ -151,7 +151,9 @@ JUDGE_BACKOFF_SECONDS = (5, 20, 60)
 
 
 def _la_loi_tam_thoi(exc: Exception) -> bool:
-    """429 / 5xx / timeout = thu lai duoc. Sai API key thi thu lai vo ich."""
+    """429 / 5xx / timeout / JSON hong = thu lai duoc. Sai API key thi thu lai vo ich."""
+    if isinstance(exc, json.JSONDecodeError):
+        return True
     msg = str(exc).lower()
     return any(t in msg for t in ("429", "rate", "timeout", "timed out",
                                   "500", "502", "503", "504", "overload"))
@@ -178,6 +180,12 @@ def judge_answer(judge_llm, question: str, ground_truth: str, context: str, answ
             if lan == JUDGE_RETRIES - 1 or not _la_loi_tam_thoi(exc):
                 break
             cho = JUDGE_BACKOFF_SECONDS[min(lan, len(JUDGE_BACKOFF_SECONDS) - 1)]
+            # JSON hong o temperature=0.0 thi cung mot model se sinh lai y het
+            # loi cu (deterministic) - phai xoay sang model KHAC trong pool thi
+            # thu lai moi co y nghia. Khong co pool (chi 1 model) thi bo qua,
+            # van thu lai sau backoff (khong hai, du khong chac giup).
+            if isinstance(exc, json.JSONDecodeError) and hasattr(judge_llm, "force_rotate"):
+                judge_llm.force_rotate()
             logger.warning("Judge lỗi tạm thời (lần %d/%d), chờ %ds: %s",
                            lan + 1, JUDGE_RETRIES, cho, exc)
             print(f"    judge lỗi tạm thời, thử lại sau {cho}s ({lan + 1}/{JUDGE_RETRIES})")
