@@ -275,3 +275,65 @@ def test_bu_khong_them_o_trung_id(khu, monkeypatch):
     B.main()
     sau = json.loads((out / "items.json").read_text(encoding="utf-8"))
     assert sum(1 for x in sau if x["id"] == moi["id"]) == 1
+
+
+def _fake_meta(quyen, trang, nhan, anh):
+    return {"pdf_filename": quyen, "page_number": trang, "figure_label": nhan,
+            "image_type": "single_figure", "image_path": str(anh),
+            "figure_caption": "", "crop_text": ""}
+
+
+def test_chon_khong_tu_ghi_file(monkeypatch, tmp_path):
+    """`chon()` KHÔNG được tự ghi `items.json` — bên gọi mới có quyền ghi.
+
+    Bug thật đã gặp: `chon()` tự ghi ở cuối hàm, nên khi `--bu` đọc lại
+    "bản cũ" NGAY SAU khi gọi `chon()`, thứ đọc được đã là bản MỚI (chính
+    `chon()` vừa ghi đè) — "ghi nối" hoá ra ghi đè, mất sạch câu người đã
+    duyệt mà không báo lỗi gì (chỉ in "Đã thêm 0 ô" trong khi thật ra
+    `items.json` đã bị thay hoàn toàn).
+    """
+    out = tmp_path / "review"
+    out.mkdir()
+    anh = tmp_path / "x.png"
+    anh.write_bytes(b"")
+    fake_col = type("C", (), {"get": lambda self, **k: {
+        "metadatas": [_fake_meta("SGK_KHTN_6_KNTT", 5, "Hình 1.1", anh)]}})()
+    fake_client = type("Cl", (), {"get_collection": lambda self, name: fake_col})()
+    monkeypatch.setattr(B, "_client", lambda: fake_client)
+    monkeypatch.setattr(B, "_page_texts", lambda: {})
+    monkeypatch.setattr(B, "_printed_page_map",
+                        lambda books: {b: {5: 5} for b in books})
+
+    B.chon(4, out)
+    assert not (out / "items.json").exists(), (
+        "chon() tự ghi file — bug đã tái diễn, bên gọi (--chon/--bu) phải là "
+        "nơi DUY NHẤT ghi items.json")
+
+
+def test_bu_chi_chon_cho_quyen_dang_thieu_khong_dong_cho_quyen_da_du(monkeypatch, tmp_path):
+    """`can_them` chỉ định quyển nào thiếu — quyển KHÔNG có trong dict phải bị
+    bỏ qua HẲN (mặc định 0 ô), không phải lấy `per_book` mặc định.
+
+    Bug thật đã gặp: mặc định `per_book` (4) khiến `--bu` chọn thêm ứng viên
+    MỚI cho cả những quyển đã đủ 4/4, không chỉ đúng quyển đang thiếu.
+    """
+    anh1 = tmp_path / "a.png"
+    anh1.write_bytes(b"")
+    anh2 = tmp_path / "b.png"
+    anh2.write_bytes(b"")
+    fake_meta = [
+        _fake_meta("SGK_KHTN_6_KNTT", 5, "Hình 1.1", anh1),   # quyển đang THIẾU
+        _fake_meta("SGK_KHTN_6_CD", 7, "Hình 2.1", anh2),      # quyển đã ĐỦ — không nên bị chọn thêm
+    ]
+    fake_col = type("C", (), {"get": lambda self, **k: {"metadatas": fake_meta}})()
+    fake_client = type("Cl", (), {"get_collection": lambda self, name: fake_col})()
+    monkeypatch.setattr(B, "_client", lambda: fake_client)
+    monkeypatch.setattr(B, "_page_texts", lambda: {})
+    monkeypatch.setattr(B, "_printed_page_map",
+                        lambda books: {b: {5: 5, 7: 7} for b in books})
+
+    them = B.chon(4, tmp_path / "out",
+                  can_them={"SGK_KHTN_6_KNTT": 1}, tranh_trang=set())
+    quyen_duoc_chon = {it["quyen"] for it in them}
+    assert quyen_duoc_chon == {"SGK_KHTN_6_KNTT"}, (
+        f"chỉ được chọn cho quyển đang thiếu, nhưng chọn cả: {quyen_duoc_chon}")

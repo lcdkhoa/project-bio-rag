@@ -148,7 +148,11 @@ def chon(per_book: int, out_dir: Path, can_them: dict | None = None,
     items: List[Dict] = []
 
     for book in sorted(by_book):
-        muc_tieu = can_them.get(book, per_book) if can_them else per_book
+        # Chế độ bù (`can_them` khác rỗng): quyển KHÔNG có trong dict là quyển
+        # KHÔNG cần bù, phải bỏ qua HẲN (mặc định 0), không phải lấy per_book —
+        # bug đã gặp thật: mặc định per_book khiến --bu chọn thêm 4 ứng viên
+        # MỚI cho cả 10 quyển đã đủ, không chỉ 2 quyển thật sự thiếu.
+        muc_tieu = can_them.get(book, 0) if can_them else per_book
         if muc_tieu <= 0:
             continue
         seen_pages = set()
@@ -192,8 +196,10 @@ def chon(per_book: int, out_dir: Path, can_them: dict | None = None,
                 "chu_tren_trang": (page_text.get((book, trang_in)) or "")[:1500],
             })
 
-    (out_dir / "items.json").write_text(
-        json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")
+    # KHÔNG ghi items.json ở đây — bên gọi (--chon ghi thẳng, --bu ghi NỐI vào
+    # bản cũ) chịu trách nhiệm ghi, để `chon()` dùng an toàn cho cả hai chế độ
+    # mà không tự ý xoá dữ liệu người đã duyệt của chế độ kia (bug đã gặp thật:
+    # ghi ở đây làm `--bu` tự xoá mất bản gốc trước cả khi merge chạy).
     return items
 
 
@@ -562,6 +568,8 @@ def main() -> int:
 
     if a.chon:
         items = chon(a.per_book, out_dir)
+        (out_dir / "items.json").write_text(
+            json.dumps(items, ensure_ascii=False, indent=1), encoding="utf-8")
         per: Dict[str, int] = defaultdict(int)
         for it in items:
             per[it["quyen"]] += 1
@@ -587,11 +595,14 @@ def main() -> int:
             print(f"Không thiếu ô nào — mọi quyển đủ {a.per_book}.")
             return 0
         print(f"Thiếu: {thieu}  (tổng {sum(thieu.values())} ô)")
-        them = chon(a.per_book, out_dir, can_them=thieu, tranh_trang=tranh)
-        # Ghi NỐI vào items.json, không ghi đè: ô cũ người đã duyệt phải còn.
+        # Đọc bản CŨ TRƯỚC khi gọi chon() — chon() không còn tự ghi file nữa,
+        # nhưng đọc trước vẫn là thứ tự đúng, tránh lặp lại đúng bug đã gặp
+        # (đọc SAU khi ghi thì "cũ" chẳng khác gì "mới").
         p = out_dir / "items.json"
         cu = json.loads(p.read_text(encoding="utf-8"))
         cu_id = {x["id"] for x in cu}
+        them = chon(a.per_book, out_dir, can_them=thieu, tranh_trang=tranh)
+        # Ghi NỐI vào items.json, không ghi đè: ô cũ người đã duyệt phải còn.
         moi = [x for x in them if x["id"] not in cu_id]
         p.write_text(json.dumps(cu + moi, ensure_ascii=False, indent=1),
                      encoding="utf-8")

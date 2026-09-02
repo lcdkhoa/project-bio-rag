@@ -238,5 +238,15 @@
   "cau_hoi": "Quan sát Hình 1.12, hãy cho biết chủ đề của bài thuyết trình mẫu được minh hoạ bằng phần mềm trình chiếu là gì?",
   "dap_an": "Báo cáo kết quả khảo sát thực tế về một số bệnh đường tiêu hoá và vấn đề vệ sinh an toàn thực phẩm tại địa phương.",
   "chac_chan": true
+ },
+ "SGK_KHTN_6_KNTT_p12_01": {
+  "cau_hoi": "Trong Hình 2.2, kí hiệu nào đại diện cho cảnh báo chất độc sinh học?",
+  "dap_an": "Kí hiệu có hình sinh vật (thường là vi khuẩn hoặc tế bào) bên trong tam giác hoặc hình vuông cảnh báo.",
+  "chac_chan": false
+ },
+ "SGK_KHTN_7_CD_p11_01": {
+  "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguyên tử lithium được vẽ gồm bao nhiêu proton, bao nhiêu neutron và bao nhiêu electron?",
+  "dap_an": "3 proton, 4 neutron và 2 electron.",
+  "chac_chan": true
  }
 }

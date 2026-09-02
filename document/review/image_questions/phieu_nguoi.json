@@ -290,6 +290,20 @@
    "dap_an": "Hình 1.10 là lưới tản nhiệt (lưới thép), dùng để phân tán nhiệt đều khi đun/đốt bằng đèn cồn, tránh làm vỡ dụng cụ thuỷ tinh do nhiệt tập trung tại một điểm.",
    "bo": false,
    "ly_do_bo": ""
+  },
+  "SGK_KHTN_6_KNTT_p12_01": {
+   "cau_hoi": "Trong Hình 2.2, kí hiệu nào đại diện cho cảnh báo chất độc sinh học?",
+   "dap_an": "Kí hiệu có hình sinh vật (thường là vi khuẩn hoặc tế bào) bên trong tam giác hoặc hình vuông cảnh báo.",
+   "nhap_chac_chan": false,
+   "bo": false,
+   "ly_do_bo": ""
+  },
+  "SGK_KHTN_7_CD_p11_01": {
+   "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguyên tử lithium được vẽ gồm bao nhiêu proton, bao nhiêu neutron và bao nhiêu electron?",
+   "dap_an": "3 proton, 4 neutron và 2 electron.",
+   "nhap_chac_chan": true,
+   "bo": false,
+   "ly_do_bo": ""
   }
  }
 }
