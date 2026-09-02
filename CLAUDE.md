@@ -374,6 +374,21 @@ trang cũ (G2 tổng quát, `qa_ocr_gold.py`) **vẫn VÔ HIỆU** và cảnh b�
 may2` của nó **vẫn hỏng** như mô tả — nhưng không còn cần sửa, vì câu hỏi mà nó định
 trả lời đã có số từ nguồn khác.
 
+## Sửa lỗi FE/retrieval ngoài phạm vi MT (2026-09-02, D-177/D-178)
+
+Người dùng test FE thật, báo 4 lỗi bằng ảnh chụp: trích dẫn lạc đề, trích dẫn vẫn
+hiện dù câu trả lời là "không được đề cập", `cho tôi hình con cá` chỉ trả 1 ảnh sai
+chủ đề, ảnh tự động đính kèm mọi câu hỏi kể cả câu thuần chữ. Đây là lỗi **phục vụ
+(serving)**, không thuộc corpus/ETL nên không đổi số liệu MT1-MT5 ở bảng dưới. Đã
+sửa 3/4 (`src/app/api.py`, `src/rag/hybrid_retriever.py`, `src/rag/image_vectorstore.py`)
+— chi tiết root cause + đo trước/sau xem D-177/D-178 trong `document/decision_log.html`.
+**Còn nợ, cố ý chưa làm:** `RERANK_SCORE_MIN=0.2` — đã quét (D-178) và thấy phẳng
+tuyệt đối từ 0,00 đến 0,50 trên 240 câu ở bề rộng production, chỉ đổi ở 0,60 (mất
+~1,2-1,7 điểm % R@3/R@5/R@10/MRR, 5/240 câu rỗng) — mốc 0,60 mới đủ cao lọc được
+hai chunk lạc đề đã bắt được tay ("con cá có màu gì" → CD tr.129=0,589,
+KNTT tr.105=0,575). Đây là đánh đổi SẢN PHẨM (độ tin cậy trích dẫn ↔ recall), chưa
+đổi trong code, chờ người dùng chốt.
+
 ## Quy tắc làm việc (luôn áp dụng)
 
 - **Phản biện mọi thay đổi code tìm bug ẩn trước khi báo xong** — truy edge case,
