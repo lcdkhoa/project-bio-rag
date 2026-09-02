@@ -500,7 +500,15 @@ mức duy nhất — lượt chạy thật 240 câu (2 model) dính hạn mức 
 tối đa ~85s không đủ chờ token nạp lại (thông báo lỗi đòi 3–5 phút) → 106/240 câu
 (44%) mất điểm judge, lệch hẳn về khối CD/CTST (4 quyển KNTT sống 100%). Đã mở rộng
 lên 4 model (nhân đôi ngân sách/ngày, mỗi model một bucket riêng) thay vì sửa
-backoff — đơn giản hơn, không đụng code retry.
+backoff — đơn giản hơn, không đụng code retry. **D-174 (2026-09-02): lượt chạy lại
+sau D-173 crash ở cổng mtime (mục 15 notebook)** — bug THẬT trong `_copy_resilient()`
+(`shutil.copy2` giữ nguyên mtime GỐC trên Drive khi khôi phục), không phải trong
+logic D-173. File 4 quyển KNTT hợp lệ bị khôi phục với mtime CŨ (từ lần đồng bộ
+Drive trước), cổng mtime D-168 coi là "dữ liệu sót lại" và raise dừng notebook. Đã
+vá: `khoi_phuc_tien_do_da_co()` gọi `dich.touch()` ngay sau khi copy về, đặt mtime =
+lúc phiên NÀY xác nhận file hợp lệ. Không cần làm lại gì trên Drive — 8 quyển
+CD/CTST đã tính lại đúng trong phiên bị crash, đã đồng bộ lên Drive trước khi crash
+xảy ra; chỉ cần chạy lại notebook (git clone kéo bản vá mới).
 
 ```bash
 python src/test/generate_testsets.py --dry-run  # chọn trang + in thống kê, KHÔNG gọi LLM
