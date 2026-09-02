@@ -1,7 +1,7 @@
 \chapter{THỰC NGHIỆM, ĐÁNH GIÁ VÀ THẢO LUẬN}
 \label{chapter:thuc_nghiem_danh_gia}
 
-Chương này trình bày toàn bộ quá trình thực nghiệm và đánh giá định lượng hệ thống trợ lý ảo. Nội dung bao gồm: thiết lập môi trường và bộ công cụ thực nghiệm; kho tri thức đã số hoá; quy trình xây dựng bộ dữ liệu kiểm thử có gắn nhãn nguồn (ground truth) để đo lường khách quan; hệ thống độ đo đánh giá tách thành hai pha (truy xuất và sinh ngôn ngữ); kết quả thực nghiệm thực tế trên \textbf{231 câu hỏi} phủ đủ 12 cuốn sách cùng các bảng biểu, biểu đồ minh họa; và cuối cùng là phần thảo luận về ưu điểm, hạn chế cũng như các phát hiện rút ra từ số liệu.
+Chương này trình bày toàn bộ quá trình thực nghiệm và đánh giá định lượng hệ thống trợ lý ảo. Nội dung bao gồm: thiết lập môi trường và bộ công cụ thực nghiệm; kho tri thức đã số hoá; quy trình xây dựng bộ dữ liệu kiểm thử có gắn nhãn nguồn (ground truth) để đo lường khách quan; hệ thống độ đo đánh giá tách thành hai pha (truy xuất và sinh ngôn ngữ); kết quả thực nghiệm thực tế trên \textbf{240 câu hỏi} phủ đủ 12 cuốn sách cùng các bảng biểu, biểu đồ minh họa; và cuối cùng là phần thảo luận về ưu điểm, hạn chế cũng như các phát hiện rút ra từ số liệu.
 
 \section{Môi trường và công cụ thực nghiệm}
 Quá trình tiền xử lý dữ liệu (nhận dạng ký tự, phát hiện và cắt hình) cùng với suy luận của mô hình ngôn ngữ lớn đòi hỏi tài nguyên tính toán đáng kể. Cấu hình thực tế dùng cho các phép đo trong chương này được trình bày ở Bảng~\ref{tab:env}.
@@ -26,12 +26,12 @@ Chỉ mục thưa & Okapi BM25 tự cài đặt ($k_1 = 0{,}7$, $b = 0{,}75$) \\
 Mô hình xếp hạng lại & \texttt{BAAI/bge-reranker-v2-m3} (cross-encoder) \\
 Mô hình thị giác & CLIP-ViT-B/16, OwlViT-B/32 \\
 Nhận dạng ký tự & Tesseract, gói tiếng Việt \\
-LLM giám khảo (judge) & \texttt{stealth/ox-alpha}, gọi qua điểm cuối tương thích OpenAI \\
+LLM giám khảo (judge) & Groq, tập $4$ mô hình xoay vòng (chi tiết ở Mục~\ref{sec:judge_pha2}) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Điểm đáng chú ý của cấu hình này là \textbf{toàn bộ pha ETL chạy trên CPU, không dùng GPU}. Đây không phải một hạn chế cần biện minh mà là một kết quả có ý nghĩa thực tiễn: pipeline được thiết kế xoay quanh thị giác máy tính cổ điển và nhận dạng ký tự xác định, nên phần đắt nhất của nó không cần phần cứng tăng tốc. Chi phí thực tế đo được: luồng văn bản dựng đủ 12 cuốn trong \textbf{3 giờ 20 phút} ($5{,}0$ giây/trang), cộng $49$ phút cho bước dựng tệp kê khai; luồng hình ảnh dựng đủ 12 cuốn trong \textbf{5 giờ 01 phút} ở lượt đầu, sau đó tám cuốn phải dựng lại thêm khoảng $4$ giờ rưỡi nữa vì hai lỗi phát hiện được sau đó (lỗi ký tự tam giác của Chân trời sáng tạo và lỗi khung cắt dải hẹp của Kết nối tri thức). Con số đáng dùng để dự trù chi phí vì vậy là chi phí \textit{một lượt} --- $3$ giờ $20$ và $5$ giờ $01$ --- kèm ghi nhớ rằng mỗi lần sửa tham số trích xuất là một lượt nữa. Trong phạm vi số liệu của chương này, GPU chỉ thực sự cần cho pha \textit{phục vụ} mô hình sinh Qwen2.5; kiến trúc xử lý công thức Hoá/Vật lí trình bày ở Mục~\ref{sec:formula_hybrid} là ngoại lệ duy nhất --- nó cần GPU cho bước OCR bằng mô hình thị giác-ngôn ngữ, và chưa chạy trên corpus sản xuất tại thời điểm các số liệu dưới đây được đo.
+Điểm đáng chú ý của cấu hình này là \textbf{toàn bộ pha ETL chạy trên CPU, không dùng GPU}. Đây không phải một hạn chế cần biện minh mà là một kết quả có ý nghĩa thực tiễn: pipeline được thiết kế xoay quanh thị giác máy tính cổ điển và nhận dạng ký tự xác định, nên phần đắt nhất của nó không cần phần cứng tăng tốc. Chi phí thực tế đo được: luồng văn bản dựng đủ 12 cuốn trong \textbf{3 giờ 20 phút} ($5{,}0$ giây/trang), cộng $49$ phút cho bước dựng tệp kê khai; luồng hình ảnh dựng đủ 12 cuốn trong \textbf{5 giờ 01 phút} ở lượt đầu, sau đó tám cuốn phải dựng lại thêm khoảng $4$ giờ rưỡi nữa vì hai lỗi phát hiện được sau đó (lỗi ký tự tam giác của Chân trời sáng tạo và lỗi khung cắt dải hẹp của Kết nối tri thức). Con số đáng dùng để dự trù chi phí vì vậy là chi phí \textit{một lượt} --- $3$ giờ $20$ và $5$ giờ $01$ --- kèm ghi nhớ rằng mỗi lần sửa tham số trích xuất là một lượt nữa. Trong phạm vi số liệu của chương này, GPU chỉ thực sự cần cho pha \textit{phục vụ} mô hình sinh Qwen2.5; kiến trúc xử lý công thức Hoá/Vật lí trình bày ở Mục~\ref{sec:formula_hybrid} là ngoại lệ duy nhất --- nó cần GPU cho bước OCR bằng mô hình thị giác-ngôn ngữ. Bước này đã chạy trên môi trường GPU thuê ngoài (Google Colab) chứ không phải trên máy trạm mô tả ở Bảng~\ref{tab:env}, và \textbf{đã hoàn tất trên toàn bộ corpus sản xuất} trước thời điểm các số liệu Recall/MRR/Precision/judge của chương này được đo lại lần cuối (Mục~\ref{sec:hanche}).
 
 Mô hình giám khảo được tách riêng và truy cập qua điểm cuối tương thích chuẩn OpenAI, bảo đảm \textit{tính độc lập} giữa mô hình bị đánh giá (Qwen2.5) và mô hình chấm điểm --- một nguyên tắc quan trọng của phương pháp LLM-as-a-judge~\cite{zheng2023llmjudge} nhằm tránh thiên kiến tự đánh giá (self-enhancement bias).
 
@@ -127,7 +127,7 @@ $rows \leftarrow \emptyset$\;
 \Return $rows$\;
 \end{algorithm2e}
 
-Bộ kiểm thử của đồ án gồm \textbf{231 câu hỏi} phủ đủ $12$ cuốn: \textbf{192 câu sinh từ văn bản} ($16$ câu mỗi cuốn) và \textbf{39 câu sinh từ hình}. Thiết kế ban đầu là $20$ câu mỗi cuốn ($16$ văn bản $+$ $4$ hình, tổng $240$); phần hình rút xuống còn $39$ vì $9/48$ khung cắt bị loại ở bước người duyệt (giải thích ngay dưới đây). Câu hỏi trải trên cả ba phân môn, có nhãn phân môn, khối lớp, bộ sách và độ khó đi kèm từng câu văn bản: hoá $69$, lí $54$, sinh $47$, liên môn hoặc chung $22$; theo độ khó, $179$ câu \textit{trích xuất trực tiếp} và $52$ câu \textit{suy luận}.
+Bộ kiểm thử của đồ án gồm \textbf{240 câu hỏi} phủ đủ $12$ cuốn, đúng thiết kế ban đầu: \textbf{192 câu sinh từ văn bản} ($16$ câu mỗi cuốn) và \textbf{48 câu sinh từ hình} ($4$ câu mỗi cuốn). Câu hỏi trải trên cả ba phân môn, có nhãn phân môn, khối lớp, bộ sách và độ khó đi kèm từng câu văn bản: hoá $69$, lí $54$, sinh $47$, liên môn hoặc chung $22$; theo độ khó (tính trên cả $240$ câu, phần hình mặc định \textit{trích xuất trực tiếp}), $188$ câu \textit{trích xuất trực tiếp} và $52$ câu \textit{suy luận}.
 
 \textbf{Chọn câu theo trang, không chọn ngẫu nhiên thuần.} Vì mỗi lần gọi mô hình sinh nhiều câu từ cùng một trang, các câu sinh cùng trang \textit{tương quan với nhau}: một bộ $16$ câu rơi vào $6$ trang có sức phân biệt thống kê gần với $6$ hơn là với $16$. Quy trình chọn vì vậy ưu tiên trải rộng --- vòng đầu lấy mỗi trang vàng một câu, chỉ khi cần mới lấy câu thứ hai của một trang. Kết quả đo trên bộ thật: $16$ câu phủ hết $9/9$ trang vàng ở \textbf{cả 12 cuốn}. Toàn bộ $192$ câu văn bản được rút mẫu từ một kho $300$ câu sẵn có, nên bước này \textbf{không tốn lượt gọi mô hình nào}.
 
@@ -135,38 +135,42 @@ Bộ kiểm thử của đồ án gồm \textbf{231 câu hỏi} phủ đủ $12$
 \label{sec:cauhoihinh}
 Ý định ban đầu là sinh câu hỏi hình từ chính siêu dữ liệu mà pipeline đọc được quanh mỗi hình. Phép đo trên $938$ hình của bốn cuốn cho thấy hướng đó không dùng được: dòng chú thích hình trùng với văn bản đã lập chỉ mục của \textit{chính trang đó} ở mức \textbf{trung vị $0{,}958$} ($73{,}3\%$ số hình có độ phủ $\geq 0{,}8$), nên câu hỏi sinh từ nó thực chất là câu hỏi văn bản đội lốt; còn phần chữ đọc được \textit{bên trong} khung hình mà độc lập với văn bản trang thì lại hỏng nặng do nhận dạng.
 
-Quy trình cuối cùng có ba bước: máy chọn $48$ khung cắt (4 mỗi cuốn) và trình ra mọi thông tin nó đọc được $\rightarrow$ mô hình viết \textit{bản nháp} câu hỏi kèm đáp án $\rightarrow$ người duyệt qua một phiếu HTML.
+Quy trình cuối cùng có ba bước: máy chọn $48$ khung cắt (4 mỗi cuốn) và trình ra mọi thông tin nó đọc được $\rightarrow$ mô hình viết \textit{bản nháp} câu hỏi kèm đáp án, KHÔNG nhìn thấy ảnh --- nó chỉ suy từ dòng chú thích và chữ nhận dạng quanh hình $\rightarrow$ người duyệt qua một phiếu HTML hiển thị trực tiếp khung ảnh đã cắt.
 
-\textbf{Phải nói rõ người đã làm gì và chưa làm gì}, vì đây là chỗ dễ phóng đại nhất trong cả khung đánh giá:
+\textbf{Quy trình duyệt trải qua hai lượt tách biệt, với phạm vi khác nhau, cả hai đều đo được thời gian:}
 
 \begin{itemize}
-    \item \textbf{Người đã làm:} duyệt \textit{khung cắt}. Có $9/48$ khung bị loại vì hỏng, kèm lý do ghi lại --- \textbf{7 ca ``cắt thiếu''}, 1 ca ``cắt lấn'', 1 ca khác. Số ô mất tập trung ở một bộ sách: đối chiếu phân bố cuối cùng (Bảng~\ref{tab:testset_dist}), Kết nối tri thức chỉ còn $9/16$ ô trong khi Cánh Diều và Chân trời sáng tạo mỗi bộ còn $15/16$, tức \textbf{$7$ trong $9$ ô bị loại thuộc Kết nối tri thức}. Đây là một kết quả thật và có ích: chính tín hiệu ``cắt thiếu'' dồn vào một bộ sách đã dẫn tới việc tìm ra và sửa được lỗi khung cắt dải dọc hẹp trình bày ở Mục~\ref{sec:hanche}.
-    \item \textbf{Người chưa làm:} duyệt \textit{nội dung}. Cả $39$ câu còn lại \textbf{giữ nguyên $100\%$ bản nháp của mô hình}, không câu nào được sửa chữ. Đo trên chính tệp phiếu: lượt duyệt thứ nhất xử lý $48$ ô trong $2{,}3$ phút, lượt thứ hai $40$ ô trong $3{,}3$ phút --- trung bình \textbf{$4{,}9$ giây mỗi ô}, một nhịp chỉ đủ để nhìn khung cắt, không đủ để thẩm định câu hỏi.
+    \item \textbf{Lượt 1 --- duyệt khung cắt} (chỉ nhìn ảnh, chưa đọc nội dung câu hỏi): $9/48$ khung ban đầu bị đánh dấu nghi hỏng, kèm lý do ghi lại --- $7$ ca ``cắt thiếu'', $1$ ca ``cắt lấn'', $1$ ca khác. Tín hiệu này KHÔNG rải đều: $7/9$ ca thuộc Kết nối tri thức, và chính việc lỗi ``cắt thiếu'' dồn vào một bộ sách đã dẫn tới việc tìm ra và sửa lỗi khung cắt dải dọc hẹp trình bày ở Mục~\ref{sec:hanche}. Đo trên tệp phiếu của lượt này: $48$ khung xử lý trong $2{,}3$ phút, cộng $40$ khung kiểm tra chéo trong $3{,}3$ phút --- trung bình $4{,}9$ giây/khung, một nhịp đủ để nhìn khung cắt, không đủ để thẩm định nội dung câu hỏi.
+    \item \textbf{Lượt 2 --- duyệt nội dung} (đọc cả câu hỏi lẫn đáp án, đối chiếu trực tiếp với ảnh hiển thị trên phiếu): thực hiện SAU lượt 1, trên $50$ ứng viên ($48$ khung gốc $+$ $2$ khung dự phòng chuẩn bị sẵn để thay hai ca bị nghi hỏng ở lượt 1). Đo trên chính tệp phiếu: $50$ ô trong $41$ phút, \textbf{$\approx$$49$ giây/ô} --- chậm hơn lượt 1 khoảng $10$ lần, đúng với việc lượt này đòi thẩm định nội dung chứ không chỉ nhìn khung.
 \end{itemize}
 
-Hệ quả phải ghi thẳng ra: mô hình viết nháp \textbf{không nhìn thấy hình}; nó suy từ dòng chú thích và chữ nhận dạng quanh hình. Vì vậy $39$ câu hỏi hình trong bộ kiểm thử là \textbf{do mô hình sinh và chưa được người đối chiếu với ảnh}. Mọi số liệu tính trên phần này phải được đọc kèm giới hạn đó.
+\textbf{Kết quả lượt 2, đo trực tiếp trên tệp phiếu:} \textbf{$34/48$ câu ($70{,}8\%$) bị sửa lại} --- $10$ câu sửa cả câu hỏi lẫn đáp án, $24$ câu chỉ sửa đáp án, không câu nào chỉ sửa câu hỏi mà giữ nguyên đáp án sai; $14/48$ câu ($29{,}2\%$) giữ nguyên $100\%$ bản nháp của mô hình. Về hai khung bị nghi hỏng ở lượt 1: sau khi đọc nội dung và đối chiếu ảnh, người duyệt xác định cả hai đều viết được câu hỏi dùng tốt nên \textbf{giữ lại thay vì loại}; hai khung dự phòng chuẩn bị thay thế chúng vì vậy trở nên dư thừa và bị loại ở bước áp dụng cuối cùng --- đưa bộ câu hỏi hình về đúng $48$ khung gốc, $4$ khung/cuốn, không khung nào bị loại khỏi bộ kiểm thử cuối cùng.
 
-\textbf{Độ tin cậy của nhãn nguồn được đo, không được giả định.} Phần câu hỏi văn bản cũng do mô hình sinh, nên bản thân nhãn nguồn cũng có sai số. Trên một mẫu $50$ câu do người rà soát thủ công, tỉ lệ nhãn nguồn sai đo được là \textbf{2/49 = 4,1\%} (một câu không quyết được), khoảng tin cậy Wilson $95\%$ là $1{,}1\%$--$13{,}7\%$. Mẫu này \textit{cố ý lệch} về nhóm câu suy luận ($50\%$ so với $32\%$ của cả kho nguồn) nên $4{,}1\%$ là con số bi quan; hiệu chỉnh theo trọng số cả bộ cho khoảng $2{,}7\%$. Đáng chú ý là \textbf{cả hai câu sai đều thuộc cùng một ô} (Hoá học $\times$ suy luận), và đều là lỗi \textit{sinh câu hỏi} --- câu đòi học sinh tự viết phương trình nên đáp án không nằm nguyên văn ở trang vàng --- chứ không phải lỗi chọn trang. Mọi con số ở Mục~\ref{sec:ketqua} cần được đọc cùng với sai số này.
+Một ví dụ cụ thể cho thấy vì sao bước duyệt nội dung không phải hình thức: với khung \texttt{SGK\_KHTN\_8\_KNTT\_p8\_03}, mô hình suy đoán --- hợp lý theo ngữ cảnh chữ xung quanh nhưng sai hoàn toàn --- rằng ảnh minh hoạ ``hai loại thiết bị đo pH: máy đo pH và bút đo pH''; ảnh thật chụp thao tác đo huyết áp bằng huyết áp kế cơ. Lỗi lệch hẳn chủ đề này chỉ lộ ra khi người duyệt nhìn trực tiếp ảnh hiển thị trên phiếu --- đúng loại lỗi mà lượt 1 (không đọc nội dung) không thể bắt được.
+
+Hệ quả cần ghi lại chính xác, thay cho một khẳng định của một bản nháp trước đó của chính chương này: \textbf{cả $48$ câu hỏi hình trong bộ kiểm thử cuối cùng đã được người đối chiếu trực tiếp với ảnh}, không còn ở trạng thái ``do mô hình sinh, chưa ai kiểm chứng''. Phần chưa đo được là \textit{tỉ lệ lỗi còn sót lại sau khi sửa} --- không có một mẫu độc lập thứ hai để tính khoảng tin cậy riêng cho $48$ câu này, khác với phần văn bản (đo được ở đoạn kế tiếp).
+
+\textbf{Độ tin cậy của nhãn nguồn được đo, không được giả định.} Phần câu hỏi văn bản cũng do mô hình sinh, nên bản thân nhãn nguồn cũng có sai số. Trên một mẫu $50$ câu do người rà soát thủ công, tỉ lệ nhãn nguồn sai đo được là \textbf{2/49 = 4,1\%} (một câu không quyết được), khoảng tin cậy Wilson $95\%$ là $1{,}1\%$--$13{,}7\%$. Mẫu này \textit{cố ý lệch} về nhóm câu suy luận ($50\%$ so với $32\%$ của cả kho nguồn) nên $4{,}1\%$ là con số bi quan; hiệu chỉnh theo trọng số cả bộ cho khoảng $2{,}7\%$. Đáng chú ý là \textbf{cả hai câu sai đều thuộc cùng một ô} (Hoá học $\times$ suy luận), và đều là lỗi \textit{sinh câu hỏi} --- câu đòi học sinh tự viết phương trình nên đáp án không nằm nguyên văn ở trang vàng --- chứ không phải lỗi chọn trang. Áp tỉ lệ $4{,}1\%$ này lên toàn bộ $240$ câu (số bi quan, không hiệu chỉnh trọng số) cho khoảng \textbf{10/240} câu có thể mang nhãn nguồn sai mà mẫu $50$ câu không phát hiện được. Mọi con số ở Mục~\ref{sec:ketqua} cần được đọc cùng với sai số này.
 
 \begin{table}[H]
 \centering
-\caption{Phân bố bộ dữ liệu kiểm thử 231 câu theo bộ sách và nguồn sinh câu hỏi}
+\caption{Phân bố bộ dữ liệu kiểm thử 240 câu theo bộ sách và nguồn sinh câu hỏi}
 \label{tab:testset_dist}
 \small
 \begin{tabular}{lccc}
 \toprule
 \textbf{Bộ sách} & \textbf{Từ văn bản} & \textbf{Từ hình} & \textbf{Cộng} \\
 \midrule
-Cánh Diều (4 cuốn)            & $64$ & $15$ & $79$ \\
-Chân trời sáng tạo (4 cuốn)   & $64$ & $15$ & $79$ \\
-Kết nối tri thức (4 cuốn)     & $64$ & $\phantom{0}9$ & $73$ \\
+Cánh Diều (4 cuốn)            & $64$ & $16$ & $80$ \\
+Chân trời sáng tạo (4 cuốn)   & $64$ & $16$ & $80$ \\
+Kết nối tri thức (4 cuốn)     & $64$ & $16$ & $80$ \\
 \midrule
-\textbf{Tổng cộng} & \textbf{192} & \textbf{39} & \textbf{231} \\
+\textbf{Tổng cộng} & \textbf{192} & \textbf{48} & \textbf{240} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Phân bố lệch nhẹ về phía Kết nối tri thức ($73$ câu thay vì $80$) là hệ quả trực tiếp của việc $6/9$ khung cắt bị loại thuộc bộ này --- tức bản thân sự lệch cũng là một số liệu, không phải một sai sót lấy mẫu.
+Phân bố đều tuyệt đối giữa ba bộ sách ($80$ câu/bộ, $20$ câu/cuốn) là kết quả của bước duyệt nội dung mô tả ở trên: hai khung của Kết nối tri thức từng bị coi hỏng ở lượt duyệt khung cắt được giữ lại sau khi đọc nội dung, nên không cần đến hai khung dự phòng đã chuẩn bị sẵn để bù --- khác với một bản nháp trước đó của chương này, vốn ghi nhận một độ lệch nhẹ về phía Kết nối tri thức khi hai khung dự phòng đó chưa được xác nhận là thừa.
 
 Bảng~\ref{tab:sample_q} minh họa một số câu hỏi tiêu biểu cùng đáp án chuẩn và trang nguồn được gắn nhãn.
 
@@ -227,14 +231,17 @@ Ba độ đo chính được tính như sau:
 Ngoài mức page-level (nghiêm ngặt), đồ án còn tính các độ đo tương ứng ở mức \textbf{book-level} (chỉ cần đúng sách) nhằm định lượng hiện tượng nhiễu chéo giữa 12 cuốn sách vốn được lưu chung trong một collection. Bên cạnh đó, để tách bạch \textit{khả năng tìm thấy của riêng mô hình nhúng} với \textit{đóng góp của các bước đứng sau nó}, hệ thống còn đo \textbf{Recall@k thô} tại các mức $k \in \{3, 5, 10\}$ bằng cách gọi thẳng tìm kiếm tương đồng trên collection văn bản --- tức \textit{chỉ kênh ngữ nghĩa}, không hợp nhất từ khoá, không xếp hạng lại, không cổng lọc. Mục~\ref{sec:recallk} cho thấy vì sao việc gọi đại lượng này là ``trần recall của hệ thống'' --- như báo cáo trước đã làm --- là một cách gọi sai.
 
 \subsection{Đánh giá pha sinh ngôn ngữ (LLM-as-a-judge)}
-Câu trả lời do Qwen2.5 sinh ra được một mô hình LLM thứ hai (\texttt{stealth/ox-alpha}, truy cập qua một điểm cuối tương thích OpenAI) chấm điểm độc lập. Mô hình giám khảo nhận đầu vào gồm câu hỏi, đáp án chuẩn, ngữ cảnh truy xuất và câu trả lời cần chấm, rồi trả về điểm theo ba tiêu chí trên thang $1$--$5$:
+\label{sec:judge_pha2}
+Câu trả lời do Qwen2.5 sinh ra được chấm điểm độc lập bởi một mô hình LLM thứ hai, truy cập qua một điểm cuối tương thích OpenAI (nhà cung cấp Groq). Mô hình giám khảo nhận đầu vào gồm câu hỏi, đáp án chuẩn, ngữ cảnh truy xuất và câu trả lời cần chấm, rồi trả về điểm theo ba tiêu chí trên thang $1$--$5$:
 \begin{itemize}
     \item \textbf{Tính đúng (Correctness):} câu trả lời có chính xác so với đáp án chuẩn hay không.
     \item \textbf{Độ trung thực (Faithfulness):} câu trả lời có bám sát ngữ cảnh được cung cấp, không bịa đặt (hallucination) hay không.
     \item \textbf{Độ liên quan (Relevancy):} câu trả lời có đi đúng trọng tâm câu hỏi hay không.
 \end{itemize}
 
-Một chi tiết kỹ thuật nhỏ nhưng ảnh hưởng trực tiếp tới tính đầy đủ của số liệu: lời gọi tới mô hình giám khảo được \textbf{thử lại tối đa ba lần} khi gặp lỗi tạm thời. Ở lượt chạy đầu, $2/231$ câu mất điểm giám khảo chỉ vì một lỗi nghẽn tạm thời phía nhà cung cấp và không có bước thử lại nào; một ô trống ở đúng cột quyết định chất lượng thì đắt hơn vài giây chờ nhiều lần.
+\textbf{Mô hình giám khảo trên thực tế là một tập bốn mô hình xoay vòng} (\texttt{qwen/qwen3.8-27b}, \texttt{openai/gpt-oss-120b}, \texttt{qwen/qwen3.6-27b}, \texttt{openai/gpt-oss-20b}), không phải một mô hình đơn lẻ, và đây là một đánh đổi có chủ đích chứ không phải một lựa chọn tuỳ tiện. Mỗi mô hình trên Groq có hạn mức riêng, cả theo phút ($8\,000$ token/phút) lẫn theo ngày ($200\,000$ token/ngày); đo được trực tiếp khi chạy: với chỉ hai mô hình, hạn mức theo ngày cạn giữa chừng lượt chấm $240$ câu, khiến $106/240$ câu ($44\%$) mất điểm giám khảo. Mở rộng lên bốn mô hình --- xoay sang mô hình kế khi mô hình đang dùng bị giới hạn --- giải quyết được vấn đề ngân sách nhưng tạo ra một hệ quả cần nói rõ: \textbf{các câu hỏi khác nhau trong cùng một báo cáo có thể được chấm bởi các mô hình khác nhau} trong tập bốn mô hình trên. Đây là điều kiện cần để có đủ điểm cho toàn bộ $240$ câu, đổi lại giám khảo không hoàn toàn đồng nhất giữa các câu --- một giới hạn được ghi nhận ở Mục~\ref{sec:hanche}, không phải một sai sót bị che giấu.
+
+Một chi tiết kỹ thuật khác ảnh hưởng trực tiếp tới tính đầy đủ của số liệu: lời gọi tới mô hình giám khảo được \textbf{thử lại tối đa ba lần} khi gặp lỗi tạm thời (429/5xx, hoặc JSON hỏng cú pháp --- trường hợp sau bắt buộc phải đổi sang mô hình khác trong tập rồi mới thử lại, vì nhiệt độ sinh bằng $0$ khiến cùng một mô hình lặp lại đúng lỗi cũ). Cơ chế thử lại này chưa xử lý được trường hợp hạn mức theo NGÀY cạn kiệt (thời gian chờ hồi phục dài hơn nhiều so với thời gian chờ giữa các lần thử lại) --- đây chính là nguyên nhân của $106$ câu mất điểm nói trên, và là lý do trực tiếp dẫn tới việc mở rộng từ hai lên bốn mô hình.
 
 \subsection{Điểm tổng hợp và xếp hạng}
 Để xếp hạng 12 cuốn sách, mỗi cuốn được quy về một \textit{điểm tổng thể} cân bằng giữa chất lượng truy xuất và chất lượng câu trả lời:
@@ -273,7 +280,7 @@ Một chi tiết kỹ thuật nhỏ nhưng ảnh hưởng trực tiếp tới t�
 \label{sec:ketqua}
 Phần này trình bày kết quả định lượng khi chạy toàn bộ bộ kiểm thử qua hệ thống. Mục~\ref{sec:ablation} trả lời trực tiếp Mục tiêu 4 của đề cương bằng các bảng đối chiếu; các mục sau trình bày độ đo tổng quát và chất lượng câu trả lời.
 
-Một quy ước cần nói trước, vì nó đổi số ở hàng thập phân thứ ba: các giá trị tổng hợp dưới đây được \textbf{gộp trên $231$ câu}, không phải lấy trung bình của $12$ trung bình theo cuốn. Số câu mỗi cuốn không bằng nhau ($17$--$20$ câu, do $9$ khung cắt bị loại), nên hai cách tính không trùng nhau. Riêng cột \texttt{overall} ở bảng xếp hạng vẫn là trung bình theo cuốn, vì bản thân nó là điểm \textit{của một cuốn}.
+Một quy ước cần nói trước: các giá trị tổng hợp dưới đây được \textbf{gộp trên $240$ câu}, không phải lấy trung bình của $12$ trung bình theo cuốn. Vì bộ kiểm thử nay đều $20$ câu/cuốn ở cả $12$ cuốn (Mục~\ref{sec:testset}), hai cách gộp cho cùng một kết quả ở đúng bộ dữ liệu này; quy ước gộp-theo-câu vẫn được giữ làm chuẩn vì nó là cách tính đúng \textit{tổng quát}, không phụ thuộc vào việc số câu mỗi cuốn có bằng nhau hay không. Riêng cột \texttt{overall} ở bảng xếp hạng vẫn là trung bình theo cuốn, vì bản thân nó là điểm \textit{của một cuốn}.
 
 \subsection{Đối chiếu cấu hình truy xuất}
 \label{sec:ablation}
@@ -284,28 +291,28 @@ Ba thành phần của pha truy xuất --- kênh truy xuất, xếp hạng lại
 
 \begin{table}[H]
 \centering
-\caption{Đối chiếu kênh truy xuất và cổng lọc, ở bề rộng production ($20$ ứng viên/kênh), $231$ câu hỏi. Xếp hạng lại BẬT ở mọi hàng.}
+\caption{Đối chiếu kênh truy xuất và cổng lọc, ở bề rộng production ($20$ ứng viên/kênh), $240$ câu hỏi. Xếp hạng lại BẬT ở mọi hàng.}
 \label{tab:ablation_main}
 \begin{tabular}{llccccc}
 \toprule
 \textbf{Kênh} & \textbf{Cổng lọc} & \textbf{R@1} & \textbf{R@3} & \textbf{R@5} & \textbf{R@10} & \textbf{MRR} \\
 \midrule
-\textbf{Lai (hybrid)} & \textbf{tắt} & \textbf{0,740} & \textbf{0,909} & \textbf{0,926} & \textbf{0,970} & \textbf{0,826} \\
-BM25 & tắt & 0,732 & 0,887 & 0,922 & 0,948 & 0,813 \\
-Ngữ nghĩa (dense) & tắt & 0,723 & 0,866 & 0,883 & 0,926 & 0,798 \\
+\textbf{Lai (hybrid)} & \textbf{tắt} & \textbf{0,708} & \textbf{0,888} & \textbf{0,921} & \textbf{0,958} & \textbf{0,804} \\
+BM25 & tắt & 0,708 & 0,871 & 0,896 & 0,929 & 0,792 \\
+Ngữ nghĩa (dense) & tắt & 0,679 & 0,858 & 0,883 & 0,921 & 0,774 \\
 \midrule
-Lai (hybrid) & bật & 0,701 & 0,840 & 0,870 & 0,892 & 0,775 \\
-BM25 & bật & 0,732 & 0,887 & 0,922 & 0,948 & 0,813 \\
-Ngữ nghĩa (dense) & bật & 0,723 & 0,866 & 0,883 & 0,926 & 0,798 \\
+Lai (hybrid) & bật & 0,675 & 0,838 & 0,863 & 0,883 & 0,759 \\
+BM25 & bật & 0,708 & 0,871 & 0,896 & 0,929 & 0,792 \\
+Ngữ nghĩa (dense) & bật & 0,679 & 0,858 & 0,883 & 0,921 & 0,774 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Hai kết luận rút ra, cả hai đều là \textit{đối chiếu trực tiếp} chứ không phải suy đoán:
 
-\textbf{(i) Truy xuất lai thắng ở mọi cột.} So với BM25 thuần, truy xuất lai hơn $+0{,}008$ ở R@1, $+0{,}022$ ở R@3 và $+0{,}022$ ở R@10; so với truy xuất ngữ nghĩa thuần, khoảng cách rộng hơn ($+0{,}017$ R@1, $+0{,}044$ R@10). Đây không phải thắng ở giá trị trung bình rồi thua ở chỗ khác --- nó thắng ở từng độ đo. Cần nói thêm rằng biên độ này chỉ lộ ra ở \textit{đúng} bề rộng production: khi đo ở bề rộng nới rộng ($50$ ứng viên/kênh), chênh lệch giữa lai và BM25 tụt xuống mức nhiễu ($+0{,}007$ MRR).
+\textbf{(i) Truy xuất lai thắng hoặc hoà ở mọi cột, không thua ở cột nào.} So với BM25 thuần, truy xuất lai \textit{hoà tuyệt đối} ở R@1 ($0{,}708$ cả hai) và thắng ở các cột còn lại ($+0{,}017$ R@3, $+0{,}025$ R@5, $+0{,}029$ R@10, $+0{,}012$ MRR); so với truy xuất ngữ nghĩa thuần, nó thắng ở \textit{mọi} cột, kể cả R@1 ($+0{,}029$). Việc hoà đúng ở R@1 --- thay vì thắng như đo được ở bộ câu hỏi trước --- là một thay đổi thật khi đổi bộ kiểm thử, không phải sai số làm tròn: cả hai giá trị đều là $0{,}7083$ tới bốn chữ số thập phân. Biên độ thắng của lai cũng không còn co lại về mức nhiễu khi nới bề rộng ứng viên như quan sát ở bộ câu hỏi trước: đo ở bề rộng $50$ ứng viên/kênh (Bảng~\ref{tab:ablation_rerank}), chênh MRR giữa lai và BM25 là $+0{,}013$ --- cùng bậc độ lớn với $+0{,}012$ ở bề rộng $20$, không tụt xuống gần $0$.
 
-\textbf{(ii) Cổng lọc theo khoảng cách tương đối làm hại, không làm lợi.} Bật cổng lọc kéo R@10 của truy xuất lai từ $0{,}970$ xuống $0{,}892$ và MRR từ $0{,}826$ xuống $0{,}775$. Hai hàng BM25 và ngữ nghĩa không đổi vì ở bề rộng $20$ cổng lọc giữ lại đúng cả $20$ ứng viên, tức nó \textit{không có gì để cắt}; chỉ kênh lai --- nơi tập ứng viên là hợp của hai kênh nên rộng hơn --- mới thực sự bị nó cắt. Nguyên nhân đã nêu ở Mục~\ref{sec:relevance_gate}: giả định ``đoạn đúng luôn nằm sát đoạn gần nhất'' không đúng với câu hỏi nhiều ý. Vì vậy cấu hình mặc định của hệ thống \textbf{tắt} cổng lọc này.
+\textbf{(ii) Cổng lọc theo khoảng cách tương đối làm hại, không làm lợi.} Bật cổng lọc kéo R@10 của truy xuất lai từ $0{,}958$ xuống $0{,}883$ và MRR từ $0{,}804$ xuống $0{,}759$. Hai hàng BM25 và ngữ nghĩa không đổi vì ở bề rộng $20$ cổng lọc giữ lại đúng cả $20$ ứng viên, tức nó \textit{không có gì để cắt}; chỉ kênh lai --- nơi tập ứng viên là hợp của hai kênh nên rộng hơn --- mới thực sự bị nó cắt. Nguyên nhân đã nêu ở Mục~\ref{sec:relevance_gate}: giả định ``đoạn đúng luôn nằm sát đoạn gần nhất'' không đúng với câu hỏi nhiều ý. Vì vậy cấu hình mặc định của hệ thống \textbf{tắt} cổng lọc này.
 
 \textbf{Bảng~\ref{tab:ablation_rerank} tách riêng đóng góp của bước xếp hạng lại}, đo ở bề rộng $50$ ứng viên để thấy rõ dư địa mà bước này khai thác.
 
@@ -317,65 +324,65 @@ Hai kết luận rút ra, cả hai đều là \textit{đối chiếu trực ti�
 \toprule
 \textbf{Kênh} & \textbf{Xếp hạng lại} & \textbf{R@1} & \textbf{R@10} & \textbf{MRR} \\
 \midrule
-\multirow{2}{*}{Lai (hybrid)} & tắt & 0,671 & 0,931 & 0,762 \\
- & \textbf{bật} & \textbf{0,745} & \textbf{0,974} & \textbf{0,832} \\
+\multirow{2}{*}{Lai (hybrid)} & tắt & 0,642 & 0,921 & 0,742 \\
+ & \textbf{bật} & \textbf{0,721} & \textbf{0,971} & \textbf{0,816} \\
 \midrule
-\multirow{2}{*}{BM25} & tắt & 0,693 & 0,931 & 0,765 \\
- & bật & 0,736 & 0,970 & 0,825 \\
+\multirow{2}{*}{BM25} & tắt & 0,642 & 0,917 & 0,725 \\
+ & bật & 0,717 & 0,950 & 0,803 \\
 \midrule
-\multirow{2}{*}{Ngữ nghĩa (dense)} & tắt & 0,602 & 0,896 & 0,699 \\
- & bật & 0,732 & 0,948 & 0,814 \\
+\multirow{2}{*}{Ngữ nghĩa (dense)} & tắt & 0,604 & 0,904 & 0,701 \\
+ & bật & 0,708 & 0,950 & 0,802 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Xếp hạng lại là thành phần đóng góp lớn nhất trong ba công tắc: nó nâng R@1 của truy xuất lai từ $0{,}671$ lên $0{,}745$ và MRR từ $0{,}762$ lên $0{,}832$. Kênh ngữ nghĩa hưởng lợi nhiều nhất ($+21{,}6\%$ R@1), điều này nhất quán với vai trò của nó: bộ nhúng hai tháp mã hoá truy vấn và tài liệu độc lập nên xếp hạng thô hơn, còn cross-encoder nhìn được tương tác giữa hai bên.
+Xếp hạng lại là thành phần đóng góp lớn nhất trong ba công tắc: nó nâng R@1 của truy xuất lai từ $0{,}642$ lên $0{,}721$ và MRR từ $0{,}742$ lên $0{,}816$. Kênh ngữ nghĩa hưởng lợi nhiều nhất tính theo tỉ lệ ($+17{,}2\%$ R@1, so với $+12{,}3\%$ của lai và $+11{,}7\%$ của BM25) và cũng lớn nhất tính theo giá trị tuyệt đối ($+0{,}104$), điều này nhất quán với vai trò của nó: bộ nhúng hai tháp mã hoá truy vấn và tài liệu độc lập nên xếp hạng thô hơn, còn cross-encoder nhìn được tương tác giữa hai bên.
 
-Một quan sát đáng chú ý cho miền Khoa học tự nhiên: \textbf{khi tắt xếp hạng lại, BM25 thuần vượt truy xuất ngữ nghĩa thuần một khoảng lớn} ($0{,}693$ so với $0{,}602$ ở R@1) --- đúng như phân tích ở Mục~\ref{sec:relevance_gate} về ký hiệu và công thức. Nhưng khi bật xếp hạng lại, khoảng cách gần như biến mất ($0{,}736$ so với $0{,}732$): cross-encoder bù được phần lớn điểm yếu đó của kênh ngữ nghĩa.
+Một quan sát đáng chú ý cho miền Khoa học tự nhiên: \textbf{khi tắt xếp hạng lại, BM25 thuần vượt truy xuất ngữ nghĩa thuần} ($0{,}642$ so với $0{,}604$ ở R@1) --- đúng như phân tích ở Mục~\ref{sec:relevance_gate} về ký hiệu và công thức, dù khoảng cách này hẹp hơn so với đo được ở bộ câu hỏi trước. Khi bật xếp hạng lại, khoảng cách gần như biến mất ($0{,}717$ so với $0{,}708$): cross-encoder bù được phần lớn điểm yếu đó của kênh ngữ nghĩa.
 
-Cuối cùng, cột \textit{trần} $P@5 = 0{,}979$ giữ nguyên ở mọi cấu hình. Đây là giới hạn do \textit{bộ kiểm thử} đặt ra chứ không phải do hệ thống: khoảng $2\%$ số câu không thể đạt $P@5 = 1$ dù cấu hình có lý tưởng đến đâu, vì trang vàng của chúng không có đủ $5$ đoạn. Không cấu hình nào trả về kết quả rỗng.
+Cuối cùng, cột \textit{trần} $P@5 = 0{,}981$ giữ nguyên ở mọi cấu hình. Đây là giới hạn do \textit{bộ kiểm thử} đặt ra chứ không phải do hệ thống: khoảng $2\%$ số câu không thể đạt $P@5 = 1$ dù cấu hình có lý tưởng đến đâu, vì trang vàng của chúng không có đủ $5$ đoạn. Không cấu hình nào trả về kết quả rỗng.
 
 \subsection{Độ đo tổng quát}
-Các số liệu tổng hợp trên toàn bộ $231$ câu hỏi được tóm tắt trong Bảng~\ref{tab:summary}.
+Các số liệu tổng hợp trên toàn bộ $240$ câu hỏi được tóm tắt trong Bảng~\ref{tab:summary}.
 
 \begin{table}[H]
 \centering
-\caption{Các độ đo tổng hợp trên toàn bộ 231 câu hỏi (12 cuốn sách)}
+\caption{Các độ đo tổng hợp trên toàn bộ 240 câu hỏi (12 cuốn sách)}
 \label{tab:summary}
 \begin{tabular}{lc}
 \toprule
 \textbf{Độ đo} & \textbf{Giá trị} \\
 \midrule
 \multicolumn{2}{l}{\textit{Pha truy xuất --- mức trang (nghiêm ngặt)}} \\
-Recall@k (cấu hình thật) & \textbf{0,9091} \\
-MRR & 0,8153 \\
-Precision@k & 0,4112 \\
+Recall@k (cấu hình thật) & \textbf{0,8833} \\
+MRR & 0,7889 \\
+Precision@k & 0,4000 \\
 \midrule
 \multicolumn{2}{l}{\textit{Pha truy xuất --- mức sách}} \\
-Recall (book-level) & 0,9567 \\
-Precision (book-level) & 0,5455 \\
+Recall (book-level) & 0,9375 \\
+Precision (book-level) & 0,5375 \\
 \midrule
 \multicolumn{2}{l}{\textit{Top-k thô, chỉ kênh ngữ nghĩa}} \\
-Recall@3 & 0,7706 \\
-Recall@5 & 0,8225 \\
-Recall@10 & 0,8961 \\
+Recall@3 & 0,7625 \\
+Recall@5 & 0,8375 \\
+Recall@10 & 0,9042 \\
 \midrule
 \multicolumn{2}{l}{\textit{Pha sinh ngôn ngữ --- giám khảo chấm, thang 1--5}} \\
-Tính đúng (Correctness) & 4,065 \\
-Độ trung thực (Faithfulness) & 4,394 \\
-Độ liên quan (Relevancy) & 4,602 \\
+Tính đúng (Correctness) & 3,896 \\
+Độ trung thực (Faithfulness) & 4,100 \\
+Độ liên quan (Relevancy) & 4,129 \\
 \midrule
-Điểm tổng thể (overall, trung bình theo cuốn) & 0,7924 \\
+Điểm tổng thể (overall, trung bình theo cuốn) & 0,7495 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Xếp hạng tổng thể 12 bộ sách}
-Bảng~\ref{tab:leaderboard} và Hình~\ref{fig:leaderboard} trình bày bảng xếp hạng tổng thể của 12 cuốn sách theo điểm \texttt{overall}. Cuốn \textit{KHTN 8 Kết nối tri thức} đạt điểm cao nhất ($0{,}879$) với recall tuyệt đối và điểm giám khảo cao nhất bộ, trong khi \textit{KHTN 7 Chân trời sáng tạo} xếp cuối ($0{,}697$).
+Bảng~\ref{tab:leaderboard} và Hình~\ref{fig:leaderboard} trình bày bảng xếp hạng tổng thể của 12 cuốn sách theo điểm \texttt{overall}. Cuốn \textit{KHTN 6 Chân trời sáng tạo} đạt điểm cao nhất ($0{,}836$) với recall gần tuyệt đối và điểm giám khảo cao nhất bộ, trong khi \textit{KHTN 9 Chân trời sáng tạo} xếp cuối ($0{,}675$).
 
 \begin{table}[H]
 \centering
-\caption{Bảng xếp hạng tổng thể 12 cuốn sách (231 câu; giám khảo: \texttt{stealth/ox-alpha})}
+\caption{Bảng xếp hạng tổng thể 12 cuốn sách (240 câu, đều 20 câu/cuốn; giám khảo: Groq, 4 mô hình xoay vòng)}
 \label{tab:leaderboard}
 \small
 \begin{adjustbox}{max width=\textwidth}
@@ -383,18 +390,18 @@ Bảng~\ref{tab:leaderboard} và Hình~\ref{fig:leaderboard} trình bày bảng 
 \toprule
 \textbf{Hạng} & \textbf{Cuốn sách} & \textbf{Số câu} & \textbf{Overall} & \textbf{Recall} & \textbf{MRR} & \textbf{Precision} & \textbf{Correct/5} & \textbf{Faithful/5} & \textbf{Relevancy/5} \\
 \midrule
-1  & KHTN 8 KNTT & 18 & 0,879 & 1,000 & 0,944 & 0,519 & 4,44 & 4,89 & 4,72 \\
-2  & KHTN 6 CTST & 19 & 0,862 & 1,000 & 0,939 & 0,526 & 4,26 & 4,53 & 4,74 \\
-3  & KHTN 8 CD   & 20 & 0,821 & 0,950 & 0,867 & 0,417 & 4,30 & 4,55 & 4,60 \\
-4  & KHTN 6 CD   & 20 & 0,812 & 0,950 & 0,892 & 0,400 & 4,05 & 4,45 & 4,65 \\
-5  & KHTN 6 KNTT & 17 & 0,806 & 0,941 & 0,882 & 0,412 & 4,00 & 4,24 & 4,76 \\
-6  & KHTN 8 CTST & 20 & 0,804 & 0,950 & 0,808 & 0,433 & 4,10 & 4,40 & 4,65 \\
-7  & KHTN 9 KNTT & 18 & 0,798 & 0,944 & 0,852 & 0,444 & 3,94 & 4,39 & 4,39 \\
-8  & KHTN 9 CD   & 20 & 0,788 & 0,850 & 0,767 & 0,383 & 4,25 & 4,45 & 4,95 \\
-9  & KHTN 7 KNTT & 20 & 0,786 & 0,950 & 0,892 & 0,383 & 3,90 & 4,20 & 4,35 \\
-10 & KHTN 7 CD   & 19 & 0,756 & 0,947 & 0,719 & 0,386 & 3,68 & 4,21 & 4,53 \\
-11 & KHTN 9 CTST & 20 & 0,701 & 0,800 & 0,625 & 0,333 & 3,75 & 4,15 & 4,35 \\
-12 & KHTN 7 CTST & 20 & 0,697 & 0,650 & 0,625 & 0,317 & 4,10 & 4,30 & 4,55 \\
+1  & KHTN 6 CTST & 20 & 0,836 & 0,950 & 0,925 & 0,483 & 4,30 & 4,45 & 4,55 \\
+2  & KHTN 8 KNTT & 20 & 0,806 & 0,950 & 0,875 & 0,483 & 4,05 & 4,25 & 4,35 \\
+3  & KHTN 6 CD   & 20 & 0,796 & 1,000 & 0,867 & 0,417 & 4,00 & 4,30 & 4,15 \\
+4  & KHTN 7 KNTT & 20 & 0,767 & 0,950 & 0,900 & 0,400 & 3,75 & 4,05 & 3,95 \\
+5  & KHTN 8 CD   & 20 & 0,755 & 0,850 & 0,825 & 0,367 & 4,00 & 4,15 & 4,30 \\
+6  & KHTN 6 KNTT & 20 & 0,747 & 0,900 & 0,850 & 0,400 & 3,75 & 3,85 & 4,05 \\
+7  & KHTN 9 KNTT & 20 & 0,744 & 0,850 & 0,742 & 0,383 & 3,95 & 4,30 & 4,20 \\
+8  & KHTN 7 CD   & 20 & 0,738 & 0,950 & 0,708 & 0,400 & 3,85 & 4,00 & 4,00 \\
+9  & KHTN 9 CD   & 20 & 0,731 & 0,850 & 0,758 & 0,367 & 3,80 & 4,10 & 4,15 \\
+10 & KHTN 8 CTST & 20 & 0,723 & 0,900 & 0,767 & 0,433 & 3,55 & 3,80 & 3,85 \\
+11 & KHTN 7 CTST & 20 & 0,676 & 0,700 & 0,650 & 0,367 & 3,80 & 3,95 & 3,95 \\
+12 & KHTN 9 CTST & 20 & 0,675 & 0,750 & 0,600 & 0,300 & 3,95 & 4,00 & 4,05 \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}
@@ -407,9 +414,9 @@ Bảng~\ref{tab:leaderboard} và Hình~\ref{fig:leaderboard} trình bày bảng 
     \label{fig:leaderboard}
 \end{figure}
 
-\textbf{Không có bộ sách nào thắng hay thua như một khối.} Cả ba bộ đều có cuốn ở nửa trên và cuốn ở nửa dưới: Kết nối tri thức chiếm hạng 1 nhưng cũng có hạng 9; Chân trời sáng tạo chiếm hạng 2 và đồng thời cả hai hạng cuối. Vì vậy bảng này \textit{không} là một nhận xét về chất lượng sách giáo khoa; nó là nhận xét về mức độ hệ thống xử lý được bố cục của từng cuốn.
+\textbf{Không có bộ sách nào thắng hay thua như một khối, và Chân trời sáng tạo là ví dụ rõ nhất cho việc đó.} Bộ này chiếm cả hạng 1 (KHTN 6, điểm cao nhất toàn bộ) lẫn hai trong ba hạng cuối (KHTN 7 và KHTN 9); Kết nối tri thức tập trung ở nhóm giữa (hạng 2, 4, 6, 7); Cánh Diều trải đều hơn cả (hạng 3, 5, 8, 9). Vì vậy bảng này \textit{không} là một nhận xét về chất lượng sách giáo khoa; nó là nhận xét về mức độ hệ thống xử lý được bố cục của từng cuốn --- và với Chân trời sáng tạo, mức độ đó khác nhau rất nhiều giữa các khối lớp của cùng một bộ sách.
 
-Hình~\ref{fig:ret_vs_ans} phân tách điểm tổng thể thành hai thành phần. Điểm câu trả lời (trung bình $0{,}871$) cao hơn điểm truy xuất (trung bình $0{,}712$) ở \textit{cả 12 cuốn}, không có ngoại lệ nào --- khoảng cách nhỏ nhất là $0{,}080$ (KHTN 6 Chân trời sáng tạo) và lớn nhất là $0{,}333$ (KHTN 7 Chân trời sáng tạo). Điều này cho thấy \textbf{nút thắt còn lại của hệ thống vẫn nằm ở pha truy xuất}, chứ không phải ở khả năng diễn đạt của mô hình sinh. Cần lưu ý rằng phần lớn khoảng cách này đến từ thành phần \textit{Precision} trong công thức \texttt{retrieval\_score}: Recall đã đạt $0{,}909$ trong khi Precision chỉ $0{,}411$, mà Precision thấp ở đây phần lớn là hệ quả của nhiễu chéo giữa các cuốn chứ không phải của câu trả lời sai (xem Mục~\ref{sec:thaoluan}).
+Hình~\ref{fig:ret_vs_ans} phân tách điểm tổng thể thành hai thành phần. Điểm câu trả lời (trung bình $0{,}808$) cao hơn điểm truy xuất (trung bình $0{,}691$) ở \textit{cả 12 cuốn}, không có ngoại lệ nào --- khoảng cách nhỏ nhất là $0{,}033$ (KHTN 7 Kết nối tri thức) và lớn nhất là $0{,}250$ (KHTN 9 Chân trời sáng tạo). Điều này cho thấy \textbf{nút thắt còn lại của hệ thống vẫn nằm ở pha truy xuất}, chứ không phải ở khả năng diễn đạt của mô hình sinh. Cần lưu ý rằng phần lớn khoảng cách này đến từ thành phần \textit{Precision} trong công thức \texttt{retrieval\_score}: Recall đạt $0{,}883$ trong khi Precision chỉ $0{,}400$, mà Precision thấp ở đây phần lớn là hệ quả của nhiễu chéo giữa các cuốn chứ không phải của câu trả lời sai (xem Mục~\ref{sec:thaoluan}).
 
 \begin{figure}[H]
     \centering
@@ -418,15 +425,15 @@ Hình~\ref{fig:ret_vs_ans} phân tách điểm tổng thể thành hai thành ph
     \label{fig:ret_vs_ans}
 \end{figure}
 
-\subsection{Phân tích Recall@k: khoảng cách recall đã bị xoá}
+\subsection{Phân tích Recall@k: khoảng cách recall thu hẹp mạnh, nhưng chưa đóng hẳn}
 \label{sec:recallk}
-Đây là chỗ kết quả đo lật ngược hẳn kết luận của báo cáo trước, nên cần trình bày cẩn thận.
+Đây là chỗ kết quả đo đã đổi \textbf{hai lần} khi bộ câu hỏi và giám khảo thay đổi, nên cần trình bày đủ cả ba lượt đo, không chỉ lượt cuối cùng.
 
-\textbf{Bản trước nêu đây là ``phát hiện quan trọng nhất'':} trần recall $0{,}84$ so với recall production $0{,}63$, khoảng cách $0{,}21$, và quy phần hụt đó cho khâu xếp hạng và cắt-$k$. Đề cương lấy chính khoảng cách này làm nội dung của Mục tiêu 3.
+\textbf{Bản chuyên đề cũ nêu đây là ``phát hiện quan trọng nhất'':} trần recall $0{,}84$ so với recall production $0{,}63$, khoảng cách $0{,}21$, và quy phần hụt đó cho khâu xếp hạng và cắt-$k$. Đề cương lấy chính khoảng cách này làm nội dung của Mục tiêu 3.
 
-\textbf{Trước hết phải nói rõ ``trần'' đó là trần của cái gì.} Recall@k thô được đo bằng cách gọi thẳng hàm tìm kiếm tương đồng trên collection văn bản, tức \textit{chỉ kênh ngữ nghĩa}: không hợp nhất từ khoá, không xếp hạng lại, không cổng lọc. Bằng chứng kiểm được: ba giá trị $0{,}7706 / 0{,}8225 / 0{,}8961$ ở Bảng~\ref{tab:summary} trùng \textbf{tới từng chữ số thập phân thứ tư} với hàng \texttt{dense, xếp hạng lại tắt, cổng lọc tắt} của bảng đối chiếu --- hai lượt chạy độc lập, hai đoạn mã khác nhau, cùng một con số. Vậy đại lượng này là trần của \textbf{một kênh}, không phải trần của hệ thống. Gọi nó là ``trần recall'' như bản trước là một cách gọi sai, và cách gọi sai đó dẫn thẳng tới một kết luận sai.
+\textbf{Trước hết phải nói rõ ``trần'' đó là trần của cái gì.} Recall@k thô được đo bằng cách gọi thẳng hàm tìm kiếm tương đồng trên collection văn bản, tức \textit{chỉ kênh ngữ nghĩa}: không hợp nhất từ khoá, không xếp hạng lại, không cổng lọc. Bằng chứng kiểm được: ba giá trị $0{,}7625 / 0{,}8375 / 0{,}9042$ ở Bảng~\ref{tab:summary} trùng \textbf{tới từng chữ số thập phân thứ tư} với hàng \texttt{dense, xếp hạng lại tắt, cổng lọc tắt} của bảng đối chiếu --- hai lượt chạy độc lập, hai đoạn mã khác nhau, cùng một con số. Vậy đại lượng này là trần của \textbf{một kênh}, không phải trần của hệ thống. Gọi nó là ``trần recall'' như bản chuyên đề cũ là một cách gọi sai, và cách gọi sai đó dẫn thẳng tới một kết luận sai.
 
-\textbf{Kết quả hôm nay: cấu hình thật vượt qua chính cái trần ấy.} Recall của cấu hình production là $\mathbf{0{,}9091}$, cao hơn $0{,}8961$ của top-10 thô. Khoảng cách $0{,}21$ của bản trước không những đã đóng mà còn \textit{đổi dấu}.
+\textbf{Lượt đo trên $231$ câu (một bản nháp trước đó của chương này) từng báo cấu hình thật vượt qua chính cái trần ấy} ($0{,}9091$ so với $0{,}8961$). \textbf{Lượt đo lại trên $240$ câu, với bộ câu hỏi và giám khảo đều đổi (Mục~\ref{sec:testset}, Mục~\ref{sec:judge_pha2}), không tái lập được kết luận đó:} recall của cấu hình production là $\mathbf{0{,}8833}$, \textit{thấp hơn} $0{,}9042$ của top-10 thô --- một khoảng hụt $\mathbf{0{,}021}$. Đây là kết quả thật, không phải một sai số làm tròn, và phải ghi lại đúng như vậy dù nó phủ định một khẳng định đã viết trước đó trong chính chương này: \textbf{khoảng cách chưa bị xoá, nó chỉ được thu hẹp mạnh} --- từ $0{,}21$ của bản chuyên đề cũ xuống còn $0{,}021$, tức giảm khoảng $10$ lần, chứ không giảm về $0$ hay đổi dấu.
 
 \begin{table}[H]
 \centering
@@ -437,20 +444,20 @@ Hình~\ref{fig:ret_vs_ans} phân tách điểm tổng thể thành hai thành ph
 \toprule
 \textbf{Cuốn sách} & \textbf{Recall@3 thô} & \textbf{Recall@5 thô} & \textbf{Recall@10 thô} & \textbf{Recall (cấu hình thật)} \\
 \midrule
-KHTN 8 KNTT & 0,889 & 0,889 & 0,944 & \textbf{1,000} \\
-KHTN 6 CTST & 0,895 & 0,895 & 1,000 & \textbf{1,000} \\
-KHTN 8 CD   & 0,600 & 0,650 & 0,750 & \textbf{0,950} \\
-KHTN 6 CD   & 0,800 & 0,800 & 0,900 & \textbf{0,950} \\
-KHTN 6 KNTT & 0,765 & 0,824 & 0,941 & 0,941 \\
-KHTN 8 CTST & 0,850 & 0,950 & 0,950 & \textbf{0,950} \\
-KHTN 9 KNTT & 0,833 & 0,889 & 0,889 & \textbf{0,944} \\
-KHTN 9 CD   & 0,750 & 0,750 & 0,800 & \textbf{0,850} \\
-KHTN 7 KNTT & 0,850 & 0,900 & 0,950 & \textbf{0,950} \\
-KHTN 7 CD   & 0,895 & 0,947 & 0,947 & \textbf{0,947} \\
-KHTN 9 CTST & 0,550 & 0,650 & 0,800 & \textbf{0,800} \\
-KHTN 7 CTST & 0,600 & 0,750 & 0,900 & 0,650 \\
+KHTN 6 CD   & 0,800 & 0,850 & 0,900 & \textbf{1,000} \\
+KHTN 6 CTST & 0,900 & 0,900 & 1,000 & 0,950 \\
+KHTN 8 KNTT & 0,900 & 0,900 & 0,950 & \textbf{0,950} \\
+KHTN 7 KNTT & 0,800 & 0,900 & 0,950 & \textbf{0,950} \\
+KHTN 7 CD   & 0,750 & 0,900 & 0,950 & \textbf{0,950} \\
+KHTN 6 KNTT & 0,750 & 0,900 & 0,950 & 0,900 \\
+KHTN 8 CTST & 0,900 & 0,950 & 0,950 & 0,900 \\
+KHTN 9 KNTT & 0,750 & 0,800 & 0,850 & \textbf{0,850} \\
+KHTN 9 CD   & 0,800 & 0,850 & 0,900 & 0,850 \\
+KHTN 8 CD   & 0,550 & 0,600 & 0,750 & \textbf{0,850} \\
+KHTN 9 CTST & 0,600 & 0,700 & 0,750 & \textbf{0,750} \\
+KHTN 7 CTST & 0,650 & 0,800 & 0,950 & 0,700 \\
 \midrule
-\textbf{Gộp trên 231 câu} & \textbf{0,7706} & \textbf{0,8225} & \textbf{0,8961} & \textbf{0,9091} \\
+\textbf{Gộp trên 240 câu} & \textbf{0,7625} & \textbf{0,8375} & \textbf{0,9042} & \textbf{0,8833} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -458,7 +465,7 @@ KHTN 7 CTST & 0,600 & 0,750 & 0,900 & 0,650 \\
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.82\textwidth]{src/images/chapter4/recall_at_k.png}
-    \caption{Recall trung bình theo $k$ của riêng kênh ngữ nghĩa, so với recall của cấu hình thật --- cấu hình thật nằm \textit{trên} top-10 thô.}
+    \caption{Recall trung bình theo $k$ của riêng kênh ngữ nghĩa, so với recall của cấu hình thật.}
     \label{fig:recall_at_k}
 \end{figure}
 
@@ -469,23 +476,23 @@ KHTN 7 CTST & 0,600 & 0,750 & 0,900 & 0,650 \\
     \label{fig:recall_per_book}
 \end{figure}
 
-\textbf{Nhờ đâu?} Hai công tắc, cả hai đều có số trước/sau ở Mục~\ref{sec:ablation}:
+\textbf{Nhờ đâu mà khoảng cách vẫn thu hẹp được $10$ lần, dù không đóng hẳn?} Hai công tắc, cả hai đều có số trước/sau ở Mục~\ref{sec:ablation}:
 
 \begin{enumerate}
-    \item \textbf{Tắt cổng lọc theo khoảng cách tương đối.} Ở bề rộng production, riêng việc tắt nó nâng R@10 của kênh lai từ $0{,}892$ lên $0{,}970$ và MRR từ $0{,}775$ lên $0{,}826$. Đây chính là ``khâu cắt-$k$'' mà bản trước chỉ ra đúng --- nhưng cách chữa của bản trước (nới $k$) không phải cách chữa hiệu quả nhất; \textit{bỏ hẳn} cổng lọc mới là.
-    \item \textbf{Bật xếp hạng lại bằng cross-encoder.} Ở bề rộng $50$, nó nâng R@1 của kênh lai từ $0{,}671$ lên $0{,}745$, và nâng R@1 của riêng kênh ngữ nghĩa từ $0{,}602$ lên $0{,}732$ ($+21{,}6\%$).
+    \item \textbf{Tắt cổng lọc theo khoảng cách tương đối.} Ở bề rộng production, riêng việc tắt nó nâng R@10 của kênh lai từ $0{,}883$ lên $0{,}958$ và MRR từ $0{,}759$ lên $0{,}804$. Đây chính là ``khâu cắt-$k$'' mà bản chuyên đề cũ chỉ ra đúng --- nhưng cách chữa của bản đó (nới $k$) không phải cách chữa hiệu quả nhất; \textit{bỏ hẳn} cổng lọc mới là.
+    \item \textbf{Bật xếp hạng lại bằng cross-encoder.} Ở bề rộng $50$, nó nâng R@1 của kênh lai từ $0{,}642$ lên $0{,}721$, và nâng R@1 của riêng kênh ngữ nghĩa từ $0{,}604$ lên $0{,}708$ ($+17{,}2\%$).
 \end{enumerate}
 
-Cộng thêm kênh BM25 vào tập ứng viên, hệ thống nhìn thấy những trang mà kênh ngữ nghĩa một mình không bao giờ trả về --- điển hình là các trang chứa ký hiệu và công thức; rồi cross-encoder kéo những trang đó lên đủ cao để lọt vào ba đoạn được giữ lại. Đó là lý do một cấu hình chỉ giữ $3$ đoạn lại vượt được một danh sách $10$ đoạn của kênh ngữ nghĩa.
+Cộng thêm kênh BM25 vào tập ứng viên, hệ thống nhìn thấy những trang mà kênh ngữ nghĩa một mình không bao giờ trả về --- điển hình là các trang chứa ký hiệu và công thức; rồi cross-encoder kéo những trang đó lên cao hơn. Nhưng khi chỉ giữ lại $3$ đoạn (đúng cấu hình production), phần được kéo lên chưa đủ để bù hết khoảng hụt so với trần $10$ đoạn thô của kênh ngữ nghĩa.
 
-\textbf{Nhưng khoảng cách chưa biến mất hoàn toàn, chỉ chuyển chỗ --- và phần còn lại đo được.} Recall $0{,}9091$ của cấu hình thật trùng \textit{đúng} với ô R@3 của hàng lai ở Bảng~\ref{tab:ablation_main} (cũng $0{,}909$), điều này hợp lý vì hệ thống giữ lại ba đoạn; trong khi R@10 của cùng cấu hình đó là $0{,}970$. Vậy phần recall còn hụt do cắt-$k$ hôm nay là $\mathbf{0{,}970 - 0{,}909 = 0{,}061}$, chứ không phải $0{,}21$. Nới số đoạn giữ lại từ $3$ lên $10$ sẽ thu được đúng $6$ điểm phần trăm đó, đổi lại ngữ cảnh dài hơn ba lần --- một đánh đổi định lượng được, chưa đo về phía chất lượng câu trả lời.
+\textbf{Phần recall còn hụt do cắt-$k$ đo được chính xác, và cách thu hồi nó cũng đo được.} Ở bề rộng production, R@3 của hàng lai (Bảng~\ref{tab:ablation_main}) là $0{,}888$ --- gần nhưng chưa bằng recall $0{,}8833$ của cấu hình thật thực đo (chênh $0{,}004$, tương đương đúng $1/240$ câu; xem chú thích\footnote{Câu hỏi \texttt{SGK\_KHTN\_8\_KNTT} trang $6$, sinh từ hình, được bộ định tuyến ý định (Mục~\ref{sec:mm}) xác định đúng là câu hỏi chỉ-cần-ảnh nên bỏ qua truy xuất văn bản hoàn toàn --- hệ thống trả lời đúng bằng ảnh, nhưng độ đo recall ở mức trang (chỉ tính trên collection văn bản) không có gì để ghi nhận cho câu này, nên tính là trượt.}); trong khi R@10 của cùng cấu hình là $0{,}958$. Nới số đoạn giữ lại từ $3$ lên $10$ sẽ thu được thêm $\mathbf{0{,}958 - 0{,}888 = 0{,}071}$ điểm recall --- nhiều hơn khoảng hụt $0{,}0167$ cần để vượt trần $0{,}9042$ --- đổi lại ngữ cảnh dài hơn ba lần, một đánh đổi định lượng được, chưa đo về phía chất lượng câu trả lời.
 
-\textbf{Một ngoại lệ cần chỉ mặt, không được che.} KHTN 7 Chân trời sáng tạo là cuốn duy nhất mà cấu hình thật ($0{,}650$) \textit{thấp hơn rõ rệt} top-10 thô ($0{,}900$). Đây cũng chính là cuốn xếp hạng cuối. Đối chiếu từng câu một trong tệp kết quả của cuốn này: có \textbf{$5$ câu} mà trang vàng nằm trong top-10 của kênh ngữ nghĩa nhưng cấu hình thật vẫn trượt, và \textbf{$0$ câu} theo chiều ngược lại --- tức với riêng cuốn này, chẩn đoán ``mất recall ở khâu xếp hạng và cắt-$k$'' của bản trước vẫn còn nguyên giá trị. Điểm giám khảo của nó lại ở mức trung bình ($4{,}10/5$ Tính đúng), nên vấn đề nằm ở truy xuất chứ không ở sinh câu trả lời.
+\textbf{Một ngoại lệ cần chỉ mặt, không được che.} KHTN 7 Chân trời sáng tạo là cuốn duy nhất mà cấu hình thật ($0{,}700$) \textit{thấp hơn rõ rệt} top-10 thô ($0{,}950$). Đây cũng là cuốn gần cuối bảng xếp hạng (hạng $11/12$). Đối chiếu từng câu một trong tệp kết quả của cuốn này: có \textbf{$5$ câu} mà trang vàng nằm trong top-10 của kênh ngữ nghĩa nhưng cấu hình thật vẫn trượt, và \textbf{$0$ câu} theo chiều ngược lại --- tức với riêng cuốn này, chẩn đoán ``mất recall ở khâu xếp hạng và cắt-$k$'' của bản chuyên đề cũ vẫn còn nguyên giá trị, và hai con số này không đổi qua cả ba lượt đo ($231$, $238$, $240$ câu) vì bộ câu hỏi của đúng cuốn này không đổi giữa các lượt. Điểm giám khảo của nó lại ở mức trung bình ($3{,}80/5$ Tính đúng), nên vấn đề nằm ở truy xuất chứ không ở sinh câu trả lời.
 
 \subsection{Chất lượng câu trả lời sinh ra}
-Hình~\ref{fig:judge} tổng hợp điểm trung bình do mô hình giám khảo chấm trên $231$ câu. Mô hình Qwen2.5 đạt \textbf{Độ liên quan $4{,}602/5$} và \textbf{Độ trung thực $4{,}394/5$} --- mức cao, cho thấy cơ chế RAG cùng prompt nghiêm ngặt đã buộc mô hình bám sát ngữ cảnh và trả lời đúng trọng tâm, hạn chế ảo giác. Điểm \textbf{Tính đúng} thấp hơn ($4{,}065/5$) phản ánh ảnh hưởng dây chuyền từ pha truy xuất: khi ngữ cảnh thiếu trang vàng, mô hình khó cho ra đáp án hoàn toàn chính xác dù vẫn trung thực với ngữ cảnh nhận được.
+Hình~\ref{fig:judge} tổng hợp điểm trung bình do mô hình giám khảo chấm trên $240$ câu. Mô hình Qwen2.5 đạt \textbf{Độ liên quan $4{,}129/5$} và \textbf{Độ trung thực $4{,}100/5$} --- mức khá, cho thấy cơ chế RAG cùng prompt nghiêm ngặt phần lớn buộc được mô hình bám sát ngữ cảnh và trả lời đúng trọng tâm, hạn chế ảo giác. Điểm \textbf{Tính đúng} thấp hơn ($3{,}896/5$) phản ánh ảnh hưởng dây chuyền từ pha truy xuất: khi ngữ cảnh thiếu trang vàng, mô hình khó cho ra đáp án hoàn toàn chính xác dù vẫn trung thực với ngữ cảnh nhận được. Cả ba điểm đều thấp hơn lượt đo trên $231$ câu (tương ứng $4{,}602 / 4{,}394 / 4{,}065$); vì bộ câu hỏi VÀ giám khảo đều đổi cùng lúc (Mục~\ref{sec:judge_pha2}), chênh lệch này không được diễn giải là ``chất lượng câu trả lời giảm'' --- không có lượt đối chứng nào giữ nguyên hai biến kia để tách riêng đóng góp của từng biến.
 
-Tính đúng là tiêu chí \textit{thấp nhất} trong ba tiêu chí ở \textbf{cả $12/12$ cuốn}, không có ngoại lệ, nên đây là một đặc điểm hệ thống chứ không phải dao động của một vài cuốn. (Thứ tự đầy đủ Độ liên quan $>$ Độ trung thực $>$ Tính đúng giữ nguyên ở $10/12$ cuốn; hai ngoại lệ chỉ hoán đổi hai tiêu chí \textit{trên}, không đụng tới vị trí cuối của Tính đúng.)
+Tính đúng là tiêu chí \textit{thấp nhất} trong ba tiêu chí ở \textbf{cả $12/12$ cuốn}, không có ngoại lệ, nên đây là một đặc điểm hệ thống chứ không phải dao động của một vài cuốn --- và đặc điểm này giữ nguyên qua cả ba lượt đo ($231$, $238$, $240$ câu). Thứ tự đầy đủ Độ liên quan $>$ Độ trung thực $>$ Tính đúng chỉ còn giữ nguyên ở $7/12$ cuốn (so với $10/12$ ở lượt trước); $3/12$ cuốn đảo thứ tự hai tiêu chí \textit{trên} (Độ trung thực vượt Độ liên quan) và $2/12$ cuốn hai tiêu chí đó bằng nhau --- không cuốn nào đụng tới vị trí cuối của Tính đúng.
 
 \begin{figure}[H]
     \centering
@@ -499,11 +506,11 @@ Tính đúng là tiêu chí \textit{thấp nhất} trong ba tiêu chí ở \text
 Từ các số liệu thực nghiệm, có thể rút ra năm nhận định:
 
 \begin{enumerate}
-    \item \textbf{Nút thắt recall mà đề tài nhắm vào đã được xử lý, và cách xử lý không phải cách đã dự đoán.} Như phân tích ở Mục~\ref{sec:recallk}, recall của cấu hình thật ($0{,}9091$) nay \textit{cao hơn} trần của riêng kênh ngữ nghĩa ($0{,}8961$). Điều đáng nói về mặt phương pháp là hai biện pháp có tác dụng lại đi ngược trực giác ban đầu: cái được kỳ vọng nhiều nhất --- \textit{siết} nhiễu bằng cổng lọc theo khoảng cách tương đối --- hoá ra \textbf{có hại} ($-0{,}078$ R@10), còn cái thực sự hiệu quả là \textit{mở rộng} ứng viên bằng kênh từ khoá rồi mới chấm lại bằng cross-encoder. Phần recall còn hụt do cắt-$k$ nay là $0{,}061$, và nó nằm ở một chỗ đã định lượng được.
-    \item \textbf{Kênh ngữ nghĩa yếu nhất khi đứng một mình, và được xếp hạng lại cứu nhiều nhất.} Bản trước quy điểm yếu này cho việc chọn một mô hình nhúng nhẹ; hệ thống hiện tại đã dùng \texttt{bge-m3} $1024$ chiều, nhưng \textit{thứ hạng} của ba kênh khi tắt xếp hạng lại vẫn giữ nguyên hình dạng cũ: ngữ nghĩa thuần chỉ đạt R@1 $0{,}602$, thấp hơn BM25 thuần ($0{,}693$). Bật cross-encoder đưa nó lên $0{,}732$, tức \textbf{$+21{,}6\%$}, mức cải thiện lớn nhất trong ba kênh. Kết luận đúng vì vậy không phải ``mô hình nhúng yếu'' mà là: \textit{với miền dữ liệu đầy ký hiệu và công thức, một bộ nhúng hai tháp --- dù mạnh --- vẫn cần một bước chấm lại có nhìn thấy cặp (truy vấn, tài liệu)}.
-    \item \textbf{Nhiễu chéo giữa các bộ sách là nguyên nhân chính của Precision thấp.} Ba bộ sách trình bày cùng một hệ thống kiến thức Khoa học tự nhiên THCS, nên nhiều chủ đề trùng lặp. Precision ở mức trang chỉ $0{,}4112$, nhưng bằng chứng rõ hơn nằm ở cặp số mức sách: Recall book-level $\mathbf{0{,}9567}$ so với Precision book-level $\mathbf{0{,}5455}$ --- hệ thống gần như luôn tìm đúng \textit{cuốn}, nhưng gần một nửa số đoạn trả về lại đến từ cuốn khác. Đó chính là hình dạng của nhiễu chéo, và nó có nghĩa là một câu trả lời có thể đúng về mặt khoa học trong khi độ đo Precision vẫn phạt nó.
-    \item \textbf{Độ đo IR và đánh giá của giám khảo đo hai thứ khác nhau, và chênh lệch giữa chúng là thông tin chứ không phải nhiễu.} Trường hợp rõ nhất là KHTN 7 Chân trời sáng tạo: recall thấp nhất bộ ($0{,}650$) nhưng Tính đúng $4{,}10/5$ --- trên mức trung bình chung ($4{,}065$). Ngược lại KHTN 7 Kết nối tri thức có recall cao ($0{,}950$) nhưng Tính đúng thấp nhất nhì ($3{,}90$). Hai pha đo vì vậy \textit{bổ sung} nhau: độ đo IR phản ánh chất lượng định vị nguồn --- thứ quyết định trích dẫn có chỉ đúng trang sách hay không --- còn giám khảo phản ánh chất lượng nội dung câu trả lời.
-    \item \textbf{Sai số nhận dạng ký tự với công thức là giới hạn còn lại, và nay đã đo được đúng hình dạng của nó.} Không còn là một nhận xét chung chung: đếm trên chính văn bản đã lập chỉ mục, tỉ lệ \textit{chỉ số dưới hỏng so với đọc đúng} là $256{:}3$ ở Cánh Diều, $377{:}3$ ở Chân trời sáng tạo và $408{:}4$ ở Kết nối tri thức, còn ký tự chỉ số dưới Unicode xuất hiện \textbf{đúng $0$ lần} ở cả ba bộ. Nghĩa là chỉ số dưới gần như \textit{không bao giờ} sống sót, và điều này đúng ở mọi độ phân giải --- giả thuyết ``đây là hệ quả của bộ sách có độ phân giải thấp nhất'' đã bị chính phép đo này bác bỏ. Một cuộc đối chiếu bốn công cụ nhận dạng cho thấy \textbf{có công cụ đọc được \ce{CO2} và \ce{O2} đúng}, nhưng công cụ đó bị loại vì tỉ lệ lỗi \textit{dấu tiếng Việt} của nó ($0{,}037$) cao gấp hơn hai lần công cụ đang dùng ($0{,}016$) --- trong một quyển sách giáo khoa, sai dấu tiếng Việt là lỗi nặng hơn thiếu một chỉ số dưới. Hướng dùng công cụ đó \textit{chỉ cho vùng công thức} đã được \textbf{thiết kế, cài đặt và kiểm thử xong} (Mục~\ref{sec:formula_hybrid}) nhưng chưa chạy trên corpus sản xuất tại thời điểm viết chương này.
+    \item \textbf{Nút thắt recall mà đề tài nhắm vào đã thu hẹp mạnh, nhưng chưa đóng hẳn --- và cách xử lý hiệu quả nhất không phải cách đã dự đoán.} Như phân tích ở Mục~\ref{sec:recallk}, recall của cấu hình thật ($0{,}8833$) vẫn \textit{thấp hơn} trần của riêng kênh ngữ nghĩa ($0{,}9042$), hụt $0{,}021$ --- so với hụt $0{,}21$ của bản chuyên đề cũ, một cải thiện khoảng $10$ lần dù không phải một sự đảo chiều hoàn toàn như một bản nháp trước đó của chương này từng ghi nhận trên bộ $231$ câu. Điều đáng nói về mặt phương pháp là hai biện pháp có tác dụng lại đi ngược trực giác ban đầu: cái được kỳ vọng nhiều nhất --- \textit{siết} nhiễu bằng cổng lọc theo khoảng cách tương đối --- hoá ra \textbf{có hại} ($-0{,}075$ R@10), còn cái thực sự hiệu quả là \textit{mở rộng} ứng viên bằng kênh từ khoá rồi mới chấm lại bằng cross-encoder. Phần recall còn hụt do cắt-$k$ (giữ $3$ thay vì $10$ đoạn) là $0{,}071$, lớn hơn khoảng hụt so với trần --- nghĩa là dư địa để đóng nốt khoảng cách đã nằm sẵn trong chính cấu hình hiện tại, đổi lấy ngữ cảnh dài hơn.
+    \item \textbf{Kênh ngữ nghĩa yếu nhất khi đứng một mình, và được xếp hạng lại cứu nhiều nhất.} Bản chuyên đề cũ quy điểm yếu này cho việc chọn một mô hình nhúng nhẹ; hệ thống hiện tại đã dùng \texttt{bge-m3} $1024$ chiều, nhưng \textit{thứ hạng} của ba kênh khi tắt xếp hạng lại vẫn giữ nguyên hình dạng cũ: ngữ nghĩa thuần chỉ đạt R@1 $0{,}604$, thấp hơn BM25 thuần ($0{,}642$). Bật cross-encoder đưa nó lên $0{,}708$, tức \textbf{$+17{,}2\%$}, mức cải thiện lớn nhất trong ba kênh cả về tỉ lệ lẫn giá trị tuyệt đối. Kết luận đúng vì vậy không phải ``mô hình nhúng yếu'' mà là: \textit{với miền dữ liệu đầy ký hiệu và công thức, một bộ nhúng hai tháp --- dù mạnh --- vẫn cần một bước chấm lại có nhìn thấy cặp (truy vấn, tài liệu)}.
+    \item \textbf{Nhiễu chéo giữa các bộ sách là nguyên nhân chính của Precision thấp.} Ba bộ sách trình bày cùng một hệ thống kiến thức Khoa học tự nhiên THCS, nên nhiều chủ đề trùng lặp. Precision ở mức trang chỉ $0{,}4000$, nhưng bằng chứng rõ hơn nằm ở cặp số mức sách: Recall book-level $\mathbf{0{,}9375}$ so với Precision book-level $\mathbf{0{,}5375}$ --- hệ thống gần như luôn tìm đúng \textit{cuốn}, nhưng gần một nửa số đoạn trả về lại đến từ cuốn khác. Đó chính là hình dạng của nhiễu chéo, và nó có nghĩa là một câu trả lời có thể đúng về mặt khoa học trong khi độ đo Precision vẫn phạt nó.
+    \item \textbf{Độ đo IR và đánh giá của giám khảo đo hai thứ khác nhau, và chênh lệch giữa chúng là thông tin chứ không phải nhiễu.} Trường hợp rõ nhất là KHTN 9 Chân trời sáng tạo: recall gần thấp nhất bộ ($0{,}750$, chỉ trên KHTN 7 Chân trời sáng tạo) nhưng Tính đúng $3{,}95/5$ --- trên mức trung bình chung ($3{,}896$), và xếp hạng \texttt{overall} của cuốn này lại thấp nhất toàn kho ($0{,}675$) vì Precision quá thấp ($0{,}300$, thấp nhất trong $12$ cuốn). Ngược lại KHTN 8 Chân trời sáng tạo có recall cao ($0{,}900$) nhưng Tính đúng thấp nhất toàn kho ($3{,}55$). Hai pha đo vì vậy \textit{bổ sung} nhau: độ đo IR phản ánh chất lượng định vị nguồn --- thứ quyết định trích dẫn có chỉ đúng trang sách hay không --- còn giám khảo phản ánh chất lượng nội dung câu trả lời; không cuốn nào tệ hay tốt đồng đều ở cả hai pha.
+    \item \textbf{Sai số nhận dạng ký tự với công thức là giới hạn đã được xử lý một bước, nhưng chưa đo lại được mức cải thiện.} Bake-off đo trên gold set $97$ ô/$15$ trang (D-108, D-147): tỉ lệ \textit{chỉ số dưới hỏng so với đọc đúng} là $256{:}3$ ở Cánh Diều, $377{:}3$ ở Chân trời sáng tạo và $408{:}4$ ở Kết nối tri thức, còn ký tự chỉ số dưới Unicode xuất hiện \textbf{đúng $0$ lần} ở cả ba bộ --- đúng ở mọi độ phân giải, bác bỏ giả thuyết ``đây là hệ quả của bộ sách có độ phân giải thấp nhất''. Một cuộc đối chiếu bốn công cụ nhận dạng cho thấy \textbf{có công cụ đọc được \ce{CO2} và \ce{O2} đúng} (MinerU), nhưng công cụ đó bị loại khỏi luồng OCR chính vì tỉ lệ lỗi \textit{dấu tiếng Việt} của nó ($0{,}037$) cao gấp hơn hai lần công cụ đang dùng ($0{,}016$) --- trong một quyển sách giáo khoa, sai dấu tiếng Việt là lỗi nặng hơn thiếu một chỉ số dưới. Hướng dùng công cụ đó \textit{chỉ cho vùng công thức} (kiến trúc lai, Mục~\ref{sec:formula_hybrid}) \textbf{đã chạy trên toàn bộ corpus sản xuất}: $4\,293$ lượt merge MinerU thành công trên tổng $16\,515$ đoạn ($1\,063$ áp dụng trực tiếp $+$ $3\,230$ đánh dấu \texttt{unmatched\_count}), $0$ lỗi gọi mô hình. Đây là một thay đổi thật so với bản nháp trước của chương này (từng ghi ``chưa chạy trên corpus sản xuất''). \textbf{Còn thiếu:} một lượt bake-off CER/tỉ lệ lỗi dấu \textit{mới}, đo lại trên chính văn bản đã được merge, để lượng hoá mức cải thiện thật của chỉ số dưới sau khi kiến trúc lai chạy --- số liệu này chưa có tại thời điểm viết chương.
 \end{enumerate}
 
 \subsection{Đối chiếu đa phương thức so với chỉ văn bản}
@@ -520,7 +527,7 @@ Một lỗi định tuyến nghiêm trọng hơn được phát hiện và sửa
 
 \subsection{Ưu điểm}
 \begin{itemize}
-    \item \textbf{Giảm thiểu ảo giác:} điểm Độ trung thực $4{,}394/5$ trên $231$ câu cho thấy cơ chế RAG cùng prompt nghiêm ngặt đã buộc Qwen2.5 trả lời bám sát nội dung sách giáo khoa chính thống.
+    \item \textbf{Giảm thiểu ảo giác:} điểm Độ trung thực $4{,}100/5$ trên $240$ câu cho thấy cơ chế RAG cùng prompt nghiêm ngặt phần lớn buộc được Qwen2.5 trả lời bám sát nội dung sách giáo khoa chính thống.
     \item \textbf{Trích dẫn không do mô hình sinh ra.} Số trang trong trích dẫn được dựng từ siêu dữ liệu của chính đoạn văn bản được truy xuất, chứ không phải do mô hình ngôn ngữ viết ra. Mô hình vì vậy \textit{không có khả năng} bịa một số trang, kể cả khi nó bịa nội dung.
     \item \textbf{Phương pháp đánh giá khách quan, lặp lại được:} nhờ gắn nhãn nguồn xác định, các độ đo Precision/Recall/MRR được tính trực tiếp từ metadata mà không phụ thuộc vào cảm tính hay sự dao động của mô hình chấm. Toàn bộ bảng đối chiếu ở Mục~\ref{sec:ablation} chạy \textbf{không tốn một lượt gọi LLM nào}, nên có thể chạy lại bất cứ lúc nào với chi phí bằng không.
     \item \textbf{Chi phí triển khai thấp:} toàn bộ pha ETL cho $2.399$ trang chạy trọn trên CPU của một máy trạm thông thường, không cần GPU.
@@ -532,8 +539,9 @@ Một lỗi định tuyến nghiêm trọng hơn được phát hiện và sửa
 Phần này liệt kê những hạn chế \textit{đã đo được}, kể cả những hạn chế bất lợi cho kết luận của đồ án.
 
 \begin{enumerate}
-    \item \textbf{Bộ kiểm thử do mô hình sinh và chưa được người duyệt toàn bộ.} Tệp siêu dữ liệu của bộ ghi rõ \texttt{human\_reviewed: false}. Mẫu $50$ câu người rà soát cho tỉ lệ nhãn nguồn sai $4{,}1\%$ với khoảng tin cậy Wilson $95\%$ là $1{,}1\%$--$13{,}7\%$; cận trên đó nghĩa là tới khoảng $9/231$ câu vẫn có thể sai mà mẫu không phát hiện. Riêng $39$ câu hỏi hình thì \textbf{chưa ai đối chiếu với ảnh} (Mục~\ref{sec:cauhoihinh}).
-    \item \textbf{Bước xử lý đặc thù cho công thức Hoá, Lí --- một hạng mục của Mục tiêu 1 --- đã cài đặt và kiểm thử xong nhưng chưa chạy trên corpus sản xuất.} Tại thời điểm các số liệu Recall/MRR/Precision của chương này được đo, chỉ số dưới vẫn không sống sót qua bước nhận dạng (tỉ lệ hỏng:đúng $256{:}3$, $377{:}3$, $408{:}4$), và văn bản lưu trong kho vẫn mang nguyên các lỗi đó. Kiến trúc lai Tesseract kết hợp mô hình thị giác-ngôn ngữ cho riêng các dòng bị nghi có công thức hỏng (Mục~\ref{sec:formula_hybrid}) đã hoàn thành cài đặt, có bộ kiểm thử tự động (bao gồm một ca đầu-cuối trên chính trang sách đã biết hỏng) nhưng chưa được chạy để lập chỉ mục lại toàn bộ $12$ cuốn --- công việc đó cần môi trường GPU không có sẵn trên máy phát triển. Biện pháp \textit{một phần} đang chạy trong sản xuất là chuẩn hoá công thức ở phía truy vấn và phía chỉ mục thưa, tuyệt đối không sửa văn bản đã lưu --- đo trên $12$ công thức, số truy vấn tìm được đoạn đúng tăng từ $1/12$ lên $11/12$, nhưng bản thân \textit{văn bản} lưu trong kho vẫn hỏng nên câu trả lời trích từ đó vẫn có thể sai công thức cho tới khi bước xử lý mới được chạy.
+    \item \textbf{Bộ kiểm thử do mô hình sinh; phần văn bản chưa được người duyệt toàn bộ, phần hình đã được duyệt toàn bộ nhưng chưa có mẫu đối chứng độc lập.} Với $192$ câu văn bản: mẫu $50$ câu người rà soát cho tỉ lệ nhãn nguồn sai $4{,}1\%$ với khoảng tin cậy Wilson $95\%$ là $1{,}1\%$--$13{,}7\%$; áp tỉ lệ điểm này lên toàn bộ $240$ câu cho khoảng $10/240$ câu vẫn có thể sai mà mẫu không phát hiện. Với $48$ câu hình: khác với một bản nháp trước đó của chương này, cả $48$ câu đã được người đối chiếu trực tiếp với ảnh và $70{,}8\%$ trong số đó bị sửa lại nội dung (Mục~\ref{sec:cauhoihinh}) --- nhưng đây vẫn là một lượt duyệt \textit{đơn}, không có một mẫu độc lập thứ hai để tính tỉ lệ lỗi còn sót lại theo kiểu Wilson như phần văn bản.
+    \item \textbf{Mô hình giám khảo không hoàn toàn đồng nhất giữa các câu.} Như đã nêu ở Mục~\ref{sec:judge_pha2}, việc mở rộng từ hai lên bốn mô hình giám khảo (để tránh hạn mức token/ngày của Groq) đồng nghĩa các câu hỏi khác nhau có thể được chấm bởi các mô hình khác nhau trong tập bốn mô hình. Ba tiêu chí Correctness/Faithfulness/Relevancy vì vậy mang thêm một nguồn nhiễu không có trong thiết kế LLM-as-a-judge kinh điển (một giám khảo cố định cho toàn bộ tập); ảnh hưởng của nguồn nhiễu này tới độ lệch chuẩn của điểm chấm chưa được đo tách riêng.
+    \item \textbf{Bước xử lý đặc thù cho công thức Hoá, Lí --- một hạng mục của Mục tiêu 1 --- đã chạy trên corpus sản xuất, nhưng mức cải thiện của chỉ số dưới chưa được đo lại.} Bake-off gần nhất đo tỉ lệ hỏng:đúng của chỉ số dưới là $256{:}3$ (Cánh Diều), $377{:}3$ (Chân trời sáng tạo), $408{:}4$ (Kết nối tri thức) --- nhưng phép đo đó thực hiện \textbf{trước} khi kiến trúc lai Tesseract kết hợp mô hình thị giác-ngôn ngữ (Mục~\ref{sec:formula_hybrid}) chạy trên corpus sản xuất. Lượt chạy sản xuất sau đó cho $4\,293$ lần merge MinerU thành công trên $16\,515$ đoạn ($1\,063$ áp dụng trực tiếp $+$ $3\,230$ \texttt{unmatched\_count}, $0$ lỗi gọi mô hình), nên khác với một bản nháp trước đó của chương này (từng ghi ``chưa chạy trên corpus sản xuất''), bước xử lý này \textbf{đã chạy}. Điều chưa làm là đo lại chính chỉ số hỏng:đúng đó trên văn bản đã merge, nên mức cải thiện thật --- nếu có --- vẫn chưa được lượng hoá bằng cùng một thước đo đã dùng để phát hiện vấn đề. Biện pháp \textit{khác}, đang chạy song song trong sản xuất, là chuẩn hoá công thức ở phía truy vấn và phía chỉ mục thưa, tuyệt đối không sửa văn bản đã lưu --- đo trên $12$ công thức, số truy vấn tìm được đoạn đúng tăng từ $1/12$ lên $11/12$; biện pháp này độc lập với việc merge nói trên và vẫn còn giá trị dù merge có cải thiện chỉ số hỏng:đúng hay không.
     \item \textbf{Số hiệu Bài chỉ có ở $4/12$ cuốn} ($4.857/16.393$ đoạn). Tám cuốn Cánh Diều và Chân trời sáng tạo chưa đọc được trục Bài liền mạch nên hệ thống cố tình để trống; hệ quả là truy vấn theo Bài chỉ chạy trên một phần ba kho.
     \item \textbf{$11.459$ đoạn của Cánh Diều và Chân trời sáng tạo vẫn mang nhãn nhà xuất bản sai trong siêu dữ liệu.} Lỗi ở mã nguồn đã sửa, nhưng dữ liệu chỉ sạch sau một lượt lập chỉ mục lại toàn bộ ($3$ giờ $20$ phút), nên tới thời điểm viết báo cáo \textbf{nhãn này vẫn sai}. Nó không ảnh hưởng tới truy xuất hay trích dẫn (cả hai đọc trường \texttt{source}), nhưng bất kỳ phân tích nào lọc theo trường \texttt{variant} đều sẽ ra số sai.
     \item \textbf{Khung cắt hình ghép còn hụt, và con số ``đã sửa'' không nói hết sự thật.} Một cổng kiểm tự động đo tỉ lệ khung cắt có dạng \textit{dải dọc hẹp} --- dấu hiệu của việc cắt trượt qua một phần hình. Sau khi sửa sàn chiều rộng khung cắt, tỉ lệ này ở bộ Kết nối tri thức giảm từ $17{,}5\%$ xuống $1{,}7\%$ và trên toàn kho từ $8{,}4\%$ xuống $4{,}6\%$. \textbf{Nhưng ca gốc vẫn cắt sai}: hình ghép ba tấm ở trang 6 của KHTN 8 Kết nối tri thức đi từ $135\times289$ lên $209\times289$ điểm ảnh --- vẫn cắt ngang giữa hai tấm; nó chỉ thoát khỏi \textit{định nghĩa} ``dải hẹp'' chứ không hết cắt sai. Nói cách khác, $1{,}7\%$ nghĩa là hết dải hẹp, không phải hết cắt sai, và phần hụt còn lại \textbf{chưa lượng hoá được}.
@@ -542,4 +550,4 @@ Phần này liệt kê những hạn chế \textit{đã đo được}, kể cả
     \item \textbf{Đoạn văn bản không giữ quan hệ hàng--cột của bảng.} Khi một trang chứa bảng số liệu, các ô bị trộn vào nhau theo thứ tự đọc chứ không theo cấu trúc bảng, nên hệ thống có thể trả lời một câu hỏi bằng dữ liệu của \textbf{sai cột}. Trường hợp đo được nặng nhất là một bảng mất trọn dòng tiêu đề năm \textit{và} toàn bộ dấu phẩy thập phân --- một sai lệch gấp mười lần giá trị thật.
 \end{enumerate}
 
-Bảy trong tám hạn chế trên đều đi kèm một phép đo và một hướng xử lý cụ thể; hạn chế thứ năm là ngoại lệ đáng chú ý về mặt phương pháp, vì nó cho thấy một cổng kiểm chuyển sang màu xanh chỉ có nghĩa là \textit{câu hỏi của riêng cổng đó} đã được trả lời, không có nghĩa là phần việc đã đúng.
+Tám trong chín hạn chế trên đều đi kèm một phép đo và một hướng xử lý cụ thể; hạn chế thứ bảy (cờ ``cần rà soát'') là ngoại lệ đáng chú ý về mặt phương pháp, vì nó cho thấy một cổng kiểm chuyển sang màu xanh chỉ có nghĩa là \textit{câu hỏi của riêng cổng đó} đã được trả lời, không có nghĩa là phần việc đã đúng.

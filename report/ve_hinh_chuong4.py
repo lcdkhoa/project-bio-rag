@@ -8,8 +8,8 @@ tái lập được là một con số không kiểm được: người đọc k
 chiếu nó với dữ liệu, và người viết không có cách nào cập nhật nó khi dữ liệu
 đổi. Nên mọi giá trị dưới đây đọc thẳng từ hai tệp kết quả:
 
-  - `src/test/evaluation_report_240.csv`  (12 quyển, 231 câu, D-130)
-  - `src/test/ablation_report_240.csv`    (30 hàng đối chiếu cấu hình, D-127)
+  - `src/test/evaluation_report_240.csv`  (12 quyển, 240 câu, D-173/D-174)
+  - `src/test/ablation_report_240.csv`    (30 hàng đối chiếu cấu hình, D-173/D-174)
 
 Không hằng số nào được gõ tay. Đổi dữ liệu -> chạy lại -> hình đổi theo.
 
@@ -127,7 +127,7 @@ def _gop(d: pd.DataFrame, cot: str) -> float:
 
 
 # --- Hình 1: xếp hạng tổng thể ------------------------------------------------
-def ve_leaderboard(d: pd.DataFrame) -> Path:
+def ve_leaderboard(d: pd.DataFrame, tong_cau: int) -> Path:
     d = d.sort_values("overall_score")
     fig, ax = plt.subplots(figsize=(8.2, 5.0))
     y = range(len(d))
@@ -141,7 +141,7 @@ def ve_leaderboard(d: pd.DataFrame) -> Path:
     ax.set_yticklabels(d["nhan"])
     ax.set_xlim(0, 1.0)
     ax.set_xlabel("Điểm tổng thể (overall)")
-    ax.set_title("Xếp hạng 12 cuốn sách theo điểm tổng thể — 231 câu hỏi",
+    ax.set_title(f"Xếp hạng 12 cuốn sách theo điểm tổng thể — {tong_cau} câu hỏi",
                  loc="left", color=MUC_CHINH, pad=30)
     _don_khung(ax, "x")
     tay = [plt.Rectangle((0, 0), 1, 1, facecolor=MAU_NXB[k], hatch=GACH[k],
@@ -187,7 +187,7 @@ def ve_retrieval_vs_answer(d: pd.DataFrame) -> Path:
 
 
 # --- Hình 3: Recall@k thô so với production ------------------------------------
-def ve_recall_at_k(d: pd.DataFrame) -> Path:
+def ve_recall_at_k(d: pd.DataFrame, tong_cau: int) -> Path:
     ks = [3, 5, 10]
     tho = [_gop(d, f"recall@{k}_raw") for k in ks]
     prod = _gop(d, "recall_page")
@@ -218,7 +218,7 @@ def ve_recall_at_k(d: pd.DataFrame) -> Path:
     ax.set_ylim(0, 1.14)
     ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.set_ylabel("Recall ở mức trang")
-    ax.set_title("Cấu hình thật VƯỢT trần của kênh ngữ nghĩa — 231 câu hỏi",
+    ax.set_title(f"Cấu hình thật VƯỢT trần của kênh ngữ nghĩa — {tong_cau} câu hỏi",
                  loc="left", color=MUC_CHINH)
     _don_khung(ax, "y")
     return _luu(fig, "recall_at_k.png")
@@ -294,14 +294,14 @@ def main() -> int:
     _dat_kieu()
     d = _doc_eval()
     tong_cau = int(d["num_questions"].sum())
-    if tong_cau != 231:
-        # Không tự sửa: nếu bộ test đổi, các câu chữ trong .tex cũng phải đổi
-        # theo, nên chỗ này chỉ được phép kêu lên.
-        print(f"CẢNH BÁO: tổng số câu = {tong_cau}, không phải 231. "
-              f"Số trong .tex phải được rà lại trước khi tin hình.")
-    for ham in (ve_leaderboard, ve_retrieval_vs_answer, ve_recall_at_k,
-                ve_recall_per_book, ve_judge_scores):
-        print("  đã ghi", ham(d).relative_to(GOC))
+    # Không hardcode tổng số câu: nó đã đổi 231->238->240 trong quá trình làm
+    # đồ án (xem D-169..D-174). Tiêu đề hình lấy thẳng giá trị đo được; số
+    # trong .tex phải được rà lại theo đúng tong_cau in ra dưới đây.
+    for ham, can_tong_cau in ((ve_leaderboard, True), (ve_retrieval_vs_answer, False),
+                              (ve_recall_at_k, True), (ve_recall_per_book, False),
+                              (ve_judge_scores, False)):
+        duong = ham(d, tong_cau) if can_tong_cau else ham(d)
+        print("  đã ghi", duong.relative_to(GOC))
     print(f"\n5 hình sinh từ {CSV_EVAL.name} — {tong_cau} câu / {len(d)} cuốn.")
     print("Số gộp theo CÂU (dùng trong Chương 4):")
     for cot, ten in [("recall_page", "Recall (cấu hình thật)"),

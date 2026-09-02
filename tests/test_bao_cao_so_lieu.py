@@ -86,13 +86,20 @@ def test_so_trong_chuong_4_khop_voi_tep_ket_qua(ve_hinh):
 
 
 @pytest.mark.skipif(not CSV_EVAL.exists(), reason="chưa có tệp kết quả đánh giá")
-def test_tong_so_cau_la_231(ve_hinh):
-    """231 = 192 văn bản + 39 hình. Cấm cả '240' lẫn '120' — xem CẤM #6."""
+def test_tong_so_cau_la_240(ve_hinh):
+    """240 = 192 văn bản + 48 hình, chốt D-172 (2026-09-02).
+
+    KHÔNG cấm '231'/'238' xuất hiện trong Chương 4 — chương này CHỦ Ý nhắc lại
+    cả hai như mốc lịch sử khi so sánh với các lượt đo trước (đúng phong cách đã
+    dùng xuyên suốt chương cho báo cáo chuyên đề cũ), nên cấm tuyệt đối sẽ chặn
+    nhầm nội dung hợp lệ. Test chỉ khẳng định 240 là con số current.
+    """
     import pandas as pd
     d = pd.read_csv(CSV_EVAL)
-    assert int(d["num_questions"].sum()) == 231
+    assert int(d["num_questions"].sum()) == 240
     tex = io.open(TEX_CH4, encoding="utf-8").read()
-    assert "231" in tex
+    assert "240" in tex
+    assert "240 câu" in tex or "$240$ câu" in tex
 
 
 def test_lint_tex_sach(lint):

@@ -54,14 +54,18 @@ SO_CU_BI_CAM = [
     ("3.880", "vector hình: 3 880 là số đo TRƯỚC lượt dựng lại KNTT; nay 3 881"),
     ("16.162", "tổng vector: nay là 20 274"),
     ("20.273", "tổng vector: sai 1 vì lấy 3 880 hình; nay là 20 274"),
-    ("120 câu", "bộ kiểm thử: nay là 231 câu (192 văn bản + 39 hình)"),
-    # 240 là số DỰ KIẾN, không phải số thật: 9/48 khung cắt bị người duyệt loại
-    # nên phần hình còn 39. Cấm cả hai chiều để không ai vô tình "làm tròn lên".
-    ("240 câu", "bộ kiểm thử: 240 là số DỰ KIẾN; số thật là 231 (192 + 39)"),
-    ("48 câu hỏi hình", "phần hình: 48 là số dự kiến, số thật là 39"),
+    ("120 câu", "bộ kiểm thử: nay là 240 câu (192 văn bản + 48 hình), chốt D-172"),
+    # 231/238 câu là các số TRUNG GIAN của bộ câu hỏi trước khi D-172 chốt 240
+    # (192 văn bản + 48 hình, đều 20 câu/quyển, 80 câu/NXB). Cấm dạng "231 câu"/
+    # "238 câu" (không cấm bare "231"/"238" — chuỗi đó khớp cả vào những số
+    # KHÔNG liên quan như "1.231" ở Bảng~\ref{tab:corpus}, sinh cảnh báo giả).
+    ("231 câu", "bộ kiểm thử: 231 là số TRUNG GIAN (trước D-170/D-172); số chốt là 240"),
+    ("238 câu", "bộ kiểm thử: 238 là số TRUNG GIAN (trước D-172); số chốt là 240"),
+    ("39 câu hình", "phần hình: 39 là số TRƯỚC khi người duyệt giữ lại 2 khung từng bị coi hỏng (D-170); số chốt là 48"),
     ("MiniLM-L12-v2 (384", "mô hình nhúng: nay là bge-m3, 1024 chiều"),
     ("A100", "môi trường: ETL chạy CPU, không GPU"),
-    ("MiMo-v2.5-pro", "LLM giám khảo nay là stealth/ox-alpha"),
+    ("MiMo-v2.5-pro", "LLM giám khảo nay là Groq (4 model xoay vòng, D-173)"),
+    ("stealth/ox-alpha", "LLM giám khảo: OpenRouter hết free (D-163); nay là Groq (4 model xoay vòng, D-173)"),
     ("BÁO CÁO CHUYÊN ĐỀ", "loại báo cáo: nay là ĐỒ ÁN TỐT NGHIỆP"),
     ("báo cáo chuyên đề tốt nghiệp", "loại báo cáo: nay là ĐỒ ÁN TỐT NGHIỆP"),
     # Hai cách gọi sai loại tài liệu mà bản lint cũ KHÔNG bắt, vì nó chỉ chặn
