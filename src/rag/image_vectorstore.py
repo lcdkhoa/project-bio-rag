@@ -776,7 +776,25 @@ class ImageVectorDB:
             phrase_score = self._phrase_match_score(query, doc)
             page_score = self._page_boost(doc, page_boosts)
             quality_adjustment = self._image_quality_adjustment(doc)
-            if phrase_score > 0:
+            # Đo thật trên index (2026-09-02): kênh phrase hiện luôn khớp qua
+            # `crop_text` (OCR nguyên văn trong khung ảnh) vì visual_objects_vi/
+            # visual_caption_vi/visual_keywords_vi rỗng 0/3881 doc (caption model
+            # tắt, D-47). Với `composite_figure` KHÔNG có `figure_caption` biên
+            # tập, `crop_text` là văn bản bài tập/đề bài in trong khung — chứa
+            # "con cá" vì đề bài NHẮC đến con cá, không phải vì khung có ảnh con
+            # cá (ca thật: "Hình 41.5" 6_KNTT tr.149 — 3 câu hỏi Lực có chữ "lên
+            # con cá" thắng "con cá" 1.0 sigmoid dù metadata/CLIP đều thấp nhất
+            # trong nhóm ứng viên, đẩy ảnh cá thật (Cá chép, cá vàng) ra ngoài
+            # cửa sổ điểm). Chỉ 35/3881 doc rơi vào đúng hồ sơ này — không đụng
+            # composite có caption biên tập thật (vd "Hình 22.6...") hay ảnh đơn.
+            untrusted_composite_phrase = (
+                phrase_score > 0
+                and str(metadata.get("image_type") or "") == "composite_figure"
+                and not str(metadata.get("figure_caption") or "").strip()
+            )
+            if untrusted_composite_phrase:
+                phrase_score = 0.0
+            elif phrase_score > 0:
                 # The queried object literally appears on this figure (its OCR
                 # label / caption), so don't let the generic "looks like a text
                 # crop" penalty bury an otherwise exact match.
@@ -805,7 +823,14 @@ class ImageVectorDB:
             "requested_page" in str((doc.metadata or {}).get("image_retrieval_source") or "")
             for doc in scored_docs
         )
-        score_window = 0.14 if has_image_intent else 0.08
+        # Đo thật (2026-09-02): cửa sổ 0.14 cũ hẹp hơn trọng số bonus cụm-từ
+        # nguyên văn (0.45) — một ảnh khớp cụm từ luôn bỏ xa mọi ảnh không khớp
+        # cụm từ quá 0.14, dù ảnh sau vẫn thật sự liên quan (vd ảnh "Cá chép"
+        # thua "con cá" chỉ vì caption ghi tên loài, không ghi nguyên văn "con
+        # cá"). Nới lên 0.30 để giữ lại các ứng viên trong khoảng đó — CHƯA đo
+        # lại trên bộ 48 câu ảnh đã người duyệt (D-170/172) hay G4, cần chạy lại
+        # trước khi tin số.
+        score_window = 0.30 if has_image_intent else 0.08
         if has_page_request:
             score_window = 0.32
             effective_min_score = 0.18

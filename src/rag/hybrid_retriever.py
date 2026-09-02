@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from ..config import RETRIEVER_K, IMAGE_RETRIEVER_K
 from .vectorstore import VectorDB
 from .image_vectorstore import ImageVectorDB
-from .query_intent import is_image_only_query
+from .query_intent import has_image_intent, is_image_only_query
 
 logger = logging.getLogger(__name__)
 
@@ -67,10 +67,15 @@ class HybridRetriever:
         except Exception as e:
             logger.warning(f"Text retrieval failed: {e}")
 
-        try:
-            image_docs = self._image_retriever.invoke(query, related_text_docs=text_docs)
-        except Exception as e:
-            logger.warning(f"Image retrieval failed: {e}")
+        # Chỉ tìm ảnh khi câu hỏi có tín hiệu RÕ RÀNG cần hình (`has_image_intent`,
+        # cùng bộ từ khoá đã dùng cho định tuyến chỉ-ảnh). Trước bản vá này, MỌI
+        # câu hỏi thuần chữ đều kèm gallery ảnh — đo thật 2026-09-02: câu hỏi Hoá
+        # thuần "sắt tác dụng với axit tạo thành gì" vẫn trả về 3 ảnh không ai hỏi.
+        if has_image_intent(query):
+            try:
+                image_docs = self._image_retriever.invoke(query, related_text_docs=text_docs)
+            except Exception as e:
+                logger.warning(f"Image retrieval failed: {e}")
 
         return SearchResult(
             text_docs=text_docs,

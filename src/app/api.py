@@ -193,10 +193,17 @@ def chat_response_body(answer_text, citations, images):
     và trên thực tế đã không làm, tức bảo đảm quan trọng nhất của hệ thống không
     tới được mắt học sinh.
     """
+    # `append_citations` đã ẩn khối trích dẫn dạng chữ khi câu trả lời là
+    # fallback ("...không được đề cập..."), nhưng trường `citations` có cấu
+    # trúc — thứ FE thực sự render thành chip — trước bản vá này KHÔNG được lọc
+    # theo cùng điều kiện. Đo thật 2026-09-02: câu "bài 8 sgk 9 cánh diều dạy
+    # bài gì" trả lời fallback đúng nhưng vẫn hiện 3 chip nguồn sai (CD7 tr.2,
+    # KNTT7 tr.8, CD8 tr.179) — học sinh đọc chip trước khi đọc câu trả lời.
+    effective_citations = [] if is_fallback_answer(answer_text) else (citations or [])
     return {
         "answer": append_citations(answer_text, citations),
         "answer_text": answer_text,
-        "citations": citations or [],
+        "citations": effective_citations,
         "images": images,
     }
 
