@@ -18,8 +18,8 @@
   "SGK_KHTN_6_KNTT_p12_01": {
    "cau_hoi": "Trong Hình 2.2, kí hiệu nào đại diện cho cảnh báo chất độc sinh học?",
    "dap_an": "hình d)",
-   "bo": false,
-   "ly_do_bo": ""
+   "bo": true,
+   "ly_do_bo": "giu deu 4 cau hinh/quyen (240 cau) - khung goc da duyet dung duoc, khung nay la du phong khong can dung nua"
   },
   "SGK_KHTN_6_KNTT_p9_02": {
    "cau_hoi": "Quan sát Hình 1.2, hãy kể tên MỘT cặp phương tiện (xưa – nay) mà hình vẽ dùng để so sánh và cho biết cặp phương tiện đó thuộc lĩnh vực nào của đời sống.",
@@ -114,8 +114,8 @@
   "SGK_KHTN_7_CD_p11_01": {
    "cau_hoi": "Quan sát Hình 1.3, hãy cho biết nguyên tử lithium được vẽ gồm bao nhiêu proton, bao nhiêu neutron và bao nhiêu electron?",
    "dap_an": "Số proton: 3 hạt (các hạt màu đỏ trong hạt nhân).\nSố neutron: 4 hạt (các hạt màu xanh lá trong hạt nhân).\nSố electron: 3 hạt (các hạt màu xanh lam ở lớp vỏ: 2 hạt ở vòng trong và 1 hạt ở vòng ngoài).",
-   "bo": false,
-   "ly_do_bo": ""
+   "bo": true,
+   "ly_do_bo": "giu deu 4 cau hinh/quyen (240 cau) - khung goc da duyet dung duoc, khung nay la du phong khong can dung nua"
   },
   "SGK_KHTN_7_CD_p4_01": {
    "cau_hoi": "Quan sát Hình 1, hãy cho biết hạt đỗ có thể nằm ở những kiểu nào khi rơi xuống mặt đất?",
