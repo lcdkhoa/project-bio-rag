@@ -398,6 +398,56 @@ mới; `pytest tests/`: 781 passed, 3 skipped. **Còn nợ, ngoài phạm vi D-1
 chạy lại `evaluator.py`/`report_numbers.py` trước khi nộp báo cáo nếu muốn số liệu
 khớp cấu hình production hiện tại.
 
+## Cấu trúc đánh giá mới theo yêu cầu CBHD (2026-09-03, D-181) — CHỐT ĐỊNH HƯỚNG, CHƯA CODE
+
+CBHD xem bảng 240 câu đã nộp (12 quyển × 9 cột `precision_page…overall_score`) và yêu
+cầu đổi hẳn cấu trúc đo. **Đây là chỉ đạo miệng, lệch có chủ đích khỏi `goal.docx`**
+(đề cương chỉ yêu cầu Precision@k/Recall@k/MRR, không có F1, không có "4 phương pháp",
+không có câu ngoài-phạm-vi) — chấp nhận lệch vì CBHD quyết định kết quả bảo vệ, ghi rõ
+ở D-181 để không lẫn với một phép đo lật giả định kỹ thuật.
+
+Yêu cầu cụ thể:
+
+1. **Bỏ 9 cột theo-quyển**: `precision_page, recall_page, mrr_page, precision_book,
+   recall_book, mrr_book, retrieval_score, answer_score, overall_score`.
+2. **Precision/Recall/F1 theo K = 3, 5, 10, 20** (hiện `ablation.py:70` chỉ có
+   `KS = (1, 3, 5, 10)`, không có F1). Recall@K đổi từ hit@k nhị phân sang **tỉ lệ
+   chuẩn** (số chunk đúng lấy được / tổng chunk gold, dùng `n_gold_chunks` có sẵn).
+3. **Đúng 4 phương pháp truy vấn**, ánh xạ vào 4/12 dòng có sẵn của
+   `ablation.py::ALL_CONFIGS` — không cần đường truy vấn mới:
+   - **keyword** = bm25, rerank off, gate off
+   - **dense** = dense, rerank off, gate off
+   - **truyền thống** = hybrid, rerank off, gate off
+   - **đề xuất** = hybrid, rerank on, gate off (đúng `.env` production sau D-180)
+4. **Thêm 30 câu "ngoài phạm vi 12 quyển KHTN"** (câu hỏi khác môn hẳn, không phải
+   KHTN nhưng thiếu nội dung) → tổng **270 câu**. Hệ thống phải trả lời "không biết"
+   thay vì bịa (Nguyên tắc 1). Người soạn phải duyệt tay, không tự sinh rồi tin luôn
+   (Nguyên tắc 2).
+5. **Trục phân tích = LOẠI câu hỏi** (văn bản 192 / hình 48 / ngoài-phạm-vi 30),
+   **không** theo quyển/môn — CBHD nói rõ tách theo môn làm vector DB "rời rạc".
+6. Công thức/hình: chỉ mô tả bằng lời trong text báo cáo (`phan_mon`/`figure_label`
+   có sẵn), không làm bảng số liệu riêng theo loại nội dung.
+7. Gộp `recall_at_k.py` vào `ablation.py`, xoá file rời.
+8. Giữ `RERANK_SCORE_MIN=0,59` (D-180), kèm giải thích ngưỡng khi trình bày.
+
+**Rủi ro đã phản biện, phải xử lý lúc code, không phải ghi chú suông** (chi tiết đầy
+đủ ở D-181):
+- 30 câu ngoài-phạm-vi có 0 gold chunk → P/R/F1@K chia 0/0, phải tách riêng một chỉ
+  số khác (vd tỉ lệ từ chối đúng), không gộp chung công thức với 2 nhóm còn lại.
+- Câu "hình" bị `is_image_only_query()` (D-88) định tuyến bỏ qua truy xuất text theo
+  đúng thiết kế → P/R/F1@K văn bản = 0 cho các câu đó không phải lỗi, phải chú thích.
+- `report/ve_hinh_chuong4.py` và `tests/test_bao_cao_so_lieu.py` đọc/khoá cứng cấu
+  trúc `evaluation_report_240.csv` hiện tại — rà hai chỗ này TRƯỚC khi đổi cột.
+- Bảng 240 câu trong `report/tex_source/` (D-175) vẫn đo ở `RERANK_SCORE_MIN=0,2` cũ
+  — cộng dồn với đổi cấu trúc ở đây nghĩa là **toàn bộ chương 4/5 phải viết lại từ
+  đầu**, không phải vá số. Hạn bảo vệ 23/09/2026.
+- LLM-judge trên 270 câu × nhiều cấu hình tốn quota Groq — TPD từng cạn giữa lượt
+  240 câu cũ (D-173/D-174), cần tính trước số lượt gọi.
+
+**Việc còn lại theo đúng 4 bước "định nghĩa xong" của CLAUDE.md — CHƯA LÀM VIỆC NÀO**:
+sửa `ablation.py`, sửa `evaluator.py`, soạn 30 câu ngoài-phạm-vi, chạy lại toàn bộ,
+viết lại `report/tex_source/` chương 4/5.
+
 ## Quy tắc làm việc (luôn áp dụng)
 
 - **Phản biện mọi thay đổi code tìm bug ẩn trước khi báo xong** — truy edge case,
@@ -410,6 +460,14 @@ khớp cấu hình production hiện tại.
   unit test có fixture tổng hợp hơn end-to-end nặng nề.
 - **Commit message: KHÔNG có dòng `Co-Authored-By`** (và không có dòng "Generated
   with"). Chỉ message thuần.
+- **Việc implement lớn có ≥2 phần tách được theo file/module riêng biệt (không đụng
+  chung file)**: chia tối đa 2 subagent chạy **song song trong CÙNG một lượt gọi**
+  (model Sonnet 5), mỗi agent một phạm vi file rõ ràng, prompt đầy đủ ngữ cảnh (agent
+  mới không thấy hội thoại). Sau khi cả hai xong, dùng **1 subagent Opus 5 phản biện**
+  — đối chiếu code đã sửa với yêu cầu gốc, tìm edge case/off-by-one/fallback âm thầm,
+  chạy test liên quan — trước khi báo việc là xong. Không áp dụng cho việc nhỏ/một
+  file/một hàm — lúc đó tự làm trực tiếp nhanh hơn. (Chốt theo yêu cầu người dùng
+  2026-09-03, áp dụng lần đầu cho D-181.)
 - Ghi mỗi quyết định vào `document/decision_log.html`; giữ spec/plan trong
   `document/specs/`; giữ CLAUDE.md + memory luôn khớp thực tế.
 

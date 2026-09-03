@@ -25,6 +25,47 @@ index đổi thì đệm bị từ chối chứ không âm thầm dùng lại (C
 viên — con số đó phụ thuộc chính bộ truy xuất đang chấm, nên dùng nó là vòng
 tròn luẩn quẩn). Báo cáo trần đó **cạnh** precision, để người đọc thấy 0,55 so
 với **trần của chính nó** chứ không phải so với 1,0.
+
+## Cấu trúc đo lại theo yêu cầu CBHD (D-181, 2026-09-03)
+
+Chỉ đạo miệng, lệch có chủ đích khỏi `goal.docx` — xem D-181 trong
+`document/decision_log.html`. Bốn thay đổi trong file này:
+
+- `KS` có thêm `20`; mỗi K đi kèm **F1@K** (an toàn khi P+R=0, không chia 0/0).
+  **F1@K là MACRO theo câu**: tính `2PR/(P+R)` cho TỪNG câu rồi lấy trung bình,
+  giống hệt cách `P@K`/`R@K` đang được trung bình trong file này. Hệ quả phải nói
+  trước kẻo người đọc tưởng bảng sai: `F1@K` in ra **không** bằng
+  `2·P@K·R@K/(P@K+R@K)` tính từ hai cột kế bên (bất đẳng thức Jensen — macro-F1
+  luôn ≤ F1 của macro-P/macro-R). Lấy trung bình rồi mới ghép là một độ đo khác,
+  và nó che mất các câu recall 0.
+- `R@K` đổi từ hit@k nhị phân sang **tỉ lệ chuẩn**: `|top-k ∩ gold| / m`, `m` lấy
+  từ `_n_gold_chunks` đã có sẵn (không phải "có trúng hay không").
+- Bốn "phương pháp" báo cáo (`METHOD_LABELS`) ánh xạ vào 4/12 dòng có sẵn của
+  `ALL_CONFIGS` — không có đường truy vấn mới.
+- Câu "ngoài phạm vi" (không có TRANG VÀNG theo định nghĩa) bị tách khỏi công
+  thức P/R/F1@K — mẫu số 0 vô nghĩa — và đo bằng "tỉ lệ từ chối đúng" riêng
+  (`ngoai_pham_vi_ti_le_tu_choi_dung`).
+
+## Bảng này KHÔNG đi qua định tuyến ảnh (D-88) — phải nói ra khi trình bày
+
+`rank_for()` chấm **thẳng kênh văn bản** cho mọi câu có trang vàng, kể cả 48 câu
+HÌNH. Production thì khác: `HybridRetriever.search()` gọi `is_image_only_query()`
+và với câu chỉ-cần-ảnh nó **bỏ qua truy xuất văn bản hoàn toàn** (D-88), nên
+P/R/F1@K văn bản của đúng những câu đó ở production là **0 theo thiết kế, không
+phải lỗi**. Hệ quả: số trong bảng này là *năng lực kênh văn bản*, luôn ≥ số
+người dùng thật nhận trên nhóm câu hình. Đây chính là nguồn của khoảng lệch 0,004
+giữa recall production và recall mô phỏng đã ghi ở D-175 (1/240 câu hình bị định
+tuyến sang chỉ-cần-ảnh). Đừng dán hai con số cạnh nhau như thể cùng một phép đo.
+
+`recall_at_k.py` đã **gộp vào đây và bị xoá**: chức năng độc nhất của nó (recall
+dense baseline vs rerank, không LLM) đã trùng với hai dòng có sẵn trong
+`ALL_CONFIGS` (`mode=dense rerank=off/on gate=off`) — chạy `--build-cache` một
+lần rồi đọc đúng hai dòng đó thay vì một script rời. Trục "theo từng quyển" của
+nó (mà nó có vì bộ test cũ tách file theo sách) **không được mang sang** —
+CBHD nói rõ tách theo quyển/môn làm vector DB "rời rạc" (D-181 #5); trục phân
+tích đúng bây giờ là LOẠI câu hỏi (văn bản/hình/ngoài-phạm-vi), không phải
+sách. Hàm `reciprocal_rank()` (dùng nội bộ để tính MRR) được giữ lại nguyên
+tên vì `tests/test_mrr_metric.py` import trực tiếp nó.
 """
 
 from __future__ import annotations
@@ -67,7 +108,7 @@ from src.rag.bm25 import chunk_ids_digest  # noqa: E402
 from src.rag.fusion import GateStats, fuse, relevance_gate  # noqa: E402
 from src.rag.sparse_store import get_sparse_index, open_text_collection  # noqa: E402
 
-KS = (1, 3, 5, 10)
+KS = (1, 3, 5, 10, 20)
 # Bề rộng ứng viên của MỖI kênh trước khi hợp nhất. Rộng hơn `RERANK_FETCH_K`
 # đang chạy (20) vì bảng này phải đo được cả recall@10 SAU cổng lọc.
 CANDIDATE_N = 50
@@ -356,6 +397,22 @@ class Config:
                 f"gate={'on ' if self.gate else 'off'} fus={self.fusion:4s}{rong}")
 
 
+# Bốn "phương pháp" báo cáo theo yêu cầu CBHD (D-181 #3) — ánh xạ trực tiếp vào
+# 4/12 dòng có sẵn của `ALL_CONFIGS` bên dưới, KHÔNG phải đường truy vấn mới.
+# Khoá là (mode, rerank, gate) đúng TÊN TRƯỜNG thật của `Config` — bản D-181 gốc
+# giả định tên `retrieval_mode`, đã đối chiếu code và sửa thành `mode`.
+METHOD_LABELS: Dict[Tuple[str, bool, bool], str] = {
+    ("bm25", False, False): "keyword",
+    ("dense", False, False): "dense",
+    ("hybrid", False, False): "truyen_thong",
+    ("hybrid", True, False): "de_xuat",  # cấu hình production thật (D-180)
+}
+
+
+def method_label(cfg: "Config") -> str:
+    return METHOD_LABELS.get((cfg.mode, cfg.rerank, cfg.gate), "")
+
+
 def rank_for(cfg: Config, query: str, cache: Cache, sparse,
              top_n: int, gate_stats: Optional[GateStats] = None) -> List[str]:
     """Trả danh sách chunk_id đã xếp hạng cho MỘT câu hỏi dưới MỘT cấu hình."""
@@ -408,43 +465,126 @@ def rank_for(cfg: Config, query: str, cache: Cache, sparse,
 
 # --- Chỉ số -------------------------------------------------------------
 
+def _gold_key(row: dict) -> Optional[Tuple[str, int]]:
+    """Khoá (sách, trang) của câu hỏi, hoặc `None` nếu câu KHÔNG có trang vàng.
+
+    Câu "ngoài phạm vi" (D-181 #4) không thuộc corpus 12 quyển nên không có
+    trang vàng — `source_book`/`source_page` rỗng là tín hiệu THIẾT KẾ của loại
+    câu đó, không phải lỗi dữ liệu cần raise (khác với `ManifestMissing` ở
+    đường ETL, nơi thiếu là bug).
+    """
+    sb = str(row.get("source_book", "") or "").strip()
+    sp = str(row.get("source_page", "") or "").strip()
+    if not sb or not sp:
+        return None
+    try:
+        return (sb, int(sp))
+    except ValueError:
+        return None
+
+
+def reciprocal_rank(flags: Sequence[bool]) -> float:
+    """1/hạng của phần tử `True` đầu tiên (1-based), 0.0 nếu không có.
+
+    Giữ lại từ `recall_at_k.py` (đã gộp/xoá, D-181 #7) — `tests/test_mrr_metric.py`
+    import thẳng tên này.
+    """
+    for i, f in enumerate(flags):
+        if f:
+            return 1.0 / (i + 1)
+    return 0.0
+
+
 def evaluate(cfg: Config, rows: Sequence[dict], cache: Cache, sparse,
              page_of: Dict[str, Tuple[str, int]]) -> dict:
+    """Tính P/R/F1@K trên nhóm câu CÓ gold chunk; nhóm ngoài-phạm-vi tách riêng.
+
+    Ranh giới là **KHÔNG CÓ TRANG VÀNG** (`_gold_key(row) is None`), KHÔNG phải
+    `_n_gold_chunks == 0`. Hai điều kiện đó trùng nhau trên corpus hôm nay (đo
+    2026-09-03: 30/270 câu không có trang vàng, và **0** câu có trang vàng mà
+    trang đó lại 0 chunk trong index 16 515 chunk) nhưng chúng là HAI THỨ KHÁC
+    HẲN nhau:
+
+    - không có trang vàng  -> câu ngoài phạm vi 12 quyển (D-181 #4), đúng thiết kế;
+    - có trang vàng nhưng trang đó 0 chunk -> **khuyết dữ liệu** (trang bìa, trang
+      ETL bỏ sót, gold key lệch số trang).
+
+    Dùng `_n_gold_chunks == 0` cho cả hai thì ca thứ hai bị ÂM THẦM đổi nhãn
+    thành "ngoài phạm vi" và chui vào mẫu số của tỉ lệ từ chối đúng, đồng thời
+    `so_cau` tụt đi mà không ai biết — đúng loại fallback im lặng Nguyên tắc 5
+    cấm. Nên ca đó bị tách ra thành `suy_bien_*` và NÊU TÊN, không bị gộp vào
+    đâu cả.
+    """
     max_k = max(KS)
-    hits = {k: 0 for k in KS}
+    out_scope = [r for r in rows if _gold_key(r) is None]
+    co_trang_vang = [r for r in rows if _gold_key(r) is not None]
+    in_scope = [r for r in co_trang_vang if int(r.get("_n_gold_chunks", 0)) > 0]
+    suy_bien = [r for r in co_trang_vang if int(r.get("_n_gold_chunks", 0)) == 0]
+
     prec = {k: 0.0 for k in KS}
+    rec = {k: 0.0 for k in KS}
+    f1 = {k: 0.0 for k in KS}
     ceil = {k: 0.0 for k in KS}
     mrr = 0.0
     empty = 0
     gate_stats = GateStats()
-    for row in rows:
+    for row in in_scope:
         q = str(row["question"])
-        gold = (str(row["source_book"]), int(row["source_page"]))
+        gold = _gold_key(row)
         ranked = rank_for(cfg, q, cache, sparse, max_k, gate_stats)
         if not ranked:
             empty += 1
         flags = [page_of.get(c) == gold for c in ranked]
-        for i, f in enumerate(flags):
-            if f:
-                mrr += 1.0 / (i + 1)
-                break
+        mrr += reciprocal_rank(flags)
         # Trần của precision: trang vàng chỉ có `m` chunk, nên precision@k
         # không thể vượt min(k, m)/k dù xếp hạng hoàn hảo (§2.2 prompt M2).
-        n_gold_total = int(row.get("_n_gold_chunks", 0))
+        n_gold_total = int(row["_n_gold_chunks"])  # in_scope đảm bảo > 0
         for k in KS:
-            if any(flags[:k]):
-                hits[k] += 1
-            prec[k] += sum(flags[:k]) / k
+            hit_count = sum(flags[:k])
+            p_k = hit_count / k
+            # Recall@K = tỉ lệ chuẩn (D-181 #2), KHÔNG còn là hit@k nhị phân:
+            # |top-k ∩ gold| / |gold|, mẫu số là TỔNG chunk vàng trong index.
+            r_k = hit_count / n_gold_total
+            prec[k] += p_k
+            rec[k] += r_k
+            f1[k] += (2 * p_k * r_k / (p_k + r_k)) if (p_k + r_k) > 0 else 0.0
             ceil[k] += min(k, n_gold_total) / k
-    n = len(rows)
-    out = {"cau_hinh": cfg.label, "so_cau": n, "rong": empty,
-           "MRR": round(mrr / n, 4)}
+
+    n = len(in_scope)
+    out = {
+        "cau_hinh": cfg.label,
+        "phuong_phap_bao_cao": method_label(cfg),
+        "so_cau": n,
+        "rong": empty,
+        "MRR": round(mrr / n, 4) if n else 0.0,
+    }
     for k in KS:
-        out[f"R@{k}"] = round(hits[k] / n, 4)
-    for k in KS:
-        out[f"P@{k}"] = round(prec[k] / n, 4)
-        out[f"tranP@{k}"] = round(ceil[k] / n, 4)
+        out[f"P@{k}"] = round(prec[k] / n, 4) if n else 0.0
+        out[f"R@{k}"] = round(rec[k] / n, 4) if n else 0.0
+        out[f"F1@{k}"] = round(f1[k] / n, 4) if n else 0.0
+        out[f"tranP@{k}"] = round(ceil[k] / n, 4) if n else 0.0
     out.update({f"gate_{key}": val for key, val in gate_stats.summary().items()})
+
+    # Nhóm ngoài-phạm-vi (D-181 #4/#5): tách khỏi P/R/F1@K ở trên (mẫu số 0 vô
+    # nghĩa). Chỉ số đúng câu hỏi của nhóm này là "có từ chối đúng không" — hệ
+    # thống KHÔNG trả về trích dẫn nào, tức không tuyên bố sai (Nguyên tắc 1).
+    tu_choi_dung = None
+    if out_scope:
+        so_tu_choi = 0
+        for row in out_scope:
+            q = str(row["question"])
+            ranked = rank_for(cfg, q, cache, sparse, max_k, gate_stats)
+            if not ranked:
+                so_tu_choi += 1
+        tu_choi_dung = round(so_tu_choi / len(out_scope), 4)
+    out["ngoai_pham_vi_so_cau"] = len(out_scope)
+    out["ngoai_pham_vi_ti_le_tu_choi_dung"] = tu_choi_dung
+    # Câu CÓ trang vàng nhưng trang đó không có chunk nào trong index: không
+    # tính được P/R/F1 (mẫu số 0) và cũng KHÔNG phải câu ngoài phạm vi. Đếm
+    # riêng để nó không biến mất khỏi mọi cột (0 là con số đúng hôm nay — đo
+    # 2026-09-03 trên 270 câu / 16 515 chunk).
+    out["suy_bien_gold_0_chunk"] = len(suy_bien)
+
     return out
 
 
@@ -466,6 +606,12 @@ ALL_CONFIGS = [
     for r in (False, True)
     for g in (False, True)
 ]
+
+# 4 "phương pháp" báo cáo CBHD (D-181 #3) — CHÍNH XÁC 4/12 dòng của ALL_CONFIGS
+# ở trên, không phải danh sách rời. Thứ tự khớp METHOD_LABELS để bảng in ra
+# đúng thứ tự keyword -> dense -> truyền thống -> đề xuất.
+REPORT_CONFIGS = [Config(mode=m, rerank=r, gate=g)
+                  for (m, r, g) in METHOD_LABELS]
 
 # Bảng phụ: CHỌN CÁCH HỢP NHẤT BẰNG SỐ (§3.3 đòi "đo cả hai rồi mới chốt").
 # Miễn phí — bộ nhớ đệm không phụ thuộc cách hợp nhất, nên đây chỉ là phát lại.
@@ -495,6 +641,11 @@ def main() -> int:
              "bo_sach. Dùng để KIỂM THIÊN VỊ: nếu ưu thế của BM25 tập trung ở "
              "`truc_tiep` và biến mất ở `suy_luan` thì bộ test đang thiên vị kênh "
              "từ khoá, vì câu hỏi do LLM sinh trong lúc đọc chính trang vàng.")
+    ap.add_argument(
+        "--chi-4-phuong-phap", action="store_true",
+        help="Chỉ chạy 4 cấu hình CBHD yêu cầu (keyword/dense/truyền thống/"
+             "đề xuất, D-181 #3) — bỏ bảng hợp nhất phụ và bảng bề rộng "
+             "production, dùng cho báo cáo chương 4/5.")
     args = ap.parse_args()
 
     rows = load_testset(Path(args.testset_dir))
@@ -505,8 +656,23 @@ def main() -> int:
     sparse = get_sparse_index(collection=collection)
     page_of, per_page = build_page_lookup(collection)
     for row in rows:
-        row["_n_gold_chunks"] = per_page.get(
-            (str(row["source_book"]), int(row["source_page"])), 0)
+        gold = _gold_key(row)
+        row["_n_gold_chunks"] = per_page.get(gold, 0) if gold else 0
+
+    # NÊU TÊN ngay, không đợi tới bảng: một câu CÓ trang vàng mà trang đó 0 chunk
+    # là khuyết dữ liệu (gold key lệch, trang bìa, ETL bỏ sót), KHÔNG phải câu
+    # ngoài phạm vi — nó bị loại khỏi P/R/F1 nên nếu im lặng thì `so_cau` tụt đi
+    # mà bảng vẫn trông đầy đủ.
+    _suy_bien = [r for r in rows
+                 if _gold_key(r) is not None and r["_n_gold_chunks"] == 0]
+    if _suy_bien:
+        print(f"\n!! {len(_suy_bien)}/{len(rows)} câu CÓ trang vàng nhưng trang đó "
+              f"KHÔNG có chunk nào trong index -> bị loại khỏi P/R/F1@K "
+              f"(mẫu số 0), và KHÔNG được tính là câu ngoài phạm vi:")
+        for r in _suy_bien[:10]:
+            print(f"   {r['_file']}  {_gold_key(r)}  {str(r['question'])[:60]!r}")
+        if len(_suy_bien) > 10:
+            print(f"   … và {len(_suy_bien) - 10} câu nữa")
 
     cache_path = Path(args.cache)
     if args.build_cache:
@@ -550,39 +716,53 @@ def main() -> int:
         rows_out = [evaluate(c, data, cache, sparse, page_of) for c in configs]
         head = (f"{'cấu hình':38s} "
                 + " ".join(f"{'R@' + str(k):>7s}" for k in KS)
-                + f" {'MRR':>7s} {'P@5':>7s} {'trầnP@5':>8s} {'rỗng':>5s}"
-                + f" {'cắt':>6s}")
+                + f" {'MRR':>7s} {'P@5':>7s} {'F1@10':>7s} {'trầnP@5':>8s}"
+                + f" {'rỗng':>5s} {'cắt':>6s} {'ngPV.tcđ':>9s}")
         print(f"\n### {title}")
         print(head)
         print("-" * len(head))
         for r in rows_out:
+            tcd = r.get("ngoai_pham_vi_ti_le_tu_choi_dung")
+            tcd_s = f"{tcd:9.2f}" if tcd is not None else f"{'—':>9s}"
             print(f"{r['cau_hinh']:38s} "
                   + " ".join(f"{r['R@' + str(k)]:7.3f}" for k in KS)
-                  + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['tranP@5']:8.3f}"
+                  + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['F1@10']:7.3f}"
+                  + f" {r['tranP@5']:8.3f}"
                   + f" {r['rong']:5d}"
-                  + f" {r.get('gate_ti_le_truy_van_bi_cat', 0):6.2f}")
+                  + f" {r.get('gate_ti_le_truy_van_bi_cat', 0):6.2f}"
+                  + f" {tcd_s}")
         return rows_out
 
-    results = table(f"12 cấu hình hợp đồng (hợp nhất = {FUSION_METHOD})",
-                    ALL_CONFIGS)
-    fusion_rows = table(
-        "Chọn cách hợp nhất BẰNG SỐ, và tách riêng tác dụng của cổng lọc "
-        "(rerank BẬT ở mọi hàng)", FUSION_CONFIGS)
-    print("\n`cắt` = tỉ lệ truy vấn mà cổng lọc thực sự bỏ bớt ứng viên (tính trên")
-    print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
-    results = results + fusion_rows
+    if args.chi_4_phuong_phap:
+        # Chỉ 4 dòng CBHD yêu cầu (D-181 #3) — không in bảng hợp nhất phụ hay
+        # bảng bề rộng production, để bảng chương 4/5 không lẫn cấu hình thừa.
+        results = table("4 phương pháp báo cáo (keyword/dense/truyền thống/"
+                        "đề xuất — D-181)", REPORT_CONFIGS)
+        print("\n`ngPV.tcđ` = tỉ lệ TỪ CHỐI ĐÚNG trên nhóm câu ngoài phạm vi "
+              "(D-181 #4): hệ thống KHÔNG trả về trích dẫn nào cho câu không "
+              "thuộc corpus 12 quyển — '—' nghĩa là bộ test này chưa có câu "
+              "loại đó.")
+    else:
+        results = table(f"12 cấu hình hợp đồng (hợp nhất = {FUSION_METHOD})",
+                        ALL_CONFIGS)
+        fusion_rows = table(
+            "Chọn cách hợp nhất BẰNG SỐ, và tách riêng tác dụng của cổng lọc "
+            "(rerank BẬT ở mọi hàng)", FUSION_CONFIGS)
+        print("\n`cắt` = tỉ lệ truy vấn mà cổng lọc thực sự bỏ bớt ứng viên (tính trên")
+        print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
+        results = results + fusion_rows
 
-    # Bề rộng PRODUCTION: `.env` chạy RERANK_FETCH_K = 20 và BM25_FETCH_K = 20,
-    # không phải 50. Bảng ở trên là TRẦN chất lượng truy xuất; bảng này là thứ
-    # người dùng thật sẽ nhận. Chốt mặc định phải dựa vào bảng NÀY.
-    prod_n = max(RERANK_FETCH_K, BM25_FETCH_K)
-    if prod_n != CANDIDATE_N:
-        prod_rows = table(
-            f"Bề rộng PRODUCTION ({prod_n} ứng viên/kênh, không phải "
-            f"{CANDIDATE_N}) — đây là thứ người dùng thật nhận",
-            [Config(mode=m, rerank=True, gate=g, cand_n=prod_n)
-             for m in ("bm25", "dense", "hybrid") for g in (False, True)])
-        results = results + prod_rows
+        # Bề rộng PRODUCTION: `.env` chạy RERANK_FETCH_K = 20 và BM25_FETCH_K = 20,
+        # không phải 50. Bảng ở trên là TRẦN chất lượng truy xuất; bảng này là thứ
+        # người dùng thật sẽ nhận. Chốt mặc định phải dựa vào bảng NÀY.
+        prod_n = max(RERANK_FETCH_K, BM25_FETCH_K)
+        if prod_n != CANDIDATE_N:
+            prod_rows = table(
+                f"Bề rộng PRODUCTION ({prod_n} ứng viên/kênh, không phải "
+                f"{CANDIDATE_N}) — đây là thứ người dùng thật nhận",
+                [Config(mode=m, rerank=True, gate=g, cand_n=prod_n)
+                 for m in ("bm25", "dense", "hybrid") for g in (False, True)])
+            results = results + prod_rows
 
     if args.group_by:
         key = args.group_by

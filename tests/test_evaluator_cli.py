@@ -9,7 +9,9 @@ với D-84: một cờ bị bỏ qua im lặng đắt hơn nhiều một lỗi �
 import pandas as pd
 import pytest
 
-from src.test.evaluator import book_of, chon_testsets, result_path_for, summarize_result
+from src.test.evaluator import (
+    aggregate_by_loai, book_of, chon_testsets, result_path_for,
+)
 
 
 def _tao_bo_test(tmp_path, ten, co_ket_qua=False):
@@ -63,15 +65,47 @@ def test_bo_qua_da_co_tat_thi_van_chay_lai(tmp_path):
     assert len(can_chay) == 1 and bo_qua == []
 
 
-def test_summarize_result_danh_dau_luot_chay_va_chiu_thieu_cot():
-    df = pd.DataFrame({"recall_page": [1.0, 0.0], "mrr_page": [1.0, 0.5]})
-    s = summarize_result("A", df, luot_chay="da_co")
-    assert s["book"] == "A"
-    assert s["num_questions"] == 2
-    assert s["luot_chay"] == "da_co"
-    assert s["recall_page"] == 0.5
-    # Cột vắng mặt phải ra NaN chứ không được ném — file kết quả cũ có thể thiếu cột.
-    assert pd.isna(s["judge_correctness"])
+def test_aggregate_by_loai_gop_theo_loai_khong_theo_quyen():
+    """D-181: trục tổng hợp là LOẠI câu hỏi, không còn theo quyển."""
+    df = pd.DataFrame({
+        "question": ["q1", "q2", "q3"],
+        "nguon_cau_hoi": ["van_ban", "van_ban", "hinh"],
+        "judge_correctness": [5.0, 3.0, 4.0],
+        "judge_faithfulness": [5.0, 3.0, 4.0],
+        "judge_relevancy": [5.0, 3.0, 4.0],
+    })
+    out = aggregate_by_loai(df)
+    van_ban = out[out["loai_cau_hoi"] == "van_ban"].iloc[0]
+    assert van_ban["num_questions"] == 2
+    assert van_ban["judge_correctness"] == 4.0
+    hinh = out[out["loai_cau_hoi"] == "hinh"].iloc[0]
+    assert hinh["num_questions"] == 1
+
+
+def test_aggregate_by_loai_gia_tri_la_roi_vao_khong_ro_khong_bi_tron():
+    """Giá trị nguon_cau_hoi thiếu/lạ -> nhóm riêng `khong_ro`, không bị đoán
+    thành văn bản/hình/ngoài-phạm-vi (nguyên tắc 5, fail loudly)."""
+    df = pd.DataFrame({
+        "question": ["q1", "q2"],
+        "nguon_cau_hoi": [None, "gia_tri_la"],
+        "judge_correctness": [5.0, 3.0],
+        "judge_faithfulness": [5.0, 3.0],
+        "judge_relevancy": [5.0, 3.0],
+    })
+    out = aggregate_by_loai(df)
+    assert set(out["loai_cau_hoi"]) == {"khong_ro"}
+    assert out.iloc[0]["num_questions"] == 2
+
+
+def test_aggregate_by_loai_rong_thi_tra_bang_rong_khong_nem():
+    out = aggregate_by_loai(pd.DataFrame(columns=["question", "nguon_cau_hoi",
+                                                    "judge_correctness",
+                                                    "judge_faithfulness",
+                                                    "judge_relevancy"]))
+    assert list(out.columns) == ["loai_cau_hoi", "num_questions",
+                                  "judge_correctness", "judge_faithfulness",
+                                  "judge_relevancy"]
+    assert len(out) == 0
 
 
 class _LLMGia:

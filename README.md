@@ -204,8 +204,8 @@ xác định) và **chất lượng câu trả lời** (một LLM thứ 2 chấm
 
 ```bash
 python src/test/generate_testsets.py   # sinh test set có ground-truth (cần EVAL_LLM_* trong .env)
-python src/test/evaluator.py           # chạy RAG thật, đo IR, LLM chấm, xếp hạng 12 sách
-python src/test/recall_at_k.py         # benchmark recall nhanh, không gọi LLM
+python src/test/evaluator.py           # chạy RAG thật, LLM thứ 2 chấm, gộp theo LOẠI câu hỏi (D-181)
+python -m src.test.ablation --build-cache   # bảng đối chiếu cấu hình, không gọi LLM (gộp recall_at_k.py cũ)
 ```
 
 Chi tiết: [src/test/README.md](src/test/README.md).

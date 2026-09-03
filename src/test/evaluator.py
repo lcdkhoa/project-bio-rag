@@ -1,19 +1,31 @@
-"""Đánh giá hệ RAG (Qwen 2.5) theo từng bộ sách + LLM thứ 2 (Gemini) chấm lại.
+"""Đánh giá hệ RAG (Qwen 2.5) đầu-cuối + LLM thứ 2 (Groq) chấm lại câu trả lời.
+
+D-181 (2026-09-03, chỉ đạo CBHD, xem document/decision_log.html): bỏ hẳn 9 cột
+IR/xếp hạng theo TỪNG QUYỂN (precision_page, recall_page, mrr_page, precision_book,
+recall_book, mrr_book, retrieval_score, answer_score, overall_score) và mọi logic
+tổng hợp/xếp hạng theo quyển. Precision/Recall/F1@K với K=3/5/10/20 trên 4 phương
+pháp truy vấn (keyword/dense/truyền thống/đề xuất) nay sống hẳn trong
+`src/test/ablation.py` (đã gộp thêm `recall_at_k.py`) — module này KHÔNG còn tính
+số liệu truy xuất xác định nữa, tránh hai nơi cùng tính lại cùng một thứ.
 
 Luồng cho mỗi câu hỏi trong từng bộ test:
-    1. TRUY XUẤT: gọi đúng pipeline thật (HybridRetriever) -> lấy chunk text kèm
-       metadata (source, page).
-    2. SỐ LIỆU IR (xác định): đối chiếu metadata với (source_book, source_page)
-       của câu hỏi -> Precision@k, Recall@k (hit@k), MRR (điểm rank).
-       Tính cả mức page-level (nghiêm) và book-level (đo nhiễu chéo sách).
-    3. SINH CÂU TRẢ LỜI: ghép context -> prompt -> Qwen 2.5 -> parser (y như API).
-    4. LLM THỨ 2 CHẤM LẠI: Gemini 2.5 Flash chấm câu trả lời của Qwen theo
+    1. SINH CÂU TRẢ LỜI: gọi đúng pipeline thật (HybridRetriever -> prompt ->
+       Qwen 2.5 -> parser, y như API /api/chat).
+    2. LLM THỨ 2 CHẤM LẠI: giám khảo Groq chấm câu trả lời của Qwen theo
        correctness / faithfulness / relevancy (1-5) so với đáp án chuẩn + context.
+       Cách tính GIỮ NGUYÊN từ trước D-181 — chỉ đổi TRỤC tổng hợp bên dưới.
+
+Trục tổng hợp = LOẠI câu hỏi (`nguon_cau_hoi`): văn bản / hình / ngoài-phạm-vi —
+KHÔNG theo quyển/môn (CBHD: tách theo quyển làm vector DB "rời rạc").
+    - "van_ban" / "hinh": xem `src/test/testsets_240/`.
+    - "ngoai_pham_vi": 30 câu hỏi thuộc môn KHÁC (Sử/Địa/GDCD/Toán/Văn/Anh/...),
+      không có trang vàng — `ground_truth` mô tả kỳ vọng hệ thống trả lời không
+      biết/không có trong sách thay vì bịa (nguyên tắc 1).
 
 Kết quả:
-    - testsets/<book>_result.csv  : chi tiết từng câu.
-    - evaluation_report.csv       : tổng hợp + XẾP HẠNG 12 sách.
-    - evaluation_report.md        : bảng leaderboard dễ đọc.
+    - <testset>_result.csv        : chi tiết từng câu (đã bỏ 9 cột IR).
+    - evaluation_report<hậu tố>.csv : tổng hợp theo LOẠI câu hỏi.
+    - evaluation_report<hậu tố>.md  : bảng dễ đọc theo LOẠI câu hỏi.
 
 Chạy (sau khi đã có testsets):
     python src/test/evaluator.py
@@ -38,16 +50,18 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from src.app.dependencies import AppServices
-from src.test.metrics import evaluate_retrieval
 from src.test.eval_llm import get_eval_llm, is_configured, config_help
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
 JUDGE_MODEL = os.getenv("EVAL_LLM_MODEL", "(chưa cấu hình)")
-# Các mức k cho recall "thô" (top-k similarity, BỎ QUA relevance gate) — dùng để
-# chứng minh: tăng k thì recall tăng. recall@<max> chính là "trần recall".
-RAW_RECALL_KS = (3, 5, 10)
+
+# Ba loại câu hỏi hợp lệ theo cột `nguon_cau_hoi` của testset (D-181). Một giá
+# trị thiếu/lạ KHÔNG được lặng lẽ gộp vào một trong ba loại này — xem
+# `_loai_cau_hoi`.
+LOAI_HOP_LE = ("van_ban", "hinh", "ngoai_pham_vi")
+LOAI_KHONG_RO = "khong_ro"
 
 JUDGE_PROMPT = """Bạn là giám khảo chấm chất lượng câu trả lời của một trợ lý AI môn
 Khoa học tự nhiên. Hãy chấm KHÁCH QUAN, dựa trên đáp án chuẩn và ngữ cảnh.
@@ -88,7 +102,10 @@ def get_answer_and_context(question: str) -> dict:
     """Gọi hệ RAG Qwen 2.5 thật. Trả về answer, contexts, và metadata chunk.
 
     Tái sử dụng đúng pipeline của API /api/chat:
-    HybridRetriever -> ghép context -> prompt -> Qwen 2.5 -> parser.
+    HybridRetriever -> ghép context -> prompt -> Qwen 2.5 -> parser. Với câu hỏi
+    "ngoài phạm vi" (không có trang vàng) hay câu hỏi bị định tuyến CHỈ-CẦN-ẢNH
+    (`is_image_only_query`, D-88), luồng này chạy y hệt — hệ thống PHẢI tự nhận ra
+    không có ngữ cảnh phù hợp, không được bịa khi câu hỏi thuộc môn khác.
     """
     services = AppServices.get_instance()
 
@@ -116,30 +133,6 @@ def get_answer_and_context(question: str) -> dict:
         answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
 
     return {"answer": answer, "contexts": contexts, "metas": metas}
-
-
-def raw_recall_at_ks(question: str, src_book: str, src_page: int, ks=RAW_RECALL_KS) -> dict:
-    """Recall@k page-level cho nhiều mức k, dùng top-k similarity THÔ (bỏ qua gate).
-
-    Lấy top-max(ks) một lần rồi cắt tiền tố để tính hit@3/5/10 → cho thấy recall
-    tăng đơn điệu theo k. recall@<max> chính là 'trần recall' (embedding có tìm
-    ra trang vàng không), tách bạch với recall production (bị gate cắt còn ~3).
-    """
-    from src.test.metrics import make_page_relevance
-    services = AppServices.get_instance()
-    max_k = max(ks)
-    try:
-        scored = services.hybrid_retriever.text_db.db.similarity_search_with_score(question, k=max_k)
-    except Exception as exc:
-        logger.warning("Raw recall lỗi: %s", exc)
-        return {f"recall@{k}_raw": float("nan") for k in ks}
-
-    is_rel = make_page_relevance(src_book, src_page)
-    ordered_metas = [d.metadata or {} for d, _ in scored]
-    out = {}
-    for k in ks:
-        out[f"recall@{k}_raw"] = 1.0 if any(is_rel(m) for m in ordered_metas[:k]) else 0.0
-    return out
 
 
 # 429 cua OpenRouter o day KHONG phai cap/ngay ma la "temporarily rate-limited
@@ -195,12 +188,22 @@ def judge_answer(judge_llm, question: str, ground_truth: str, context: str, answ
             "judge_relevancy": float("nan"), "judge_reasoning": f"LỖI: {loi_cuoi}"}
 
 
-NUM_COLS = [
-    "precision_page", "recall_page", "mrr_page",
-    "precision_book", "recall_book", "mrr_book",
-    *[f"recall@{k}_raw" for k in RAW_RECALL_KS],
-    "judge_correctness", "judge_faithfulness", "judge_relevancy",
-]
+# Chỉ còn 3 cột LLM chấm — 9 cột IR/xếp hạng theo quyển đã bị bỏ (D-181).
+NUM_COLS = ["judge_correctness", "judge_faithfulness", "judge_relevancy"]
+
+
+def _loai_cau_hoi(value) -> str:
+    """Chuẩn hoá một giá trị `nguon_cau_hoi` về 1 trong 3 loại hợp lệ.
+
+    Giá trị thiếu/rỗng/lạ -> `khong_ro`, KHÔNG bị lặng lẽ gộp vào văn bản/hình/
+    ngoài-phạm-vi (nguyên tắc 5: fail loudly, không đoán). Đây là chỗ mọi
+    *_result.csv CŨ (trước D-181, không có cột `nguon_cau_hoi`) sẽ rơi vào, cho
+    tới khi được chạy lại.
+    """
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return LOAI_KHONG_RO
+    v = str(value).strip().lower()
+    return v if v in LOAI_HOP_LE else LOAI_KHONG_RO
 
 
 def result_path_for(testset_csv: str) -> str:
@@ -209,19 +212,6 @@ def result_path_for(testset_csv: str) -> str:
 
 def book_of(testset_csv: str) -> str:
     return os.path.basename(testset_csv).replace("_testset.csv", "")
-
-
-def summarize_result(book: str, res_df, luot_chay: str) -> dict:
-    """Tong hop mot quyen tu bang ket qua.
-
-    `luot_chay` ghi ro so nay do o LUOT NAO: "moi" = do trong lan chay nay,
-    "da_co" = doc lai tu `*_result.csv` co san. Khong duoc tron hai loai ma
-    khong noi ra (nguyen tac 5: khong im lang).
-    """
-    summary = {"book": book, "num_questions": len(res_df), "luot_chay": luot_chay}
-    for c in NUM_COLS:
-        summary[c] = round(res_df[c].mean(skipna=True), 4) if c in res_df.columns else float("nan")
-    return summary
 
 
 def chon_testsets(csv_files, books=None, bo_qua_da_co=False):
@@ -248,21 +238,33 @@ def chon_testsets(csv_files, books=None, bo_qua_da_co=False):
     return can_chay, bo_qua
 
 
-def evaluate_book(csv_path: str, judge_llm) -> dict:
+def evaluate_book(csv_path: str, judge_llm) -> pd.DataFrame:
+    """Chạy RAG + giám khảo cho một tệp testset, trả DataFrame KẾT QUẢ TỪNG CÂU.
+
+    Không còn tổng hợp/xếp hạng theo quyển ở đây (D-181) — chỉ ghi kết quả từng
+    câu ra `<testset>_result.csv`; việc gộp theo LOẠI câu hỏi làm ở
+    `aggregate_by_loai`, sau khi đã đọc lại TẤT CẢ các tệp *_result.csv.
+    """
     df = pd.read_csv(csv_path)
-    book = os.path.basename(csv_path).replace("_testset.csv", "")
-    print(f"\n=== Đánh giá: {book} ({len(df)} câu) ===")
+    ten = book_of(csv_path)
+    print(f"\n=== Đánh giá: {ten} ({len(df)} câu) ===")
 
     records = []
     for i, row in df.iterrows():
         q = str(row["question"])
         gt = str(row.get("ground_truth", ""))
-        src_book = str(row["source_book"])
-        src_page = int(row["source_page"])
+        src_book = row.get("source_book")
+        src_book = None if pd.isna(src_book) else str(src_book)
+        src_page_raw = row.get("source_page")
+        try:
+            src_page = None if pd.isna(src_page_raw) else int(src_page_raw)
+        except (TypeError, ValueError):
+            # Câu "ngoài phạm vi" (D-181) không có trang vàng — cố ép int một
+            # ô rỗng/NaN sẽ ném, nên giữ None thay vì đoán số trang.
+            src_page = None
+        loai = _loai_cau_hoi(row.get("nguon_cau_hoi"))
 
         rag = get_answer_and_context(q)
-        ir = evaluate_retrieval(rag["metas"], src_book, src_page)
-        raw_recalls = raw_recall_at_ks(q, src_book, src_page)
         verdict = judge_answer(judge_llm, q, gt, "\n\n".join(rag["contexts"]), rag["answer"])
 
         retrieved_sources = "; ".join(
@@ -270,22 +272,82 @@ def evaluate_book(csv_path: str, judge_llm) -> dict:
         )
         records.append({
             "question": q,
+            "nguon_cau_hoi": loai,
             "source_book": src_book,
             "source_page": src_page,
-            **ir,
-            **raw_recalls,
             "retrieved": retrieved_sources,
             "rag_answer": rag["answer"],
             "ground_truth": gt,
             **verdict,
         })
-        print(f"  [{i + 1:>2}/{len(df)}] P_page={ir['precision_page']:.2f} "
-              f"R_page={ir['recall_page']:.0f} MRR={ir['mrr_page']:.2f} "
-              f"correct={verdict['judge_correctness']:.0f}/5")
+        print(f"  [{i + 1:>2}/{len(df)}] loai={loai:<13} "
+              f"correct={verdict['judge_correctness']:.0f}/5 "
+              f"faithful={verdict['judge_faithfulness']:.0f}/5 "
+              f"relevancy={verdict['judge_relevancy']:.0f}/5")
 
     res_df = pd.DataFrame(records)
     res_df.to_csv(result_path_for(csv_path), index=False, encoding="utf-8-sig")
-    return summarize_result(book, res_df, luot_chay="moi")
+    return res_df
+
+
+def _doc_ket_qua_cu(csv_path: str) -> pd.DataFrame:
+    """Đọc `<testset>_result.csv` có sẵn (không chạy lại lượt này).
+
+    Bản CŨ (trước D-181) không có cột `nguon_cau_hoi` — khôi phục nó bằng cách
+    nối lại với chính testset CSV theo `question` (nguồn sự thật của nhãn loại
+    câu hỏi), thay vì để mọi câu cũ rơi hết vào `khong_ro` một cách oan uổng.
+    Câu hỏi trùng chữ trong cùng testset (hiếm) thì giữ khớp ĐẦU TIÊN — không
+    nhân bản hàng.
+    """
+    rp = result_path_for(csv_path)
+    res = pd.read_csv(rp, encoding="utf-8-sig")
+    if "nguon_cau_hoi" not in res.columns:
+        try:
+            ts = pd.read_csv(csv_path)[["question", "nguon_cau_hoi"]]
+            ts = ts.drop_duplicates(subset="question", keep="first")
+            res = res.merge(ts, on="question", how="left")
+        except Exception as exc:
+            logger.warning("Không khôi phục được nguon_cau_hoi cho %s: %s", rp, exc)
+            res["nguon_cau_hoi"] = None
+    return res
+
+
+def aggregate_by_loai(all_records: pd.DataFrame) -> pd.DataFrame:
+    """Tổng hợp theo LOẠI câu hỏi (văn bản/hình/ngoài-phạm-vi) — trục do CBHD chỉ
+    định (D-181), thay cho xếp hạng theo quyển.
+
+    3 chỉ số LLM chấm GIỮ NGUYÊN cách tính (mean, skipna) — chỉ đổi trục gộp.
+    Loại `khong_ro` (thiếu/lạ) được báo cáo NHƯ MỘT NHÓM RIÊNG, không bị trộn
+    vào văn bản/hình/ngoài-phạm-vi.
+    """
+    cot_ra = ["loai_cau_hoi", "num_questions", *NUM_COLS]
+    if all_records.empty:
+        return pd.DataFrame(columns=cot_ra)
+
+    df = all_records.copy()
+    df["nguon_cau_hoi"] = df["nguon_cau_hoi"].map(_loai_cau_hoi)
+    g = df.groupby("nguon_cau_hoi", dropna=False)
+    out = g.agg(
+        num_questions=("question", "count"),
+        judge_correctness=("judge_correctness", "mean"),
+        judge_faithfulness=("judge_faithfulness", "mean"),
+        judge_relevancy=("judge_relevancy", "mean"),
+    ).reset_index().rename(columns={"nguon_cau_hoi": "loai_cau_hoi"})
+    for c in NUM_COLS:
+        out[c] = out[c].round(4)
+
+    thu_tu = {"van_ban": 0, "hinh": 1, "ngoai_pham_vi": 2, LOAI_KHONG_RO: 3}
+    out["_thu_tu"] = out["loai_cau_hoi"].map(thu_tu).fillna(9)
+    out = out.sort_values("_thu_tu").drop(columns="_thu_tu").reset_index(drop=True)
+    return out[cot_ra]
+
+
+TEN_LOAI_HIEN_THI = {
+    "van_ban": "Văn bản",
+    "hinh": "Hình",
+    "ngoai_pham_vi": "Ngoài phạm vi",
+    LOAI_KHONG_RO: "Không rõ loại (dữ liệu cũ trước D-181)",
+}
 
 
 def run_evaluation(testsets_dir: str, report_csv: str, report_md: str,
@@ -313,111 +375,87 @@ def run_evaluation(testsets_dir: str, report_csv: str, report_md: str,
 
     judge_llm = get_eval_llm(temperature=0.0) if can_chay else None
 
-    summaries_by_book = {}
+    ok_books = set()
     for csv_path in can_chay:
         try:
-            s_book = evaluate_book(csv_path, judge_llm)
-            summaries_by_book[s_book["book"]] = s_book
+            evaluate_book(csv_path, judge_llm)
+            ok_books.add(book_of(csv_path))
         except Exception as exc:
             import traceback
             print(f"Lỗi khi đánh giá {csv_path}: {exc}")
             traceback.print_exc()
 
-    # Đọc lại kết quả CŨ cho những quyển không chạy ở lượt này, để bảng xếp hạng
-    # phủ đủ 12 quyển thay vì im lặng chỉ báo cáo phần vừa chạy. Quyển không có
-    # kết quả nào thì bị NÊU TÊN ra, không bị bỏ qua lặng lẽ.
+    # Đọc lại TẤT CẢ *_result.csv hiện có (vừa chạy + có sẵn từ lượt trước) để
+    # gộp theo LOẠI câu hỏi trên toàn bộ dữ liệu, không chỉ phần vừa chạy. Tệp
+    # nào không có *_result.csv nào cả thì bị NÊU TÊN, không bị bỏ qua lặng lẽ.
+    frames = []
     chua_do = []
+    luot_theo_ten = {}
     for csv_path in csv_files:
-        b = book_of(csv_path)
-        if b in summaries_by_book:
-            continue
-        rp = result_path_for(csv_path)
-        if os.path.exists(rp):
-            summaries_by_book[b] = summarize_result(
-                b, pd.read_csv(rp, encoding="utf-8-sig"), luot_chay="da_co")
+        ten = book_of(csv_path)
+        if os.path.exists(result_path_for(csv_path)):
+            df_r = _doc_ket_qua_cu(csv_path)
+            luot = "moi" if ten in ok_books else "da_co"
+            df_r["_ten_testset"] = ten
+            frames.append(df_r)
+            luot_theo_ten[ten] = luot
         else:
-            chua_do.append(b)
-
-    summaries = [summaries_by_book[book_of(p)] for p in csv_files
-                 if book_of(p) in summaries_by_book]
+            chua_do.append(ten)
     if chua_do:
         print("CHƯA CÓ SỐ (không có *_result.csv): " + ", ".join(chua_do))
-    if not summaries:
+    if not frames:
         return 2
 
-    report = pd.DataFrame(summaries)
-    # Điểm tổng hợp để XẾP HẠNG: 50% chất lượng truy xuất + 50% chất lượng trả lời.
-    report["retrieval_score"] = report[["recall_page", "mrr_page", "precision_page"]].mean(axis=1)
-    report["answer_score"] = (
-        report[["judge_correctness", "judge_faithfulness", "judge_relevancy"]].mean(axis=1) / 5.0
-    )
-    report["overall_score"] = (report["retrieval_score"] + report["answer_score"]) / 2.0
-    report = report.sort_values("overall_score", ascending=False).reset_index(drop=True)
-    report.insert(0, "rank", report.index + 1)
+    tat_ca = pd.concat(frames, ignore_index=True, sort=False)
+    report = aggregate_by_loai(tat_ca)
     report.to_csv(report_csv, index=False, encoding="utf-8-sig")
 
-    # Bảng leaderboard markdown.
+    tong_cau = int(tat_ca.shape[0])
     lines = [
-        "# Báo cáo đánh giá RAG theo từng bộ sách\n",
-        f"Tổng số bộ sách: {len(report)}/{len(csv_files)} | "
-        f"Tổng số câu: {int(report['num_questions'].sum())} | "
-        f"Judge: {os.getenv('EVAL_LLM_MODEL', '?')} | "
-        f"Số câu/sách: {int(report['num_questions'].mean())}\n",
-        ("- Đo ở lượt NÀY: " + ", ".join(
-            r["book"] for r in summaries if r["luot_chay"] == "moi") + "\n") if any(
-            r["luot_chay"] == "moi" for r in summaries) else "",
-        ("- Lấy từ `*_result.csv` CÓ SẴN của lượt trước: " + ", ".join(
-            r["book"] for r in summaries if r["luot_chay"] == "da_co") + "\n") if any(
-            r["luot_chay"] == "da_co" for r in summaries) else "",
+        "# Báo cáo đánh giá RAG theo LOẠI câu hỏi (D-181)\n",
+        f"Tổng số câu: {tong_cau} | Judge: {os.getenv('EVAL_LLM_MODEL', '?')}\n",
+        ("- Tệp đo ở lượt NÀY: " + ", ".join(sorted(ok_books)) + "\n") if ok_books else "",
+        ("- Tệp lấy từ *_result.csv CÓ SẴN: " + ", ".join(
+            sorted(t for t, l in luot_theo_ten.items() if l == "da_co")) + "\n")
+            if any(l == "da_co" for l in luot_theo_ten.values()) else "",
         ("- **CHƯA ĐO**: " + ", ".join(chua_do) + "\n") if chua_do else "",
-        "## Xếp hạng tổng thể\n",
-        "| Hạng | Sách | Overall | Recall@k(page) | MRR(page) | Precision(page) | "
-        "Correct/5 | Faithful/5 | Relevancy/5 |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "## Tổng hợp theo loại câu hỏi\n",
+        "| Loại | Số câu | Correct/5 | Faithful/5 | Relevancy/5 |",
+        "|---|---|---|---|---|",
     ]
     for _, r in report.iterrows():
+        ten_hien_thi = TEN_LOAI_HIEN_THI.get(r["loai_cau_hoi"], r["loai_cau_hoi"])
         lines.append(
-            f"| {int(r['rank'])} | {r['book']} | {r['overall_score']:.3f} | "
-            f"{r['recall_page']:.2f} | {r['mrr_page']:.2f} | {r['precision_page']:.2f} | "
-            f"{r['judge_correctness']:.2f} | {r['judge_faithfulness']:.2f} | {r['judge_relevancy']:.2f} |"
+            f"| {ten_hien_thi} | {int(r['num_questions'])} | "
+            f"{r['judge_correctness']:.2f} | {r['judge_faithfulness']:.2f} | "
+            f"{r['judge_relevancy']:.2f} |"
         )
-
-    # Bảng recall@k: chứng minh tăng k thì recall tăng (top-k thô, bỏ qua gate).
-    raw_cols = [f"recall@{k}_raw" for k in RAW_RECALL_KS]
-    k_headers = " | ".join(f"Recall@{k}" for k in RAW_RECALL_KS)
-    lines += [
-        "\n## Recall@k tăng theo k (top-k thô, bỏ qua relevance gate)\n",
-        "Cho thấy embedding tìm được trang vàng ở mức nào; tăng k thì recall tăng đơn điệu. "
-        f"Recall@{max(RAW_RECALL_KS)} là 'trần recall'. So với **Recall(prod)** (chỉ ~3 chunk sau gate) "
-        "để thấy nút thắt nằm ở khâu gate/cắt-k, không phải embedding.\n",
-        f"| Sách | {k_headers} | Recall(prod) |",
-        "|---|" + "---|" * (len(RAW_RECALL_KS) + 1),
-    ]
-    for _, r in report.iterrows():
-        cells = " | ".join(f"{r[c]:.2f}" for c in raw_cols)
-        lines.append(f"| {r['book']} | {cells} | {r['recall_page']:.2f} |")
-    # Dòng trung bình toàn bộ sách.
-    avg_cells = " | ".join(f"{report[c].mean():.2f}" for c in raw_cols)
-    lines.append(f"| **TRUNG BÌNH** | {avg_cells} | {report['recall_page'].mean():.2f} |")
-
     lines += [
         "\n## Ghi chú số liệu",
-        "- **Recall@k(page)** = hit@k: tỷ lệ câu hỏi mà hệ truy xuất đúng trang nguồn (top-k thực tế).",
-        "- **MRR(page)** = điểm rank: trung bình 1/thứ-hạng của chunk đúng đầu tiên.",
-        "- **Precision(page)** = tỷ lệ chunk truy xuất là đúng trang nguồn.",
-        f"- **Recall@{RAW_RECALL_KS}** (top-k thô) đo khả năng embedding tìm thấy trang vàng; "
-        "**Recall(prod)** là recall thực tế sau relevance gate (~3 chunk). Khoảng cách giữa hai cái "
-        "định lượng phần recall mất đi do khâu rank/cắt-k.",
-        "- **Correct/Faithful/Relevancy** do LLM thứ 2 chấm lại câu trả lời của Qwen 2.5, thang 1-5.",
-        "- `overall_score = (retrieval_score + answer_score)/2`, dùng để xếp hạng.",
+        "- Trục tổng hợp là LOẠI câu hỏi (văn bản/hình/ngoài-phạm-vi), KHÔNG theo "
+        "quyển/môn (CBHD, D-181) — bỏ 9 cột IR + xếp hạng theo quyển "
+        "(precision/recall/mrr page & book, retrieval_score, answer_score, "
+        "overall_score). Precision/Recall/F1@K (K=3/5/10/20) theo 4 phương pháp "
+        "truy vấn (keyword/dense/truyền thống/đề xuất) tính riêng trong `ablation.py`.",
+        "- Nhóm **Hình**: câu hỏi bị `is_image_only_query()` định tuyến bỏ qua "
+        "truy xuất văn bản theo đúng thiết kế (D-88) — không phải lỗi.",
+        "- Nhóm **Ngoài phạm vi**: không có trang vàng (`source_page` trống) — 30 "
+        "câu thuộc môn KHÁC (Sử/Địa/GDCD/Toán/Văn/Anh/...), không phải câu KHTN "
+        "thiếu nội dung. `ground_truth` mô tả kỳ vọng hệ thống trả lời không biết/"
+        "không có trong sách; 3 chỉ số giám khảo đo GIÁN TIẾP việc từ chối đúng "
+        "hay không (không có chỉ số riêng cho việc này — quyết định D-181).",
+        "- Nhóm **Không rõ loại**: `*_result.csv` từ TRƯỚC D-181 không khôi phục "
+        "được `nguon_cau_hoi` (testset gốc không còn/câu hỏi không khớp) — chạy "
+        "lại tệp đó để có nhãn đúng.",
+        "- **Correct/Faithful/Relevancy** do LLM thứ 2 chấm lại câu trả lời, thang "
+        "1-5 — cách tính GIỮ NGUYÊN từ trước D-181.",
     ]
     with open(report_md, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     print(f"\nĐã lưu báo cáo: {report_csv}")
     print(f"Đã lưu leaderboard: {report_md}")
-    print("\n" + report[["rank", "book", "overall_score", "recall_page",
-                          "mrr_page", "judge_correctness"]].to_string(index=False))
+    print("\n" + report.to_string(index=False))
 
 
 if __name__ == "__main__":
@@ -426,7 +464,7 @@ if __name__ == "__main__":
     _ap = argparse.ArgumentParser(description="Đánh giá đầu-cuối, CÓ gọi LLM")
     _ap.add_argument("--testset-dir", default=os.path.join(base, "testsets"),
                      help="mặc định src/test/testsets; dùng src/test/testsets_240 "
-                          "cho bộ 240 câu")
+                          "cho bộ 240 câu (+30 ngoài-phạm-vi nếu có, D-181)")
     _ap.add_argument("--hau-to", default="",
                      help="hậu tố tên file báo cáo, ví dụ _240 -> "
                           "evaluation_report_240.csv (đừng ghi đè số cũ)")

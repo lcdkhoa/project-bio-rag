@@ -1,4 +1,4 @@
-from src.test.recall_at_k import reciprocal_rank
+from src.test.ablation import reciprocal_rank
 
 
 def test_reciprocal_rank_first_hit():

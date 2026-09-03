@@ -83,11 +83,15 @@ Kết quả:
 **Đánh giá RAG (text + câu trả lời):**
 - `metrics.py` — hàm tính Precision@k / Recall@k / MRR (page & book level).
 - `generate_testsets.py` — sinh 12 bộ test có ground-truth nguồn (dùng LLM đánh giá).
-- `evaluator.py` — chạy RAG thật, đo IR, LLM thứ 2 chấm lại, xếp hạng 12 sách.
-- `recall_at_k.py` — benchmark Recall@3/5/10 nhanh, **không gọi LLM**, để chẩn đoán recall thô.
+- `evaluator.py` — chạy RAG thật, LLM thứ 2 chấm lại. **D-181: KHÔNG còn đo IR và
+  KHÔNG còn xếp hạng 12 sách** — 9 cột IR/xếp hạng theo quyển đã bỏ, trục tổng hợp
+  nay là LOẠI câu hỏi (văn bản / hình / ngoài-phạm-vi); P/R/F1@K sống ở `ablation.py`.
+- `ablation.py` — bảng đối chiếu cấu hình (bm25/dense/hybrid × rerank × gate), **không gọi LLM**;
+  gộp cả chức năng của `recall_at_k.py` cũ (đã xoá, D-181 #7) — recall dense baseline vs rerank
+  chính là hai dòng `mode=dense rerank=off/on gate=off` của `ALL_CONFIGS`.
 - `eval_llm.py` — dựng client LLM đánh giá (endpoint OpenAI-compatible: Groq/MiMo/OpenRouter...).
 - `testsets/` — các file `*_testset.csv` (test) và `*_result.csv` (kết quả từng câu).
-- `evaluation_report.{csv,md}`, `recall_at_k_report.{csv,md}` — báo cáo tổng hợp/xếp hạng.
+- `evaluation_report.{csv,md}`, `ablation_report.csv` — báo cáo tổng hợp/xếp hạng.
 
 **QA cho ETL ảnh (không đụng DB):**
 - `test_image_extraction_full.py` — render 1 page/PDF, vẽ overlay anchor + region + xuất crop PNG

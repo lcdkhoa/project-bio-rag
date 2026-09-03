@@ -13,7 +13,7 @@ qua LLM** — rồi với TỪNG trang được trích, đọc lại **văn bả
 trong index** và hỏi: `ground_truth` có nằm trong đó không?
 
 Điểm quan trọng: phép thử **không dùng khoá vàng**. Nó không hỏi "có trích đúng
-trang vàng không" (đó là recall, đã có `recall_at_k.py`), mà hỏi "trang đã trích
+trang vàng không" (đó là recall, đo bằng `ablation.py`), mà hỏi "trang đã trích
 có chứa câu trả lời không". Một câu hỏi có thể trả lời được từ trang khác trang
 vàng và vẫn ĐÚNG. Khoá vàng chỉ được in ra để đối chiếu, không tham gia phán xử.
 

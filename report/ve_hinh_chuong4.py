@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Sinh lại 5 hình của Chương 4 từ SỐ ĐO THẬT, không vẽ tay.
+"""Sinh hình Chương 4 từ SỐ ĐO THẬT, không vẽ tay.
 
-Trước script này, `report/tex_source/src/images/chapter4/*.png` là năm tệp PNG
-dựng từ bộ 120 câu của báo cáo chuyên đề cũ, và repo **không có** mã nguồn nào
-sinh ra chúng (`grep -rl matplotlib src/ report/ scripts/` = 0). Một hình không
-tái lập được là một con số không kiểm được: người đọc không có cách nào đối
-chiếu nó với dữ liệu, và người viết không có cách nào cập nhật nó khi dữ liệu
-đổi. Nên mọi giá trị dưới đây đọc thẳng từ hai tệp kết quả:
-
-  - `src/test/evaluation_report_240.csv`  (12 quyển, 240 câu, D-173/D-174)
-  - `src/test/ablation_report_240.csv`    (30 hàng đối chiếu cấu hình, D-173/D-174)
-
-Không hằng số nào được gõ tay. Đổi dữ liệu -> chạy lại -> hình đổi theo.
+D-181 (2026-09-03, chỉ đạo CBHD): `evaluation_report_240.csv` đổi trục tổng hợp
+từ "theo TỪNG QUYỂN" (12 hàng, 9 cột IR + điểm tổng hợp) sang "theo LOẠI câu hỏi"
+(văn bản / hình / ngoài-phạm-vi). 9 cột IR/xếp hạng theo quyển
+(precision/recall/mrr page & book, retrieval_score, answer_score, overall_score)
+đã bị xoá khỏi báo cáo — số liệu Precision/Recall/F1@K theo 4 phương pháp truy
+vấn (keyword/dense/truyền thống/đề xuất) nay sống trong `ablation.py`, không còn
+ở đây. Hai hình cũ dựa trên trục "theo quyển" (leaderboard, recall_per_book) và
+hai hình dựa trên các cột IR đã xoá (retrieval_vs_answer, recall_at_k) KHÔNG còn
+vẽ được — bộ hình mới chỉ còn phản ánh những gì evaluator.py THẬT SỰ đo:
+thành phần bộ câu hỏi theo loại, và điểm giám khảo (Correct/Faithful/Relevancy)
+theo loại. Không hằng số nào được gõ tay:
 
     python report/ve_hinh_chuong4.py
 
@@ -33,15 +33,13 @@ import pandas as pd  # noqa: E402
 
 GOC = Path(__file__).resolve().parent.parent
 CSV_EVAL = GOC / "src" / "test" / "evaluation_report_240.csv"
-CSV_ABLATION = GOC / "src" / "test" / "ablation_report_240.csv"
 THU_MUC_HINH = GOC / "report" / "tex_source" / "src" / "images" / "chapter4"
 
 # --- bảng màu (xem docstring) -------------------------------------------------
-XANH = "#2a78d6"     # ô phân loại 1
-CAM = "#eb6834"      # ô phân loại 2
-NGOC = "#1baf7a"     # ô phân loại 3
-# thang thứ bậc một sắc (xanh dương, nhạt -> đậm), đã qua bộ kiểm --ordinal
-THANG = ["#86b6ef", "#2a78d6", "#184f95"]
+XANH = "#2a78d6"     # văn bản
+CAM = "#eb6834"       # hình
+NGOC = "#1baf7a"      # ngoài phạm vi
+XAM = "#9a988f"       # không rõ loại (dữ liệu cũ trước D-181)
 
 MUC_CHINH = "#0b0b0b"
 MUC_PHU = "#52514e"
@@ -49,12 +47,15 @@ MUC_MO = "#898781"
 LUOI = "#e1e0d9"
 NEN = "#fcfcfb"
 
-# Gạch chéo đi kèm màu, để bản in đen trắng vẫn đọc được. Chỉ dùng 45° và ảnh
-# gương 135° của nó — hai góc này phân biệt tốt mà không làm rối mặt cột.
-GACH = {"CD": "", "CTST": "/", "KNTT": "\\"}
-MAU_NXB = {"CD": XANH, "CTST": CAM, "KNTT": NGOC}
-TEN_NXB = {"CD": "Cánh Diều", "CTST": "Chân trời sáng tạo",
-           "KNTT": "Kết nối tri thức"}
+GACH_LOAI = {"van_ban": "", "hinh": "/", "ngoai_pham_vi": "\\", "khong_ro": "x"}
+MAU_LOAI = {"van_ban": XANH, "ngoai_pham_vi": NGOC, "hinh": CAM, "khong_ro": XAM}
+TEN_LOAI = {
+    "van_ban": "Văn bản",
+    "hinh": "Hình",
+    "ngoai_pham_vi": "Ngoài phạm vi",
+    "khong_ro": "Không rõ loại",
+}
+THU_TU_LOAI = ["van_ban", "hinh", "ngoai_pham_vi", "khong_ro"]
 
 
 def _dat_kieu() -> None:
@@ -96,190 +97,93 @@ def _so(x: float, n: int = 3) -> str:
     return f"{x:.{n}f}".replace(".", ",")
 
 
-def _nxb(book: str) -> str:
-    return book.rsplit("_", 1)[-1]
-
-
-def _nhan_sach(book: str) -> str:
-    # SGK_KHTN_8_KNTT -> "KHTN 8 · Kết nối tri thức"
-    phan = book.split("_")
-    return f"KHTN {phan[2]} · {TEN_NXB[phan[3]]}"
+def _sap_xep(d: pd.DataFrame) -> pd.DataFrame:
+    """Sắp theo thứ tự cố định văn_bản/hình/ngoài_phạm_vi/không_rõ, bỏ loại vắng mặt."""
+    thu_tu = {loai: i for i, loai in enumerate(THU_TU_LOAI)}
+    d = d[d["loai_cau_hoi"].isin(thu_tu)].copy()
+    d["_thu_tu"] = d["loai_cau_hoi"].map(thu_tu)
+    return d.sort_values("_thu_tu").drop(columns="_thu_tu").reset_index(drop=True)
 
 
 def _doc_eval() -> pd.DataFrame:
     if not CSV_EVAL.exists():
         raise SystemExit(f"Không thấy {CSV_EVAL} — chưa chạy evaluator?")
     d = pd.read_csv(CSV_EVAL)
-    d["nxb"] = d["book"].map(_nxb)
-    d["nhan"] = d["book"].map(_nhan_sach)
-    return d
+    thieu = [c for c in ("loai_cau_hoi", "num_questions") if c not in d.columns]
+    if thieu:
+        raise SystemExit(
+            f"{CSV_EVAL} thiếu cột {thieu} — đây có phải bản CŨ trước D-181 "
+            "(trục 'theo quyển') không? Chạy lại `python src/test/evaluator.py "
+            "--testset-dir src/test/testsets_240 --hau-to _240` để tái sinh đúng "
+            "cấu trúc mới trước khi vẽ."
+        )
+    return _sap_xep(d)
 
 
 def _gop(d: pd.DataFrame, cot: str) -> float:
-    """Gộp theo CÂU, không phải trung bình theo quyển.
-
-    Số câu mỗi quyển không bằng nhau (17--20 vì 9/48 khung cắt bị người duyệt
-    loại), nên trung bình của 12 trung bình KHÁC trung bình của 231 câu. Báo cáo
-    dùng số gộp; hàm này là chỗ duy nhất định nghĩa nó.
+    """Gộp CÓ TRỌNG SỐ theo `num_questions` — trung bình của các nhóm KHÁC trung
+    bình đơn giản khi cỡ nhóm lệch nhau (vd văn bản 192 câu vs ngoài-phạm-vi 30
+    câu). Đây là chỗ DUY NHẤT định nghĩa cách gộp, dùng chung cho mọi hình + cho
+    `tests/test_bao_cao_so_lieu.py`.
     """
     n = d["num_questions"]
     return float((d[cot] * n).sum() / n.sum())
 
 
-# --- Hình 1: xếp hạng tổng thể ------------------------------------------------
-def ve_leaderboard(d: pd.DataFrame, tong_cau: int) -> Path:
-    d = d.sort_values("overall_score")
-    fig, ax = plt.subplots(figsize=(8.2, 5.0))
-    y = range(len(d))
+# --- Hình 1: thành phần bộ câu hỏi theo loại -----------------------------------
+def ve_phan_bo_loai(d: pd.DataFrame) -> Path:
+    tong = int(d["num_questions"].sum())
+    fig, ax = plt.subplots(figsize=(7.4, 3.6))
+    y = list(range(len(d)))
     for i, (_, r) in enumerate(d.iterrows()):
-        ax.barh(i, r["overall_score"], height=0.68,
-                color=MAU_NXB[r["nxb"]], hatch=GACH[r["nxb"]],
-                edgecolor=NEN, linewidth=0.8)
-        ax.text(r["overall_score"] + 0.008, i, _so(r["overall_score"]),
+        loai = r["loai_cau_hoi"]
+        ty_le = r["num_questions"] / tong
+        ax.barh(i, r["num_questions"], height=0.55, color=MAU_LOAI[loai],
+                hatch=GACH_LOAI[loai], edgecolor=NEN, linewidth=0.8)
+        ax.text(r["num_questions"] + tong * 0.01, i,
+                f"{int(r['num_questions'])} câu ({_so(ty_le * 100, 1)}%)",
                 va="center", ha="left", fontsize=9, color=MUC_PHU)
-    ax.set_yticks(list(y))
-    ax.set_yticklabels(d["nhan"])
-    ax.set_xlim(0, 1.0)
-    ax.set_xlabel("Điểm tổng thể (overall)")
-    ax.set_title(f"Xếp hạng 12 cuốn sách theo điểm tổng thể — {tong_cau} câu hỏi",
-                 loc="left", color=MUC_CHINH, pad=30)
+    ax.set_yticks(y)
+    ax.set_yticklabels([TEN_LOAI.get(l, l) for l in d["loai_cau_hoi"]])
+    ax.set_xlim(0, tong * 1.28)
+    ax.set_xlabel("Số câu hỏi")
+    ax.set_title(f"Thành phần bộ câu hỏi theo loại — {tong} câu",
+                 loc="left", color=MUC_CHINH, pad=14)
     _don_khung(ax, "x")
-    tay = [plt.Rectangle((0, 0), 1, 1, facecolor=MAU_NXB[k], hatch=GACH[k],
-                         edgecolor=NEN) for k in ("CD", "CTST", "KNTT")]
-    ax.legend(tay, [TEN_NXB[k] for k in ("CD", "CTST", "KNTT")],
-              loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3)
-    return _luu(fig, "leaderboard.png")
+    return _luu(fig, "phan_bo_loai_cau_hoi.png")
 
 
-# --- Hình 2: truy xuất so với câu trả lời -------------------------------------
-def ve_retrieval_vs_answer(d: pd.DataFrame) -> Path:
-    d = d.sort_values("overall_score")
-    fig, ax = plt.subplots(figsize=(8.2, 5.4))
-    cao = 0.38
-    vi_tri = list(range(len(d)))
-    ax.barh([v + cao / 2 for v in vi_tri], d["retrieval_score"], height=cao,
-            color=XANH, edgecolor=NEN, linewidth=0.8, label="Điểm truy xuất")
-    ax.barh([v - cao / 2 for v in vi_tri], d["answer_score"], height=cao,
-            color=CAM, hatch="/", edgecolor=NEN, linewidth=0.8,
-            label="Điểm câu trả lời")
-
-    tb_r = _gop(d, "retrieval_score")
-    tb_a = _gop(d, "answer_score")
-    ax.axvline(tb_r, color=XANH, linestyle="--", linewidth=1.2, alpha=0.8)
-    ax.axvline(tb_a, color=CAM, linestyle="--", linewidth=1.2, alpha=0.8)
-    # Nhãn đường trung bình đặt dưới đáy trục để không đè lên cột nào; chính
-    # đường đứt cùng màu đã mang danh tính, nên chữ giữ mực trung tính.
-    ax.text(tb_r, -0.95, f"TB truy xuất {_so(tb_r)}", color=MUC_PHU,
-            fontsize=8.5, ha="right", va="top")
-    ax.text(tb_a, -0.95, f"TB trả lời {_so(tb_a)}", color=MUC_PHU,
-            fontsize=8.5, ha="left", va="top")
-
-    ax.set_yticks(vi_tri)
-    ax.set_yticklabels(d["nhan"])
-    ax.set_xlim(0, 1.0)
-    ax.set_ylim(-1.6, len(d) - 0.3)
-    ax.set_xlabel("Điểm thành phần (0–1)")
-    ax.set_title("Hai thành phần của điểm tổng thể theo từng cuốn",
-                 loc="left", color=MUC_CHINH, pad=30)
-    _don_khung(ax, "x")
-    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2)
-    return _luu(fig, "retrieval_vs_answer.png")
-
-
-# --- Hình 3: Recall@k thô so với production ------------------------------------
-def ve_recall_at_k(d: pd.DataFrame, tong_cau: int) -> Path:
-    ks = [3, 5, 10]
-    tho = [_gop(d, f"recall@{k}_raw") for k in ks]
-    prod = _gop(d, "recall_page")
-
-    fig, ax = plt.subplots(figsize=(7.4, 4.4))
-    x = list(range(len(ks)))
-    for i, (k, v) in enumerate(zip(ks, tho)):
-        ax.bar(i, v, width=0.55, color=THANG[i], edgecolor=NEN, linewidth=0.8)
-        ax.text(i, v + 0.012, _so(v), ha="center", va="bottom", fontsize=9,
-                color=MUC_PHU)
-    ax.bar(len(ks), prod, width=0.55, color=CAM, hatch="/", edgecolor=NEN,
-           linewidth=0.8)
-    ax.text(len(ks), prod + 0.012, _so(prod), ha="center", va="bottom",
-            fontsize=9, color=MUC_CHINH, fontweight="bold")
-
-    # Đường đứt = trần đo được của RIÊNG kênh ngữ nghĩa. Nhãn đặt ngay trên
-    # đường, phía trên đỉnh cột cao nhất, để không đè lên nhãn giá trị nào.
-    ax.axhline(tho[-1], color=THANG[2], linestyle="--", linewidth=1.1,
-               alpha=0.9)
-    ax.text(-0.42, tho[-1] + 0.055,
-            "trần của RIÊNG kênh ngữ nghĩa (top-10 thô, chưa hợp nhất, "
-            "chưa xếp hạng lại)",
-            fontsize=8.5, color=MUC_PHU, ha="left", va="bottom")
-
-    ax.set_xticks(x + [len(ks)])
-    ax.set_xticklabels([f"top-{k} thô\n(ngữ nghĩa)" for k in ks]
-                       + ["cấu hình thật\n(lai + xếp hạng lại)"])
-    ax.set_ylim(0, 1.14)
-    ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
-    ax.set_ylabel("Recall ở mức trang")
-    ax.set_title(f"Cấu hình thật VƯỢT trần của kênh ngữ nghĩa — {tong_cau} câu hỏi",
-                 loc="left", color=MUC_CHINH)
-    _don_khung(ax, "y")
-    return _luu(fig, "recall_at_k.png")
-
-
-# --- Hình 4: Recall@k theo từng cuốn -------------------------------------------
-def ve_recall_per_book(d: pd.DataFrame) -> Path:
-    d = d.sort_values("recall_page")
-    ks = [3, 5, 10]
-    fig, ax = plt.subplots(figsize=(8.6, 5.4))
-    cao = 0.24
-    vi_tri = list(range(len(d)))
-    for i, k in enumerate(ks):
-        lech = (i - 1) * cao
-        ax.barh([v + lech for v in vi_tri], d[f"recall@{k}_raw"], height=cao,
-                color=THANG[i], edgecolor=NEN, linewidth=0.6,
-                label=f"top-{k} thô (ngữ nghĩa)")
-    ax.scatter(d["recall_page"], vi_tri, marker="D", s=34, color=CAM,
-               edgecolor=NEN, linewidth=0.8, zorder=5,
-               label="cấu hình thật (lai + xếp hạng lại)")
-
-    ax.set_yticks(vi_tri)
-    ax.set_yticklabels(d["nhan"])
-    ax.set_xlim(0, 1.05)
-    ax.set_xlabel("Recall ở mức trang")
-    ax.set_title("Recall theo từng cuốn: cấu hình thật so với top-k thô",
-                 loc="left", color=MUC_CHINH, pad=30)
-    _don_khung(ax, "x")
-    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=4,
-              columnspacing=1.0, handletextpad=0.5)
-    return _luu(fig, "recall_per_book.png")
-
-
-# --- Hình 5: điểm giám khảo ----------------------------------------------------
+# --- Hình 2: điểm giám khảo theo loại câu hỏi ----------------------------------
 def ve_judge_scores(d: pd.DataFrame) -> Path:
-    tieu_chi = [("judge_correctness", "Tính đúng", XANH, ""),
-                ("judge_faithfulness", "Độ trung thực", CAM, "/"),
-                ("judge_relevancy", "Độ liên quan", NGOC, "\\")]
-    fig, ax = plt.subplots(figsize=(7.8, 3.2))
-    for i, (cot, ten, mau, gach) in enumerate(tieu_chi):
-        tb = _gop(d, cot)
-        ax.barh(i, tb, height=0.46, color=mau, hatch=gach, edgecolor=NEN,
-                linewidth=0.8)
-        # Mỗi chấm = một cuốn, đặt NGAY TRÊN cột để không đè lên mặt cột;
-        # viền trắng để hai cuốn sát điểm nhau vẫn tách ra được.
-        ax.scatter(d[cot], [i + 0.36] * len(d), s=22, color=MUC_PHU,
-                   alpha=0.75, zorder=5, linewidth=0.6, edgecolor=NEN)
-        # Nhãn giá trị dồn hết về lề phải, thẳng cột, nên không bao giờ va
-        # vào chấm dù trung bình của tiêu chí nào rơi vào đâu.
-        ax.text(5.45, i, _so(tb, 2), va="center", ha="right", fontsize=10.5,
-                color=MUC_CHINH, fontweight="bold")
+    tieu_chi = [("judge_correctness", "Tính đúng"),
+                ("judge_faithfulness", "Độ trung thực"),
+                ("judge_relevancy", "Độ liên quan")]
+    n_loai = len(d)
+    cao = 0.8 / max(n_loai, 1)
+    fig, ax = plt.subplots(figsize=(7.8, 3.6))
+    for j, (_, r) in enumerate(d.iterrows()):
+        loai = r["loai_cau_hoi"]
+        for i, (cot, _ten) in enumerate(tieu_chi):
+            lech = (j - (n_loai - 1) / 2) * cao
+            gia_tri = r[cot]
+            ax.barh(i + lech, gia_tri, height=cao * 0.92, color=MAU_LOAI[loai],
+                    hatch=GACH_LOAI[loai], edgecolor=NEN, linewidth=0.6)
+            if pd.notna(gia_tri):
+                ax.text(gia_tri + 0.05, i + lech, _so(gia_tri, 2), va="center",
+                        ha="left", fontsize=8, color=MUC_PHU)
     ax.set_yticks(range(len(tieu_chi)))
     ax.set_yticklabels([t[1] for t in tieu_chi])
-    ax.set_xlim(0, 5.5)
-    ax.set_ylim(-0.5, len(tieu_chi) - 0.35)
+    ax.set_xlim(0, 5.6)
     ax.set_xticks([0, 1, 2, 3, 4, 5])
-    ax.set_xlabel("Điểm giám khảo (thang 1–5); mỗi chấm là một cuốn")
-    ax.set_title("Chất lượng câu trả lời do mô hình giám khảo độc lập chấm",
-                 loc="left", color=MUC_CHINH)
+    ax.set_xlabel("Điểm giám khảo (thang 1–5)")
+    ax.set_title("Chất lượng câu trả lời theo LOẠI câu hỏi (giám khảo LLM độc lập)",
+                 loc="left", color=MUC_CHINH, pad=30)
     _don_khung(ax, "x")
-    return _luu(fig, "judge_scores.png")
+    tay = [plt.Rectangle((0, 0), 1, 1, facecolor=MAU_LOAI[l], hatch=GACH_LOAI[l],
+                         edgecolor=NEN) for l in d["loai_cau_hoi"]]
+    ax.legend(tay, [TEN_LOAI.get(l, l) for l in d["loai_cau_hoi"]],
+              loc="lower left", bbox_to_anchor=(0, 1.0), ncol=len(d))
+    return _luu(fig, "judge_scores_theo_loai.png")
 
 
 def _luu(fig, ten: str) -> Path:
@@ -294,23 +198,12 @@ def main() -> int:
     _dat_kieu()
     d = _doc_eval()
     tong_cau = int(d["num_questions"].sum())
-    # Không hardcode tổng số câu: nó đã đổi 231->238->240 trong quá trình làm
-    # đồ án (xem D-169..D-174). Tiêu đề hình lấy thẳng giá trị đo được; số
-    # trong .tex phải được rà lại theo đúng tong_cau in ra dưới đây.
-    for ham, can_tong_cau in ((ve_leaderboard, True), (ve_retrieval_vs_answer, False),
-                              (ve_recall_at_k, True), (ve_recall_per_book, False),
-                              (ve_judge_scores, False)):
-        duong = ham(d, tong_cau) if can_tong_cau else ham(d)
+    for ham in (ve_phan_bo_loai, ve_judge_scores):
+        duong = ham(d)
         print("  đã ghi", duong.relative_to(GOC))
-    print(f"\n5 hình sinh từ {CSV_EVAL.name} — {tong_cau} câu / {len(d)} cuốn.")
-    print("Số gộp theo CÂU (dùng trong Chương 4):")
-    for cot, ten in [("recall_page", "Recall (cấu hình thật)"),
-                     ("mrr_page", "MRR"),
-                     ("precision_page", "Precision"),
-                     ("recall@3_raw", "Recall@3 thô"),
-                     ("recall@5_raw", "Recall@5 thô"),
-                     ("recall@10_raw", "Recall@10 thô"),
-                     ("judge_correctness", "Tính đúng /5"),
+    print(f"\n2 hình sinh từ {CSV_EVAL.name} — {tong_cau} câu / {len(d)} loại.")
+    print("Số gộp có trọng số theo loại (dùng trong Chương 4):")
+    for cot, ten in [("judge_correctness", "Tính đúng /5"),
                      ("judge_faithfulness", "Độ trung thực /5"),
                      ("judge_relevancy", "Độ liên quan /5")]:
         print(f"  {ten:26s} {_so(_gop(d, cot), 4)}")
