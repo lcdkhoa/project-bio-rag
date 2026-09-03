@@ -198,7 +198,14 @@ RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
 RERANK_FETCH_K = int(os.getenv("RERANK_FETCH_K", "20"))
 # Absolute safety gate on the rerank score (0..1): a chunk below this is
 # dropped so an all-irrelevant fetch yields no context (LLM emits fallback).
-RERANK_SCORE_MIN = float(os.getenv("RERANK_SCORE_MIN", "0.2"))
+# 0.59, không phải một số tròn: quét trên 240 câu (D-178/D-179) cho thấy
+# 0.00-0.50 KHÔNG đổi recall/MRR chút nào; hai chunk lạc đề đo được thực tế
+# ("con cá có màu gì" -> CD tr.129=0.589, KNTT tr.105=0.575) chỉ bị loại khi
+# ngưỡng > 0.589 (lọc là score >= score_min) — 0.59 là mốc THẤP NHẤT đảm bảo
+# loại cả hai với thiệt hại ít nhất (MRR 0.8038->0.7972, R@10 0.9583->0.9417,
+# rỗng 0->3/240 câu; rẻ hơn mốc tròn 0.60 cũ, vốn cho cùng đảm bảo nhưng rỗng
+# 5/240).
+RERANK_SCORE_MIN = float(os.getenv("RERANK_SCORE_MIN", "0.59"))
 # Image side: cross-encoder is an additive term over the manual fusion score.
 IMAGE_RERANK_ENABLED = os.getenv("IMAGE_RERANK_ENABLED", "true").lower() == "true"
 IMAGE_RERANK_TOP_N = int(os.getenv("IMAGE_RERANK_TOP_N", "12"))

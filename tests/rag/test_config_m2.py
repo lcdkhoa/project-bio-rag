@@ -14,7 +14,7 @@ def test_m2_config_defaults(monkeypatch):
     assert cfg.RERANK_ENABLED is True
     assert cfg.RERANK_MODEL == "BAAI/bge-reranker-v2-m3"
     assert cfg.RERANK_FETCH_K == 20
-    assert cfg.RERANK_SCORE_MIN == 0.2
+    assert cfg.RERANK_SCORE_MIN == 0.59
     assert cfg.IMAGE_RERANK_ENABLED is True
     assert cfg.IMAGE_RERANK_TOP_N == 12
     assert cfg.IMAGE_RERANK_WEIGHT == 0.25

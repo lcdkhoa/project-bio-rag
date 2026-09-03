@@ -374,25 +374,29 @@ trang cũ (G2 tổng quát, `qa_ocr_gold.py`) **vẫn VÔ HIỆU** và cảnh b�
 may2` của nó **vẫn hỏng** như mô tả — nhưng không còn cần sửa, vì câu hỏi mà nó định
 trả lời đã có số từ nguồn khác.
 
-## Sửa lỗi FE/retrieval ngoài phạm vi MT (2026-09-02/03, D-177/D-178/D-179)
+## Sửa lỗi FE/retrieval ngoài phạm vi MT (2026-09-02/03, D-177..D-180)
 
 Người dùng test FE thật, báo 4 lỗi bằng ảnh chụp: trích dẫn lạc đề, trích dẫn vẫn
 hiện dù câu trả lời là "không được đề cập", `cho tôi hình con cá` chỉ trả 1 ảnh sai
 chủ đề, ảnh tự động đính kèm mọi câu hỏi kể cả câu thuần chữ. Đây là lỗi **phục vụ
 (serving)**, không thuộc corpus/ETL nên không đổi số liệu MT1-MT5 ở bảng dưới. Đã
 sửa 3/4 (`src/app/api.py`, `src/rag/hybrid_retriever.py`, `src/rag/image_vectorstore.py`)
-— chi tiết root cause + đo trước/sau xem D-177/D-178/D-179 trong
-`document/decision_log.html`.
-**Còn nợ, cố ý chưa làm:** `RERANK_SCORE_MIN=0.2` — quét thô (D-178) tìm được mốc
-tròn 0,60 nhưng đó KHÔNG PHẢI ngưỡng có căn cứ, chỉ là số tình cờ trong dãy quét
-bước 0,1. Quét mịn (D-179, bước 0,005-0,03) sửa lại: ngưỡng THẤP NHẤT có thể chứng
-minh bằng lý luận là **0,59** — vì cơ chế lọc là `score >= score_min`
-(`hybrid_text_retriever.py`), ngưỡng phải LỚN HƠN điểm cao nhất của hai chunk lạc
-đề đã bắt được ("con cá có màu gì" → CD tr.129=0,589, KNTT tr.105=0,575), nên 0,59
-là mốc rẻ nhất đảm bảo loại được cả hai (MRR 0,8038→0,7972 tức −0,82%, R@10
-0,9583→0,9417 tức −1,73%, rỗng 0→3/240=1,25% câu) — rẻ hơn 0,60 (rỗng 5/240) mà
-đạt cùng đảm bảo. Đây là đánh đổi SẢN PHẨM (độ tin cậy trích dẫn ↔ recall), chưa
-đổi trong code, chờ người dùng chốt.
+— chi tiết root cause + đo trước/sau xem D-177..D-179 trong `document/decision_log.html`.
+
+**`RERANK_SCORE_MIN` ĐÃ ĐỔI (D-180, 2026-09-03): `0,2` → `0,59`** trong
+`src/config.py` (mặc định, `.env` không ghi đè). Căn cứ (D-179): lọc dùng
+`score >= score_min` nên ngưỡng phải LỚN HƠN điểm cao nhất của hai chunk lạc đề
+đo được thật ("con cá có màu gì" → CD tr.129=0,589, KNTT tr.105=0,575) — 0,59 là
+mốc THẤP NHẤT thoả điều kiện đó, rẻ hơn mốc tròn 0,60 (D-178, không có căn cứ
+riêng) mà đạt cùng đảm bảo. Đánh đổi đã CHẤP NHẬN, đo trên 240 câu: MRR
+0,8038→0,7972 (−0,82%), R@10 0,9583→0,9417 (−1,73%), 3/240 câu (1,25%) không còn
+kết quả nào lọt rerank (LLM trả fallback). Verify bằng ca gốc: câu "con cá có màu
+gì" trước 3 trích dẫn (2 lạc đề) → sau đúng 1 trích dẫn đúng chủ đề.
+`tests/rag/test_config_m2.py::test_m2_config_defaults` đã cập nhật theo giá trị
+mới; `pytest tests/`: 781 passed, 3 skipped. **Còn nợ, ngoài phạm vi D-180:** bảng
+đầu-cuối 240 câu trong `report/tex_source/` (D-175) vẫn đo trên `0,2` cũ — cần
+chạy lại `evaluator.py`/`report_numbers.py` trước khi nộp báo cáo nếu muốn số liệu
+khớp cấu hình production hiện tại.
 
 ## Quy tắc làm việc (luôn áp dụng)
 
