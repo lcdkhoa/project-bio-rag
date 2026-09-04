@@ -1,10 +1,11 @@
-# Bộ đánh giá hệ thống RAG (12 sách)
+# Bộ đánh giá hệ thống RAG
 
 Đánh giá hệ Trợ lý ảo Khoa học tự nhiên: **chất lượng truy xuất (RAG)** bằng số liệu
 IR xác định (Precision / Recall / MRR) + **chất lượng câu trả lời của Qwen 2.5** được
 **một LLM thứ 2 chấm lại**.
 
-Mỗi cuốn trong 12 PDF có **một bộ test riêng** → 12 file CSV → xếp hạng 12 sách.
+Bộ test là MỘT file duy nhất (`src/test/testset/draft.csv`, D-182), lấy mẫu ngẫu
+nhiên trên toàn corpus — không còn khái niệm "theo quyển".
 
 ## 1. Yêu cầu
 
@@ -12,8 +13,7 @@ Mỗi cuốn trong 12 PDF có **một bộ test riêng** → 12 file CSV → x�
 pip install -r requirements.txt   # đã gồm langchain-openai, pandas, pytesseract
 ```
 
-- Tesseract tiếng Việt (`TESSERACT_CMD` trong `.env`) cho bước sinh test.
-- Vector DB đã build sẵn trong `database/` (collection `biology_text`, ~13.7k chunk).
+- Vector DB đã build sẵn trong `database/` (collection `biology_text`, ~16.5k chunk).
 - **LLM đánh giá** (sinh test + chấm) cấu hình qua `.env`, dùng endpoint
   **OpenAI-compatible** nên cắm được MiMo / Groq / OpenRouter / vLLM tự host:
 
@@ -34,13 +34,10 @@ Mỗi câu hỏi được sinh **từ một trang cụ thể** của một sách
 | Số liệu | Ý nghĩa |
 |---|---|
 | **Precision@k (page)** | Tỷ lệ chunk truy xuất đúng trang nguồn. |
-| **Recall@k (page)** = hit@k | Có tìm được trang nguồn trong top-k không (0/1, lấy trung bình). |
+| **Recall@k** | Tỉ lệ chunk vàng lấy được trong top-k (`\|top-k ∩ gold\|/\|gold\|`, KHÔNG phải hit@k nhị phân — đổi ở D-181/D-182). |
 | **MRR (page)** | Điểm rank = 1/(thứ hạng chunk đúng đầu tiên). |
-| **\*_book** | Bản book-level (chỉ cần đúng sách) → đo nhiễu chéo giữa 12 sách. |
-| `recall_top10_diag` | "Trần recall" top-10 thô (bỏ qua relevance gate) để chẩn đoán. |
 
-Số liệu này **không phụ thuộc LLM chấm** → minh bạch, lặp lại được. (Cho phép sai số
-±1 trang vì chunk có thể tràn qua ranh giới trang — xem `metrics.py`.)
+Số liệu này **không phụ thuộc LLM chấm** → minh bạch, lặp lại được.
 
 ## 3. Các bước (D-182, 2026-09-04 — viết lại từ đầu, thay pipeline cũ)
 

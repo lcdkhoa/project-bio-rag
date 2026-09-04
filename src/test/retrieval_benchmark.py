@@ -557,6 +557,7 @@ def evaluate(cfg: Config, rows: Sequence[dict], cache: Cache, sparse,
     out = {
         "cau_hinh": cfg.label,
         "phuong_phap_bao_cao": method_label(cfg),
+        "cand_n": cfg.cand_n,
         "so_cau": n,
         "rong": empty,
         "MRR": round(mrr / n, 4) if n else 0.0,
@@ -619,8 +620,23 @@ ALL_CONFIGS = [
 # 4 "phương pháp" báo cáo CBHD (D-181 #3) — CHÍNH XÁC 4/12 dòng của ALL_CONFIGS
 # ở trên, không phải danh sách rời. Thứ tự khớp METHOD_LABELS để bảng in ra
 # đúng thứ tự keyword -> dense -> truyền thống -> đề xuất.
+#
+# `cand_n` mặc định = CANDIDATE_N = 50 (bề rộng ĐO, không phải production) — bảng
+# này KHÔNG dùng cho báo cáo, chỉ giữ lại để đối chiếu 4/12 dòng ở đúng bề rộng
+# 12-cấu-hình. Bảng dùng cho báo cáo chương 4/5 là REPORT_CONFIGS_PROD ngay dưới.
 REPORT_CONFIGS = [Config(mode=m, rerank=r, gate=g)
                   for (m, r, g) in METHOD_LABELS]
+
+# C-A (Critical, phản biện Opus 5, 2026-09-04): `--chi-4-phuong-phap` — bảng
+# dùng thẳng cho báo cáo chương 4/5 — trước đây gọi table(..., REPORT_CONFIGS)
+# nên đo ở CANDIDATE_N=50, KHÔNG phải bề rộng production thật (.env:
+# RERANK_FETCH_K=BM25_FETCH_K=20). Đúng loại lỗi mà C-1 (dòng ~750 dưới) đã
+# cảnh báo cho bảng 12-cấu-hình nhưng bỏ sót ở nhánh 4-phương-pháp. `PROD_N`
+# và `REPORT_CONFIGS_PROD` ở cấp module để cả `--chi-4-phuong-phap` lẫn nhánh
+# else (bảng "Bề rộng PRODUCTION") dùng chung MỘT định nghĩa bề rộng.
+PROD_N = max(RERANK_FETCH_K, BM25_FETCH_K)
+REPORT_CONFIGS_PROD = [Config(mode=m, rerank=r, gate=g, cand_n=PROD_N)
+                        for (m, r, g) in METHOD_LABELS]
 
 # Bảng phụ: CHỌN CÁCH HỢP NHẤT BẰNG SỐ (§3.3 đòi "đo cả hai rồi mới chốt").
 # Miễn phí — bộ nhớ đệm không phụ thuộc cách hợp nhất, nên đây chỉ là phát lại.
@@ -637,8 +653,9 @@ FUSION_CONFIGS = [
 
 
 def main() -> int:
-    from src.test.testset_common import (DRAFT_CSV, META_JSON,
+    from src.test.testset_common import (DRAFT_CSV,
                                           duong_dan_output,
+                                          meta_path_for,
                                           require_human_reviewed)
 
     ap = argparse.ArgumentParser(description=__doc__)
@@ -653,7 +670,12 @@ def main() -> int:
              "đề xuất, D-181 #3) — dùng cho báo cáo chương 4/5.")
     args = ap.parse_args()
 
-    require_human_reviewed(META_JSON, allow_draft=args.allow_draft)
+    # I-3 (phản biện Opus 5, 2026-09-04): cổng duyệt phải theo ĐÚNG
+    # `--testset-csv` người dùng truyền, không phải hằng số META_JSON mặc
+    # định — nếu không, trỏ --testset-csv sang một CSV khác (chưa duyệt) khi
+    # meta.json mặc định vẫn human_reviewed=true (từ lượt trước) sẽ lọt cổng.
+    require_human_reviewed(meta_path_for(args.testset_csv),
+                           allow_draft=args.allow_draft)
 
     rows = load_testset(Path(args.testset_csv))
     if not rows:
@@ -723,8 +745,12 @@ def main() -> int:
         return rows_out
 
     if args.chi_4_phuong_phap:
-        results = table("4 phương pháp báo cáo (keyword/dense/truyền thống/"
-                        "đề xuất)", REPORT_CONFIGS)
+        # C-A: dùng REPORT_CONFIGS_PROD (n=PROD_N, bề rộng production thật),
+        # KHÔNG phải REPORT_CONFIGS (n=CANDIDATE_N=50) — bảng này đi thẳng vào
+        # báo cáo chương 4/5 nên phải đo đúng cấu hình `.env` đang chạy.
+        results = table(f"4 phương pháp báo cáo (keyword/dense/truyền thống/"
+                        f"đề xuất) — bề rộng PRODUCTION n={PROD_N}",
+                        REPORT_CONFIGS_PROD)
         print("\n`ngPV.tcđ` = tỉ lệ TỪ CHỐI ĐÚNG trên nhóm câu ngoài phạm vi "
               "(D-181 #4): hệ thống KHÔNG trả về trích dẫn nào cho câu không "
               "thuộc corpus 12 quyển — '—' nghĩa là chỉ tính cho cấu hình "
@@ -775,7 +801,7 @@ def main() -> int:
     # `results`, đúng các cột đã in ra console) thay vì stub 2 dòng vô nghĩa.
     # Tính năng MỚI so với `ablation.py` gốc (nó chưa từng ghi .md) — làm gọn,
     # không cố bọc lại toàn bộ định dạng của bảng console.
-    md_cols = ["cau_hinh", "phuong_phap_bao_cao", "so_cau"] + \
+    md_cols = ["cau_hinh", "phuong_phap_bao_cao", "cand_n", "so_cau"] + \
         [f"R@{k}" for k in KS] + ["MRR", "P@5", "F1@10", "tranP@5", "rong",
                                    "gate_ti_le_truy_van_bi_cat",
                                    "ngoai_pham_vi_so_cau",

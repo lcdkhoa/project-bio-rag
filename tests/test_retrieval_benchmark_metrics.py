@@ -25,6 +25,7 @@ class _FakeConfig:
     mode = "dense"
     rerank = False
     gate = False
+    cand_n = 50  # C-A: evaluate() nay đọc cfg.cand_n để ghi cột "cand_n" ra output
 
 
 def _fake_rank_for(*args, **kwargs):
@@ -57,3 +58,20 @@ def test_evaluate_phan_biet_3_nhom(monkeypatch):
     assert out["ngoai_pham_vi_so_cau"] == 1
     for k in KS:
         assert out[f"P@{k}"] > 0       # nhóm 3 khớp hết -> P/R > 0
+
+    # I-4 (phản biện Opus 5, 2026-09-04): ghim giá trị CHÍNH XÁC, không chỉ
+    # "> 0" — chặn hồi quy nếu R@K vô tình quay lại hit@k nhị phân, hoặc F1@K
+    # tính sai công thức (macro vs micro). q_ok có 5 chunk vàng
+    # (`_n_gold_chunks=5`), `_fake_rank_for()` trả ["c1".."c5"] và mọi c1..c5
+    # đều map về đúng trang vàng (page_of), nên top-1 CHỈ khớp 1/5 gold chunk:
+    #   R@1 = |top-1 ∩ gold| / |gold| = 1/5 = 0.2  (TỈ LỆ CHUẨN, không phải
+    #   hit@k nhị phân — nhị phân sẽ ra 1.0 vì có ít nhất 1 khớp trong top-1).
+    #   R@5 = 5/5 = 1.0 (khớp hết 5/5).
+    #   P@1 = 1/1 = 1.0 (1 trong 1 ứng viên top-1 là đúng).
+    #   F1@1 = 2*P*R/(P+R) = 2*1.0*0.2/1.2 = 1/3.
+    #   tranP@1 = min(k, n_gold_total)/k = min(1,5)/1 = 1.0.
+    assert out["R@1"] == 0.2
+    assert out["R@5"] == 1.0
+    assert out["P@1"] == 1.0
+    assert out["F1@1"] == pytest.approx(1 / 3, abs=1e-4)
+    assert out["tranP@1"] == 1.0

@@ -285,8 +285,9 @@ TEN_LOAI_HIEN_THI = {
 
 if __name__ == "__main__":
     import argparse
-    from src.test.testset_common import (DRAFT_CSV, META_JSON,
+    from src.test.testset_common import (DRAFT_CSV,
                                           duong_dan_output,
+                                          meta_path_for,
                                           require_human_reviewed)
 
     _ap = argparse.ArgumentParser(description="Đánh giá đầu-cuối, CÓ gọi LLM")
@@ -294,7 +295,12 @@ if __name__ == "__main__":
     _ap.add_argument("--allow-draft", action="store_true")
     _a = _ap.parse_args()
 
-    require_human_reviewed(META_JSON, allow_draft=_a.allow_draft)
+    # I-3 (phản biện Opus 5, 2026-09-04): cổng duyệt phải theo ĐÚNG
+    # `--testset-csv` người dùng truyền, không phải hằng số META_JSON mặc
+    # định — nếu không, trỏ --testset-csv sang một CSV khác (chưa duyệt) khi
+    # meta.json mặc định vẫn human_reviewed=true (từ lượt trước) sẽ lọt cổng.
+    require_human_reviewed(meta_path_for(_a.testset_csv),
+                           allow_draft=_a.allow_draft)
 
     if not is_configured():
         print(config_help())

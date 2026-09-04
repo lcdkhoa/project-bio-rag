@@ -199,8 +199,8 @@ Chi tiết request/response & ví dụ frontend: [document/api_server_docs.md](d
 
 ## 8) Đánh giá chất lượng
 
-Bộ đánh giá trong `src/test/` đo **chất lượng truy xuất** (Precision/Recall/MRR — số liệu IR
-xác định) và **chất lượng câu trả lời** (một LLM thứ 2 chấm 1–5), cho từng cuốn trong 12 sách.
+Bộ đánh giá trong `src/test/` đo **chất lượng truy xuất** (Precision/Recall/F1/MRR@K — số liệu
+IR xác định) và **chất lượng câu trả lời** (một LLM thứ 2 chấm 1–5).
 
 ```bash
 python -m src.test.build_testset                       # sinh bộ test (cần EVAL_LLM_* trong .env), rồi --mark-reviewed

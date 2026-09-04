@@ -20,6 +20,22 @@ DRAFT_CSV = OUT_DIR / "draft.csv"
 META_JSON = OUT_DIR / "meta.json"
 
 
+def meta_path_for(testset_csv) -> Path:
+    """Đường dẫn `meta.json` ĐÚNG cho một `--testset-csv` bất kỳ.
+
+    I-3 (phản biện Opus 5, 2026-09-04): `retrieval_benchmark.py`/`run_eval.py`
+    từng gọi `require_human_reviewed(META_JSON, ...)` — hằng số MẶC ĐỊNH —
+    bất kể `--testset-csv` người dùng truyền trỏ tới đâu. Nếu ai đó chạy với
+    `--testset-csv` trỏ sang một CSV KHÁC (chưa duyệt) trong khi `meta.json`
+    mặc định vẫn `human_reviewed: true` (từ một lượt trước), cổng duyệt cho
+    qua nhầm. Đúng phải là: `meta.json` LUÔN nằm CẠNH file CSV đang dùng.
+
+    Khi `testset_csv == DRAFT_CSV` (mặc định, không truyền cờ), hàm này trả
+    về đúng `META_JSON` — hành vi mặc định không đổi.
+    """
+    return Path(testset_csv).parent / "meta.json"
+
+
 def require_human_reviewed(meta_path: Path, allow_draft: bool = False) -> None:
     """Chặn dùng một bộ test CHƯA được người duyệt tay, trừ khi `--allow-draft`.
 
