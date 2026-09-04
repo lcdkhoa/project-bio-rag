@@ -243,8 +243,16 @@ def evaluate_all(csv_path: str, judge_llm) -> pd.DataFrame:
 
 def aggregate_by_loai(all_records: pd.DataFrame) -> pd.DataFrame:
     """Tổng hợp theo LOẠI câu hỏi — copy nguyên văn evaluator.py, chỉ đổi tên
-    cột nguon_cau_hoi -> loai (khớp schema draft.csv mới)."""
-    cot_ra = ["loai_cau_hoi", "num_questions", *NUM_COLS]
+    cột nguon_cau_hoi -> loai (khớp schema draft.csv mới).
+
+    I-3 (phản biện Task 4, Opus 5, lặp lại đúng lớp lỗi D-173 đã xảy ra thật:
+    106/240 câu mất điểm judge mà không ai biết ngay): `num_questions` đếm MỌI
+    dòng kể cả dòng `judge_correctness` là NaN (giám khảo lỗi hết retry).
+    `.mean()` của pandas tự bỏ qua NaN nên trung bình in ra có thể chỉ tính
+    trên một phần nhỏ câu — thêm `so_cau_co_diem_judge` để lộ ra ngay trong
+    chính bảng tổng hợp, không đợi ai đó đi đối chiếu số dòng NaN thủ công.
+    """
+    cot_ra = ["loai_cau_hoi", "num_questions", "so_cau_co_diem_judge", *NUM_COLS]
     if all_records.empty:
         return pd.DataFrame(columns=cot_ra)
 
@@ -253,6 +261,7 @@ def aggregate_by_loai(all_records: pd.DataFrame) -> pd.DataFrame:
     g = df.groupby("loai", dropna=False)
     out = g.agg(
         num_questions=("question", "count"),
+        so_cau_co_diem_judge=("judge_correctness", lambda s: int(s.notna().sum())),
         judge_correctness=("judge_correctness", "mean"),
         judge_faithfulness=("judge_faithfulness", "mean"),
         judge_relevancy=("judge_relevancy", "mean"),
@@ -301,6 +310,16 @@ if __name__ == "__main__":
     report_csv = duong_dan_output("eval_report.csv", _a.allow_draft)
     report_md = duong_dan_output("eval_report.md", _a.allow_draft)
     report.to_csv(report_csv, index=False, encoding="utf-8-sig")
+
+    # I-3 (phản biện Task 4): cảnh báo NGAY khi một nhóm có ít điểm judge hơn
+    # số câu — lặp lại đúng lớp lỗi D-173 (106/240 câu mất điểm judge vì cạn
+    # hạn mức TPD, không ai biết cho tới khi đối chiếu thủ công).
+    _thieu_diem = report[report["so_cau_co_diem_judge"] < report["num_questions"]]
+    if not _thieu_diem.empty:
+        print(f"\n!! {int((_thieu_diem['num_questions'] - _thieu_diem['so_cau_co_diem_judge']).sum())} "
+              "câu KHÔNG có điểm giám khảo (lỗi judge/rate-limit) — số trung bình "
+              "ở các dòng dưới đây KHÔNG tính trên đủ num_questions:")
+        print(_thieu_diem[["loai_cau_hoi", "num_questions", "so_cau_co_diem_judge"]].to_string(index=False))
 
     lines = ["# Báo cáo đánh giá RAG theo LOẠI câu hỏi\n",
              f"Tổng số câu: {len(all_records)} | "

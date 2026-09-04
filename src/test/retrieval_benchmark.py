@@ -675,6 +675,22 @@ def main() -> int:
         for r in _suy_bien[:10]:
             print(f"   {_gold_key(r)}  {str(r['question'])[:60]!r}")
 
+    # I-2 (phản biện Task 4, Opus 5): đối chiếu cột `loai` (do build_testset.py
+    # ghi vào draft.csv) với kết luận suy ra thuần tuý từ source_book/
+    # source_page ở `_gold_key()`. Hai nguồn phải khớp — lệch nhau nghĩa là
+    # draft.csv có dữ liệu lỗi (câu van_ban/hinh thiếu source_book/source_page,
+    # hoặc câu ngoai_pham_vi lại có trang vàng), KHÔNG phải lỗi của module này.
+    # In cảnh báo, KHÔNG raise — cùng tinh thần "flag for review" như _suy_bien.
+    _lech_loai = [r for r in rows
+                  if (str(r.get("loai", "")).strip() == "ngoai_pham_vi") != (_gold_key(r) is None)]
+    if _lech_loai:
+        print(f"\n!! {len(_lech_loai)}/{len(rows)} câu có cột `loai` KHÔNG khớp "
+              "kết luận suy ra từ source_book/source_page (dữ liệu draft.csv có "
+              "vấn đề, không phải lỗi retrieval_benchmark.py):")
+        for r in _lech_loai[:10]:
+            print(f"   loai={r.get('loai')!r} gold={_gold_key(r)}  "
+                  f"{str(r['question'])[:60]!r}")
+
     cache_path = Path(args.cache)
     if args.build_cache:
         cache = build_cache(rows, collection, sparse, cache_path)
@@ -689,20 +705,59 @@ def main() -> int:
         rows_out = [evaluate(c, rows, cache, sparse, page_of) for c in configs]
         head = (f"{'cấu hình':38s} "
                 + " ".join(f"{'R@' + str(k):>7s}" for k in KS)
-                + f" {'MRR':>7s} {'P@5':>7s} {'F1@10':>7s}")
+                + f" {'MRR':>7s} {'P@5':>7s} {'F1@10':>7s} {'trầnP@5':>8s}"
+                + f" {'rỗng':>5s} {'cắt':>6s} {'ngPV.tcđ':>9s}")
         print(f"\n### {title}")
         print(head)
+        print("-" * len(head))
         for r in rows_out:
+            tcd = r.get("ngoai_pham_vi_ti_le_tu_choi_dung")
+            tcd_s = f"{tcd:9.2f}" if tcd is not None else f"{'—':>9s}"
             print(f"{r['cau_hinh']:38s} "
                   + " ".join(f"{r['R@' + str(k)]:7.3f}" for k in KS)
-                  + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['F1@10']:7.3f}")
+                  + f" {r['MRR']:7.3f} {r['P@5']:7.3f} {r['F1@10']:7.3f}"
+                  + f" {r['tranP@5']:8.3f}"
+                  + f" {r['rong']:5d}"
+                  + f" {r.get('gate_ti_le_truy_van_bi_cat', 0):6.2f}"
+                  + f" {tcd_s}")
         return rows_out
 
     if args.chi_4_phuong_phap:
         results = table("4 phương pháp báo cáo (keyword/dense/truyền thống/"
                         "đề xuất)", REPORT_CONFIGS)
+        print("\n`ngPV.tcđ` = tỉ lệ TỪ CHỐI ĐÚNG trên nhóm câu ngoài phạm vi "
+              "(D-181 #4): hệ thống KHÔNG trả về trích dẫn nào cho câu không "
+              "thuộc corpus 12 quyển — '—' nghĩa là chỉ tính cho cấu hình "
+              "`de_xuat` (production); ba phương pháp còn lại in '—'.")
     else:
         results = table("12 cấu hình hợp đồng", ALL_CONFIGS)
+
+        # I-5 (phản biện Task 4): bảng phụ CHỌN CÁCH HỢP NHẤT BẰNG SỐ — miễn
+        # phí (đọc lại từ cùng bộ nhớ đệm), nhưng là chỗ DUY NHẤT lộ ra cái
+        # bẫy RRF (cổng lọc tương đối không cắt gì dưới `rrf`). Không được
+        # để `FUSION_CONFIGS` là code chết — đây là bảng dùng nó.
+        fusion_rows = table(
+            "Chọn cách hợp nhất BẰNG SỐ, và tách riêng tác dụng của cổng lọc "
+            "(rerank BẬT ở mọi hàng)", FUSION_CONFIGS)
+        print("\n`cắt` = tỉ lệ truy vấn mà cổng lọc thực sự bỏ bớt ứng viên (tính trên")
+        print(f"toàn bộ {CANDIDATE_N} ứng viên, không phải trên top-10).")
+        results = results + fusion_rows
+
+        # C-1 (Critical, phản biện Task 4): bảng "Bề rộng PRODUCTION" — `.env`
+        # chạy RERANK_FETCH_K = 20 và BM25_FETCH_K = 20, KHÔNG phải
+        # CANDIDATE_N = 50. Bảng 12-cấu-hình ở trên là TRẦN chất lượng truy
+        # xuất; bảng này là thứ người dùng thật sẽ nhận. Toàn bộ số liệu hiện
+        # có trong CLAUDE.md/report/tex_source/ (D-82, D-175, D-180) đo ở
+        # ĐÚNG bảng này (n=20), không phải bảng n=50 ở trên — thiếu đoạn này
+        # là mất khả năng tái lập những con số đó.
+        prod_n = max(RERANK_FETCH_K, BM25_FETCH_K)
+        if prod_n != CANDIDATE_N:
+            prod_rows = table(
+                f"Bề rộng PRODUCTION ({prod_n} ứng viên/kênh, không phải "
+                f"{CANDIDATE_N}) — đây là thứ người dùng thật nhận",
+                [Config(mode=m, rerank=True, gate=g, cand_n=prod_n)
+                 for m in ("bm25", "dense", "hybrid") for g in (False, True)])
+            results = results + prod_rows
 
     out_csv = duong_dan_output("retrieval_report.csv", args.allow_draft)
     out_md = duong_dan_output("retrieval_report.md", args.allow_draft)
@@ -716,8 +771,24 @@ def main() -> int:
         w = csv.DictWriter(fh, fieldnames=fields, restval="")
         w.writeheader()
         w.writerows(results)
+    # I-6 (phản biện Task 4): ghi bảng markdown THẬT (header + từng hàng của
+    # `results`, đúng các cột đã in ra console) thay vì stub 2 dòng vô nghĩa.
+    # Tính năng MỚI so với `ablation.py` gốc (nó chưa từng ghi .md) — làm gọn,
+    # không cố bọc lại toàn bộ định dạng của bảng console.
+    md_cols = ["cau_hinh", "phuong_phap_bao_cao", "so_cau"] + \
+        [f"R@{k}" for k in KS] + ["MRR", "P@5", "F1@10", "tranP@5", "rong",
+                                   "gate_ti_le_truy_van_bi_cat",
+                                   "ngoai_pham_vi_so_cau",
+                                   "ngoai_pham_vi_ti_le_tu_choi_dung",
+                                   "suy_bien_gold_0_chunk"]
+    md_lines = [f"# Bảng đối chiếu truy xuất\n", f"{len(results)} cấu hình.\n",
+                "| " + " | ".join(md_cols) + " |",
+                "|" + "|".join("---" for _ in md_cols) + "|"]
+    for r in results:
+        md_lines.append(
+            "| " + " | ".join(str(r.get(c, "")) for c in md_cols) + " |")
     with io.open(out_md, "w", encoding="utf-8") as fh:
-        fh.write(f"# Bảng đối chiếu truy xuất\n\n{len(results)} cấu hình.\n")
+        fh.write("\n".join(md_lines) + "\n")
     print(f"\nĐã lưu: {out_csv}")
     return 0
 
