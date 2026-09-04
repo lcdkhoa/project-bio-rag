@@ -181,13 +181,30 @@ cần retriever/reranker ở bước này).
    trên corpus hôm nay hai bộ lọc lệch nhau 101/3881 ảnh = 2,6%, không đủ lớn để
    gây lỗi ngưỡng hôm nay nhưng là chỗ tự mâu thuẫn nội bộ cần tránh khi viết
    code, không phải chỉ khi viết spec).
-4. `p_hinh = n_anh / (n_chunk + n_anh)`; `n_hinh = round(n_con_lai * p_hinh)`;
+4. **SỬA SAU PHẢN BIỆN ĐỘC LẬP TASK 4 (2026-09-04, thực thi plan) — LẬT LẠI
+   điểm 3 ở trên cho riêng `n_chunk`:** dùng `n_chunk` THÔ (không lọc) làm mẫu
+   số của `p_hinh` trong khi `n_anh` là số ẢNH ĐÃ LỌC là một bất đối xứng có hệ
+   thống, không phải "không cần lọc gì thêm cho text" như câu trên từng viết.
+   Đo trên index thật ngày 2026-09-04: `biology_text` có **16515 chunk thô**
+   nhưng chỉ **11444 chunk đủ điều kiện lấy mẫu** (`len(document) >= 200`, xem
+   mục "Lấy mẫu" bên dưới) — 30,7% bị loại, so với chỉ 2,6% bị loại ở phía ảnh.
+   Dùng mẫu số thô 16515 cho text nhưng mẫu số đã lọc 3780 cho ảnh làm `n_hinh`
+   nhỏ hơn đáng ra phải có — đúng nghịch với lý do D-182 ra đời (nhóm câu Hình
+   quá ít để chẩn đoán). **Chốt (khớp code thật đã triển khai,
+   `build_testset.py::build()`): `n_chunk = len(van_ban_pool["ids"])` — CHÍNH
+   pool đã lọc `len>=200` dùng để lấy mẫu, đối xứng với cách `n_anh` đã được
+   lọc.** Trường `n_chunk_do_duoc` trong `meta.json` giữ NGUYÊN TÊN nhưng mang
+   giá trị ĐÃ LỌC (11444 hôm nay), không phải số thô (16515).
+5. `p_hinh = n_anh / (n_chunk + n_anh)`; `n_hinh = round(n_con_lai * p_hinh)`;
    `n_van_ban = n_con_lai - n_hinh`.
-   Đo hôm nay (đã re-verify bằng truy vấn DB thật ở phản biện lần 4):
-   `n_chunk=16515, n_anh=3881` → `p_hinh≈0,190` → trên 210 câu:
-   `n_hinh≈40, n_van_ban≈170` (tỉ lệ khác con số cứng 192/48 cũ nhưng KHÔNG cố
-   tình khớp — đây là hệ quả tự nhiên của việc đếm, không phải mục tiêu).
-5. In rõ 4 số này ra console + ghi vào `meta.json` — không được lặng lẽ dùng một
+   Đo hôm nay với `n_chunk` ĐÃ LỌC theo điểm 4 ở trên: `n_chunk=11444,
+   n_anh=3780` → `p_hinh≈0,2483` → trên 210 câu: `n_hinh≈52, n_van_ban≈158`.
+   (Số cũ trong bản spec trước — `n_chunk=16515` thô → `p_hinh≈0,190` →
+   `n_hinh≈40` — đã SAI theo điểm 4, không còn là mục tiêu của
+   `build_testset.py`. Cả hai tỉ lệ đều khác con số cứng 192/48 của D-181 cũ,
+   KHÔNG cố tình khớp — đây là hệ quả tự nhiên của việc đếm, không phải mục
+   tiêu.)
+6. In rõ 4 số này ra console + ghi vào `meta.json` — không được lặng lẽ dùng một
    tỉ lệ khác tỉ lệ đã in (nguyên tắc 6: một nguồn sự thật).
 
 **Lấy mẫu (`random.Random(seed)`, KHÔNG chia theo quyển)**:
