@@ -272,11 +272,13 @@ còn ghi đè text gốc, xem D-34.)
   chỉ nhận khớp `Hình N.M`. Không phải vấn đề độ phân giải (đọc được ở mọi scale) mà
   là polarity + binarize cục bộ của Tesseract. **Còn chưa đọc được:** pill lồng trong
   ô cùng họ màu (D-40, ví dụ `page_010`: pill sat 82 trên nền sat 157).
-- **G3 (`qa_citation_page.py`) đo trang được trích dẫn có thực sự chứa câu trả lời
-  không** — IDF-weighted token coverage, ngưỡng `COVERAGE_MIN=0,50` hiệu chỉnh bằng
-  số trên judge LLM (D-49, D-57). G1 (spine Bài liền mạch) PASS 195/195 trên 4 quyển
-  KNTT cũ (D-43); G2 (gold set OCR) nửa chừng, đang đề xuất thu hẹp thành gold set
-  công thức (xem cuối bảng tiến độ).
+- **HISTORICAL (`qa_citation_page.py` đã xoá ở D-182, 2026-09-04):** G3 từng đo trang
+  được trích dẫn có thực sự chứa câu trả lời không — IDF-weighted token coverage,
+  ngưỡng `COVERAGE_MIN=0,50` hiệu chỉnh bằng số trên judge LLM (D-49, D-57). Đánh đổi
+  đã CHẤP NHẬN khi xoá: không có gì thay thế G3, `run_eval.py` (LLM-judge) đo chiều
+  khác. G1 (spine Bài liền mạch) PASS 195/195 trên 4 quyển KNTT cũ (D-43); G2 (gold
+  set OCR) nửa chừng, đang đề xuất thu hẹp thành gold set công thức (xem cuối bảng
+  tiến độ).
 - **`IMAGE_CAPTION_ENABLED=false` mặc định (D-47), đã đo rồi mới tắt, không phải tắt
   theo cảm tính:** InternVL trên 12 crop thật — bịa 4/12 (móc treo thành "bác sĩ phẫu
   thuật tai"), và khi tự nêu số hình thì SAI 4/4 lần trên chính thứ `pill.py` đã đọc
@@ -328,7 +330,7 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 |---|---|---|
 | Corpus 12 quyển trên đĩa | **XONG**, và **cố ý không nằm trong git** | 12 folder, 2 399 trang, 0 khoảng trống (D-65); 4,1 GB nên `.gitignore` bỏ qua `datasources/*` (D-68) — chạy bằng `RAG_DATA_DIR` trỏ sang Drive, xem `datasources/README.md` |
 | M0 fingerprint 12/12 | **XONG** | `database/fingerprints/*.json` đủ 12 file, 5 khoá mỗi file |
-| Test suite | **XANH** | `pytest tests/ -q` → **769 pass, 3 skip** (2026-08-31 sau D-155; các con số **761**, **686**, **488**, **584**, **617**, **732** ghi ở đây trước đó đã cũ) |
+| Test suite | **XANH, nhưng "xanh" không còn nghĩa "mọi cổng còn hiệu lực" (D-182, phản biện Task 4)** | `pytest tests/ -q` → **709 pass, 13 skip** (2026-09-04 sau D-182, giảm từ 781 vì Task 1 xoá 9 file test của pipeline cũ, đúng dự kiến). **CẢNH BÁO đã đo được:** `tests/test_bao_cao_so_lieu.py` có 2 test SKIP (không FAIL) từ khi D-182 xoá `evaluation_report_240.csv` — cổng giữ số báo cáo khớp phép đo đã VÔ HIỆU MÀ VẪN XANH, đừng đọc "709 passed" thành "mọi cổng còn hiệu lực". Các con số **769**, **761**, **686**, **488**, **584**, **617**, **732** ghi ở đây trước đó đã cũ |
 | Commit công việc M0 | **XONG, đã cũ** (dòng "CHƯA" trước đây là stale, sửa 2026-08-28) | `fingerprint.py`/`fp_*.py`/12 JSON fingerprint/`goal.docx` đã commit từ D-65/D-69; `git status` hôm nay **0 file untracked**, `master` đã push hết (xem dòng dưới) |
 | M1 manifest 12 quyển | **GỠ CHẶN, G1 PASS cả 12/12 quyển** — dòng "G1 FAIL cho 8 quyển" ghi ở đây từ trước là SAI, sửa 2026-08-28 sau khi chạy thật | `book/toc_lines.py` (D-70, sửa D-149): `read_toc` chọn bộ đọc theo fingerprint, nên `--build-manifests` **chạy được cả 12 quyển** (đo: 1,27–1,46 s/trang → ~50 phút). Chạy thật `--build-manifests --book SGK_KHTN_7_CTST` (2026-08-28): báo cáo in rõ `PASS` — **G1 chỉ đo danh tính trang (số trang in), không đo spine Bài** (`manifest.py:216-217`: cờ `bai_numbers_not_contiguous` "KHÔNG chặn G1"). Spine Bài của 8 quyển CTST/CD **vẫn chưa liền mạch** sau khi vá một bug index lệch (D-149) — CTST đọc thêm được 4 mục (**23/17/17/21 → 25/17/17/23**), CD **không đổi** (32/24/23/29, bug không áp dụng cho CD) → `bai_so` **không** đi vào metadata chunk cho 8 quyển đó (đúng thiết kế: thiếu thì im, không đoán) — đây mới là thứ bị chặn, không phải G1. Cờ trội còn lại: `toc_page_reader_conflict` (hai bộ đọc bất đồng, có ca cả hai đều SAI — vd Bài 20 của 8_CTST thật là trang 90 nhưng hai bộ đọc ra `[3,93]`, không khớp cái nào) — **cố ý KHÔNG dùng heuristic "chọn số hợp lý theo thứ tự tăng dần"** vì nó có thể chọn đúng số sai (93 cũng monotonic-hợp-lý), đúng loại lỗi module này sinh ra để tránh |
 | Tỉ lệ đọc số trang ở đường manifest | **CHƯA**, và nguyên nhân KHÔNG phải scale | Đo 30 trang/quyển với `(1,3)` / `(1,2,3)` / `(2,)` → **cùng một con số**: 6_CD **40%**, 9_CD 87%, 6_CTST 87%, 6_KNTT **100%**. Giả thuyết "thiếu scale 2×" **bị bác bỏ** (D-72). Khác biệt thật: fingerprint đọc trong **dải zone đo được của chính quyển** (`zone_read.band_even`), còn `page_number_ocr` dùng hằng số góc của KNTT. Hệ quả hiện tại: 6_CD có `ocr_confirmed` **37,1%**, 112 trang lấy `printed_page` suy từ offset đã đo, mỗi trang một cờ `page_number_not_read` → G1 FAIL đúng như phải fail |
@@ -352,8 +354,8 @@ phải kế hoạch — mỗi dòng nói rõ bằng chứng.
 | `bai_so` trong metadata chunk | **CHỈ 4/12 QUYỂN** | KNTT có `bai_so`; 8 quyển CTST/CD không chunk nào (spine chưa liền mạch → tự động thôi ghi, đúng thiết kế) |
 | `needs_review` | **MẤT TÁC DỤNG**, phải hiệu chỉnh | bật ở 57–84% chunk theo quyển, gộp toàn kho 69,3% — ở mức đó cờ gần như không mang tin |
 | LLM đánh giá (Groq, đổi từ OpenRouter D-163) | **CHẠY ĐƯỢC, nhưng lượt 240 câu đầu (2 model) dính hạn mức TPD giữa chừng — đã tăng lên 4 model (D-173), chưa chạy lại để xác nhận đủ** | 4 model xoay vòng qua `JudgePool`, `https://api.groq.com/openai/v1`: `qwen/qwen3.8-27b`, `openai/gpt-oss-120b`, `qwen/qwen3.6-27b`, `openai/gpt-oss-20b`. Mỗi model **8000 token/phút riêng** (D-163) VÀ **200 000 token/NGÀY riêng** (D-173, phát hiện khi cả 2 model cũ cùng cạn TPD lúc chạy 240 câu — 106/240 câu mất điểm judge). `stealth/ox-alpha`/OpenRouter (D-67, D-128) **ngừng dùng vì hết free** |
-| Bộ test câu hỏi (CBHD kê 240) | **ĐỦ 240 CÂU, ĐỀU 20/quyển · 80/NXB — ĐÃ NGƯỜI DÙNG DUYỆT TOÀN BỘ CÂU HÌNH (D-170/D-172, 2026-09-02)** | 192 câu văn bản (16/quyển) rút mẫu từ pool 300, 0 lượt LLM, 192/192 gold key khớp index. 48 câu HÌNH (4/quyển đều) sau duyệt tay thật (41 phút/50 ô ban đầu, có sửa lỗi nháp LLM — D-170): người dùng giữ lại CẢ 2 khung cắt từng bị đánh giá hỏng trước đây (`crop hỏng`, `ảnh trang trí`) thay vì loại; 2 khung THAY THẾ đã bù (D-169) hoá ra dư — D-172 chốt bỏ 2 khung thay thế đó để 12 quyển đều 4 hình, đưa tổng về đúng **240** (192+48), theo NXB đều **80/80/80** (CD/CTST/KNTT). **CẢNH BÁO đã gỡ:** câu hỏi/đáp án HÌNH nay đều do người viết SAU khi có nháp AI (D-113/D-148 — trước D-170 là AI best-effort một mình, nay là người duyệt độc lập thật) |
-| Đánh giá đầu-cuối bộ câu (12 quyển) | **XONG, ĐỦ 240/240 CÂU, ĐÃ ĐỒNG BỘ VÀO `report/tex_source/` (D-173/D-174/D-175, 2026-09-02)** | `Recall(page)` 0,8833 · `MRR(page)` 0,7889 · `R@10` thô 0,9042 · `Correct` 3,896/5 · `Faithful` 4,100/5 · `Relevancy` 4,129/5 — đo trên **đúng 240 câu** (192 văn bản + 48 hình, chốt D-172), index 16 515 chunk `v4_formula_hybrid_fix`, giám khảo Groq **4 model xoay vòng** (D-173, mở từ 2 lên 4 sau khi 106/240 câu mất điểm vì hạn mức TPD). Số cũ (231 câu, D-130, giám khảo OpenRouter): Recall 0,9091 · MRR 0,8153 · R@10 0,8961 · Correct 4,065 · Faithful 4,394 · Relevancy 4,602. **KHÔNG được viết "hybrid công thức/đổi giám khảo làm Recall giảm"** — bộ câu hỏi, giám khảo, VÀ có thể cả index đều đổi cùng lúc giữa hai lượt, không có lượt đối chứng giữ nguyên hai biến kia. Ablation (`ablation_report_240.csv`, 240 câu): bề rộng production (`n=20`, hybrid rerank=on gate=off): MRR 0,8038 · R@1 0,7083 · R@3 0,8875 · R@10 0,9583 — hybrid **hoà tuyệt đối** với BM25 ở R@1 (cả hai 0,7083 tới 4 chữ số thập phân, KHÁC lượt 238/231 câu trước khi hybrid còn thắng rõ), vẫn thắng bm25/dense ở mọi cột khác, nhất quán hướng D-82/D-132. **D-175: `report/tex_source/` Ch.0/3/4/5 đã viết lại đủ số MỚI + lập luận đi kèm** — phát hiện quan trọng nhất: recall production (0,8833) nay THẤP HƠN trần kênh ngữ nghĩa (0,9042, hụt 0,021) — khác hẳn bản nháp trước (231 câu) từng báo production VƯỢT trần; khoảng cách so với báo cáo chuyên đề cũ (0,21) đã thu hẹp ~10 lần nhưng KHÔNG đóng hẳn/đảo chiều như từng viết. `tests/test_bao_cao_so_lieu.py` xanh (đã đổi `test_tong_so_cau_la_231`→`_240`). Build PDF thật xác nhận: **76 trang** (từ 73), 0 lỗi. **D-168 (phân tích cũ, vẫn còn giá trị định tính, số tuyệt đối đã đổi):** `7_CTST`/`9_CTST` vẫn yếu nhất về `overall`, do truy xuất chứ không do trả lời — đặc tính cấu trúc chunk/index của CTST, không phải nhiễu đo lường. **Còn nợ, CỐ Ý ngoài phạm vi D-175:** Bảng~tab:corpus và mọi trích dẫn "16.393 đoạn" trong `report/tex_source/` vẫn tính trên index TRƯỚC hybrid — index thật hiện có **16.515 đoạn** (D-162); cần chạy `python -m src.test.report_numbers --latex` để lấy số đúng trước khi sửa các dòng đó (Mục tiêu 2, `bai_so`, `11.459 đoạn nhãn sai`, cờ "cần rà soát"). Ablation multimodal (M2C, vế 2 Mục tiêu 4) vẫn chưa chạy lại bằng bộ 48 câu hình mới đã người duyệt. |
+| Bộ test câu hỏi (CBHD kê 240) | **LỖI THỜI HOÀN TOÀN (D-182, 2026-09-04) — bộ 240-câu-cố-định-theo-quyển mô tả dưới đây ĐÃ BỊ XOÁ, thay bằng lấy mẫu ngẫu nhiên qua `build_testset.py`. Cột này chỉ còn giá trị LỊCH SỬ. Pipeline mới đã code + chạy thật `--n 6` xác nhận; `--n 240` thật + duyệt tay CHƯA CHẠY, chờ người dùng — xem mục "Pipeline sinh test + đánh giá viết lại từ đầu (D-182)" ở trên.** | 192 câu văn bản (16/quyển) rút mẫu từ pool 300, 0 lượt LLM, 192/192 gold key khớp index. 48 câu HÌNH (4/quyển đều) sau duyệt tay thật (41 phút/50 ô ban đầu, có sửa lỗi nháp LLM — D-170): người dùng giữ lại CẢ 2 khung cắt từng bị đánh giá hỏng trước đây (`crop hỏng`, `ảnh trang trí`) thay vì loại; 2 khung THAY THẾ đã bù (D-169) hoá ra dư — D-172 chốt bỏ 2 khung thay thế đó để 12 quyển đều 4 hình, đưa tổng về đúng **240** (192+48), theo NXB đều **80/80/80** (CD/CTST/KNTT). **CẢNH BÁO đã gỡ:** câu hỏi/đáp án HÌNH nay đều do người viết SAU khi có nháp AI (D-113/D-148 — trước D-170 là AI best-effort một mình, nay là người duyệt độc lập thật) |
+| Đánh giá đầu-cuối bộ câu (12 quyển) | **LỖI THỜI HOÀN TOÀN (D-182, 2026-09-04) — số dưới đây đo trên bộ 240-câu-cố-định-theo-quyển đã bị xoá và `RERANK_SCORE_MIN=0,2` cũ (trước D-180). `report/tex_source/` vẫn build trên số cũ này — KHÔNG viết thêm gì vào chương 4/5 cho tới khi có lượt `--n 240` mới (D-182) + `RERANK_SCORE_MIN=0,59` hiện hành. Giữ nguyên bên dưới CHỈ để tham khảo LỊCH SỬ (D-173/D-174/D-175, 2026-09-02):** | `Recall(page)` 0,8833 · `MRR(page)` 0,7889 · `R@10` thô 0,9042 · `Correct` 3,896/5 · `Faithful` 4,100/5 · `Relevancy` 4,129/5 — đo trên **đúng 240 câu** (192 văn bản + 48 hình, chốt D-172), index 16 515 chunk `v4_formula_hybrid_fix`, giám khảo Groq **4 model xoay vòng** (D-173, mở từ 2 lên 4 sau khi 106/240 câu mất điểm vì hạn mức TPD). Số cũ (231 câu, D-130, giám khảo OpenRouter): Recall 0,9091 · MRR 0,8153 · R@10 0,8961 · Correct 4,065 · Faithful 4,394 · Relevancy 4,602. **KHÔNG được viết "hybrid công thức/đổi giám khảo làm Recall giảm"** — bộ câu hỏi, giám khảo, VÀ có thể cả index đều đổi cùng lúc giữa hai lượt, không có lượt đối chứng giữ nguyên hai biến kia. Ablation (`ablation_report_240.csv`, 240 câu): bề rộng production (`n=20`, hybrid rerank=on gate=off): MRR 0,8038 · R@1 0,7083 · R@3 0,8875 · R@10 0,9583 — hybrid **hoà tuyệt đối** với BM25 ở R@1 (cả hai 0,7083 tới 4 chữ số thập phân, KHÁC lượt 238/231 câu trước khi hybrid còn thắng rõ), vẫn thắng bm25/dense ở mọi cột khác, nhất quán hướng D-82/D-132. **D-175: `report/tex_source/` Ch.0/3/4/5 đã viết lại đủ số MỚI + lập luận đi kèm** — phát hiện quan trọng nhất: recall production (0,8833) nay THẤP HƠN trần kênh ngữ nghĩa (0,9042, hụt 0,021) — khác hẳn bản nháp trước (231 câu) từng báo production VƯỢT trần; khoảng cách so với báo cáo chuyên đề cũ (0,21) đã thu hẹp ~10 lần nhưng KHÔNG đóng hẳn/đảo chiều như từng viết. `tests/test_bao_cao_so_lieu.py` xanh (đã đổi `test_tong_so_cau_la_231`→`_240`). Build PDF thật xác nhận: **76 trang** (từ 73), 0 lỗi. **D-168 (phân tích cũ, vẫn còn giá trị định tính, số tuyệt đối đã đổi):** `7_CTST`/`9_CTST` vẫn yếu nhất về `overall`, do truy xuất chứ không do trả lời — đặc tính cấu trúc chunk/index của CTST, không phải nhiễu đo lường. **Còn nợ, CỐ Ý ngoài phạm vi D-175:** Bảng~tab:corpus và mọi trích dẫn "16.393 đoạn" trong `report/tex_source/` vẫn tính trên index TRƯỚC hybrid — index thật hiện có **16.515 đoạn** (D-162); cần chạy `python -m src.test.report_numbers --latex` để lấy số đúng trước khi sửa các dòng đó (Mục tiêu 2, `bai_so`, `11.459 đoạn nhãn sai`, cờ "cần rà soát"). Ablation multimodal (M2C, vế 2 Mục tiêu 4) vẫn chưa chạy lại bằng bộ 48 câu hình mới đã người duyệt. |
 | G2 gold set 24 trang | **VÔ HIỆU** | số trang đổi (offset −1 → 0); khuyến nghị thu hẹp thành gold set CÔNG THỨC thay vì làm lại bản tổng quát — xem cuối phần này |
 | Xử lý công thức Hoá/Lý (MT1) | **XONG (D-162, 2026-09-01) — ETL thật đã chạy, đo xác nhận trên `database/` local, không chỉ tin log Colab** | Kiến trúc Hybrid Tesseract + MinerU patch: `ocr_lines.py` (tách dòng), `formula_signals.py` & `formula_gate.py` (bắt dòng nghi — precision 0,8654/recall 1,0000 trên gold set 89 ô/3 NXB, D-144, KHÔNG đổi sau D-155), `formula_ocr.py` (client MinerU `opendatalab/MinerU2.5-Pro-2605-1.2B`), `formula_merge.py` (merge cục bộ từng dòng). **Chuỗi bug đã tìm ra và sửa hết, theo thứ tự:** D-154 (bug gốc: gate khớp xuyên dòng, 527 `gate_hit_no_line_located`) → D-155 (sửa `CO_DAU_BANG` `\s*`→`[ \t]*`) → D-157 (checkpoint khôi phục kéo về bản CŨ trước D-155, version-gate coi 63,9% trang cũ là "đã xong" nên không OCR lại — 0/16513 chunk `applied`) → D-158 (root cause cuối: `download_models.py --profile text-etl` chưa từng tải model MinerU + notebook chưa trỏ `FORMULA_MINERU_MODEL` local → 100%/3714 lượt gọi MinerU thất bại dưới `HF_HUB_OFFLINE=1`; đã sửa cả hai trong `master`) → D-159 (viết lại sạch notebook 57→35 cell, bump `TEXT_EXTRACTION_VERSION`→`v4_formula_hybrid_fix`, `scripts/reset_text_all_books.py --all` resume-safe, mục "XÁC NHẬN kết quả" đo trực tiếp trên DB) → D-160 (% tiến độ sống qua `PYTHONUNBUFFERED=1`) → D-161 (`_copy_resilient()` chịu Drive-FUSE rớt kết nối ENOTCONN, thay mọi `shutil.copytree`). **D-162: lượt Colab 8 chạy thành công, đo lại độc lập trên `database/` local tải về** (không chỉ tin cell mục 11 của chính notebook): `processing_status` 2399/2399 trang đúng version mới (text `v4_formula_hybrid_fix`, ảnh `v19_pill_kernels`); `biology_images` 3881 doc không mất; `biology_text` 16515 chunk, `formula_hybrid_status`: `applied` 1063 + `unmatched_count` 3230 = **4293 lần merge MinerU thành công**, `mineru_call_failed*` = 0, `gate_hit_no_line_located` = 1 (đúng kỳ vọng D-155); BM25 (`database/sparse/`) 16515 id khớp đúng `biology_text`. Bốn con số khớp chính xác output notebook — không phải checkpoint cũ lẫn vào. **Phát hiện phụ:** `.env` local từng có dòng `TEXT_EXTRACTION_VERSION=v3_formula_hybrid` cũ đè lên default, gây phép đo đầu tiên báo sai — đã xoá, không phải bug repo (`.env` không nằm trong git). `MIN_SAT_FLOOR=9` (Task 7, sửa D-146), `single_line_max_h` per-book chưa đổi hành vi cho quyển nào (Task 8, xem mục M0). Box-detection ở `MIN_SAT_FLOOR=9` đã đo đủ 12/12 quyển (D-150): 10/12 không đổi số hộp trong dải 9-15; `6_CD` tăng 21→23, `7_CD` giảm 11→9 (CHƯA xem bằng mắt để xác nhận). **D-167 (2026-09-02): đo lại xong** `recall_at_k`/`evaluator.py` trên corpus hybrid (238 câu, giám khảo Groq) — xem dòng "Đánh giá đầu-cuối". **Còn nợ:** bảng `ablation.py` (fail lượt đầu do thiếu `--build-cache`, đã vá, chưa chạy lại), điều tra lệch 231/238 câu, rồi mới cập nhật `report/tex_source/` (số hiện tại vẫn là TRƯỚC lượt hybrid) |
 | Báo cáo (`report/tex_source/`) | **XONG cả 5 chương + Tóm tắt + front matter, đã dịch ra PDF thật, ĐÃ CẬP NHẬT SỐ 240 CÂU + GIÁM KHẢO GROQ (D-175, 2026-09-02)** | `pdflatex`+`biber`×2 (không qua `build.ps1`, script đó có bug `$ErrorActionPreference=Stop` chặn fallback khi dò `latexmk`) → `build/main.pdf` **76 trang** (73→76 sau D-175), 60 mục tham khảo. **D-175 lật lại một phần lập luận trung tâm của D-132:** "trần recall" (0,9042, kênh ngữ nghĩa thô) nay KHÔNG bị vượt qua nữa — recall cấu hình thật (0,8833) THẤP HƠN trần, hụt 0,021 (so với 0,21 của báo cáo chuyên đề cũ — thu hẹp ~10 lần, KHÔNG đóng hẳn/đảo chiều như D-132 từng ghi trên bộ 231 câu). Nguyên nhân lệch 0,004 giữa recall production và ablation-simulated: 1/240 câu hình được định tuyến đúng sang "chỉ-cần-ảnh" (bỏ qua truy xuất văn bản), độ đo recall mức-trang không ghi nhận được ca này. Giám khảo đổi từ `stealth/ox-alpha` (OpenRouter, hết free D-163) sang **Groq 4 model xoay vòng** (D-173) — thêm Mục~4.2.2 (`sec:judge_pha2`) giải thích đánh đổi (giám khảo không đồng nhất giữa các câu) như một hạn chế MỚI. Mục 3.4 (câu hỏi hình) viết lại hoàn toàn: 48/48 câu đã người đối chiếu trực tiếp với ảnh (70,8% bị sửa nội dung), không còn "39 câu chưa ai đối chiếu" như bản trước. 5 hình Ch.4 sinh lại bằng `report/ve_hinh_chuong4.py` (đã bỏ số cứng `231` trong tiêu đề hình). `tests/test_bao_cao_so_lieu.py` xanh (đổi `test_tong_so_cau_la_231`→`_240`); `report/kiem_tra_tex.py` cấm list đổi ("240 câu" từ bị-cấm sang hợp lệ, thêm cấm "231 câu"/"238 câu"/"stealth/ox-alpha"). **Sửa thêm một lỗi build CÓ SẴN, không liên quan D-175:** Ch.3 có ký tự Unicode subscript trần (`₂`,`₃`) trong `\texttt{}` gây lỗi FATAL — đổi sang `x$_2$`. **CẦN SỬA TIẾP, CỐ Ý ngoài phạm vi D-175:** Bảng~tab:corpus + mọi trích "16.393 đoạn" vẫn tính trên index TRƯỚC hybrid (D-162 đã đưa lên 16.515 đoạn) — cần chạy `report_numbers.py --latex` lấy số mới. Ablation multimodal (M2C) chưa chạy lại bằng bộ 48 câu hình mới |
@@ -398,55 +400,81 @@ mới; `pytest tests/`: 781 passed, 3 skipped. **Còn nợ, ngoài phạm vi D-1
 chạy lại `evaluator.py`/`report_numbers.py` trước khi nộp báo cáo nếu muốn số liệu
 khớp cấu hình production hiện tại.
 
-## Cấu trúc đánh giá mới theo yêu cầu CBHD (2026-09-03, D-181) — CHỐT ĐỊNH HƯỚNG, CHƯA CODE
+## Pipeline sinh test + đánh giá viết lại từ đầu (2026-09-04, D-182) — ĐÃ CODE, ĐÃ CHẠY THẬT `--n 6`, `--n 240` CHỜ NGƯỜI DÙNG
 
-CBHD xem bảng 240 câu đã nộp (12 quyển × 9 cột `precision_page…overall_score`) và yêu
-cầu đổi hẳn cấu trúc đo. **Đây là chỉ đạo miệng, lệch có chủ đích khỏi `goal.docx`**
-(đề cương chỉ yêu cầu Precision@k/Recall@k/MRR, không có F1, không có "4 phương pháp",
-không có câu ngoài-phạm-vi) — chấp nhận lệch vì CBHD quyết định kết quả bảo vệ, ghi rõ
-ở D-181 để không lẫn với một phép đo lật giả định kỹ thuật.
+D-181 (cấu trúc 240 câu **cố định theo quyển**: 192 văn bản 16/quyển + 48 hình
+4/quyển) đã bị **HUỶ HOÀN TOÀN** ngay trong ngày ban hành, sau khi soát kết
+quả: nhóm Hình chấm Correct chỉ **2,06/5** so với Văn bản **4,36/5**, nhưng mẫu
+4 câu/quyển quá nhỏ để chẩn đoán nguyên nhân — và bản thân việc "đều theo
+quyển" chưa từng là yêu cầu của `goal.docx` (đề cương chỉ đòi
+Precision@k/Recall@k/MRR). Quyết định mới: **lấy mẫu HOÀN TOÀN NGẪU NHIÊN trên
+toàn corpus**, không ràng buộc phủ đều quyển. Thiết kế đầy đủ, đã qua 4 lượt
+phản biện đối kháng trước khi code:
+`document/specs/2026-09-03-eval-rebuild-design.md`. Xem D-182 trong
+`document/decision_log.html` cho lịch sử đầy đủ (bao gồm 2 lỗi nghiêm trọng
+nhất từng suýt lọt qua: ánh xạ trường `pdf_filename`/`page_number` của ảnh, và
+3 nhóm `suy_bien`/`ngoai_pham_vi`/bình-thường của `_gold_key()`).
 
-Yêu cầu cụ thể:
+**Ba script mới thay toàn bộ pipeline cũ** (xoá sạch `generate_testsets.py`,
+`build_testset_240.py`, `build_image_questions.py`, `evaluator.py`,
+`metrics.py`, `ablation.py`, `ablation_multimodal.py`, `bm25_sweep.py`,
+`review_testset.py`, `prompt_scope_probe.py`, `qa_citation_page.py` — kể cả
+`ablation.py` vừa viết theo D-181 sáng cùng ngày):
 
-1. **Bỏ 9 cột theo-quyển**: `precision_page, recall_page, mrr_page, precision_book,
-   recall_book, mrr_book, retrieval_score, answer_score, overall_score`.
-2. **Precision/Recall/F1 theo K = 3, 5, 10, 20** (hiện `ablation.py:70` chỉ có
-   `KS = (1, 3, 5, 10)`, không có F1). Recall@K đổi từ hit@k nhị phân sang **tỉ lệ
-   chuẩn** (số chunk đúng lấy được / tổng chunk gold, dùng `n_gold_chunks` có sẵn).
-3. **Đúng 4 phương pháp truy vấn**, ánh xạ vào 4/12 dòng có sẵn của
-   `ablation.py::ALL_CONFIGS` — không cần đường truy vấn mới:
-   - **keyword** = bm25, rerank off, gate off
-   - **dense** = dense, rerank off, gate off
-   - **truyền thống** = hybrid, rerank off, gate off
-   - **đề xuất** = hybrid, rerank on, gate off (đúng `.env` production sau D-180)
-4. **Thêm 30 câu "ngoài phạm vi 12 quyển KHTN"** (câu hỏi khác môn hẳn, không phải
-   KHTN nhưng thiếu nội dung) → tổng **270 câu**. Hệ thống phải trả lời "không biết"
-   thay vì bịa (Nguyên tắc 1). Người soạn phải duyệt tay, không tự sinh rồi tin luôn
-   (Nguyên tắc 2).
-5. **Trục phân tích = LOẠI câu hỏi** (văn bản 192 / hình 48 / ngoài-phạm-vi 30),
-   **không** theo quyển/môn — CBHD nói rõ tách theo môn làm vector DB "rời rạc".
-6. Công thức/hình: chỉ mô tả bằng lời trong text báo cáo (`phan_mon`/`figure_label`
-   có sẵn), không làm bảng số liệu riêng theo loại nội dung.
-7. Gộp `recall_at_k.py` vào `ablation.py`, xoá file rời.
-8. Giữ `RERANK_SCORE_MIN=0,59` (D-180), kèm giải thích ngưỡng khi trình bày.
+- **`build_testset.py`** — sinh 3 nhóm câu (`van_ban`/`hinh`/`ngoai_pham_vi`)
+  từ MỘT chunk/MỘT ảnh cụ thể trong index, KHÔNG quan tâm chunk/ảnh đó thuộc
+  quyển nào. Tỉ lệ văn_bản/hình tính từ kích thước THẬT của index tại thời
+  điểm chạy: `p_hinh = n_anh / (n_chunk + n_anh)`, cả `n_chunk` và `n_anh` đều
+  lấy từ pool **ĐÃ LỌC** dùng để lấy mẫu (đối xứng hai phía — một lượt phản
+  biện độc lập khi triển khai plan bắt được bản đầu dùng `n_chunk` THÔ, làm
+  nhóm Hình bị lấy mẫu ít hơn đáng ra, xem D-182 phần notes). Đo hôm nay:
+  `n_chunk≈11444` (đã lọc `len>=200`), `n_anh≈3780` → `p_hinh≈0,2483` → trên
+  210 câu còn lại: `n_hinh≈52, n_van_ban≈158` (khác 192/48 của D-181, KHÔNG cố
+  tình khớp — hệ quả tự nhiên của việc đếm). Có circuit-breaker khi tỉ lệ lỗi
+  LLM > 30%/20 item, chặn input vô lý (pool cạn, `--n-ngoai-pham-vi >= --n`).
+- **`retrieval_benchmark.py`** (thay `ablation.py`) — giữ nguyên
+  `Cache`/`Config`/`rank_for`/`_gold_key`/`reciprocal_rank`/`evaluate`, MRR +
+  K∈{1,3,5,10,20}, 4 phương pháp báo cáo (`keyword`=bm25/`dense`/
+  `truyen_thong`=hybrid rerank off/`de_xuat`=hybrid rerank on — đúng `.env`
+  production D-180), và bảng "Bề rộng PRODUCTION (n=20)" — bảng MÀ MỌI SỐ
+  LIỆU HIỆN CÓ TRONG FILE NÀY (D-82, D-175, D-180) ĐO Ở ĐÓ, không phải bảng
+  12-cấu-hình mặc định (n=50).
+- **`run_eval.py`** (thay `evaluator.py`) — đơn giản hoá vì chỉ còn MỘT file
+  `draft.csv` thay vì 12 file theo quyển; giữ nguyên `judge_answer`/
+  `JudgePool`/`aggregate_by_loai` (trục = LOẠI câu hỏi, không phải quyển/môn —
+  CBHD từng nói rõ tách theo môn làm vector DB "rời rạc", quyết định đó vẫn
+  giữ nguyên trong D-182). Thêm cột `so_cau_co_diem_judge` để lộ ra ngay khi
+  một lượt eval mất điểm giám khảo giữa chừng (lặp đúng lớp lỗi D-173: 106/240
+  câu mất điểm mà không ai biết ngay vì `.mean()` của pandas tự bỏ qua NaN).
+- `eval_llm.py` đổi tên **`llm_client.py`** (logic `JudgePool` giữ nguyên,
+  không viết lại — tránh debug lại rate-limit đã mất 3 vòng ở D-163/D-168/D-173).
 
-**Rủi ro đã phản biện, phải xử lý lúc code, không phải ghi chú suông** (chi tiết đầy
-đủ ở D-181):
-- 30 câu ngoài-phạm-vi có 0 gold chunk → P/R/F1@K chia 0/0, phải tách riêng một chỉ
-  số khác (vd tỉ lệ từ chối đúng), không gộp chung công thức với 2 nhóm còn lại.
-- Câu "hình" bị `is_image_only_query()` (D-88) định tuyến bỏ qua truy xuất text theo
-  đúng thiết kế → P/R/F1@K văn bản = 0 cho các câu đó không phải lỗi, phải chú thích.
-- `report/ve_hinh_chuong4.py` và `tests/test_bao_cao_so_lieu.py` đọc/khoá cứng cấu
-  trúc `evaluation_report_240.csv` hiện tại — rà hai chỗ này TRƯỚC khi đổi cột.
-- Bảng 240 câu trong `report/tex_source/` (D-175) vẫn đo ở `RERANK_SCORE_MIN=0,2` cũ
-  — cộng dồn với đổi cấu trúc ở đây nghĩa là **toàn bộ chương 4/5 phải viết lại từ
-  đầu**, không phải vá số. Hạn bảo vệ 23/09/2026.
-- LLM-judge trên 270 câu × nhiều cấu hình tốn quota Groq — TPD từng cạn giữa lượt
-  240 câu cũ (D-173/D-174), cần tính trước số lượt gọi.
+**Cổng người duyệt bắt buộc MỚI**: `src/test/testset_common.py::
+require_human_reviewed()` raise nếu `meta.json` chưa `human_reviewed: true` —
+`--allow-draft` chỉ để tự kiểm code, mọi file output khi đó mang hậu tố
+`_NHAP_CHUA_DUYET` trong TÊN FILE (không chỉ cảnh báo console).
 
-**Việc còn lại theo đúng 4 bước "định nghĩa xong" của CLAUDE.md — CHƯA LÀM VIỆC NÀO**:
-sửa `ablation.py`, sửa `evaluator.py`, soạn 30 câu ngoài-phạm-vi, chạy lại toàn bộ,
-viết lại `report/tex_source/` chương 4/5.
+**Đánh đổi đã CHẤP NHẬN, ghi lại để không quên:**
+- Xoá `qa_citation_page.py` làm mất hẳn cổng đo G3 (deterministic, không cần
+  LLM, đo trang trích dẫn có chứa câu trả lời không) — không có gì thay thế,
+  LLM-judge của `run_eval.py` đo chiều khác.
+- `run_eval.py` mất khả năng resume/checkpoint giữa chừng mà `evaluator.py`
+  cũ có (`--bo-qua-da-co`, ghi CSV theo từng quyển). Một lượt `--n 240` thật
+  ước tính **12-14 giờ** (D-164) sẽ mất trắng nếu crash ở giờ thứ 11 — **PHẢI
+  xử lý (thiết kế checkpoint) TRƯỚC KHI chạy `--n 240` thật**, chưa làm.
+
+**Trạng thái**: cả 3 script đã code + qua task-review từng cái + một lượt
+phản biện đối kháng ĐỘC LẬP (không đọc kết quả 2 review trước) sau khi xong —
+tìm thêm 1 Critical (bảng production n=20 bị mất) + 6 Important, đã sửa hết
+trừ 1 (resume/checkpoint, park có chủ đích). **Đã chạy thật `--n 6`
+đầu-cuối** (Groq sinh câu thật, `retrieval_benchmark.py` nạp bge-m3+cross-
+encoder thật, `run_eval.py` nạp Qwen2.5-3B thật + Groq judge thật): 6/6 câu ra
+kết quả hợp lý, câu ngoài-phạm-vi bị từ chối đúng (không bịa đáp án Toán), câu
+hình đúng chủ đề. **`--n 240` thật + duyệt tay CHƯA CHẠY — là việc của người
+dùng** (tốn nhiều giờ + quota Groq), rồi mới cập nhật `report/tex_source/`
+(số 240/270 câu hiện có, từ D-173..D-175, đã lỗi thời hoàn toàn).
+
+Lệnh xem mục "Lệnh" bên dưới.
 
 ## Quy tắc làm việc (luôn áp dụng)
 
@@ -557,11 +585,11 @@ trỏ vào Groq (D-163, 2026-09-01 — OpenRouter `stealth/ox-alpha` hết free)
 `EVAL_LLM_MODELS=qwen/qwen3.8-27b,openai/gpt-oss-120b,qwen/qwen3.6-27b,openai/gpt-oss-20b`**
 (D-173, tăng từ 2 lên 4 — xem lý do ở dòng D-173 ngay dưới; `EVAL_LLM_MODEL` chỉ còn
 là model đầu danh sách, giữ cho tương thích code cũ). `get_eval_llm()`
-(`src/test/eval_llm.py`) trả về `JudgePool` khi có ≥2 model trong `EVAL_LLM_MODELS`
-— `.invoke()` cùng chữ ký `ChatOpenAI` nên mọi nơi gọi không đổi code; khi model
-đang active bị 429/5xx thì xoay NGAY sang model kế (không sleep, khác lớp với
-backoff 5/20/60s sẵn có trong `evaluator.py::judge_answer`), lỗi 401/400 thì raise
-ngay không xoay. Bẫy URL **vẫn y hệt OpenRouter cũ**: phải dừng ở `/v1`, đưa nguyên
+(`src/test/llm_client.py`, đổi tên từ `eval_llm.py` ở D-182) trả về `JudgePool` khi
+có ≥2 model trong `EVAL_LLM_MODELS` — `.invoke()` cùng chữ ký `ChatOpenAI` nên mọi
+nơi gọi không đổi code; khi model đang active bị 429/5xx thì xoay NGAY sang model kế
+(không sleep, khác lớp với backoff 5/20/60s sẵn có trong `run_eval.py::judge_answer`,
+trước D-182 là `evaluator.py::judge_answer`), lỗi 401/400 thì raise ngay không xoay. Bẫy URL **vẫn y hệt OpenRouter cũ**: phải dừng ở `/v1`, đưa nguyên
 `.../v1/chat/completions` sẽ bị client nối lần hai, ra 404. **Đo thật 2026-09-01
 (D-163):** cả hai model id tồn tại đúng chữ (`GET /v1/models`), mỗi model có hạn
 mức TPM RIÊNG `8000 token/phút` (không dùng chung bucket) — đo bằng header
@@ -593,31 +621,23 @@ CD/CTST đã tính lại đúng trong phiên bị crash, đã đồng bộ lên 
 xảy ra; chỉ cần chạy lại notebook (git clone kéo bản vá mới).
 
 ```bash
-python src/test/generate_testsets.py --dry-run  # chọn trang + in thống kê, KHÔNG gọi LLM
-python src/test/generate_testsets.py            # 25 câu/quyển qua PageSource; gold key từ metadata chunk thật (D-48)
-python -m src.test.ablation_multimodal          # Cấu hình 2: text-only vs multi-modal (0 LLM)
-python -m src.test.prompt_scope_probe           # before/after câu Lý + câu Hoá khi sửa prompt
-python -m src.test.qa_citation_page             # cổng G3: trang được TRÍCH DẪN có chứa câu trả lời không (không cần LLM, D-49)
-python -m src.test.qa_citation_page --judge     # + lượt LLM cứu xét, hiệu chỉnh ngưỡng coverage
+python -m src.test.build_testset                       # sinh nháp 240 câu, seed 42 (D-182)
+python -m src.test.build_testset --mark-reviewed        # xác nhận đã duyệt tay
+python -m src.test.retrieval_benchmark --build-cache    # bảng 4 phương pháp x P/R/F1/MRR@K (D-182, thay ablation.py)
+python -m src.test.retrieval_benchmark --chi-4-phuong-phap  # chỉ 4 dòng CBHD yêu cầu, dùng cho báo cáo ch.4/5
+python -m src.test.run_eval                             # đánh giá đầu-cuối LLM-judge (D-182, thay evaluator.py)
 python -m src.test.ocr_bakeoff --compare        # bảng bake-off; engine thiếu ô -> in `—`, không in số (D-96)
 python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằng mắt: NGƯỜI · engine · tesseract (D-98)
 python -m src.test.qa_ocr_gold --export         # G2: dựng gold set 24 trang cho NGƯỜI sửa (D-55)
 python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/tỉ lệ lỗi dấu sau khi đã sửa
-python src/test/evaluator.py                    # chạy RAG thật, đo P/R/MRR + LLM chấm (1-5)
-python -m src.test.recall_at_k                  # benchmark recall nhanh, không gọi LLM; in cả baseline lẫn rerank MỘT lượt
-python -m src.test.recall_at_k --testset-dir src/test/testsets_240   # bộ 240 câu (CBHD kê)
-python src/test/evaluator.py --testset-dir src/test/testsets_240 --hau-to _240
-# 231 cau tren may dev (GPU 4 GB) do duoc ~3-3,5 phut/cau (D-164) -> 5-12 gio.
-# Neu can nhanh hon: document/colab_runtime_eval.ipynb chay ca ba script tren
-# (recall_at_k/ablation/evaluator) tren Colab, doc DB da upload thu cong len
+# --n 240 that (~12-14h theo D-164, GPU 4GB tren may dev) mat kha nang resume/
+# checkpoint giua chung sau D-182 (viec PARK, chua sua) - crash gio thu 11 mat
+# trang toan bo. document/colab_runtime_eval.ipynb chay build_testset.py/
+# retrieval_benchmark.py/run_eval.py tren Colab, doc DB da upload thu cong len
 # Drive (`database_png`, D-165), khong can RAG_DATA_DIR/manifest/fingerprint.
-# D-166: LUOT DAU chay notebook nay BI BUG - git clone mang theo *_result.csv
-# CU (2026-08-26) nen --bo-qua-da-co tuong nham 12/12 quyen da xong, khong tinh
-# lai cau nao (da vao muc 1b). Sau ban va: LUON kiem cot `luot_chay` = `moi`
-# trong evaluation_report_240.csv truoc khi tin so - `da_co` nghia la doc lai
-# du lieu CU, khong phai phep do moi.
-python -m src.test.build_testset_240            # 192 câu văn bản, rút mẫu từ pool 300, 0 LLM
-python -m src.test.build_image_questions --chon # 48 câu HÌNH: máy chọn crop -> --nhap -> người duyệt
+# CANH BAO CU (D-166, con gia tri neu resume-logic tuong tu quay lai): mot
+# lot chay dau tien tung BI BUG vi git clone mang theo *_result.csv CU nen
+# co gang resume tuong nham da xong, khong tinh lai cau nao.
 python -m src.test.report_numbers [--latex]     # số liệu Bảng 4.2/4.3 đọc thẳng từ index
 python -m src.test.qa_figure_coverage           # độ phủ nhãn hình 12 quyển (không tốn OCR); thoát 1 nếu có quyển < 80%
 python scripts/reset_image_books.py --nxb CTST  # chạy lại luồng ẢNH cho riêng một NXB (đừng bump version — nó ép cả 12 quyển)
@@ -628,18 +648,17 @@ python report/ve_hinh_chuong4.py                # sinh lại 5 hình Ch.4 từ e
 python src/test/test_image_extraction_full.py   # QA thị giác chuẩn cho crop hình (vẽ box lên trang)
 ```
 
-`src/test/testsets/` giữ **bộ test 4 quyển thật: 100 câu, 25/25 mỗi quyển** (sinh
-2026-08-22 bằng `gemini-3.5-flash-lite`, seed 42) — đây là **pool nguồn** mà
-`build_testset_240.py` rút mẫu ra 192 câu văn bản của bộ `testsets_240/`, và là
-`--testset-dir` mặc định của `ablation.py`/`evaluator.py`/`recall_at_k.py` khi
-không truyền cờ. Kiểm chứng trên index đã dựng: **0/100 gold key trỏ vào trang
-không có chunk**. Hai bộ cũ hơn (12 quyển 2026-07, 4 quyển KNTT offset −1) đã
-**xoá** (2026-09-01) — gold key không khớp metadata chunk từ lâu, không script nào
-còn đọc tới (0 tham chiếu, đã grep xác nhận trước khi xoá), lịch sử xem
-`document/decision_log.html`. **Bộ test do LLM sinh, chưa người duyệt** —
-`_generation_meta.json` ghi `human_reviewed: false`, báo cáo dùng số này phải nói rõ
-điều đó. `metrics.PAGE_TOLERANCE` là **0**: chunk không bao giờ tràn trang, nên cửa
-sổ ±1 chỉ tính điểm cho chunk ở trang KHÁC và thổi phồng recall.
+**HISTORICAL (D-182, 2026-09-04): `src/test/testsets/`/`testsets_240/` đã xoá.**
+Trước D-182, `testsets/` giữ bộ test 4 quyển thật (100 câu, sinh 2026-08-22) làm
+**pool nguồn** để `build_testset_240.py` rút mẫu ra `testsets_240/` (192 văn bản +
+48 hình cố định theo quyển, D-181) — cả cơ chế "pool nguồn cố định + rút mẫu theo
+quyển" đó đã bị thay hoàn toàn bằng `build_testset.py` (D-182): lấy mẫu trực tiếp
+từ CHÍNH `biology_text`/`biology_image_metadata` tại thời điểm chạy, không qua pool
+trung gian, không ràng buộc theo quyển. `src/test/testset/` (số ít, không có "s")
+là thư mục output MỚI (D-182), chứa `draft.csv`+`meta.json`+báo cáo của lượt gần
+nhất — bị `.gitignore` loại (không commit nội dung, chỉ code tạo ra nó được
+commit). `metrics.py` (chứa `PAGE_TOLERANCE=0`) cũng đã xoá ở D-182 — logic tương
+đương (P/R/F1@K, `_gold_key`) nay nằm trong `retrieval_benchmark.py`.
 
 ## Kiến trúc
 
