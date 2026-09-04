@@ -88,6 +88,7 @@ yarn-error.log*
 next-env.d.ts
 
 .superpowers/
+.worktrees/
 
 # `database/` là thư mục SINH RA (index Chroma, crop ảnh, log tiến độ, cache).
 # Chỉ MANIFEST được commit — nó là nguồn sự thật về số trang in và đi theo repo.
