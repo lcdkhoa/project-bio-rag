@@ -74,8 +74,8 @@ Mọi tham số nằm trong `src/config.py` và có thể override qua `.env`:
 **Định tuyến ý định** (`src/rag/query_intent.py`): điều chỉnh các từ khóa nhận diện
 "câu hỏi đòi ảnh" / "chỉ cần ảnh" (`has_image_intent`, `is_image_only_query`).
 
-Sau khi đổi, đo lại bằng `python src/test/recall_at_k.py` (nhanh, không gọi LLM) rồi
-`python src/test/evaluator.py` (đầy đủ).
+Sau khi đổi, đo lại bằng `python -m src.test.retrieval_benchmark --build-cache`
+(nhanh, không gọi LLM) rồi `python -m src.test.run_eval` (đầy đủ, D-182).
 
 ---
 

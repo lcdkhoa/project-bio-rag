@@ -83,7 +83,7 @@ class JudgePool:
     mọi chỗ đang dùng `get_eval_llm()` — không đổi code gọi. Khi model đang
     active bị rate-limit, xoay sang model kế NGAY (không sleep, vì hạn mức là
     theo TỪNG model) rồi thử tiếp; hết một vòng cả pool mà vẫn lỗi thì ném lỗi
-    cuối cùng lên cho lớp gọi (evaluator.py đã có backoff riêng ở lớp đó).
+    cuối cùng lên cho lớp gọi (run_eval.py đã có backoff riêng ở lớp đó).
     """
 
     def __init__(self, clients):

@@ -203,9 +203,9 @@ Bộ đánh giá trong `src/test/` đo **chất lượng truy xuất** (Precisio
 xác định) và **chất lượng câu trả lời** (một LLM thứ 2 chấm 1–5), cho từng cuốn trong 12 sách.
 
 ```bash
-python src/test/generate_testsets.py   # sinh test set có ground-truth (cần EVAL_LLM_* trong .env)
-python src/test/evaluator.py           # chạy RAG thật, LLM thứ 2 chấm, gộp theo LOẠI câu hỏi (D-181)
-python -m src.test.ablation --build-cache   # bảng đối chiếu cấu hình, không gọi LLM (gộp recall_at_k.py cũ)
+python -m src.test.build_testset                       # sinh bộ test (cần EVAL_LLM_* trong .env), rồi --mark-reviewed
+python -m src.test.run_eval                             # chạy RAG thật, LLM thứ 2 chấm, gộp theo LOẠI câu hỏi (D-182)
+python -m src.test.retrieval_benchmark --build-cache    # bảng đối chiếu 4 phương pháp truy vấn, không gọi LLM (D-182)
 ```
 
 Chi tiết: [src/test/README.md](src/test/README.md).
