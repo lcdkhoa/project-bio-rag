@@ -154,3 +154,10 @@ logs/
 # `document/review/image_questions/` KHÔNG bị bỏ qua: phiếu người duyệt là sản
 # phẩm lao động phải giữ, và 48 crop đi kèm để lượt sau tái lập được đúng cái
 # người đã nhìn — cùng lý do với `document/review/ocr_gold/` (D-93).
+
+# `src/test/testset/` (D-182): output SINH RA bởi build_testset.py/
+# retrieval_benchmark.py/run_eval.py (draft.csv, meta.json, *_report.*,
+# *_result.csv) — chỉ CODE tạo ra nó được commit, không phải nội dung một
+# lượt chạy cụ thể (đặc biệt draft.csv chưa người duyệt không bao giờ được
+# lẫn vào git).
+src/test/testset/
