@@ -13,6 +13,32 @@
 > nào. Người điều phối (coordinator) phải tự dispatch Task 2 + Task 3 bằng hai
 > lời gọi Agent trong CÙNG một message, không dùng vòng lặp "một subagent mỗi
 > task" mặc định của skill.
+>
+> **RÀNG BUỘC AN TOÀN CHO SONG SONG HÓA (thêm sau phản biện độc lập của chính
+> plan này — tránh 2 lớp rủi ro tranh chấp)**:
+> 1. **Không agent nào tự `git commit` trong lúc chạy song song.** Bỏ Step
+>    "Commit" ở CUỐI Task 2 và CUỐI Task 3 (không xóa nội dung code/test —
+>    chỉ bỏ việc thực sự chạy `git commit`, hai agent chỉ tạo/sửa file trên đĩa
+>    và báo cáo lại cho coordinator). Coordinator đợi CẢ HAI agent báo xong,
+>    tự chạy `git status --short` xác nhận đúng tập file mong đợi của CẢ hai
+>    task, rồi tự thực hiện HAI lượt `git add`+`git commit` riêng biệt (mỗi
+>    lượt add đúng danh sách file của một Task) theo đúng thứ tự Task 2 rồi
+>    Task 3 — làm việc này ở coordinator (không phải subagent) loại hẳn nguy
+>    cơ tranh chấp `.git/index.lock` giữa hai tiến trình `git` chạy đồng thời.
+> 2. **Mỗi agent chỉ chạy `pytest` trên ĐÚNG file test của task mình trong lúc
+>    còn đang song song**, không chạy `pytest tests/ -q` (toàn bộ suite) —
+>    ví dụ Task 2 chạy `pytest tests/test_build_testset_sampling.py -v`, Task 3
+>    chạy `pytest tests/test_review_gate.py tests/test_retrieval_benchmark_metrics.py
+>    tests/test_mrr_metric.py tests/rag/test_ablation_cache.py
+>    tests/test_run_eval_aggregate.py -v`. Lý do: cả hai task đều dùng TDD (viết
+>    test trước, cố ý cho FAIL, rồi mới viết code cho PASS) — nếu một agent chạy
+>    suite đầy đủ giữa lúc agent kia đang ở trạng thái dở dang (test đã ghi,
+>    code implementation chưa xong), suite sẽ báo FAIL vì lý do KHÔNG liên quan
+>    gì tới task của agent đang chạy, gây nhiễu/hoảng loạn không cần thiết.
+>    Bước "chạy `pytest tests/ -q` toàn bộ" (Task 2 Step 5 / Task 3 Step 14)
+>    CHỈ chạy được SAU KHI coordinator đã commit cả hai task tuần tự (mục 1) —
+>    coordinator tự chạy bước này SAU cả hai commit, không phải một trong hai
+>    subagent chạy trong lúc song song.
 
 **Goal:** Xóa sạch pipeline sinh bộ test + đánh giá LLM-as-Judge cũ (D-181 và
 mọi thứ trước đó), viết lại 3 script mới lấy mẫu ngẫu nhiên trên toàn corpus
@@ -90,6 +116,7 @@ tests/
   test_build_testset_sampling.py   (CREATE, Task 2)
   test_review_gate.py               (CREATE, Task 3)
   test_retrieval_benchmark_metrics.py  (CREATE, Task 3)
+  test_run_eval_aggregate.py        (CREATE, Task 3 — chặn hồi quy cột loai/nguon_cau_hoi)
   test_mrr_metric.py                (MODIFY, Task 3 — sửa import)
   rag/test_ablation_cache.py        (MODIFY, Task 3 — sửa import + 4 tên thêm)
   # XÓA (Task 1): test_g3_matcher.py, test_eval_gold_keys.py,
@@ -204,10 +231,13 @@ git mv src/test/eval_llm.py src/test/llm_client.py
 - [ ] **Step 3: Grep xác nhận không còn tham chiếu `eval_llm` nào TRƯỚC KHI xóa các file import nó**
 
 Run: `grep -rn "eval_llm" --include="*.py" src/ tests/ scripts/`
+Run thêm (mở rộng phạm vi ra notebook — lớp phụ thuộc mà phản biện lần 4 của
+spec đã dạy đừng bỏ sót): `grep -n "eval_llm" document/*.ipynb`
 Expected: chỉ còn các dòng trong chính các file SẮP BỊ XÓA ở Step 4 (ví dụ
 `evaluator.py` có `from src.test.eval_llm import ...`). Nếu thấy tham chiếu ở
-một file KHÔNG nằm trong danh sách xóa, DỪNG lại và điều tra trước khi tiếp tục
-— đây là dấu hiệu một phụ thuộc chưa được liệt kê trong spec.
+một file KHÔNG nằm trong danh sách xóa (kể cả trong notebook), DỪNG lại và điều
+tra trước khi tiếp tục — đây là dấu hiệu một phụ thuộc chưa được liệt kê trong
+spec. (Task 8 sẽ vá notebook sau, nhưng biết trước ở đây để không bất ngờ.)
 
 - [ ] **Step 4: Xóa toàn bộ file/thư mục cũ**
 
@@ -249,7 +279,8 @@ Expected: PASS, không có FAILED/ERROR nào (số lượng pass sẽ giảm so 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add -u
+# KHÔNG cần `git add -u`/`git add -A` (cấm theo Global Constraints) — `git mv`
+# ở Step 2 và `git rm` ở Step 4 đã tự stage mọi thay đổi rồi. Chỉ cần xác nhận.
 git status --short   # xác nhận CHỈ có các thay đổi đã liệt kê, không có gì lạ
 git commit -m "$(cat <<'EOF'
 refactor(test): xoa toan bo pipeline sinh test + danh gia cu (D-182)
@@ -298,8 +329,9 @@ lượt phản biện, mọi con số/tên trường/luật chặn input đã ve
    `len(collection.get(include=[])["ids"])` sau khi áp ĐÚNG CÙNG bộ lọc sẽ dùng
    ở bước lấy mẫu (không phải bộ lọc khác).
 3. Hai chỗ chặn input bắt buộc: `n_ngoai_pham_vi >= n` và pool không đủ.
-4. Trần circuit-breaker: tỉ lệ lỗi LLM > 30% trên 20 lệnh gọi gần nhất → dừng
-   hẳn script.
+4. Trần circuit-breaker: tỉ lệ ITEM sinh thất bại > 30% trên 20 item gần nhất
+   (không phải 20 lệnh gọi API thô — mỗi item có thể tốn tới 3 lệnh gọi) →
+   dừng hẳn script.
 
 - [ ] **Step 1: Viết test lấy mẫu (mock ChromaDB, không cần DB thật)**
 
@@ -312,7 +344,7 @@ import pytest
 
 from src.test.build_testset import (
     _anh_xa_hinh_sang_cot,
-    _dem_pool_hinh_hop_le,
+    _kiem_tra_du_pool,
     _kiem_tra_input,
     _tinh_n_moi_nhom,
 )
@@ -344,9 +376,9 @@ def test_kiem_tra_input_hop_le_khong_raise():
     _kiem_tra_input(n_total=240, n_ngoai_pham_vi=30)  # không raise
 
 
-def test_dem_pool_hinh_hop_le_chan_pool_thieu():
+def test_kiem_tra_du_pool_chan_pool_thieu():
     with pytest.raises(SystemExit, match="pool"):
-        _dem_pool_hinh_hop_le(pool_size=10, n_can=40)
+        _kiem_tra_du_pool(pool_size=10, n_can=40)
 
 
 def test_anh_xa_hinh_sang_cot_dung_pdf_filename_page_number():
@@ -522,7 +554,7 @@ def _kiem_tra_input(n_total: int, n_ngoai_pham_vi: int) -> None:
             "và không âm.")
 
 
-def _dem_pool_hinh_hop_le(pool_size: int, n_can: int) -> None:
+def _kiem_tra_du_pool(pool_size: int, n_can: int) -> None:
     """Chặn khi pool đủ điều kiện nhỏ hơn số cần rút — KHÔNG âm thầm hạ n_can.
 
     Tìm ra ở phản biện lần 2 của spec: hạ n_can rồi dồn phần thiếu sang nhóm
@@ -594,6 +626,10 @@ def _dem_anh_hop_le(client) -> Dict[str, list]:
 
 
 def _dem_van_ban_hop_le(client) -> Dict[str, list]:
+    """Pool để LẤY MẪU câu văn bản (lọc độ dài). KHÔNG dùng số này cho `n_chunk`
+    của công thức `p_hinh` — spec (mục 3.1, sửa sau phản biện lần 4) chốt
+    `n_chunk` phải là TỔNG THÔ không lọc, khác hẳn phía ảnh (nơi n_anh = số ĐÃ
+    lọc). Dùng `_dem_van_ban_tho()` riêng cho `n_chunk`."""
     col = client.get_collection(TEXT_COLLECTION_NAME)
     got = col.get(include=["documents", "metadatas"], limit=1_000_000)
     ids_hop_le = []
@@ -607,8 +643,25 @@ def _dem_van_ban_hop_le(client) -> Dict[str, list]:
     return {"ids": ids_hop_le, "docs": docs_hop_le, "metas": metas_hop_le}
 
 
+def _dem_van_ban_tho(client) -> int:
+    """Tổng chunk THÔ trong `biology_text`, KHÔNG lọc gì — dùng cho `n_chunk`
+    của công thức `p_hinh` (spec mục 3.1: "không cần lọc gì thêm cho text").
+    Rẻ hơn `_dem_van_ban_hop_le` vì chỉ cần `ids`, không cần đọc `documents`."""
+    col = client.get_collection(TEXT_COLLECTION_NAME)
+    got = col.get(include=[], limit=1_000_000)
+    return len(got["ids"])
+
+
 class _CauTron:
-    """Cửa sổ trượt theo dõi tỉ lệ lỗi LLM — dừng hẳn script nếu vượt ngưỡng.
+    """Cửa sổ trượt theo dõi tỉ lệ ITEM sinh THẤT BẠI (không phải lệnh gọi API
+    thô) — dừng hẳn script nếu vượt ngưỡng.
+
+    Một ITEM có thể tốn tới 3 lệnh gọi API thật (`_sinh_mot_cau` retry tối đa 3
+    lần) trước khi bị tính là 1 lần thất bại ở đây — `ghi_nhan()` được gọi
+    ĐÚNG MỘT LẦN mỗi item (thành công hay thất bại), không phải mỗi lệnh gọi
+    API. Tên biến `window`/`CIRCUIT_BREAKER_WINDOW=20` nghĩa là "20 ITEM gần
+    nhất", KHÔNG phải "20 lệnh gọi API gần nhất" — worst case thực tế có thể
+    tốn tới 60 lệnh gọi API trước khi cửa sổ 20 item đầy và có thể dừng.
 
     Tìm ra ở phản biện lần 4 của spec: không có trần tổng cho cơ chế rút thay
     thế, nếu Groq lỗi hệ thống (đã xảy ra thật, D-173) script có thể đốt rất
@@ -622,13 +675,16 @@ class _CauTron:
         self._ket_qua: deque = deque(maxlen=window)
 
     def ghi_nhan(self, thanh_cong: bool) -> None:
+        """Gọi ĐÚNG MỘT LẦN sau khi một ITEM đã hoàn tất (thành công hoặc hết
+        3 lần thử) — xem `_sinh_mot_cau`, không gọi trong vòng lặp retry bên
+        trong nó."""
         self._ket_qua.append(thanh_cong)
         if len(self._ket_qua) == self._window:
             ti_le_loi = 1 - (sum(self._ket_qua) / self._window)
             if ti_le_loi > self._max_rate:
                 raise SystemExit(
                     f"Tỉ lệ lỗi LLM {ti_le_loi:.0%} vượt ngưỡng "
-                    f"{self._max_rate:.0%} trên {self._window} lệnh gọi gần "
+                    f"{self._max_rate:.0%} trên {self._window} ITEM gần "
                     "nhất -> DỪNG HẲN (fail loudly thay vì âm thầm đốt quota). "
                     "Kiểm tra EVAL_LLM_* trong .env / hạn mức Groq trước khi "
                     "chạy lại.")
@@ -746,18 +802,25 @@ def build(n_total: int, n_ngoai_pham_vi: int, seed: int) -> None:
     client = chromadb.PersistentClient(path=str(PERSIST_DIR))
     van_ban_pool = _dem_van_ban_hop_le(client)
     hinh_pool = _dem_anh_hop_le(client)
-    n_chunk = len(van_ban_pool["ids"])
+    # n_chunk = TỔNG THÔ (không lọc), n_anh = số ẢNH ĐÃ LỌC — hai cách đếm
+    # KHÁC NHAU có chủ ý, đúng chốt của spec (mục 3.1, phản biện lần 4): phía
+    # ảnh áp cùng bộ lọc cho cả đếm lẫn lấy mẫu, phía text thì KHÔNG (đếm thô,
+    # lọc riêng chỉ ở bước chọn ứng viên). Đừng "sửa cho đối xứng" — đây không
+    # phải sơ suất.
+    n_chunk = _dem_van_ban_tho(client)
     n_anh = len(hinh_pool["ids"])
 
     n = _tinh_n_moi_nhom(n_total, n_ngoai_pham_vi, n_chunk, n_anh)
-    print(f"[build_testset] index: {n_chunk} chunk hợp lệ, {n_anh} ảnh hợp lệ "
-          f"-> p_hinh={n['p_hinh_do_duoc']}")
+    print(f"[build_testset] index: {n_chunk} chunk (thô), {len(van_ban_pool['ids'])} "
+          f"chunk đủ điều kiện lấy mẫu, {n_anh} ảnh hợp lệ -> p_hinh={n['p_hinh_do_duoc']}")
     print(f"[build_testset] N mục tiêu: van_ban={n['n_van_ban']} "
           f"hinh={n['n_hinh']} ngoai_pham_vi={n['n_ngoai_pham_vi']} "
           f"(tổng {n['n_van_ban'] + n['n_hinh'] + n['n_ngoai_pham_vi']})")
 
-    _dem_pool_hinh_hop_le(n_chunk, n["n_van_ban"])
-    _dem_pool_hinh_hop_le(n_anh, n["n_hinh"])
+    # Chặn pool KHÔNG được dùng n_chunk (số thô) — phải dùng đúng pool đã lọc
+    # (len(van_ban_pool["ids"])), vì đó mới là pool THẬT SỰ dùng để rút mẫu.
+    _kiem_tra_du_pool(len(van_ban_pool["ids"]), n["n_van_ban"])
+    _kiem_tra_du_pool(n_anh, n["n_hinh"])
 
     if not is_configured():
         raise SystemExit(config_help())
@@ -835,12 +898,16 @@ if __name__ == "__main__":
 Run: `pytest tests/test_build_testset_sampling.py -v`
 Expected: PASS toàn bộ.
 
-- [ ] **Step 5: Chạy `pytest tests/ -q` để chắc chắn không phá gì khác**
+- [ ] **Step 5: Báo cáo hoàn thành cho coordinator — KHÔNG tự `git commit`, KHÔNG chạy `pytest tests/ -q` toàn bộ**
 
-Run: `pytest tests/ -q`
-Expected: PASS, 0 FAILED.
+Theo ràng buộc an toàn song song hóa ở đầu plan: agent thực thi Task 2 CHỈ
+chạy `pytest tests/test_build_testset_sampling.py -v` (Step 4) rồi DỪNG — báo
+cáo lại cho coordinator rằng Task 2 đã xong (2 file: `src/test/build_testset.py`,
+`tests/test_build_testset_sampling.py`), không tự add/commit, không chạy suite
+đầy đủ (Task 3 có thể đang dở dang cùng lúc, sẽ gây FAIL giả).
 
-- [ ] **Step 6: Commit**
+**Coordinator thực hiện (SAU KHI cả Task 2 và Task 3 đều báo xong)**, theo thứ
+tự: commit Task 2 trước, Task 3 sau (hai lệnh riêng biệt, không đồng thời):
 
 ```bash
 git add src/test/build_testset.py tests/test_build_testset_sampling.py
@@ -856,6 +923,10 @@ la chinh thuc.
 EOF
 )"
 ```
+
+Rồi commit Task 3 (xem Step 15 của Task 3). Sau CẢ HAI commit, coordinator tự
+chạy `pytest tests/ -q` MỘT LẦN để xác nhận toàn bộ suite xanh — đây là bước
+duy nhất thay thế cho hai "Step chạy full suite" cũ của Task 2/Task 3.
 
 ---
 
@@ -926,7 +997,8 @@ def test_allow_draft_bo_qua_nhung_in_canh_bao(tmp_path, capsys):
     meta = tmp_path / "meta.json"
     meta.write_text(json.dumps({"human_reviewed": False}), encoding="utf-8")
     require_human_reviewed(meta, allow_draft=True)  # không raise
-    out = capsys.readouterr().out + capsys.readouterr().err
+    captured = capsys.readouterr()  # đọc ĐÚNG MỘT LẦN — gọi lại sẽ luôn rỗng
+    out = captured.out + captured.err
     assert "NHÁP" in out or "nháp" in out or "draft" in out.lower()
 
 
@@ -960,6 +1032,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+# CỐ Ý định nghĩa lại (không import từ build_testset.py) — cả hai file cùng
+# neo theo Path(__file__).resolve().parent nên luôn trỏ đúng cùng một
+# src/test/testset/, và giữ Task 2/Task 3 không phụ thuộc chéo nhau (ranh giới
+# song song hóa đã chốt ở đầu plan). Đây là trade-off DRY-vs-độc-lập có chủ ý,
+# không phải trùng lặp bỏ sót.
 OUT_DIR = Path(__file__).resolve().parent / "testset"
 DRAFT_CSV = OUT_DIR / "draft.csv"
 META_JSON = OUT_DIR / "meta.json"
@@ -1077,11 +1154,24 @@ Expected: FAIL, `ModuleNotFoundError`.
 
 - [ ] **Step 7: Viết `src/test/retrieval_benchmark.py`**
 
-Cấu trúc: copy TOÀN BỘ nội dung `ablation.py` (phần import, `Cache`,
-`build_cache`, `topup_cache`, `load_cache`, `Config`, `METHOD_LABELS`,
-`method_label`, `rank_for`, `_gold_key`, `reciprocal_rank`, `KS`, `evaluate`,
-`build_page_lookup`, `ALL_CONFIGS`, `REPORT_CONFIGS`, `FUSION_CONFIGS`) GIỮ
-NGUYÊN — chỉ đổi 3 chỗ:
+Cấu trúc: copy **TOÀN BỘ NỘI DUNG FILE** `ablation.py` (không phải một danh
+sách tên chọn lọc — copy cả file rồi sửa) GIỮ NGUYÊN, chỉ đổi 3 chỗ liệt kê
+dưới đây. **SỬA SAU PHẢN BIỆN (lượt đầu áp cho plan này)**: bản trước liệt kê
+một danh sách tên tưởng là "toàn bộ" nhưng THIẾU 4 cái mà `Config`/`rank_for`/
+`build_cache`/`load_cache` tham chiếu trực tiếp — làm đúng theo nghĩa đen danh
+sách đó (thay vì đọc cả file) sẽ ra `NameError`. Danh sách ĐẦY ĐỦ, đối chiếu
+lại `ablation.py` dòng 71-119 + 154-628: toàn bộ khối import (dòng 71-109,
+gồm cả `from src.rag.bm25 import chunk_ids_digest` và
+`from src.config import (BM25_B, BM25_FETCH_K, BM25_K1, BM25_TOKENIZER,
+FUSION_DENSE_WEIGHT, FUSION_METHOD, FUSION_RRF_K, PERSIST_DIR, RERANK_FETCH_K,
+RERANK_SCORE_MIN, RETRIEVER_DISTANCE_MARGIN, RETRIEVER_MAX_K,
+TEXT_EXTRACTION_VERSION)`), rồi **`KS`, `CANDIDATE_N`, `DEFAULT_CACHE`,
+`sparse_params_stamp`, `sparse_search`**, `Cache`, `build_cache`, `_save`,
+`topup_cache`, `load_cache`, `Config`, `METHOD_LABELS`, `method_label`,
+`rank_for`, `_gold_key`, `reciprocal_rank`, `evaluate`, `build_page_lookup`,
+`ALL_CONFIGS`, `REPORT_CONFIGS`, `FUSION_CONFIGS`. (5 tên in đậm là phần bị
+thiếu ở bản trước — `Config.cand_n: int = CANDIDATE_N`, `rank_for()`,
+`build_cache()`, `load_cache()` đều tham chiếu trực tiếp các tên này.)
 
 1. **`load_testset`**: đổi từ glob nhiều `*_testset.csv` trong một thư mục
    sang đọc MỘT file `draft.csv`:
@@ -1119,7 +1209,15 @@ def load_testset(csv_path: Path) -> List[dict]:
    file, mặc định `src/test/testset/draft.csv`), thêm cổng người duyệt, thêm
    `--allow-draft`, đổi output path qua `testset_common.duong_dan_output`, bỏ
    `--group-by` (không còn ý nghĩa — không còn nhãn theo quyển/`do_kho`/
-   `phan_mon` trong CSV mới, và CBHD đã nói rõ không tách theo quyển/môn):
+   `phan_mon` trong CSV mới, và CBHD đã nói rõ không tách theo quyển/môn).
+   **CỐ Ý bỏ luôn** khối tự-vệ "bộ test đổi giữa chừng lúc chạy"
+   (`tren_dia = load_testset(...)` / cảnh báo `chua_dem`, `ablation.py` dòng
+   687-704 cũ) — khối đó tồn tại vì bộ test CŨ được sinh dần theo lô trong lúc
+   `--build-cache` đang chạy (multi-file, "Track A sinh theo lô"). Bộ test MỚI
+   là MỘT file `draft.csv` được sinh trọn vẹn trước, qua cổng người duyệt rồi
+   mới được đọc — không còn kịch bản "file đổi giữa chừng khi đang chấm", nên
+   khối code đó không còn tác dụng phòng vệ nào. Đây là loại bỏ CÓ CHỦ ĐÍCH,
+   không phải bỏ sót:
 
 ```python
 def main() -> int:
@@ -1357,9 +1455,68 @@ def evaluate_all(csv_path: str, judge_llm) -> pd.DataFrame:
 ```
 
    (Cột nguồn dữ liệu là `loai`, KHÔNG phải `nguon_cau_hoi` — khớp schema mới
-   của `draft.csv` do `build_testset.py` ghi ra. Sửa `_loai_cau_hoi`/
-   `aggregate_by_loai` copy từ `evaluator.py` để đọc đúng tên cột `loai` thay
-   vì `nguon_cau_hoi` ở MỌI chỗ.)
+   của `draft.csv` do `build_testset.py` ghi ra.)
+
+**SỬA SAU PHẢN BIỆN (đầu tiên áp cho plan này, khác 4 lượt trước áp cho
+spec)**: bản trước chỉ nói "sửa `aggregate_by_loai` để đọc đúng tên cột `loai`"
+mà KHÔNG đưa code cụ thể — đây chính xác là loại "placeholder" mà chính plan
+này tự cấm ("No Placeholders"). Đọc thật `evaluator.py` dòng 315-342:
+`aggregate_by_loai()` gốc thao tác trên cột `"nguon_cau_hoi"`
+(`df["nguon_cau_hoi"] = df["nguon_cau_hoi"].map(_loai_cau_hoi)`,
+`df.groupby("nguon_cau_hoi", ...)`) — nếu copy y nguyên mà không đổi tên cột,
+`run_eval.py` sẽ crash `KeyError: 'nguon_cau_hoi'` ngay lượt `--n 6` vì
+`evaluate_all()` chỉ ghi cột `"loai"`. Copy `aggregate_by_loai` với ĐÚNG 2 dòng
+đổi tên cột (mọi chỗ khác giữ nguyên y hệt bản gốc):
+
+```python
+def aggregate_by_loai(all_records: pd.DataFrame) -> pd.DataFrame:
+    """Tổng hợp theo LOẠI câu hỏi — copy nguyên văn evaluator.py, chỉ đổi tên
+    cột nguon_cau_hoi -> loai (khớp schema draft.csv mới)."""
+    cot_ra = ["loai_cau_hoi", "num_questions", *NUM_COLS]
+    if all_records.empty:
+        return pd.DataFrame(columns=cot_ra)
+
+    df = all_records.copy()
+    df["loai"] = df["loai"].map(_loai_cau_hoi)
+    g = df.groupby("loai", dropna=False)
+    out = g.agg(
+        num_questions=("question", "count"),
+        judge_correctness=("judge_correctness", "mean"),
+        judge_faithfulness=("judge_faithfulness", "mean"),
+        judge_relevancy=("judge_relevancy", "mean"),
+    ).reset_index().rename(columns={"loai": "loai_cau_hoi"})
+    for c in NUM_COLS:
+        out[c] = out[c].round(4)
+
+    thu_tu = {"van_ban": 0, "hinh": 1, "ngoai_pham_vi": 2, LOAI_KHONG_RO: 3}
+    out["_thu_tu"] = out["loai_cau_hoi"].map(thu_tu).fillna(9)
+    out = out.sort_values("_thu_tu").drop(columns="_thu_tu").reset_index(drop=True)
+    return out[cot_ra]
+```
+
+Cũng copy nguyên văn `NUM_COLS`, `LOAI_HOP_LE`, `LOAI_KHONG_RO`, `_loai_cau_hoi`
+(dòng 63-64, 192, 195-206 của `evaluator.py`) — các hằng số/hàm này KHÔNG đổi,
+chỉ `aggregate_by_loai` đổi tên cột như trên. Thêm test xác nhận trực tiếp vào
+`tests/test_review_gate.py` (hoặc một file test mới `tests/test_run_eval_aggregate.py`
+nếu muốn tách riêng) trước khi coi Step này xong:
+
+```python
+import pandas as pd
+
+from src.test.run_eval import aggregate_by_loai
+
+
+def test_aggregate_by_loai_doc_dung_cot_loai_khong_phai_nguon_cau_hoi():
+    df = pd.DataFrame([
+        {"question": "q1", "loai": "van_ban", "judge_correctness": 5.0,
+         "judge_faithfulness": 5.0, "judge_relevancy": 5.0},
+        {"question": "q2", "loai": "hinh", "judge_correctness": 3.0,
+         "judge_faithfulness": 3.0, "judge_relevancy": 3.0},
+    ])
+    out = aggregate_by_loai(df)  # KHÔNG được raise KeyError('nguon_cau_hoi')
+    assert set(out["loai_cau_hoi"]) == {"van_ban", "hinh"}
+    assert int(out.loc[out["loai_cau_hoi"] == "van_ban", "num_questions"].iloc[0]) == 1
+```
 
 4. `main()` gọn lại — không còn `--book`/`--bo-qua-da-co`/`--hau-to` (một file
    duy nhất, không cần các cờ đó), thêm `--allow-draft`:
@@ -1414,21 +1571,23 @@ if __name__ == "__main__":
 
 - [ ] **Step 13: Chạy toàn bộ test suite của Task 3**
 
-Run: `pytest tests/test_review_gate.py tests/test_retrieval_benchmark_metrics.py tests/test_mrr_metric.py tests/rag/test_ablation_cache.py -v`
+Run: `pytest tests/test_review_gate.py tests/test_retrieval_benchmark_metrics.py tests/test_mrr_metric.py tests/rag/test_ablation_cache.py tests/test_run_eval_aggregate.py -v`
 Expected: PASS toàn bộ.
 
-- [ ] **Step 14: Chạy `pytest tests/ -q` để chắc chắn không phá gì khác**
+- [ ] **Step 14: Báo cáo hoàn thành cho coordinator — KHÔNG tự `git commit`, KHÔNG chạy `pytest tests/ -q` toàn bộ**
 
-Run: `pytest tests/ -q`
-Expected: PASS, 0 FAILED.
+Cùng ràng buộc an toàn song song hóa ở đầu plan như Task 2: agent thực thi
+Task 3 DỪNG sau Step 13 (đã PASS toàn bộ 5 file test của riêng Task 3), báo
+cáo lại cho coordinator, không tự add/commit, không chạy suite đầy đủ (Task 2
+có thể đang dở dang cùng lúc).
 
-- [ ] **Step 15: Commit**
+**Coordinator thực hiện** (SAU Task 2 đã commit — xem Task 2 Step 5):
 
 ```bash
 git add src/test/testset_common.py src/test/retrieval_benchmark.py \
   src/test/run_eval.py tests/test_review_gate.py \
   tests/test_retrieval_benchmark_metrics.py tests/test_mrr_metric.py \
-  tests/rag/test_ablation_cache.py
+  tests/rag/test_ablation_cache.py tests/test_run_eval_aggregate.py
 git commit -m "$(cat <<'EOF'
 feat(test): them retrieval_benchmark.py + run_eval.py + testset_common.py (D-182)
 
@@ -1443,6 +1602,12 @@ danh dau file nhap qua hau to _NHAP_CHUA_DUYET.
 EOF
 )"
 ```
+
+**Ngay sau commit Task 3, coordinator chạy full suite MỘT LẦN** (thay thế 2 bước
+"Step chạy `pytest tests/ -q` toàn bộ" cũ của Task 2/Task 3):
+
+Run: `pytest tests/ -q`
+Expected: PASS, 0 FAILED.
 
 ---
 
@@ -1614,50 +1779,136 @@ EOF
 **Files** (đường dẫn tuyệt đối,
 `C:\Users\lcdkhoa\.claude\projects\D--personal-repo-project-rag\memory\`):
 
-- [ ] **Step 1: Viết lại `eval_structure_revision_2026_09.md`**
+**SỬA SAU PHẢN BIỆN**: bản trước chỉ mô tả chung chung ("thay bằng mô tả
+D-182", "đánh dấu HISTORICAL phần X") — đúng loại placeholder mà chính plan
+này tự cấm ("No Placeholders"), khác hẳn mức độ cụ thể của Task 6. Dưới đây là
+nội dung LITERAL cho file quan trọng nhất (Step 1) và chỉ dẫn find/replace
+chính xác cho các file còn lại — đã đọc trực tiếp nội dung hiện tại của từng
+file trước khi viết hướng dẫn.
 
-Nội dung hiện tại mô tả TOÀN BỘ D-181 (240 câu cố định theo quyển) — thay bằng
-mô tả D-182: lấy mẫu ngẫu nhiên, 3 script mới, cổng người duyệt bắt buộc, trạng
-thái (code xong, `--n 6` xác nhận, `--n 240` chờ người dùng). Giữ nguyên
-`name`/frontmatter, cập nhật `description`.
+- [ ] **Step 1: Viết lại TOÀN BỘ nội dung `eval_structure_revision_2026_09.md`**
+
+Nội dung hiện tại (đã đọc, 46 dòng) mô tả D-181 (240 câu cố định theo quyển,
+CHỐT ĐỊNH HƯỚNG, CHƯA CODE). Thay TOÀN BỘ phần thân (giữ nguyên khối
+frontmatter `---...---` ở đầu, chỉ đổi `description` và `modified`) bằng:
+
+```markdown
+---
+name: eval-structure-revision-2026-09
+description: "D-182 (04/09): huỷ cấu trúc 240-câu-cố-định-theo-quyển của D-181, chuyển sang lấy mẫu ngẫu nhiên toàn corpus qua build_testset.py/retrieval_benchmark.py/run_eval.py — đã code + chạy --n 6 xác nhận"
+metadata: 
+  node_type: memory
+  type: project
+  originSessionId: 88cf710f-984f-4791-82ca-22ed14a24a20
+  modified: 2026-09-04T00:00:00.000Z
+---
+
+D-181 (240 câu cố định theo quyển: 192 văn bản 16/quyển + 48 hình 4/quyển) đã
+bị **HUỶ HOÀN TOÀN** và thay bằng **D-182** (2026-09-04): lấy mẫu HOÀN TOÀN
+NGẪU NHIÊN trên toàn corpus, không ràng buộc phủ đều quyển. Lý do huỷ: soát
+kết quả D-181 cho thấy nhóm Hình chấm Correct chỉ 2,06/5 so với Văn bản 4,36/5
+— mẫu 4 câu/quyển quá nhỏ để chẩn đoán, và việc "đều theo quyển" vốn không
+phải yêu cầu của `goal.docx` (đề cương chỉ đòi Precision@k/Recall@k/MRR).
+
+**Why:** như D-181, đây vẫn là quyết định của người dùng/CBHD (không phải một
+phép đo lật giả định kỹthuật) — ghi ở đây vì không suy được từ code.
+
+**Kiến trúc mới (không suy được từ code, phải nhớ khi bảo trì):**
+- Ba nhóm câu (`van_ban`/`hinh`/`ngoai_pham_vi`) có MỤC TIÊU/khoảng riêng
+  (`ngoai_pham_vi` cố định N do CLI, phần còn lại chia theo tỉ lệ THẬT của
+  index tại thời điểm sinh — KHÔNG random cả tỉ lệ 3 nhóm).
+- `biology_image_metadata` dùng khoá `pdf_filename`/`page_number`, KHÔNG PHẢI
+  `source`/`page` như `biology_text` — lỗi ánh xạ này (đọc nhầm field không
+  tồn tại) sẽ âm thầm biến cả nhóm Hình thành `ngoai_pham_vi`, phát hiện bằng
+  truy vấn DB thật trong lượt thiết kế, không phải suy đoán.
+- Cổng người duyệt BẮT BUỘC (`testset_common.require_human_reviewed`) — không
+  còn nháp LLM chưa duyệt được dùng làm số chính thức như 30 câu ngoài-phạm-vi
+  của D-181 từng làm.
+- 3 script: `build_testset.py` (sinh), `retrieval_benchmark.py` (thay
+  `ablation.py`, giữ nguyên MRR/K=1 — `goal.docx` yêu cầu đích danh MRR),
+  `run_eval.py` (thay `evaluator.py`). `eval_llm.py` đổi tên
+  `llm_client.py` (logic JudgePool giữ nguyên).
+
+**Trạng thái**: đã code xong theo
+`document/specs/2026-09-03-eval-rebuild-design.md` (qua 4 lượt phản biện) +
+`docs/superpowers/plans/2026-09-04-eval-rebuild-plan.md`, đã chạy `--n 6` xác
+nhận bằng mắt. `--n 240` thật + duyệt tay là việc của người dùng, CHƯA chạy.
+
+**How to apply:** trước khi đụng vào `build_testset.py`/`retrieval_benchmark.py`/
+`run_eval.py`, đọc file này + D-182 (`document/decision_log.html`) để không lặp
+lại lỗi ánh xạ trường ảnh hoặc bỏ mất MRR. Liên quan
+[[thesis_report_and_goals]] (báo cáo LaTeX vẫn đang chờ số liệu D-182 mới) và
+[[demo_and_eval_constraints]] (quota Groq không đổi hạ tầng, chỉ đổi tên file
+client).
+```
 
 - [ ] **Step 2: Sửa `rag_eval_harness.md`**
 
-Đánh dấu `HISTORICAL:` phần mô tả `evaluator.py --book/--bo-qua-da-co` và bảng
-231 câu. Thêm dòng trỏ tới `[[eval_structure_revision_2026_09]]` cho pipeline
-hiện hành. Giữ nguyên phần G1-G5 (gates ETL, không liên quan LLM-judge).
+Đọc file hiện tại. Tìm đoạn mô tả `evaluator.py --book`/`--bo-qua-da-co` và
+bảng 231 câu (D-130) — thêm tiền tố `HISTORICAL:` vào ĐẦU đoạn đó (không xoá
+nội dung, chỉ đánh dấu). Thêm MỘT dòng mới ngay sau đoạn đó:
+`Xem [[eval_structure_revision_2026_09]] cho pipeline hiện hành (D-182,
+build_testset.py/retrieval_benchmark.py/run_eval.py).` Giữ nguyên hoàn toàn
+phần mô tả G1-G5 (gates ETL) — không đụng.
 
 - [ ] **Step 3: Sửa `demo_and_eval_constraints.md`**
 
-Đổi mọi chỗ nhắc `eval_llm.py` thành `llm_client.py`. Constraint TPM/TPD Groq
-giữ nguyên (không đổi hạ tầng).
+Đọc file hiện tại, tìm-và-thay CHÍNH XÁC mọi chuỗi con `eval_llm.py` (tên file)
+thành `llm_client.py` — đây là thay thế chuỗi thuần túy, không đổi ý nghĩa câu
+văn xung quanh. Constraint TPM/TPD Groq (D-163/D-173) giữ nguyên nội dung số vì
+hạ tầng `JudgePool` không đổi logic, chỉ đổi tên file chứa nó.
 
 - [ ] **Step 4: Sửa `multimodal_ablation_m2c.md`**
 
-Đánh dấu `HISTORICAL:` toàn file (dùng `ablation_multimodal.py`, đã xóa).
+Đọc file hiện tại. Thêm dòng ĐẦU TIÊN của phần thân (ngay sau frontmatter):
+`**HISTORICAL — dùng \`ablation_multimodal.py\`, đã xóa ở D-182
+(2026-09-04).** Nội dung dưới đây vẫn đúng như MỘT PHÉP ĐO LỊCH SỬ (kho ảnh 4
+quyển KNTT, delta +0,010) nhưng công cụ đo đã không còn tồn tại — chạy lại
+ablation multimodal cần viết công cụ mới nếu cần.` Không xoá/sửa gì khác trong
+file.
 
 - [ ] **Step 5: Sửa `m2_plan_two_tracks.md`**
 
-Đánh dấu `HISTORICAL:` đoạn nhắc `ablation.py`/bộ 300 câu cũ; giữ nguyên phần
-quyết định hybrid mặc định (D-82, không đổi).
+Đọc file hiện tại, tìm đoạn nhắc `ablation.py`/bộ 300 câu cũ trực tiếp — thêm
+tiền tố `HISTORICAL (module đã xoá ở D-182):` vào đầu đoạn đó. Giữ nguyên
+hoàn toàn phần mô tả quyết định hybrid mặc định (D-82) — đó là quyết định cấu
+hình production, không phải mô tả công cụ đo, vẫn đúng.
 
 - [ ] **Step 6: Sửa `thesis_report_and_goals.md`**
 
-Thêm một dòng: số liệu 240/270 câu (D-173..D-175) đã lỗi thời do D-182, chờ
-lượt đo mới trước khi viết lại báo cáo.
+Đọc file hiện tại, thêm MỘT dòng mới ở cuối phần thân (trước phần liên kết
+`[[...]]` nếu có, nếu không thì ở cuối file):
+`**D-182 (2026-09-04):** số liệu 240/270 câu trong report/tex_source/ (từ
+D-173..D-175) đã LỖI THỜI HOÀN TOÀN — bộ test cũ (cố định theo quyển) đã bị
+xóa, thay bằng lấy mẫu ngẫu nhiên qua build_testset.py. KHÔNG viết thêm vào
+report/tex_source/ cho tới khi có lượt --n 240 mới (xem
+[[eval_structure_revision_2026_09]]).`
 
 - [ ] **Step 7: Sửa `colab_runbook_and_env.md`**
 
-Giữ nguyên các bài học TPM/TPD/mtime-drift (vẫn đúng); cập nhật mô tả
-cell/script cụ thể theo notebook đã vá ở Task 8.
+Đọc file hiện tại, tìm đoạn mô tả cell/script cụ thể của
+`colab_runtime_eval.ipynb` (tên biến `BOOKS`, lệnh gọi `ablation.py`/
+`evaluator.py`) — thay các TÊN LỆNH CỤ THỂ đó bằng tên mới
+(`retrieval_benchmark.py`/`run_eval.py`, không còn vòng lặp `BOOKS` 13 mục vì
+chỉ còn MỘT file `draft.csv`), khớp đúng nội dung đã vá ở Task 8. Giữ nguyên
+hoàn toàn các đoạn mô tả bài học TPM/TPD (D-163/D-173) và mtime-drift
+(D-174) — hai bài học đó về hạ tầng Groq/Drive-FUSE, không phụ thuộc tên
+script.
 
 - [ ] **Step 8: Cập nhật `MEMORY.md` (index)**
 
-Sửa dòng trỏ tới `eval_structure_revision_2026_09.md` cho khớp mô tả mới; thêm
-`HISTORICAL` vào mô tả ngắn của `multimodal_ablation_m2c.md` nếu index có ghi
-trạng thái.
+Đọc dòng hiện tại trỏ tới `eval_structure_revision_2026_09.md` (khớp chuỗi
+`[Cấu trúc đánh giá mới theo CBHD](eval_structure_revision_2026_09.md)`) —
+thay TOÀN BỘ dòng đó bằng:
+```
+- [Cấu trúc đánh giá mới theo CBHD](eval_structure_revision_2026_09.md) — D-182 (04/09): HUỶ cấu trúc 240-câu-cố-định-theo-quyển của D-181, chuyển sang lấy mẫu ngẫu nhiên toàn corpus qua build_testset.py/retrieval_benchmark.py/run_eval.py. Đã code + chạy --n 6 xác nhận; --n 240 thật chờ người dùng
+```
+Tìm dòng trỏ tới `multimodal_ablation_m2c.md` (khớp chuỗi
+`[Cấu hình 2 đa phương thức (M2C)](multimodal_ablation_m2c.md)`) — thêm
+`**HISTORICAL (công cụ đo đã xóa D-182)**` vào ĐẦU phần mô tả sau dấu `—`,
+giữ nguyên phần còn lại của dòng.
 
-- [ ] **Step 9: Không cần chạy pytest cho bước này (memory không phải code) — chỉ đọc lại từng file đã sửa để tự kiểm chính tả/nhất quán.**
+- [ ] **Step 9: Không cần chạy pytest cho bước này (memory không phải code) — đọc lại từng file đã sửa để tự kiểm chính tả/nhất quán, đặc biệt xác nhận frontmatter YAML của Step 1 vẫn hợp lệ (không lẫn tab/ký tự lạ).**
 
 ---
 
@@ -1751,6 +2002,9 @@ từng dòng để chắc chắn không phải một lệnh gọi thật còn s�
    nào; mọi step code có nội dung đầy đủ chạy được.
 3. **Type/tên nhất quán**: `draft.csv` cột `loai` (không phải `nguon_cau_hoi`
    như bản D-181 cũ) dùng xuyên suốt Task 2 (ghi) và Task 3 (đọc,
-   `run_eval.py::evaluate_all`/`_loai_cau_hoi`) — đã kiểm khớp. `Cache`/
-   `Config`/`rank_for`/`chunk_ids_digest`/`TEXT_EXTRACTION_VERSION`/
-   `reciprocal_rank` dùng đúng 1 tên xuyên suốt Task 3 và 2 test file tái tạo.
+   `run_eval.py::evaluate_all`/`aggregate_by_loai` đã sửa lại 2 dòng đổi tên
+   cột — xem Step 12) — đã kiểm khớp. `Cache`/`Config`/`rank_for`/
+   `chunk_ids_digest`/`TEXT_EXTRACTION_VERSION`/`reciprocal_rank`/`KS`/
+   `CANDIDATE_N`/`DEFAULT_CACHE`/`sparse_search`/`sparse_params_stamp` dùng
+   đúng 1 tên xuyên suốt Task 3 và 2 test file tái tạo (danh sách "copy toàn
+   bộ" ở Step 7 đã sửa lại đủ sau phản biện — trước đó thiếu 5 tên).
