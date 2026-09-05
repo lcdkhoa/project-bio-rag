@@ -474,6 +474,23 @@ hình đúng chủ đề. **`--n 240` thật + duyệt tay CHƯA CHẠY — là 
 dùng** (tốn nhiều giờ + quota Groq), rồi mới cập nhật `report/tex_source/`
 (số 240/270 câu hiện có, từ D-173..D-175, đã lỗi thời hoàn toàn).
 
+**D-183 (2026-09-05) — người dùng không còn Colab Pro, chuyển hẳn sang Free:**
+`run_eval.py` không resume (finding I-4 ở trên) làm một lần rớt phiên Free
+(ngắn hơn, không đảm bảo GPU liên tục) mất trắng cả 240 câu. Đã thêm
+`split_testset.py` (chia `draft.csv` đã duyệt thành 3 batch 80 câu, round-robin
+theo `loai` để mỗi batch giữ tỉ lệ văn_bản/hình/ngoài_phạm_vi gần giống bộ gốc
+— là một PHÂN VÙNG thật, không câu nào trùng/mất) và `merge_eval_batches.py`
+(gộp cục bộ `eval_result.csv` của N batch, tái dùng `aggregate_by_loai()` của
+`run_eval.py`). Notebook `colab_runtime_eval.ipynb` (1 file, full-run 240 câu)
+đã **xoá**, thay bằng BA FILE RIÊNG BIỆT `colab_runtime_eval_batch{1,2,3}.ipynb`
+(không phải 1 file tham số hoá — quyết định rõ ràng của người dùng) — cả 3 đọc
+chung `database_png`/`testset_da_duyet` trên Drive nhưng ghi kết quả vào 3 thư
+mục Drive đánh số riêng, nên chạy được 2 batch song song bằng 2 tài khoản
+Google khác nhau; `retrieval_benchmark.py` (không gọi LLM) chỉ chạy ở file
+batch1, trên toàn bộ 240 câu. Xem D-183 trong `document/decision_log.html`.
+**Chưa chạy thật lượt nào của luồng 3-batch này** — việc còn lại vẫn là của
+người dùng.
+
 Lệnh xem mục "Lệnh" bên dưới.
 
 ## Quy tắc làm việc (luôn áp dụng)
@@ -623,18 +640,29 @@ xảy ra; chỉ cần chạy lại notebook (git clone kéo bản vá mới).
 ```bash
 python -m src.test.build_testset                       # sinh nháp 240 câu, seed 42 (D-182)
 python -m src.test.build_testset --mark-reviewed        # xác nhận đã duyệt tay
+python -m src.test.split_testset                       # D-183: chia draft.csv đã duyệt thành 3 batch 80 câu (round-robin theo `loai`) -> src/test/testset/batches/batch{1,2,3}.csv
+python -m src.test.split_testset --n-batches 2          # đổi số batch nếu cần (vd đã đo Colab đủ nhanh, không cần 3)
 python -m src.test.retrieval_benchmark --build-cache    # bảng 4 phương pháp x P/R/F1/MRR@K (D-182, thay ablation.py)
 python -m src.test.retrieval_benchmark --chi-4-phuong-phap  # chỉ 4 dòng CBHD yêu cầu, dùng cho báo cáo ch.4/5
-python -m src.test.run_eval                             # đánh giá đầu-cuối LLM-judge (D-182, thay evaluator.py)
+python -m src.test.run_eval                             # đánh giá đầu-cuối LLM-judge (D-182, thay evaluator.py) - mặc định đọc draft.csv ĐẦY ĐỦ; truyền --testset-csv để chấm một batch
+python -m src.test.merge_eval_batches --input a.csv --input b.csv --input c.csv  # D-183: gộp eval_result.csv của N batch (đã tải về từ Drive) thành báo cáo cuối cùng, chạy CỤC BỘ không cần GPU
 python -m src.test.ocr_bakeoff --compare        # bảng bake-off; engine thiếu ô -> in `—`, không in số (D-96)
 python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằng mắt: NGƯỜI · engine · tesseract (D-98)
 python -m src.test.qa_ocr_gold --export         # G2: dựng gold set 24 trang cho NGƯỜI sửa (D-55)
 python -m src.test.qa_ocr_gold --score --per-page   # G2: CER/WER/tỉ lệ lỗi dấu sau khi đã sửa
 # --n 240 that (~12-14h theo D-164, GPU 4GB tren may dev) mat kha nang resume/
 # checkpoint giua chung sau D-182 (viec PARK, chua sua) - crash gio thu 11 mat
-# trang toan bo. document/colab_runtime_eval.ipynb chay build_testset.py/
-# retrieval_benchmark.py/run_eval.py tren Colab, doc DB da upload thu cong len
-# Drive (`database_png`, D-165), khong can RAG_DATA_DIR/manifest/fingerprint.
+# trang toan bo cua MOT BATCH (khong con ca 240, xem D-183). Nguoi dung khong
+# con Colab Pro (D-183, 2026-09-05): chia thanh 3 batch 80 cau bang
+# split_testset.py, chay tren BA FILE NOTEBOOK RIENG document/
+# colab_runtime_eval_batch{1,2,3}.ipynb (KHONG phai 1 notebook tham so hoa) -
+# ca 3 doc CHUNG database_png/testset_da_duyet tren Drive nhung ghi ket qua
+# vao 3 thu muc Drive DANH SO rieng (eval_results/batch{1,2,3}/), nen chay
+# duoc 2 batch SONG SONG bang 2 tai khoan Google khac nhau. retrieval_
+# benchmark.py (khong goi LLM) CHI chay o file batch1 (muc 12), tren TOAN BO
+# draft.csv 240 cau - file batch2/batch3 bo qua muc do co chu dich. Sau khi
+# ca 3 batch xong: tai 3 thu muc Drive ve may local, chay merge_eval_
+# batches.py de co bao cao cuoi cung. CHUA chay that luot nao cua luong nay.
 # CANH BAO CU (D-166, con gia tri neu resume-logic tuong tu quay lai): mot
 # lot chay dau tien tung BI BUG vi git clone mang theo *_result.csv CU nen
 # co gang resume tuong nham da xong, khong tinh lai cau nao.
