@@ -481,15 +481,38 @@ dùng** (tốn nhiều giờ + quota Groq), rồi mới cập nhật `report/tex
 theo `loai` để mỗi batch giữ tỉ lệ văn_bản/hình/ngoài_phạm_vi gần giống bộ gốc
 — là một PHÂN VÙNG thật, không câu nào trùng/mất) và `merge_eval_batches.py`
 (gộp cục bộ `eval_result.csv` của N batch, tái dùng `aggregate_by_loai()` của
-`run_eval.py`). Notebook `colab_runtime_eval.ipynb` (1 file, full-run 240 câu)
-đã **xoá**, thay bằng BA FILE RIÊNG BIỆT `colab_runtime_eval_batch{1,2,3}.ipynb`
-(không phải 1 file tham số hoá — quyết định rõ ràng của người dùng) — cả 3 đọc
-chung `database_png`/`testset_da_duyet` trên Drive nhưng ghi kết quả vào 3 thư
-mục Drive đánh số riêng, nên chạy được 2 batch song song bằng 2 tài khoản
+`run_eval.py`). D-183 dự định thay `colab_runtime_eval.ipynb` (1 file, full-run
+240 câu) bằng BA FILE RIÊNG BIỆT `colab_runtime_eval_batch{1,2,3}.ipynb` — cả 3
+đọc chung `database_png`/`testset_da_duyet` trên Drive nhưng ghi kết quả vào 3
+thư mục Drive đánh số riêng, nên chạy được 2 batch song song bằng 2 tài khoản
 Google khác nhau; `retrieval_benchmark.py` (không gọi LLM) chỉ chạy ở file
-batch1, trên toàn bộ 240 câu. Xem D-183 trong `document/decision_log.html`.
-**Chưa chạy thật lượt nào của luồng 3-batch này** — việc còn lại vẫn là của
-người dùng.
+batch1, trên toàn bộ 240 câu. **SỬA D-184 (2026-09-05): dòng "đã xoá
+`colab_runtime_eval.ipynb`" ở D-183 SAI — file đó CHƯA TỪNG bị xoá** (`git log
+--diff-filter=D` cho file này rỗng, `git diff HEAD` rỗng — vẫn y hệt bản
+commit ở D-182). Người dùng đã chạy file 1-file này thật (không phải luồng
+3-batch) và đây chính là lượt eval phát hiện ra bug D-184 bên dưới — **giữ lại
+cả hai đường chạy** (1-file cho máy có phiên Colab dài hơi/Pro, 3-batch cho
+Free) thay vì coi 1-file là đã xoá. Xem D-183 + D-184 trong
+`document/decision_log.html`. **Luồng 3-batch vẫn chưa chạy thật lượt nào.**
+
+**D-184 (2026-09-05) — bug tìm được từ chính lượt chạy `colab_runtime_eval.ipynb`
+ở trên: 240/240 câu ra `contexts` rỗng, đã SỬA.** `src/rag/hybrid_retriever.py`
+bắt `except Exception` rộng quanh `self._text_retriever.invoke(query)` rồi chỉ
+`logger.warning(str(e))` — khi `hybrid_text_retriever.py` raise `RuntimeError`
+vì cross-encoder rerank trả điểm rỗng (chính cơ chế chống "rerank tắt âm thầm"
+đã vá ở một bug cũ), lỗi đó bị nuốt mất, `text_docs=[]`, script không hề
+crash/cảnh báo — lặp lại y hệt cho cả 240 câu vì nguyên nhân gốc không tự khỏi.
+Gốc sâu hơn: `src/rag/reranker.py` cũng nuốt lý do reranker fail (model
+lỗi/OOM/...) thành `[]` chỉ với `logger.warning`. Đã sửa: đổi `logger.warning`/
+`logger.error` → `logger.exception` ở cả hai file (giữ nguyên hành vi không
+crash — đúng cho API production — nhưng traceback đầy đủ được ghi lại); thêm
+circuit-breaker `_RongTron` vào `run_eval.py` (cửa sổ trượt 20 câu, ngưỡng 30%
+thất bại bất thường — không tính rỗng THIẾT KẾ của câu "ngoài phạm vi"/"chỉ-
+cần-ảnh" — dừng hẳn script sớm thay vì chấm hết 240 câu vô nghĩa). 2 test mới ở
+`tests/test_run_eval_aggregate.py`. Nguyên nhân gốc THẬT SỰ tại sao reranker
+fail trên lượt Colab đó (model không tải đủ? OOM?) KHÔNG xác định được vì log
+cell không được lưu — lượt chạy lại tiếp theo giờ sẽ lộ traceback đầy đủ nếu
+lặp lại.
 
 Lệnh xem mục "Lệnh" bên dưới.
 

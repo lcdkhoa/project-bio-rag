@@ -52,11 +52,16 @@ class CrossEncoderReranker:
             pairs = [[query, t] for t in texts]
             logits = self._predict(pairs)
             if len(logits) != len(texts):
-                logger.warning("Reranker returned %d scores for %d texts", len(logits), len(texts))
+                logger.error("Reranker returned %d scores for %d texts", len(logits), len(texts))
                 return []
             return [_sigmoid(x) for x in logits]
-        except Exception as e:
-            logger.warning("Reranker scoring failed: %s", e)
+        except Exception:
+            # D-184: traceback đầy đủ, không phải warning(str(e)) — đây là
+            # nguyên nhân GỐC khi caller (hybrid_text_retriever.py) thấy `ce`
+            # rỗng và raise RuntimeError chung chung "Cross-encoder trả 0
+            # điểm..."; không có dòng này thì lý do THẬT (model không tải
+            # được, OOM, v.v.) không bao giờ lộ ra.
+            logger.exception("Reranker scoring failed (model=%s)", self._model_name)
             return []
 
 

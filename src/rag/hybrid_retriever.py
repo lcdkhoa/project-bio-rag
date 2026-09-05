@@ -64,8 +64,12 @@ class HybridRetriever:
 
         try:
             text_docs = self._text_retriever.invoke(query)
-        except Exception as e:
-            logger.warning(f"Text retrieval failed: {e}")
+        except Exception:
+            # D-184: dùng logger.exception (traceback đầy đủ), không phải
+            # warning(str(e)) — một lượt eval Colab 2026-09-04 nuốt lỗi này
+            # thành "0 kết quả" cho 240/240 câu mà không ai biết nguyên nhân
+            # vì message ngắn không đủ để chẩn đoán.
+            logger.exception("Text retrieval failed for query: %r", query)
 
         # Chỉ tìm ảnh khi câu hỏi có tín hiệu RÕ RÀNG cần hình (`has_image_intent`,
         # cùng bộ từ khoá đã dùng cho định tuyến chỉ-ảnh). Trước bản vá này, MỌI
@@ -74,8 +78,8 @@ class HybridRetriever:
         if has_image_intent(query):
             try:
                 image_docs = self._image_retriever.invoke(query, related_text_docs=text_docs)
-            except Exception as e:
-                logger.warning(f"Image retrieval failed: {e}")
+            except Exception:
+                logger.exception("Image retrieval failed for query: %r", query)
 
         return SearchResult(
             text_docs=text_docs,
@@ -87,14 +91,14 @@ class HybridRetriever:
         """Search text collection only."""
         try:
             return self._text_retriever.invoke(query)
-        except Exception as e:
-            logger.error(f"Text retrieval failed: {e}")
+        except Exception:
+            logger.exception("Text retrieval failed for query: %r", query)
             return []
 
     def search_image_only(self, query: str) -> List[Document]:
         """Search image collection only."""
         try:
             return self._image_retriever.invoke(query)
-        except Exception as e:
-            logger.error(f"Image retrieval failed: {e}")
+        except Exception:
+            logger.exception("Image retrieval failed for query: %r", query)
             return []

@@ -38,6 +38,7 @@ import sys
 import json
 import re
 import logging
+from collections import deque
 
 # Cho phép import package `src`.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
@@ -122,18 +123,26 @@ def get_answer_and_context(question: str) -> dict:
             if result.image_only_query
             else "Thông tin này không được đề cập trong sách giáo khoa."
         )
-        return {"answer": answer, "contexts": contexts, "metas": metas}
+        return {"answer": answer, "contexts": contexts, "metas": metas,
+                "image_only_query": result.image_only_query, "answer_failed": False}
 
     context_str = "\n\n".join(contexts)
     prompt = services.rag.prompt.format(context=context_str, question=question)
+    answer_failed = False
     try:
         raw = services.llm.invoke(prompt)
         answer = services.rag.answer_parser.parse(raw)
-    except Exception as exc:
-        logger.error("Qwen lỗi cho câu hỏi %r: %s", question, exc)
+    except Exception:
+        # D-184: traceback đầy đủ (không chỉ str(exc)) + đánh dấu answer_failed
+        # để circuit-breaker bắt được luôn trường hợp Qwen luôn lỗi, cùng lớp
+        # rủi ro với retrieval rỗng — 240 câu có thể lặng lẽ nhận cùng một câu
+        # fallback này mà script không hề biết.
+        logger.exception("Qwen lỗi cho câu hỏi %r", question)
         answer = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời."
+        answer_failed = True
 
-    return {"answer": answer, "contexts": contexts, "metas": metas}
+    return {"answer": answer, "contexts": contexts, "metas": metas,
+            "image_only_query": result.image_only_query, "answer_failed": answer_failed}
 
 
 # 429 cua OpenRouter o day KHONG phai cap/ngay ma la "temporarily rate-limited
@@ -192,6 +201,47 @@ def judge_answer(judge_llm, question: str, ground_truth: str, context: str, answ
 # Chỉ còn 3 cột LLM chấm — 9 cột IR/xếp hạng theo quyển đã bị bỏ (D-181).
 NUM_COLS = ["judge_correctness", "judge_faithfulness", "judge_relevancy"]
 
+# D-184: lưới an toàn thứ hai cho lỗi âm thầm ở tầng dưới. Hai chỗ có thể lặp
+# lại y hệt cho MỌI câu mà không crash: (a) `HybridRetriever.search()` (src/
+# rag/hybrid_retriever.py) bắt Exception rộng quanh truy xuất text/ảnh rồi
+# chỉ log — một lượt Colab 2026-09-04 có exception (nguyên nhân chưa xác
+# định, log không được lưu) khiến 240/240 câu đều nhận contexts rỗng mà
+# script không hề crash hay cảnh báo, mất trắng nhiều giờ chạy; (b) Qwen sinh
+# câu trả lời lỗi ở `get_answer_and_context` — cùng lớp rủi ro, khác điểm
+# lỗi. Đã đổi logger.warning/error -> logger.exception ở cả hai (lưới thứ
+# nhất, traceback đầy đủ); cửa sổ trượt này là lưới thứ hai: dù nguyên nhân
+# là gì, dừng SỚM nếu tỉ lệ BẤT THƯỜNG vượt ngưỡng (rỗng KHÔNG tính "ngoài
+# phạm vi"/"chỉ-cần-ảnh" — hai trường hợp đó là THIẾT KẾ, xem
+# `get_answer_and_context`).
+RETRIEVAL_CIRCUIT_BREAKER_WINDOW = 20
+RETRIEVAL_CIRCUIT_BREAKER_MAX_EMPTY_RATE = 0.30
+
+
+class _RongTron:
+    """Cửa sổ trượt theo dõi tỉ lệ câu THẤT BẠI BẤT THƯỜNG (contexts rỗng
+    không-theo-thiết-kế, HOẶC Qwen sinh câu trả lời lỗi) trong N câu gần
+    nhất — dừng hẳn script nếu vượt ngưỡng."""
+
+    def __init__(self, window: int = RETRIEVAL_CIRCUIT_BREAKER_WINDOW,
+                 max_rate: float = RETRIEVAL_CIRCUIT_BREAKER_MAX_EMPTY_RATE):
+        self._window = window
+        self._max_rate = max_rate
+        self._ket_qua: deque = deque(maxlen=window)
+
+    def ghi_nhan(self, thanh_cong: bool) -> None:
+        self._ket_qua.append(thanh_cong)
+        if len(self._ket_qua) == self._window:
+            ti_le_loi = 1 - (sum(self._ket_qua) / self._window)
+            if ti_le_loi > self._max_rate:
+                raise SystemExit(
+                    f"Tỉ lệ câu THẤT BẠI BẤT THƯỜNG (contexts rỗng không-theo-"
+                    f"thiết-kế, hoặc Qwen sinh câu trả lời lỗi) là {ti_le_loi:.0%}, "
+                    f"vượt ngưỡng {self._max_rate:.0%} trên {self._window} câu "
+                    "gần nhất -> DỪNG HẲN (fail loudly, D-184). Xem log ERROR/"
+                    "traceback của HybridRetriever.search() (src/rag/"
+                    "hybrid_retriever.py) hoặc Qwen (get_answer_and_context) "
+                    "để biết nguyên nhân trước khi chạy lại.")
+
 
 def _loai_cau_hoi(value) -> str:
     """Chuẩn hoá một giá trị `loai` về 1 trong 3 loại hợp lệ.
@@ -210,6 +260,7 @@ def evaluate_all(csv_path: str, judge_llm) -> pd.DataFrame:
     print(f"\n=== Đánh giá: {len(df)} câu ===")
 
     records = []
+    rong_tron = _RongTron()
     for i, row in df.iterrows():
         q = str(row["question"])
         gt = str(row.get("ground_truth", ""))
@@ -223,6 +274,15 @@ def evaluate_all(csv_path: str, judge_llm) -> pd.DataFrame:
         loai = _loai_cau_hoi(row.get("loai"))
 
         rag = get_answer_and_context(q)
+
+        # D-184: rỗng là THIẾT KẾ cho câu ngoài-phạm-vi (không có trang vàng)
+        # và câu bị định tuyến chỉ-cần-ảnh (`image_only_query`) — chỉ những
+        # câu CÒN LẠI mà rỗng mới là dấu hiệu retrieval hỏng. `answer_failed`
+        # (Qwen lỗi) luôn là thất bại, không có trường hợp thiết kế nào rỗng.
+        rong_hop_le = (loai == "ngoai_pham_vi") or rag["image_only_query"]
+        rong_bat_thuong = (not rag["contexts"]) and not rong_hop_le
+        rong_tron.ghi_nhan(not (rong_bat_thuong or rag["answer_failed"]))
+
         verdict = judge_answer(judge_llm, q, gt, "\n\n".join(rag["contexts"]), rag["answer"])
 
         retrieved_sources = "; ".join(
@@ -285,6 +345,13 @@ TEN_LOAI_HIEN_THI = {
 
 if __name__ == "__main__":
     import argparse
+
+    # D-184: đảm bảo ERROR/traceback từ HybridRetriever.search() (giờ dùng
+    # logger.exception, không còn warning(str(e))) THỰC SỰ hiện ra stderr,
+    # không phụ thuộc vào việc một thư viện phụ thuộc có tự cấu hình logging
+    # theo cách nuốt mất hay không.
+    logging.basicConfig(level=logging.INFO,
+                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     from src.test.testset_common import (DRAFT_CSV,
                                           duong_dan_output,
                                           meta_path_for,
