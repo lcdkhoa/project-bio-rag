@@ -31,7 +31,7 @@ Tóm tắt yêu cầu chốt (chi tiết đọc thẳng file, đừng nhớ qua 
 | MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **XONG — ETL THẬT ĐÃ CHẠY, ĐO XÁC NHẬN** (D-162). Lượt Colab 8: 4293/16515 chunk merge MinerU thành công (`applied`+`unmatched_count`), 0 lỗi gọi model, đủ 12/12 quyển, BM25 dựng lại khớp. `recall_at_k`/`evaluator.py`/`ablation.py` đã đo lại trên corpus mới (D-167/D-170, 2026-09-02, cả 3 đều xong) — còn nợ: đo lại 2 quyển vừa đổi số câu (240 đều 20/quyển, D-172) và cập nhật `report/tex_source/` |
 | MT2 | Kho vector phủ **toàn bộ KHTN Lý–Hoá–Sinh, 12 quyển / 3 bộ sách, ~2 319 trang** | **XONG**: 2 387/2 399 trang lập chỉ mục, 16 393 chunk + 3 881 vector hình |
 | MT3 | Tối ưu truy xuất: định tuyến ý định + **truy xuất lai BM25 + dense** + rerank + cổng lọc | **XONG**. Mặc định `hybrid` + rerank BẬT + cổng lọc TẮT (D-82). Đo trên 231 câu ở bề rộng production: MRR **0,8255** · R@1 0,7403 · R@10 **0,9697**, thắng bm25 và dense ở MỌI cột. **Khoảng cách recall của đề cương đã bị xoá** — prod 0,9091 > 0,8961 là trần của riêng kênh dense (D-132) |
-| MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | (i)+(iii) **XONG** trên bộ 240 câu D-182/D-187 (số cũ 231 câu D-127 đã lỗi thời); (ii) **CHƯA CHẠY LƯỢT MỚI, đã CHUẨN BỊ XONG** (D-188) — bộ 52 câu `hinh` cũ (D-87, 100 câu/4 quyển KNTT) có trần 0,104 nên "chưa đo được ưu thế"; bộ 52 câu `hinh` MỚI (trong 240 câu D-187) có `ground_truth` sinh trực tiếp từ `figure_caption`/`crop_text` nên KHÔNG có trần đó — `build_m2c_subset.py`/`compare_m2c.py` đã viết + chạy thử, notebook đã vá mục 17-20, còn nợ lượt GPU thật trên Colab |
+| MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | **XONG CẢ 3 VẾ** (D-189, 2026-09-05). (i)+(iii) trên bộ 240 câu D-182/D-187 (số cũ 231 câu D-127 đã lỗi thời); (ii) **KẾT LUẬN DỨT KHOÁT — multi-modal KHÔNG cải thiện, TỆ ĐI NHẸ**: trên đúng 52 câu `hinh` (không còn trần 0,104 như bộ D-87 cũ vì `ground_truth` sinh từ `figure_caption`/`crop_text`), Correct 3,077→3,000 (Δ−0,077), Faithful/Relevancy đều Δ−0,038; 46/52 câu không đổi, 5 tệ đi, 1 tốt lên — giữ `MULTIMODAL_CONTEXT_ENABLED=false` |
 | MT5 | Web UI (Next.js) hiển thị công thức Toán/Hoá + hình sắc nét | **XONG** (D-137..D-139) — xem dòng MT5 ở bảng tiến độ |
 
 Mốc thời gian trong đề cương: 15/07/2026 → 23/09/2026, năm giai đoạn. Giai đoạn 1
@@ -577,14 +577,19 @@ D-182 đổi cấu trúc đo lường.** Việc CỐ Ý chưa làm: cập nhật
 **ĐÃ COMMIT** (D-188, sửa lại quyết định "không commit" ban đầu của D-187 theo
 yêu cầu người dùng — kết quả một lượt GPU nhiều giờ không nên chỉ nằm cục bộ).
 
-**Ablation multimodal M2C (MT4 vế ii) — ĐÃ CHUẨN BỊ, CHƯA CHẠY LƯỢT GPU** (D-188):
-bộ 52 câu `hinh` trong 240 câu trên có `ground_truth` sinh từ `figure_caption`/
-`crop_text` (không phải văn bản trang như bộ D-87 cũ), nên không bị trần 0,104
-chặn nữa — cơ hội có kết luận dứt khoát. `src/test/build_m2c_subset.py` (đã
-chạy, lọc đúng 52 câu + trích baseline text-only) và `src/test/compare_m2c.py`
-(đã smoke-test) sẵn sàng; `document/colab_runtime_eval.ipynb` đã thêm mục
-17-20. Còn nợ: chạy mục 17-20 trên Colab (`MULTIMODAL_CONTEXT_ENABLED=true`
-trên 52 câu đó) rồi `compare_m2c.py` cục bộ.
+**Ablation multimodal M2C (MT4 vế ii) — XONG, KẾT LUẬN DỨT KHOÁT** (D-188 chuẩn
+bị, D-189 chạy GPU thật + đo): bộ 52 câu `hinh` (trong 240 câu trên) có
+`ground_truth` sinh từ `figure_caption`/`crop_text` (không phải văn bản trang
+như bộ D-87 cũ), nên không bị trần 0,104 chặn — kết quả: multi-modal context
+**KHÔNG cải thiện, TỆ ĐI NHẸ** so với text-only. Ghép cặp theo từng câu
+(`python -m src.test.compare_m2c`): Correct 3,077→3,000 (Δ−0,077) · Faithful
+3,654→3,615 (Δ−0,038) · Relevancy 3,904→3,865 (Δ−0,038); 46/52 câu không đổi,
+5 tệ đi 1 điểm, 1 tốt lên 1 điểm — hiệu ứng nhỏ, ảnh hưởng ít câu, không phải
+nhiễu đo lường của một câu ngoại lệ. Giữ `MULTIMODAL_CONTEXT_ENABLED=false`.
+`src/test/eval_results_m2c/` (kết quả Colab thật) đã commit; `src/test/
+testset_m2c/m2c_ket_qua.md` (bảng so sánh) không commit — gitignore, tái lập
+được bằng `build_m2c_subset.py` + `compare_m2c.py` từ hai thư mục đã commit.
+**Còn nợ, CỐ Ý ngoài phạm vi:** đưa số này vào `report/tex_source/`.
 
 Lệnh xem mục "Lệnh" bên dưới.
 

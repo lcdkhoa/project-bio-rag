@@ -1,0 +1,8 @@
+{
+  "nguon": "src/test/build_m2c_subset.py — trích từ eval_results/draft.csv",
+  "loc_theo": "loai == 'hinh'",
+  "n_total": 52,
+  "tao_luc": "2026-09-05T16:49:06.102140+07:00",
+  "human_reviewed": true,
+  "reviewed_at": null
+}
