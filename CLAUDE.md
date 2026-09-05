@@ -557,10 +557,24 @@ CUDA khả dụng — áp dụng cho cả 2 bản bge-m3 còn lại; (3) `rerank
 tham số khác `SentenceTransformer`, đã kiểm bằng `inspect.signature`). CPU giữ
 nguyên fp32, không đổi hành vi máy dev. Ước tổng SAU sửa: 6,17+1,14(reranker fp16)+
 2,27(bge-m3×2 fp16) ≈ **9,58 GB, dư ~5 GB** thay vì ~1 GB nếu chỉ xoá riêng
-`self.vdb`. **CHƯA xác nhận bằng GPU thật** (máy dev không có CUDA) — chỉ xác nhận
-cú pháp đúng (`inspect.signature`) + `pytest tests/ -q` 730 passed/5 skipped không
-hồi quy + lý luận dung lượng khớp traceback. Việc còn lại: người dùng chạy lại
-Colab khi có GPU quota để xác nhận hết OOM.
+`self.vdb`. **SỬA D-187: ĐÃ xác nhận bằng GPU thật** — xem ngay dưới.
+
+**D-187 (2026-09-05) — XÁC NHẬN THẬT: `git pull` bản có fix D-186 vào Colab, chạy
+lại `run_eval.py`, 240/240 câu hoàn tất KHÔNG còn CUDA OOM, KHÔNG còn contexts
+rỗng hàng loạt.** `run_eval.log`/`retrieval_benchmark.log` 0 dòng ERROR;
+`eval_result.csv` 240/240 điểm judge (0 NaN); 209/240 câu trả lời KHÁC NHAU (không
+lặp lại "Thông tin này không được đề cập..." như bug D-184). Chỉ 2/158 câu `van_ban`
+có `retrieved` rỗng — không kèm ERROR log, là recall thật (bình thường), không phải
+lỗi hệ thống. Bảng theo LOẠI: Văn bản (158) Correct 4,19/5 · Faithful 4,56/5 ·
+Relevancy 4,59/5; Hình (52) Correct 3,08/5 · Faithful 3,65/5 · Relevancy 3,90/5;
+Ngoài phạm vi (30) Correct 4,87/5 · Faithful 5,00/5 · Relevancy 5,00/5. Bảng
+"Bề rộng PRODUCTION n=20" (`de_xuat`=hybrid rerank=on gate=off): MRR 0,7789 ·
+R@1 0,104 · R@10 0,241 — cùng bậc độ lớn với D-175/D-180 (số tuyệt đối lệch nhẹ do
+BỘ CÂU KHÁC — D-182 lấy mẫu ngẫu nhiên hoàn toàn, không phải bộ 240 cố định theo
+quyển cũ — không phải hồi quy). **Đây là bộ số 240 câu ĐẦU TIÊN dùng được kể từ
+D-182 đổi cấu trúc đo lường.** Việc CỐ Ý chưa làm: cập nhật `report/tex_source/`
+(vẫn số cũ từ D-173..D-175) — để một phiên làm việc RIÊNG. `src/test/eval_results/`
+không commit vào git (dữ liệu output cục bộ, giữ lại cho phiên cập nhật báo cáo).
 
 Lệnh xem mục "Lệnh" bên dưới.
 
