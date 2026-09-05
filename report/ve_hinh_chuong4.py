@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
 GOC = Path(__file__).resolve().parent.parent
-CSV_EVAL = GOC / "src" / "test" / "evaluation_report_240.csv"
+CSV_EVAL = GOC / "src" / "test" / "eval_results" / "eval_report.csv"
 THU_MUC_HINH = GOC / "report" / "tex_source" / "src" / "images" / "chapter4"
 
 # --- bảng màu (xem docstring) -------------------------------------------------
@@ -113,9 +113,8 @@ def _doc_eval() -> pd.DataFrame:
     if thieu:
         raise SystemExit(
             f"{CSV_EVAL} thiếu cột {thieu} — đây có phải bản CŨ trước D-181 "
-            "(trục 'theo quyển') không? Chạy lại `python src/test/evaluator.py "
-            "--testset-dir src/test/testsets_240 --hau-to _240` để tái sinh đúng "
-            "cấu trúc mới trước khi vẽ."
+            "(trục 'theo quyển') không? Chạy lại `python -m src.test.run_eval` "
+            "để tái sinh đúng cấu trúc mới (theo LOẠI câu hỏi) trước khi vẽ."
         )
     return _sap_xep(d)
 

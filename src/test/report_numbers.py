@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import csv
-import glob
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -72,18 +71,19 @@ def thu_thap() -> dict:
             "n_chunk": len(txt["metadatas"])}
 
 
-def bo_test(thu_muc: Path) -> dict:
+def bo_test(duong_csv: Path) -> dict:
+    """Đọc `src/test/eval_results/draft.csv` (D-182): MỘT file, cột
+    `question/loai/source_book/source_page/figure_label/ground_truth` — thay cho
+    glob nhiều file `*_testset.csv` theo quyển của cấu trúc cũ (đã xoá ở D-182)."""
     rows = []
-    for f in sorted(glob.glob(str(thu_muc / "*_testset.csv"))):
-        with open(f, encoding="utf-8-sig", newline="") as fh:
+    if duong_csv.exists():
+        with open(duong_csv, encoding="utf-8-sig", newline="") as fh:
             rows.extend(list(csv.DictReader(fh)))
     return {
         "n": len(rows),
         "theo_bo_sach": Counter(_tach(r["source_book"])[1] for r in rows
                                 if r.get("source_book")),
-        "theo_nguon": Counter(r.get("nguon_cau_hoi") or "?" for r in rows),
-        "theo_do_kho": Counter(r.get("do_kho") or "?" for r in rows),
-        "theo_phan_mon": Counter(r.get("phan_mon") or "?" for r in rows),
+        "theo_loai": Counter(r.get("loai") or "?" for r in rows),
     }
 
 
@@ -127,13 +127,11 @@ def in_bang(d: dict, test: dict) -> None:
     for k, v in d["loai_hinh"].most_common():
         print(f"  {str(k):<22} {v}")
 
-    print("\n=== Bảng 4.3 — phân bố bộ kiểm thử ===")
+    print("\n=== Bảng 4.3 — phân bố bộ kiểm thử (D-182: lấy mẫu ngẫu nhiên, không đều theo quyển) ===")
     print(f"  tổng: {test['n']} câu")
     for k, v in sorted(test["theo_bo_sach"].items()):
         print(f"    {TEN_NXB.get(k, k):<20} {v}")
-    print(f"  theo nguồn : {dict(test['theo_nguon'])}")
-    print(f"  theo độ khó: {dict(test['theo_do_kho'])}")
-    print(f"  theo phân môn: {dict(test['theo_phan_mon'])}")
+    print(f"  theo loại: {dict(test['theo_loai'])}")
 
     sai = {k: v for k, v in d["variant"].items() if k[0].lower() != (k[1] or "")}
     if sai:
@@ -167,12 +165,13 @@ def in_latex(d: dict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--latex", action="store_true", help="in thân bảng LaTeX")
-    ap.add_argument("--testset-dir", default=str(BASE / "testsets_240"))
+    ap.add_argument("--testset-csv",
+                     default=str(BASE / "eval_results" / "draft.csv"))
     ap.add_argument("--json", type=Path, default=None)
     a = ap.parse_args()
 
     d = thu_thap()
-    test = bo_test(Path(a.testset_dir))
+    test = bo_test(Path(a.testset_csv))
     if a.latex:
         in_latex(d)
     else:

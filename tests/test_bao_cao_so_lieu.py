@@ -17,7 +17,11 @@ from pathlib import Path
 import pytest
 
 GOC = Path(__file__).resolve().parent.parent
-CSV_EVAL = GOC / "src" / "test" / "evaluation_report_240.csv"
+# D-182 xoá evaluation_report_240.csv (trục "theo quyển", 12 hàng). Nguồn hiện
+# hành là src/test/eval_results/eval_report.csv (trục "theo LOẠI câu hỏi",
+# 3 hàng: van_ban/hinh/ngoai_pham_vi), sinh bởi run_eval.py::aggregate_by_loai(),
+# và đã COMMIT (D-187/D-188) nên luôn tồn tại — không còn cần skipif.
+CSV_EVAL = GOC / "src" / "test" / "eval_results" / "eval_report.csv"
 TEX_CH4 = GOC / "report" / "tex_source" / "src" / "chapters" / "4.hien_thuc_danh_gia_thao_luan.tex"
 
 
@@ -101,43 +105,21 @@ def test_so_thap_phan_dung_dau_phay_tieng_viet(ve_hinh):
     assert ve_hinh._so(4.0649, 2) == "4,06"
 
 
-_COT_IR_CU_TRUOC_D181 = (
-    "recall_page", "mrr_page", "precision_page", "recall_book", "precision_book",
-    "recall@3_raw", "recall@5_raw", "recall@10_raw",
-)
-
-
-@pytest.mark.skipif(not CSV_EVAL.exists(), reason="chưa có tệp kết quả đánh giá")
 def test_so_trong_chuong_4_khop_voi_tep_ket_qua(ve_hinh):
-    """Mỗi độ đo tổng hợp in trong Chương 4 phải bằng số tính lại từ CSV.
+    """Mỗi độ đo giám khảo (Correct/Faithful/Relevancy, gộp có trọng số theo
+    LOẠI) in trong Chương 4 phải bằng số tính lại từ `eval_report.csv`.
 
-    D-181 (2026-09-03): `evaluation_report_240.csv` đổi trục sang LOẠI câu hỏi,
-    9 cột IR/xếp hạng theo quyển (bao gồm 8 cột IR kiểm ở đây) bị xoá. Chương 4
-    `.tex` CHƯA được viết lại theo cấu trúc mới (việc đó nằm ngoài phạm vi lượt
-    sửa D-181 lần này) — nên khi CSV đã ở schema MỚI (thiếu các cột IR cũ), test
-    này SKIP thay vì crash: không còn gì để đối chiếu cho tới khi Chương 4 được
-    viết lại. Khi CSV vẫn ở schema CŨ (như tệp thật hiện có trên đĩa, sinh trước
-    D-181), test chạy y hệt trước đây.
+    D-190 (2026-09-05): CSV nay ở trục LOẠI câu hỏi cố định (`van_ban`/`hinh`/
+    `ngoai_pham_vi`, D-182), không còn 9 cột IR/xếp hạng theo quyển của cấu trúc
+    cũ (đã xoá vĩnh viễn ở D-181/D-182, không quay lại) — nên không còn lý do
+    để SKIP: cột `judge_correctness`/`judge_faithfulness`/`judge_relevancy` luôn
+    có mặt trong schema hiện hành.
     """
     import pandas as pd
     d = pd.read_csv(CSV_EVAL)
-    if any(c not in d.columns for c in _COT_IR_CU_TRUOC_D181):
-        pytest.skip(
-            "evaluation_report_240.csv đã ở schema MỚI theo LOẠI câu hỏi (D-181) "
-            "-- Chương 4 .tex chưa được viết lại theo cấu trúc mới, việc đó nằm "
-            "ngoài phạm vi lượt sửa này."
-        )
     tex = io.open(TEX_CH4, encoding="utf-8").read()
 
     can_kiem = {
-        "recall_page": 4,
-        "mrr_page": 4,
-        "precision_page": 4,
-        "recall_book": 4,
-        "precision_book": 4,
-        "recall@3_raw": 4,
-        "recall@5_raw": 4,
-        "recall@10_raw": 4,
         "judge_correctness": 3,
         "judge_faithfulness": 3,
         "judge_relevancy": 3,
@@ -151,31 +133,19 @@ def test_so_trong_chuong_4_khop_voi_tep_ket_qua(ve_hinh):
     assert not thieu, "Chương 4 không chứa số đã đo: " + "; ".join(thieu)
 
 
-@pytest.mark.skipif(not CSV_EVAL.exists(), reason="chưa có tệp kết quả đánh giá")
 def test_tong_so_cau_la_240(ve_hinh):
-    """240 = 192 văn bản + 48 hình, chốt D-172 (2026-09-02).
+    """240 = 158 văn bản + 52 hình + 30 ngoài phạm vi, bộ câu D-182/D-187
+    (lấy mẫu ngẫu nhiên toàn corpus, thay cấu trúc cố định-theo-quyển của
+    D-172 đã bị D-182 huỷ hoàn toàn).
 
-    D-181 (2026-09-03): thêm 30 câu `ngoai_pham_vi` vào `testsets_240/`, nên một
-    lượt đo bao gồm cả nhóm này cho tổng ĐÚNG là 270 = 240 + 30 — không phải một
-    hồi quy, miễn là không câu nào bị rơi mất khi gộp. Test chấp nhận cả hai giá
-    trị tuỳ CSV hiện có nhóm `ngoai_pham_vi` hay không, nhưng vẫn khẳng định
-    Chương 4 (chưa viết lại, ngoài phạm vi D-181) còn nhắc "240" như số hiện tại.
-
-    KHÔNG cấm '231'/'238' xuất hiện trong Chương 4 — chương này CHỦ Ý nhắc lại
-    cả hai như mốc lịch sử khi so sánh với các lượt đo trước (đúng phong cách đã
-    dùng xuyên suốt chương cho báo cáo chuyên đề cũ), nên cấm tuyệt đối sẽ chặn
-    nhầm nội dung hợp lệ.
+    KHÔNG cấm '231'/'238'/'270' xuất hiện trong Chương 4 — chương này CHỦ Ý
+    nhắc lại các số cũ như mốc lịch sử khi so sánh với các lượt đo trước, nên
+    cấm tuyệt đối sẽ chặn nhầm nội dung hợp lệ.
     """
     import pandas as pd
     d = pd.read_csv(CSV_EVAL)
     tong = int(d["num_questions"].sum())
-    co_ngoai_pham_vi = "loai_cau_hoi" in d.columns and (
-        d["loai_cau_hoi"] == "ngoai_pham_vi").any()
-    ky_vong = 270 if co_ngoai_pham_vi else 240
-    assert tong == ky_vong, (
-        f"Tổng số câu = {tong}, kỳ vọng {ky_vong} "
-        f"(co_ngoai_pham_vi={co_ngoai_pham_vi})"
-    )
+    assert tong == 240, f"Tổng số câu = {tong}, kỳ vọng 240"
     tex = io.open(TEX_CH4, encoding="utf-8").read()
     assert "240" in tex
     assert "240 câu" in tex or "$240$ câu" in tex
