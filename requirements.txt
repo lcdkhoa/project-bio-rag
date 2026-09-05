@@ -2,10 +2,20 @@
 
 # Core ML/AI
 torch>=2.0.0
-transformers>=4.40.0
+# D-185 (2026-09-05): trần trên BẮT BUỘC. Máy dev chạy ổn định ở transformers==
+# 4.46.3/sentence-transformers==3.3.1; một lượt Colab (fresh pip install,
+# không có trần) resolve ra transformers==5.16.1 -- một bump major KHÔNG
+# tương thích ngược -- rồi run_eval.py thoát mã 1 (retrieval_benchmark.py chạy
+# TRƯỚC trong CÙNG phiên vẫn qua, nên nghi vấn rơi vào phần AppServices không
+# dùng tới ở đó: LLM Qwen2.5-3B qua `transformers.AutoModelForCausalLM`/CLIP).
+# CHƯA xác nhận 100% bằng traceback thật (phiên Colab đã hết trước khi lấy
+# được log) -- đây là giả thuyết có bằng chứng gián tiếp mạnh nhất, không phải
+# đã đo chắc chắn. Xem [[dev_env_tokenizers_conflict]] cho một lớp lỗi
+# transformers/tokenizers khác đã gặp trên máy dev.
+transformers>=4.40.0,<5.0.0
 accelerate>=0.30.0
 huggingface-hub>=0.23.0
-sentence-transformers>=2.7.0
+sentence-transformers>=2.7.0,<4.0.0
 
 # LangChain
 langchain>=0.2.0

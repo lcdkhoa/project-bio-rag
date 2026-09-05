@@ -514,6 +514,28 @@ fail trên lượt Colab đó (model không tải đủ? OOM?) KHÔNG xác đị
 cell không được lưu — lượt chạy lại tiếp theo giờ sẽ lộ traceback đầy đủ nếu
 lặp lại.
 
+**D-185 (2026-09-05) — chạy lại vẫn thoát mã 1, session Colab hết + cạn GPU quota
+TRƯỚC khi lấy được traceback.** Ba việc đã làm để không bí hoàn toàn: (1) **smoke
+test cục bộ xác nhận code D-184 KHÔNG hỏng** — chạy `run_eval.py` đầu-cuối thật
+(model + DB thật, không cần Colab) trên 2 câu mẫu từ đúng bộ 240 câu, cả hai ra
+`correct=5/5`; (2) **phát hiện phụ quan trọng:** ngay cả cell `retrieval_benchmark.py
+--build-cache` THÀNH CÔNG (exit 0) cũng mất trắng toàn bộ log tiến độ của chính nó
+khi tải notebook về — notebook (`document/colab_runtime_eval.ipynb`) không bao giờ
+giữ được output của `subprocess.run()`, bất kể thành công hay thất bại (lặp lại lớp
+lỗi D-154 ở notebook ETL, chưa từng vá ở notebook eval này). Đã vá: hàm
+`_run_streamed()` mới (mục 10) dùng `Popen` đọc từng dòng, `print()` qua kernel VÀ
+ghi ra file log trên Drive (`retrieval_benchmark.log`/`run_eval.log`) — sống sót cả
+khi notebook không lưu được output lẫn khi tiến trình bị kill giữa chừng; (3) **nghi
+vấn có căn cứ gián tiếp mạnh, CHƯA xác nhận 100% (không có traceback thật):**
+`requirements.txt` ghim `transformers`/`sentence-transformers` KHÔNG có trần trên —
+Colab tự in ra đã cài `transformers==5.16.1` (major khác hẳn `4.46.3` đã verify chạy
+đúng ở máy dev), trong khi `retrieval_benchmark.py` (không đụng Qwen2.5-3B/CLIP) vẫn
+chạy được ở CÙNG phiên đó — nghi ngờ rơi vào phần `AppServices` riêng của
+`run_eval.py`. Đã thêm trần `<5.0.0`/`<4.0.0` vào `requirements.txt` + `assert`
+fail-loudly ở cell cài dependencies của notebook (dừng ngay nếu không phải major 4,
+trước khi tốn GPU). **Chưa xác nhận fix này có giải quyết đúng exit-1 hay không** —
+người dùng chưa chạy lại được. `pytest tests/ -q`: 730 passed, 5 skipped.
+
 Lệnh xem mục "Lệnh" bên dưới.
 
 ## Quy tắc làm việc (luôn áp dụng)
