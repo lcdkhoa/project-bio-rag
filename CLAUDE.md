@@ -31,7 +31,7 @@ Tóm tắt yêu cầu chốt (chi tiết đọc thẳng file, đừng nhớ qua 
 | MT1 | Truy vấn đa định dạng: văn bản + **công thức** + hình/sơ đồ/biểu đồ | **XONG — ETL THẬT ĐÃ CHẠY, ĐO XÁC NHẬN** (D-162). Lượt Colab 8: 4293/16515 chunk merge MinerU thành công (`applied`+`unmatched_count`), 0 lỗi gọi model, đủ 12/12 quyển, BM25 dựng lại khớp. `recall_at_k`/`evaluator.py`/`ablation.py` đã đo lại trên corpus mới (D-167/D-170, 2026-09-02, cả 3 đều xong) — còn nợ: đo lại 2 quyển vừa đổi số câu (240 đều 20/quyển, D-172) và cập nhật `report/tex_source/` |
 | MT2 | Kho vector phủ **toàn bộ KHTN Lý–Hoá–Sinh, 12 quyển / 3 bộ sách, ~2 319 trang** | **XONG**: 2 387/2 399 trang lập chỉ mục, 16 393 chunk + 3 881 vector hình |
 | MT3 | Tối ưu truy xuất: định tuyến ý định + **truy xuất lai BM25 + dense** + rerank + cổng lọc | **XONG**. Mặc định `hybrid` + rerank BẬT + cổng lọc TẮT (D-82). Đo trên 231 câu ở bề rộng production: MRR **0,8255** · R@1 0,7403 · R@10 **0,9697**, thắng bm25 và dense ở MỌI cột. **Khoảng cách recall của đề cương đã bị xoá** — prod 0,9091 > 0,8961 là trần của riêng kênh dense (D-132) |
-| MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | (i)+(iii) **XONG** trên bộ 231 câu/12 quyển (D-127); (ii) **CHƯA KẾT LUẬN ĐƯỢC** — 100 câu/4 quyển KNTT (D-87) cho delta +0,010 nhưng trần bộ test chỉ 0,104, nên phải nói "chưa đo được ưu thế", KHÔNG phải "vô ích" |
+| MT4 | Khung đánh giá đối chiếu: (i) **hybrid vs BM25 thuần**, (ii) **multi-modal vs text-only**, (iii) ablation bật/tắt rerank + gate | (i)+(iii) **XONG** trên bộ 240 câu D-182/D-187 (số cũ 231 câu D-127 đã lỗi thời); (ii) **CHƯA CHẠY LƯỢT MỚI, đã CHUẨN BỊ XONG** (D-188) — bộ 52 câu `hinh` cũ (D-87, 100 câu/4 quyển KNTT) có trần 0,104 nên "chưa đo được ưu thế"; bộ 52 câu `hinh` MỚI (trong 240 câu D-187) có `ground_truth` sinh trực tiếp từ `figure_caption`/`crop_text` nên KHÔNG có trần đó — `build_m2c_subset.py`/`compare_m2c.py` đã viết + chạy thử, notebook đã vá mục 17-20, còn nợ lượt GPU thật trên Colab |
 | MT5 | Web UI (Next.js) hiển thị công thức Toán/Hoá + hình sắc nét | **XONG** (D-137..D-139) — xem dòng MT5 ở bảng tiến độ |
 
 Mốc thời gian trong đề cương: 15/07/2026 → 23/09/2026, năm giai đoạn. Giai đoạn 1
@@ -574,7 +574,17 @@ BỘ CÂU KHÁC — D-182 lấy mẫu ngẫu nhiên hoàn toàn, không phải b
 quyển cũ — không phải hồi quy). **Đây là bộ số 240 câu ĐẦU TIÊN dùng được kể từ
 D-182 đổi cấu trúc đo lường.** Việc CỐ Ý chưa làm: cập nhật `report/tex_source/`
 (vẫn số cũ từ D-173..D-175) — để một phiên làm việc RIÊNG. `src/test/eval_results/`
-không commit vào git (dữ liệu output cục bộ, giữ lại cho phiên cập nhật báo cáo).
+**ĐÃ COMMIT** (D-188, sửa lại quyết định "không commit" ban đầu của D-187 theo
+yêu cầu người dùng — kết quả một lượt GPU nhiều giờ không nên chỉ nằm cục bộ).
+
+**Ablation multimodal M2C (MT4 vế ii) — ĐÃ CHUẨN BỊ, CHƯA CHẠY LƯỢT GPU** (D-188):
+bộ 52 câu `hinh` trong 240 câu trên có `ground_truth` sinh từ `figure_caption`/
+`crop_text` (không phải văn bản trang như bộ D-87 cũ), nên không bị trần 0,104
+chặn nữa — cơ hội có kết luận dứt khoát. `src/test/build_m2c_subset.py` (đã
+chạy, lọc đúng 52 câu + trích baseline text-only) và `src/test/compare_m2c.py`
+(đã smoke-test) sẵn sàng; `document/colab_runtime_eval.ipynb` đã thêm mục
+17-20. Còn nợ: chạy mục 17-20 trên Colab (`MULTIMODAL_CONTEXT_ENABLED=true`
+trên 52 câu đó) rồi `compare_m2c.py` cục bộ.
 
 Lệnh xem mục "Lệnh" bên dưới.
 
@@ -731,6 +741,8 @@ python -m src.test.retrieval_benchmark --build-cache    # bảng 4 phương phá
 python -m src.test.retrieval_benchmark --chi-4-phuong-phap  # chỉ 4 dòng CBHD yêu cầu, dùng cho báo cáo ch.4/5
 python -m src.test.run_eval                             # đánh giá đầu-cuối LLM-judge (D-182, thay evaluator.py) - mặc định đọc draft.csv ĐẦY ĐỦ; truyền --testset-csv để chấm một batch
 python -m src.test.merge_eval_batches --input a.csv --input b.csv --input c.csv  # D-183: gộp eval_result.csv của N batch (đã tải về từ Drive) thành báo cáo cuối cùng, chạy CỤC BỘ không cần GPU
+python -m src.test.build_m2c_subset                     # D-188: loc 52 cau 'hinh' tu eval_results/ + trich baseline text-only, chay CUC BO khong can GPU
+python -m src.test.compare_m2c                          # D-188: so sanh multi-modal-on vs text-only (MT4 ve ii), chay SAU khi tai ket qua Colab (muc 17-20 notebook eval) ve dung src/test/testset_m2c/eval_result_multimodal_on.csv, CUC BO khong can GPU
 python -m src.test.ocr_bakeoff --compare        # bảng bake-off; engine thiếu ô -> in `—`, không in số (D-96)
 python -m src.test.ocr_bakeoff --doi-chieu <engine> --so-o 10   # ĐỌC ô bằng mắt: NGƯỜI · engine · tesseract (D-98)
 python -m src.test.qa_ocr_gold --export         # G2: dựng gold set 24 trang cho NGƯỜI sửa (D-55)

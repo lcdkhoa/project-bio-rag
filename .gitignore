@@ -161,3 +161,9 @@ logs/
 # lượt chạy cụ thể (đặc biệt draft.csv chưa người duyệt không bao giờ được
 # lẫn vào git).
 src/test/testset/
+
+# `src/test/testset_m2c/` (D-188): output SINH RA bởi build_m2c_subset.py
+# (bộ 52 câu 'hinh' trích từ testset đã duyệt) + baseline/kết quả so sánh của
+# compare_m2c.py — cùng lý do với `src/test/testset/` ở trên: chỉ CODE tạo ra
+# nó được commit, không phải một lượt chạy cụ thể.
+src/test/testset_m2c/
