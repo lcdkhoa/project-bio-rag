@@ -533,8 +533,34 @@ Colab tự in ra đã cài `transformers==5.16.1` (major khác hẳn `4.46.3` đ
 chạy được ở CÙNG phiên đó — nghi ngờ rơi vào phần `AppServices` riêng của
 `run_eval.py`. Đã thêm trần `<5.0.0`/`<4.0.0` vào `requirements.txt` + `assert`
 fail-loudly ở cell cài dependencies của notebook (dừng ngay nếu không phải major 4,
-trước khi tốn GPU). **Chưa xác nhận fix này có giải quyết đúng exit-1 hay không** —
-người dùng chưa chạy lại được. `pytest tests/ -q`: 730 passed, 5 skipped.
+trước khi tốn GPU). **SỬA D-186: giả thuyết `transformers` này SAI HƯỚNG** — xem
+D-186 ngay dưới; trần version vẫn giữ (vệ sinh vô hại) nhưng KHÔNG phải nguyên nhân
+thật.
+
+**D-186 (2026-09-05) — traceback THẬT (nhờ `_run_streamed` của D-185) xác nhận
+nguyên nhân đúng: `torch.OutOfMemoryError: CUDA out of memory`, KHÔNG PHẢI version
+transformers.** `AppServices.__init__` (`src/app/dependencies.py`) có
+`self.vdb = VectorDB()` — grep xác nhận KHÔNG NƠI NÀO đọc trường này — nạp một bản
+`bge-m3` THỨ BA hoàn toàn thừa (bên cạnh bản HybridRetriever dùng thật cho truy xuất
+text và bản ImageVectorDB dùng thật cho tìm ảnh theo metadata); log xác nhận
+"Load pretrained SentenceTransformer: BAAI/bge-m3" in ra ĐÚNG BA LẦN. Cộng dồn fp32
+mặc định (không model nào set `torch_dtype` trước lượt này) — Qwen2.5-3B fp16
+~6,17 GB + reranker fp32 ~2,27 GB + bge-m3 fp32 × 3 bản ~6,9 GB ≈ **15,3 GB, đã
+VƯỢT 14,56 GB GPU** trước cả khi tính bộ nhớ activation — khớp khít traceback
+("process has 14,54 GiB memory in use", chỉ cần thêm 80 MiB đã vỡ). **CLIP KHÔNG
+tính vào tổng này** — `image_vectorstore.py` không có `.to('cuda')` nào cho CLIP,
+nó luôn chạy CPU bất kể cấu hình (lãng phí hiệu năng riêng, NGOÀI PHẠM VI, chưa sửa).
+Đã sửa 3 chỗ: (1) xoá `self.vdb` (dead code, giải phóng ~2,3 GB); (2)
+`embedding_model_kwargs()` thêm `model_kwargs={"torch_dtype": torch.float16}` khi
+CUDA khả dụng — áp dụng cho cả 2 bản bge-m3 còn lại; (3) `reranker.py` thêm
+`automodel_args={"torch_dtype": torch.float16}` cho `CrossEncoder` khi CUDA (tên
+tham số khác `SentenceTransformer`, đã kiểm bằng `inspect.signature`). CPU giữ
+nguyên fp32, không đổi hành vi máy dev. Ước tổng SAU sửa: 6,17+1,14(reranker fp16)+
+2,27(bge-m3×2 fp16) ≈ **9,58 GB, dư ~5 GB** thay vì ~1 GB nếu chỉ xoá riêng
+`self.vdb`. **CHƯA xác nhận bằng GPU thật** (máy dev không có CUDA) — chỉ xác nhận
+cú pháp đúng (`inspect.signature`) + `pytest tests/ -q` 730 passed/5 skipped không
+hồi quy + lý luận dung lượng khớp traceback. Việc còn lại: người dùng chạy lại
+Colab khi có GPU quota để xác nhận hết OOM.
 
 Lệnh xem mục "Lệnh" bên dưới.
 

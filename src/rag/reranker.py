@@ -34,15 +34,22 @@ class CrossEncoderReranker:
         if self._model is None:
             from sentence_transformers import CrossEncoder
             device = "cpu"
+            automodel_args = None
             if USE_GPU:
                 try:
                     import torch
                     if torch.cuda.is_available():
                         device = "cuda"
+                        # D-186 (CHƯA XÁC NHẬN trên GPU thật — không có CUDA để
+                        # đo cục bộ): fp32 mặc định ~2,3 GB/bản là một phần
+                        # nguyên nhân CUDA OOM đo được trên Colab; fp16 giảm
+                        # gần một nửa. CPU giữ nguyên fp32 (automodel_args=None).
+                        automodel_args = {"torch_dtype": torch.float16}
                 except Exception:
                     device = "cpu"
             logger.info("Loading reranker %s on %s", self._model_name, device)
-            self._model = CrossEncoder(self._model_name, device=device, max_length=512)
+            self._model = CrossEncoder(self._model_name, device=device, max_length=512,
+                                       automodel_args=automodel_args)
         return list(self._model.predict(pairs))
 
     def score(self, query: str, texts: List[str]) -> List[float]:

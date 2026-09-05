@@ -66,6 +66,14 @@ def embedding_model_kwargs() -> dict:
     Puts the model on CUDA when USE_GPU is set AND a GPU is actually present
     (so a Colab GPU run embeds fast, while a Windows/CPU box silently stays on
     CPU instead of crashing on a missing CUDA device).
+
+    D-186 (2026-09-05, CHƯA XÁC NHẬN bằng chạy thật trên GPU — không có CUDA để
+    đo cục bộ): trên CUDA, ép fp16 (`torch_dtype`) cho embedding — bge-m3 nạp
+    TỚI BA lần trong AppServices+HybridRetriever+ImageVectorDB, mỗi bản fp32
+    ~2,3 GB, là một phần nguyên nhân CUDA OOM đo được thật trên Colab (traceback
+    "process has 14,54 GiB memory in use" trên GPU 14,56 GiB). fp16 giảm ~một
+    nửa dung lượng mỗi bản; CPU giữ nguyên fp32 mặc định (không set khoá này)
+    vì nhiều kernel CPU không hỗ trợ tốt fp16.
     """
     kwargs: dict = {}
     if HF_TOKEN:
@@ -75,6 +83,7 @@ def embedding_model_kwargs() -> dict:
             import torch
             if torch.cuda.is_available():
                 kwargs["device"] = "cuda"
+                kwargs["model_kwargs"] = {"torch_dtype": torch.float16}
         except Exception:
             pass
     return kwargs
