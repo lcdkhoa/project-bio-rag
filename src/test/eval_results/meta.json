@@ -1,0 +1,13 @@
+{
+  "seed": 42,
+  "n_total": 240,
+  "n_van_ban": 158,
+  "n_hinh": 52,
+  "n_ngoai_pham_vi": 30,
+  "p_hinh_do_duoc": 0.2483,
+  "n_chunk_do_duoc": 11444,
+  "n_anh_do_duoc": 3780,
+  "tao_luc": "2026-09-04T14:59:08.082034+07:00",
+  "human_reviewed": true,
+  "reviewed_at": "2026-09-04T18:13:51.405615+07:00"
+}
