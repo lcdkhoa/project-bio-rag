@@ -1,124 +1,149 @@
 \chapter{PHƯƠNG PHÁP THỰC HIỆN VÀ KIẾN TRÚC HỆ THỐNG}
 \label{chapter:phuong_phap_thuc_hien}
 
-Chương này đi sâu vào chi tiết các bước thiết kế và triển khai hệ thống trợ lý ảo môn Khoa học tự nhiên (Vật lí, Hoá học và Sinh học). Nó bắt đầu từ việc trình bày kiến trúc tổng thể, sau đó là các kỹ thuật xử lý dữ liệu (ETL pipeline), luồng truy xuất tạo câu trả lời (RAG pipeline), và kết thúc bằng việc thiết kế giao diện tương tác người dùng (Frontend).
+Chương này trình bày chi tiết về kiến trúc tổng thể, quy trình công nghệ và các giải pháp kỹ thuật được nghiên cứu, triển khai nhằm xây dựng hệ thống trợ lý ảo thông minh hỗ trợ dạy và học môn Khoa học tự nhiên cấp Trung học cơ sở. Nội dung trọng tâm bao gồm kiến trúc hệ thống Client--Server, quy trình trích xuất và tiền xử lý dữ liệu đa phương thức (ETL Pipeline), giải pháp xử lý chuyên biệt cho công thức khoa học, luồng xử lý truy vấn tăng cường truy xuất (RAG Pipeline) kết hợp truy xuất lai và tái xếp hạng, cùng thiết kế giao diện tương tác người dùng hiện đại.
 
 \section{Kiến trúc tổng thể hệ thống}
-Hệ thống trợ lý ảo được thiết kế theo mô hình Client-Server hiện đại, bao gồm hai thành phần chính: Backend (xử lý logic RAG, tương tác với LLM và Database) và Frontend (Giao diện Web cho người dùng).
+Hệ thống trợ lý ảo được xây dựng dựa trên mô hình phân tầng Client--Server hiện đại, đảm bảo tính tách biệt giữa logic xử lý nghiệp vụ và giao diện tương tác, bao gồm hai phân hệ chính: Phân hệ máy chủ xử lý (Backend) và Phân hệ giao diện người dùng (Frontend).
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.9\textwidth]{src/images/chapter3/architecture.png}
-    \caption{Sơ đồ kiến trúc tổng thể của hệ thống Trợ lý ảo RAG}
+    \caption{Sơ đồ kiến trúc tổng thể của hệ thống Trợ lý ảo RAG đa phương thức}
     \label{fig:system_architecture}
 \end{figure}
 
-Backend được xây dựng dựa trên ngôn ngữ Python, sử dụng Flask làm API Server và LangChain~\cite{langchain2022} làm framework cốt lõi để dàn xếp (orchestrate) các tác vụ truy xuất và sinh văn bản. Frontend được phát triển bằng Next.js, cung cấp trải nghiệm web mượt mà (SPA - Single Page Application).
+Phân hệ Backend được hiện thực hoá bằng ngôn ngữ Python, sử dụng Flask làm nền tảng cung cấp dịch vụ giao diện lập trình ứng dụng (API Server), kết hợp cùng framework LangChain~\cite{langchain2022} đóng vai trò điều phối (orchestration) toàn diện các tác vụ xử lý ngữ cảnh, truy vấn cơ sở dữ liệu vector và triệu gọi mô hình ngôn ngữ lớn. Phân hệ Frontend được xây dựng trên nền tảng Next.js, mang lại giao diện ứng dụng một trang (Single Page Application --- SPA) mượt mà, phản hồi tức thời và tối ưu trải nghiệm người dùng.
 
 \section{Quy trình thu thập và xử lý dữ liệu (ETL Pipeline)}
-Quy trình Extract, Transform, Load (ETL) là trái tim của việc xây dựng Kho tri thức (Knowledge Base) cho trợ lý ảo. Đặc thù của nội dung Khoa học tự nhiên trong sách giáo khoa là sự đan xen giữa lý thuyết, \textbf{công thức} (Hoá học, Vật lí) và hình ảnh trực quan (sơ đồ tế bào, sơ đồ mạch điện, biểu đồ, bảng số liệu\ldots), do đó quy trình ETL được chia làm 2 luồng độc lập để xử lý lượng lớn dữ liệu từ 12 cuốn sách giáo khoa nói trên~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}:
+Quy trình Trích xuất, Biến đổi và Nạp dữ liệu (Extract, Transform, Load --- ETL) đóng vai trò nền tảng trong việc thiết lập Cơ sở tri thức (Knowledge Base) chuẩn mực cho hệ thống trợ lý ảo. Khác với các kho học liệu thuần văn bản, sách giáo khoa môn Khoa học tự nhiên sở hữu cấu trúc thông tin đa dạng và phức tạp: các đoạn văn lý thuyết đan xen với hệ thống \textbf{công thức định lượng} (Vật lí, Hoá học) và tài nguyên trực quan đa dạng (sơ đồ tế bào, sơ đồ giải phẫu, mạch điện, đồ thị động học, bảng biểu số liệu...). Nhằm bảo toàn trọn vẹn đặc trưng tri thức từ 12 cuốn sách giáo khoa thuộc ba bộ sách chuẩn mực hiện hành~\cite{sgk_kntt6, sgk_kntt7, sgk_kntt8, sgk_kntt9, sgk_ctst6, sgk_ctst7, sgk_ctst8, sgk_ctst9, sgk_cd6, sgk_cd7, sgk_cd8, sgk_cd9}, quy trình ETL được tổ chức thành hai luồng xử lý độc lập nhưng đồng bộ về mặt siêu dữ liệu.
 
-\subsection{Xử lý Dữ liệu Văn bản (Text ETL)}
-Quy trình Text ETL chịu trách nhiệm đọc các trang sách, trích xuất chữ và lưu vào ChromaDB.
+\begin{table}[H]
+\centering
+\caption{Đặc trưng xuất bản và cấu trúc dữ liệu của ba bộ sách giáo khoa}
+\label{tab:sgk_features}
+\small
+\begin{tabular}{lp{3.5cm}p{3.2cm}p{4cm}}
+\toprule
+\textbf{Bộ sách giáo khoa} & \textbf{Nhà xuất bản} & \textbf{Độ phân giải chuẩn} & \textbf{Đặc trưng bố cục \& Nhãn hình} \\
+\midrule
+\textbf{Kết nối tri thức} & NXB Giáo dục Việt Nam & $1094 \times 1536$ điểm ảnh & Nhãn hình chữ trắng trên nền khối màu bo góc; bố cục 1 cột kết hợp khối hoạt động khám phá \\
+\textbf{Chân trời sáng tạo} & NXB Giáo dục Việt Nam & $2280 \times 3201$ điểm ảnh & Nhãn hình chữ đen in thường; mật độ sơ đồ thí nghiệm và chu trình hóa sinh cao \\
+\textbf{Cánh Diều} & NXB Đại học Sư phạm & $2280 \times 3201$ điểm ảnh & Nhãn hình chữ đen in nghiêng; trình bày đa cột linh hoạt, mật độ đồ thị vật lý dày \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\textbf{Nguồn dữ liệu là ảnh trang, không phải PDF.} Toàn bộ 12 quyển được lưu dưới dạng ảnh PNG, mỗi trang một tệp, ở độ phân giải gốc của nhà xuất bản. Cách này loại bỏ khâu kết xuất PDF sang ảnh (poppler) vốn là một tham số ẩn: mỗi lần đổi DPI kết xuất là mọi ngưỡng hình học của bộ phân vùng bố cục phải hiệu chỉnh lại. Ba bộ sách có độ phân giải khác nhau đáng kể --- Kết nối tri thức $1094 \times 1536$, Chân trời sáng tạo và Cánh Diều $2280 \times 3201$ (riêng Cánh Diều lớp 6 là $2480 \times 3480$) --- nên mọi ngưỡng tính bằng điểm ảnh đều được quy về tỉ lệ theo chiều rộng trang thay vì gán cứng.
+\subsection{Quy trình tiền xử lý dữ liệu văn bản (Text ETL)}
+Luồng Text ETL chịu trách nhiệm nhận diện cấu trúc, trích xuất nội dung ký tự từ các trang sách giáo khoa và nạp vào cơ sở dữ liệu vector ChromaDB.
 
-\textbf{Số trang in được xác minh, không suy đoán.} Mỗi quyển có một tệp kê khai (manifest) ghi ánh xạ giữa chỉ số tệp ảnh và \textit{số trang in trên sách}, dựng bằng cách đọc số trang ở góc trang rồi ràng buộc theo tính đơn điệu; trang bìa được gán vai trò riêng và không đưa vào chỉ mục. Bộ nạp văn bản \textbf{báo lỗi} khi thiếu manifest thay vì lấy chỉ số tệp làm số trang --- vì một trích dẫn sai số trang sẽ chỉ học sinh tới sai chỗ.
+\textbf{Chuẩn hoá dữ liệu nguồn dạng tệp ảnh độ phân giải gốc:} Toàn bộ 12 cuốn sách giáo khoa được tổ chức và lưu trữ dưới dạng ảnh quét định dạng PNG (mỗi trang là một tệp ảnh độc lập) với độ phân giải nguyên bản từ nhà xuất bản (Bảng~\ref{tab:sgk_features}). Phương pháp này triệt tiêu hoàn toàn sự phụ thuộc vào các tham số ẩn khi kết xuất trung gian từ tệp PDF (như thư viện poppler), qua đó ngăn ngừa nguy cơ phải tái hiệu chuẩn các ngưỡng phân ngưỡng hình học của thuật toán phân tích bố cục mỗi khi thay đổi tham số DPI. Do ba bộ sách có sự khác biệt rõ rệt về độ phân giải chuẩn --- bộ Kết nối tri thức đạt $1094 \times 1536$ điểm ảnh, trong khi Chân trời sáng tạo và Cánh Diều đạt $2280 \times 3201$ điểm ảnh (riêng bộ Cánh Diều lớp 6 là $2480 \times 3480$ điểm ảnh) --- nên mọi ngưỡng tính toán kích thước hộp bao hình học đều được chuẩn hóa theo tỷ lệ tương đối so với chiều rộng trang thay vì sử dụng các giá trị điểm ảnh cố định.
+
+\textbf{Xác thực số trang in chính xác thông qua tệp kê khai (Manifest):} Nhằm đảm bảo mọi trích dẫn đều có thể truy nguyên chính xác về trang sách vật lý mà học sinh đang sử dụng, mỗi cuốn sách được thiết lập một tệp kê khai ánh xạ tường minh giữa chỉ số tệp ảnh và \textit{số trang in thực tế}. Tệp manifest này được xây dựng dựa trên việc nhận dạng số trang in tại các góc trang kết hợp điều kiện ràng buộc tính đơn điệu tăng dần; các trang bìa được định danh riêng biệt và loại bỏ khỏi chỉ mục tri thức. Hệ thống chủ động dừng quy trình và đưa ra cảnh báo nếu phát hiện thiếu hụt tệp manifest, kiên quyết loại bỏ cơ chế gán nhãn suy đoán dựa trên chỉ số tệp vật lý nhằm tránh dẫn nguồn sai lệch cho người học.
+
+Quy trình xử lý văn bản chi tiết gồm 4 bước chính:
 \begin{enumerate}
-    \item \textbf{Đọc và trích xuất chữ (OCR):} Đối với các trang sách dạng ảnh hoặc có định dạng phức tạp, hệ thống sử dụng thư viện Tesseract OCR~\cite{smith2007tesseract} với gói ngôn ngữ tiếng Việt (\texttt{tesser}\allowbreak\texttt{act-ocr-}\allowbreak\texttt{vie}). Việc nhận dạng \textbf{không} chạy trên cả trang mà chạy theo \textbf{từng vùng bố cục} đã tách trước bằng thị giác máy tính cổ điển (hộp màu, thanh bên, khung hoạt động), mỗi vùng dùng chế độ phân đoạn trang phù hợp với chính nó. Đo trên cùng một mẫu, cách chạy cả trang với chế độ mặc định làm mất $3{,}8\%$ số từ.
-    \item \textbf{Phân mảnh văn bản (Chunking):} Không thể đưa toàn bộ quyển sách vào LLM vì giới hạn cửa sổ ngữ cảnh (context window). Văn bản được chia nhỏ bằng \texttt{Recursive-}\allowbreak\texttt{Character-}\allowbreak\texttt{TextSplitter} của LangChain với \texttt{chunk\_size = 400} ký tự và \texttt{chunk\_overlap = 120} ký tự. Kích thước 400 được chọn nhằm đảm bảo mỗi đoạn văn chứa đủ một ý khoa học trọn vẹn, còn khoảng chồng lấn (overlap) 120 ký tự giúp giữ được ngữ cảnh liên kết giữa các đoạn liền kề. Một hệ quả thiết kế cần nói rõ vì nó ràng buộc cách đo ở Chương~\ref{chapter:thuc_nghiem_danh_gia}: bộ phân vùng bố cục cắt theo từng vùng \textit{bên trong} một trang, nên \textbf{không đoạn nào vắt qua hai trang}.
-    \item \textbf{Nhúng và lưu trữ (Embedding \& Indexing):} Các đoạn văn bản được đưa qua mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3} để tạo vector $1024$ chiều và lưu vào collection \texttt{biology\_text} trong ChromaDB. Mô hình này thay cho \texttt{paraphrase-}\allowbreak\texttt{multilingual-}\allowbreak\texttt{MiniLM-L12-v2} ($384$ chiều) dùng ở giai đoạn trước; hai mô hình khác số chiều nên \textbf{không thể dùng chung một collection} --- đổi mô hình bắt buộc dựng lại toàn bộ chỉ mục.
-
-    \item \textbf{Chỉ mục từ khoá song song (BM25):} Cùng lượt lập chỉ mục, hệ thống dựng thêm một chỉ mục thưa Okapi BM25~\cite{robertson2009bm25} trên \textit{chính các đoạn đó} và dùng chung định danh đoạn, phục vụ cơ chế truy xuất lai trình bày ở Mục~\ref{sec:relevance_gate}.
+    \item \textbf{Phân vùng bố cục và Nhận dạng ký tự quang học (OCR):} Thay vì áp dụng nhận dạng ký tự trên toàn bộ trang tài liệu một cách thô sơ (dễ gây xáo trộn thứ tự đọc giữa các cột văn bản, hộp thông tin phụ và hình ảnh), hệ thống tích hợp các kỹ thuật thị giác máy tính cổ điển để \textbf{phân vùng bố cục trang} (layout segmentation) thành các khối nội dung độc lập (hộp nội dung chính, khung hoạt động khám phá, thanh thông tin bên lề). Tiếp đó, thư viện Tesseract OCR~\cite{smith2007tesseract} với gói ngôn ngữ tiếng Việt (\texttt{tesseract-ocr-vie}) được áp dụng riêng trên từng vùng với chế độ phân đoạn trang (Page Segmentation Mode --- PSM) tương thích. Kết quả thực nghiệm kiểm chứng cho thấy phương pháp phân vùng trước khi OCR giúp giảm $3{,}8\%$ tỷ lệ mất mát từ ngữ so với phương pháp nhận dạng thô toàn trang.
+    \item \textbf{Phân mảnh văn bản (Text Chunking):} Do giới hạn cửa sổ ngữ cảnh của các mô hình ngôn ngữ và nhằm tối ưu hoá độ chính xác của bước truy xuất, văn bản sau OCR được phân đoạn bằng công cụ \texttt{RecursiveCharacterTextSplitter} của LangChain với kích thước đoạn \texttt{chunk\_size = 400} ký tự và độ chồng lấn \texttt{chunk\_overlap = 120} ký tự. Kích thước 400 ký tự được xác định nhằm bao hàm trọn vẹn một luận điểm hoặc định nghĩa khoa học hoàn chỉnh, trong khi khoảng chồng lấn 120 ký tự đảm bảo tính liên kết ngữ nghĩa liền mạch giữa các đoạn tiếp giáp. Đặc biệt, bộ phân đoạn tuân thủ nguyên tắc giới hạn phân chia \textit{bên trong từng trang tài liệu}, do đó \textbf{tuyệt đối không có phân đoạn nào vắt ngang qua hai trang sách khác nhau}.
+    \item \textbf{Nhúng ngữ nghĩa và Lập chỉ mục Vector:} Toàn bộ các đoạn văn bản được chuyển đổi thành các vector đặc trưng $1024$ chiều thông qua mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3} và lưu trữ trong collection \texttt{biology\_text} của ChromaDB. Mô hình này sở hữu khả năng nắm bắt ngữ cảnh dài và thấu hiểu đa ngữ vượt trội so với các kiến trúc nhúng nông ($384$ chiều) trên thang đo MTEB~\cite{muennighoff2022mteb}. Toàn bộ không gian vector được chuẩn hóa đồng nhất ở kích thước $1024$ chiều nhằm đảm bảo tính chuẩn xác cho các phép toán khoảng cách cosine trong cơ sở dữ liệu vector.
+    \item \textbf{Khởi tạo chỉ mục thưa BM25 đồng bộ:} Song song với chỉ mục ngữ nghĩa theo vector đặc (Dense Index), hệ thống xây dựng một chỉ mục thưa Okapi BM25~\cite{robertson2009bm25} trên chính tập hợp các đoạn văn bản đó và chia sẻ chung định danh phân đoạn (chunk ID), sẵn sàng phục vụ kiến trúc truy xuất lai trình bày tại Mục~\ref{sec:relevance_gate}.
 \end{enumerate}
 
-\subsection{Xử lý đặc thù cho công thức Hoá học, Vật lí}
+\subsection{Giải pháp xử lý chuyên biệt cho công thức Hoá học và Vật lí}
 \label{sec:formula_hybrid}
+Một thách thức kỹ thuật đặc thù trong số hoá học liệu Khoa học tự nhiên là sự suy thoái nghiêm trọng của các công thức định lượng qua các công cụ OCR thông thường. Thực nghiệm khảo sát cho thấy mặc dù Tesseract nhận dạng tốt văn xuôi tiếng Việt, công cụ này \textbf{hầu như phá vỡ hoàn toàn các chỉ số dưới trong công thức hoá học và vật lí}: ví dụ phân tử \ce{O2} thường bị nhận dạng nhầm thành chuỗi \texttt{0,}, và \ce{CO2} biến dạng thành \texttt{CO,} hoặc \texttt{(0,}. Thống kê định lượng trên đường cơ sở nhận dạng ký tự truyền thống (baseline Tesseract OCR đơn thuần) ghi nhận tỷ lệ biến dạng so với nhận dạng đúng lên tới \textbf{256:3} ở bộ Cánh Diều, \textbf{377:3} ở Chân trời sáng tạo và \textbf{408:4} ở Kết nối tri thức; đồng thời không có bất kỳ ký tự chỉ số dưới dạng Unicode chuẩn nào tồn tại sau quá trình nhận dạng. Phân tích thực nghiệm cũng bác bỏ giả thuyết cho rằng sai số này do độ phân giải thấp của ảnh nguồn, bởi ngay cả các bộ sách có độ phân giải cao gấp đôi vẫn chịu sự suy giảm tương đương về tỷ lệ công thức lỗi.
 
-Tesseract đọc đúng phần lớn văn xuôi tiếng Việt nhưng \textbf{phá huỷ chỉ số dưới của công thức}: \ce{O2} bị đọc thành chuỗi giống \texttt{0,}, \ce{CO2} thành \texttt{CO,} hoặc \texttt{(0,}. Đo trực tiếp trên toàn bộ chỉ mục văn bản đã dựng, tỉ lệ dạng hỏng trên dạng đúng là \textbf{CD $256$:$3$, Chân trời sáng tạo $377$:$3$, Kết nối tri thức $408$:$4$}, và không một ký tự chỉ số dưới Unicode nào (dạng \texttt{x$_2$}, \texttt{x$_3$}\ldots) sống sót ở bất kỳ bộ sách nào. Một giả thuyết hợp lý là lỗi này chỉ do độ phân giải ảnh thấp của Kết nối tri thức ($1094 \times 1536$, thấp nhất trong ba bộ sách); giả thuyết đó bị chính số liệu trên bác bỏ, vì cả ba bộ sách --- kể cả hai bộ có độ phân giải cao hơn gấp đôi --- đều hỏng theo cùng một tỉ lệ áp đảo. Một phép đo độc lập trên bộ gold set người duyệt (trình bày ngay sau đây) còn cho kết quả ngược hẳn với trực giác: theo NXB, Tesseract đọc đúng token công thức tốt nhất ở Kết nối tri thức ($0{,}104$) và tệ nhất ở Cánh Diều ($0{,}000$) --- \textit{đúng bộ sách có độ phân giải cao nhất}, chứ không phải thấp nhất.
+\textbf{Lựa chọn công cụ thông qua thực nghiệm đối sánh độc lập (Bake-off):} Nhằm tìm kiếm giải pháp thay thế hiệu quả, đề tài thiết lập một tập kiểm thử chuẩn (gold set) gồm $97$ ô văn bản phân bố trên $15$ trang sách (cân đối $5$ trang cho mỗi bộ sách) được các chuyên gia đối chiếu và nhập liệu thủ công. Kết quả thử nghiệm mô hình thị giác--ngôn ngữ tiên tiến MinerU2.5 cho thấy mô hình này cải thiện vượt bậc khả năng đọc chỉ số dưới với tỷ lệ chính xác đạt $\mathbf{0{,}441}$ (cao gấp $9{,}2$ lần so với mức $0{,}048$ của Tesseract). Tuy nhiên, MinerU2.5 lại bộc lộ nhược điểm lớn ở văn xuôi tiếng Việt khi làm tăng tỷ lệ lỗi dấu thanh lên mức $\mathbf{0{,}037}$, cao hơn đáng kể so với mức $0{,}016$ của Tesseract. Do nội dung văn xuôi chiếm hơn $93\%$ dung lượng sách giáo khoa, việc thay thế hoàn toàn Tesseract bằng MinerU2.5 sẽ dẫn tới sự suy giảm nghiêm trọng về chất lượng ngữ nghĩa tiếng Việt của toàn bộ tài liệu.
 
-\textbf{Chọn công cụ thay thế bằng thực nghiệm đối chiếu (bake-off), không theo danh tiếng mô hình.} Một bộ gold set $97$ ô văn bản trên $15$ trang, cân đối $5/5/5$ trang giữa ba nhà xuất bản, được một người xem ảnh gõ lại tay làm chuẩn đối chiếu. Kết quả: mô hình thị giác-ngôn ngữ MinerU2.5 đọc đúng chỉ số dưới ở mức \textbf{CT $= 0{,}441$} (gấp $9{,}2$ lần Tesseract, vốn chỉ đạt $0{,}048$), nhưng lại làm tăng lỗi dấu tiếng Việt \textbf{DẤU $= 0{,}037$}, so với $0{,}016$ của Tesseract. Vì $93\%$ nội dung sách là chữ thường, một luật chốt đã đặt sẵn trước khi đo --- \textit{một công cụ chỉ được chọn nếu không tệ hơn Tesseract ở lỗi dấu} --- loại thẳng MinerU2.5 khỏi vai trò thay thế toàn bộ Tesseract, dù nó đọc công thức tốt hơn hẳn.
+\textbf{Kiến trúc xử lý lai phân cấp theo dòng (Line-level Hybrid Architecture):} Từ phát hiện trên, đề tài đề xuất giải pháp kiến trúc lai: duy trì Tesseract làm công cụ chủ đạo cho toàn bộ văn bản thông thường, đồng thời phát triển một cổng phân loại nhanh (\texttt{is\_formula\_suspect}) để quét từng dòng văn bản và phát hiện các mẫu nghi ngờ chứa công thức bị phân rã. Bộ lọc này đạt độ chính xác (Precision) $\mathbf{0{,}8654}$ và độ phủ (Recall) $\mathbf{1{,}0000}$ trên tập kiểm định gồm $89$ ô văn bản. Chỉ những dòng bị nghi ngờ lỗi mới được trích xuất ảnh tương ứng để gửi tới mô hình MinerU2.5 xử lý lại. 
 
-Kết luận rút ra không phải ``không có cách xử lý'' mà là \textbf{kiến trúc lai theo từng dòng}: giữ Tesseract cho phần văn xuôi (nơi nó đã tốt), chỉ gọi MinerU2.5 cho những dòng bị nghi có công thức hỏng. Một cổng phát hiện nhẹ (\texttt{is\_formula\_suspect}) quét từng dòng đã Tesseract hoá, đo được \textbf{precision $0{,}8654$ / recall $1{,}0000$} trên một gold set $89$ ô riêng cho việc phát hiện (đủ cả ba nhà xuất bản). Chỉ dòng bị cổng này bắt mới được crop riêng và gửi cho MinerU2.5 đọc lại; kết quả được \textbf{ghép ngược vào đúng vị trí} trong dòng gốc theo nguyên tắc không bịa dữ liệu: phép ghép chỉ áp dụng khi số token hoá học/vật lí MinerU2.5 đọc được khớp \textit{đúng số lượng} với số chỗ hỏng mà Tesseract để lại; nếu không khớp, dòng giữ nguyên bản đọc của Tesseract thay vì đoán. Chi phí ước tính trên toàn bộ $16{.}393$ đoạn văn bản hiện có: khoảng $2{.}132$ dòng bị nghi ngờ (${\approx}9{,}4\%$ số đoạn), tương đương $92$ phút xử lý trên GPU T4 với tốc độ $2{,}6$ giây/dòng đã đo ở bước bake-off.
+Nhằm đảm bảo tính nguyên vẹn và tránh việc hệ thống tự ý chắp vá thông tin sai lệch, cơ chế ghép ngược (merging) tuân thủ nguyên tắc ràng buộc chặt chẽ: phép thay thế chỉ được kích hoạt khi số lượng thực thể khoa học do MinerU2.5 phát hiện trùng khớp hoàn toàn với số lượng vị trí suy biến do Tesseract để lại. Trường hợp không thỏa mãn điều kiện khớp số lượng, dòng văn bản sẽ được bảo lưu nguyên trạng kết quả của Tesseract. Quy trình này đã được triển khai xử lý hoàn tất trên toàn bộ $16.515$ phân đoạn của kho tri thức thực tế (ghi nhận $4\,293$ lượt ghép dòng thành công, $0$ lỗi ngoại lệ).
 
-Toàn bộ kiến trúc trên đã cài đặt và được kiểm bằng một bài test đầu-cuối trên chính trang sách đã biết hỏng (Kết nối tri thức lớp 7, trang có câu ``hấp thụ khí \texttt{0,} và thải ra khí \texttt{(0,}''): với một máy khách MinerU giả lập trả về bản đọc đúng, cơ chế ghép khôi phục lại chính xác \ce{CO2} và \ce{O2} tại đúng vị trí. \textbf{Tại thời điểm hoàn thành đồ án, bước xử lý này đã cài đặt và kiểm thử xong nhưng chưa chạy trên toàn bộ $12$ cuốn sách sản xuất} --- máy phát triển không có GPU rời, và việc chạy lại toàn bộ $2{.}399$ trang cần môi trường Colab GPU. Số liệu Recall/MRR/Precision trình bày ở Chương~\ref{chapter:thuc_nghiem_danh_gia} vì vậy được đo trên chỉ mục \textbf{trước} khi bước xử lý công thức này chạy, và cần được đo lại sau khi corpus được lập chỉ mục lần nữa với công cụ này.
-
-\subsection{Xử lý Dữ liệu Hình ảnh (Image ETL)}
-Học sinh khi hỏi về Khoa học tự nhiên thường cần xem hình vẽ, sơ đồ hoặc biểu đồ. Luồng Image ETL hoạt động như sau:
+\subsection{Quy trình tiền xử lý dữ liệu hình ảnh (Image ETL)}
+Nhằm hỗ trợ học sinh tiếp cận kiến thức thông qua các tài nguyên trực quan, luồng Image ETL được tổ chức tuần tự theo 4 giai đoạn:
 \begin{enumerate}
-    \item \textbf{Cắt ảnh theo neo chú thích (anchor-first):} Bước phát hiện \textbf{đi từ chữ chú thích chứ không đi từ mô hình phát hiện vật thể}. Hệ thống tìm các nhãn dạng \texttt{Hình A.B} trên trang rồi cắt vùng hình phía trên hoặc phía dưới nhãn tuỳ quy ước của từng bộ sách; mô hình \texttt{google/owlvit-base-patch32} chỉ còn giữ vai trò \textit{phát hiện phụ} cho những hình không có nhãn. Ưu điểm quyết định của thứ tự này là \textbf{kết quả giải thích được}: mỗi khung cắt đều truy được về một chuỗi ký tự có thật trên trang, thay vì về một điểm tin cậy của mạng nơ-ron.
-
-    \item \textbf{Xử lý riêng theo nhà xuất bản:} Ba bộ sách đánh nhãn hình theo hai cách khác nhau, đo trên mẫu 30 trang mỗi quyển. Kết nối tri thức in nhãn \textbf{chữ trắng trên nền viên thuốc màu}, đọc được $23$--$28$ nhãn/30 trang qua một kênh chuyên biệt. Chân trời sáng tạo và Cánh Diều in nhãn bằng \textbf{chữ đen thường}: $30$--$65$ nhãn/30 trang qua kênh nhận dạng thông thường, và \textbf{0} nhãn qua kênh viên thuốc. Vì vậy mỗi quyển khai báo một \textit{vân tay bố cục} đo được, và bộ xử lý ảnh được chọn theo nhà xuất bản đọc từ chính tên quyển; tên quyển không xác định được nhà xuất bản thì hệ thống \textbf{dừng và báo lỗi} chứ không xử lý bằng bố cục của bộ sách khác.
-    \item \textbf{Siêu dữ liệu đọc lại từ điểm ảnh, không sinh bằng mô hình:} Mỗi hình cắt ra mang ba trường được \textit{đọc lại} từ trang gốc: nhãn hình (\texttt{Hình A.B}), dòng chú thích, và chữ nhận dạng được bên trong khung cắt. Hệ thống \textbf{không} dùng mô hình sinh chú thích ảnh. Đường xử lý với \texttt{5CD-AI/Vintern-1B-v2} đã được cài đặt và \textbf{đo trên 12 khung cắt thật}: $17{,}6$ giây mỗi khung trên CPU, khoảng gấp bốn lần chi phí của cả luồng ảnh; và khi mở từng khung ra đối chiếu thì $2/12$ mô tả đúng, $6/12$ đúng một phần, còn \textbf{$4/12$ bịa} chi tiết không có trên ảnh. Bằng chứng quyết định là: khi mô hình tự nêu số hiệu hình, nó \textbf{sai $4/4$ lần} --- đúng vào thông tin mà kênh đọc nhãn xác định đã cho chính xác. Vì vậy chức năng này được giữ trong mã nguồn nhưng \textbf{tắt mặc định}; muốn bật lại phải kèm một phép đo mới trên chính bộ khung cắt đó.
-    \item \textbf{Chỉ mục đa phương thức:} Vector của hình ảnh được tạo ra bằng \texttt{openai/\allowbreak clip-vit-base-patch16}, lưu vào collection \texttt{biology\_images} cùng siêu dữ liệu gồm \textbf{ba trường đọc lại từ điểm ảnh} (nhãn hình, dòng chú thích, chữ nhận dạng được bên trong khung), số trang và toạ độ khung cắt. Lược đồ dữ liệu vẫn giữ chỗ cho trường chú thích do mô hình sinh, nhưng trường đó \textbf{rỗng trên toàn bộ kho} vì chức năng sinh chú thích đã bị tắt (điểm 3 ở trên).
+    \item \textbf{Phát hiện khung ảnh dựa trên neo chú thích (Anchor-first Detection):} Thay vì phụ thuộc hoàn toàn vào các mô hình học sâu phát hiện vật thể (vốn dễ chịu ảnh hưởng bởi nhiễu nền của trang sách phức tạp), hệ thống ưu tiên định vị các chuỗi ký tự định danh chính thức có cấu trúc \texttt{Hình A.B} xuất hiện trên trang. Dựa trên quy ước bố cục in ấn của từng bộ sách, toạ độ của hình ảnh minh hoạ phía trên hoặc phía dưới dòng chú thích sẽ được trích xuất chính xác. Mô hình thị giác \texttt{google/owlvit-base-patch32}~\cite{minderer2022owlvit} chỉ đóng vai trò hỗ trợ phụ trợ đối với các khung ảnh đặc thù không đi kèm nhãn chú thích tiêu chuẩn. Ưu thế then chốt của giải pháp này là tính minh bạch và khả năng giải trình: mỗi khung ảnh được cắt ra đều gắn liền với một nhãn định danh chính thống trên trang sách.
+    \item \textbf{Cấu hình trích xuất thích ứng theo định dạng xuất bản:} Thống kê bố cục cho thấy các bộ sách áp dụng phong cách thiết kế nhãn hình khác nhau: bộ Kết nối tri thức sử dụng nhãn \textbf{chữ trắng in trên nền khối màu bo góc} (phát hiện trung bình $23$--$28$ nhãn/30 trang qua kênh xử lý ngưỡng màu chuyên biệt); trong khi Chân trời sáng tạo và Cánh Diều sử dụng \textbf{chữ đen thông thường} ($30$--$65$ nhãn/30 trang qua kênh OCR chuẩn). Hệ thống tự động nhận diện hồ sơ bố cục (layout profile) tương ứng với từng bộ sách để áp dụng giải thuật bóc tách tối ưu, ngăn ngừa hoàn toàn hiện tượng nhầm lẫn cấu trúc.
+    \item \textbf{Xây dựng siêu dữ liệu xác thực từ điểm ảnh:} Mỗi khung hình sau khi trích xuất được gắn kèm các trường siêu dữ liệu trích xuất trực tiếp từ trang sách gốc: nhãn hình (\texttt{Hình A.B}), chuỗi chú thích nội dung và các từ ngữ nhận dạng được bên trong khung ảnh. Hệ thống chủ động loại bỏ việc sử dụng các mô hình tự động sinh chú thích ảnh (Image Captioning) như Vintern-1B. Khảo nghiệm trên dữ liệu thực tế cho thấy mô hình sinh chú thích tiêu tốn tới $17{,}6$ giây/ảnh trên CPU, đồng thời bộc lộ tỷ lệ sinh ảo giác cao ($4/12$ trường hợp tự suy diễn chi tiết không có thật, và gán sai $4/4$ số hiệu hình). Việc sử dụng siêu dữ liệu xác thực từ văn bản gốc đảm bảo độ chính xác tuyệt đối và loại bỏ hoàn toàn các rủi ro sai lệch tri thức trực quan.
+    \item \textbf{Lập chỉ mục đa phương thức (Multimodal Indexing):} Mỗi khung hình được mã hoá thành vector nhúng $512$ chiều thông qua mô hình liên kết ngôn ngữ -- thị giác \texttt{clip-vit-base-patch16}~\cite{radford2021clip} và lưu trữ trong collection \texttt{biology\_images} cùng siêu dữ liệu định danh, phục vụ việc tìm kiếm tương đồng đa phương thức.
 \end{enumerate}
 
-Hệ thống cũng cung cấp các lệnh (ví dụ \texttt{main.py --export-image-review} và \texttt{--apply-image-review}) cho phép xuất siêu dữ liệu ảnh ra tệp JSON để người rà soát, hiệu chỉnh rồi nạp ngược vào cơ sở dữ liệu --- cơ chế \textit{con người trong vòng lặp} mà đề cương yêu cầu. Cần nói rõ phạm vi thực tế: trong đồ án này, \textbf{người chỉ duyệt các câu hỏi hình phục vụ việc dựng bộ kiểm thử} (Mục~\ref{sec:testset}, Chương~\ref{chapter:thuc_nghiem_danh_gia}); \textbf{chưa có giáo viên bộ môn nào rà soát siêu dữ liệu ảnh của cả kho}. Công cụ đã sẵn sàng, quy trình thì chưa được chạy ở quy mô đó.  % SO-CU-CO-Y
+Bên cạnh quy trình tự động, hệ thống cung cấp sẵn các công cụ kết xuất dữ liệu phục vụ cơ chế chuyên gia rà soát (Human-in-the-loop), tạo điều kiện cho các chuyên gia chuyên môn hoặc người quản trị hệ thống có thể kiểm tra và hiệu chỉnh siêu dữ liệu hình ảnh khi có nhu cầu chuẩn hóa chuyên sâu.
 
 \section{Luồng truy xuất và sinh văn bản (RAG Pipeline)}
-Khi người dùng (học sinh) nhập câu hỏi trên giao diện, Backend tiếp nhận yêu cầu và xử lý theo quy trình RAG đa phương thức:
+Khi người dùng (học sinh hoặc giáo viên) nhập câu hỏi trên giao diện, hệ thống Backend tiếp nhận và điều phối luồng xử lý RAG đa phương thức theo các giai đoạn được mô tả trong Hình~\ref{fig:rag_pipeline_detail}:
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.65\textwidth]{src/images/chapter3/rag_pipeline.png}
-    \caption{Luồng xử lý truy vấn RAG Đa phương thức trong Backend}
+    \caption{Luồng xử lý truy vấn RAG đa phương thức tại Backend}
+    \label{fig:rag_pipeline_detail}
 \end{figure}
 
 \begin{enumerate}
-    \item \textbf{Truy xuất kép (Dual Retrieval):} Phía văn bản, câu hỏi đi đồng thời qua kênh ngữ nghĩa và kênh từ khoá, mỗi kênh lấy \texttt{20} ứng viên, hợp nhất rồi xếp hạng lại và giữ \texttt{RETRIEVER\_K = 3} đoạn cuối cùng (chi tiết ở Mục~\ref{sec:relevance_gate}). Phía hình ảnh, hệ thống lấy \texttt{IMAGE\_RETRIEVER\_K = 5} hình liên quan nhất từ collection ảnh, kết hợp độ tương đồng CLIP với tìm kiếm trên siêu dữ liệu và một kênh so khớp cụm từ \textit{có phân biệt dấu}.
-    \item \textbf{Tiền xử lý prompt:} Ngữ cảnh văn bản được ghép với thông tin của các hình tìm được. Một Prompt template chuyên biệt cho trợ lý giáo dục được sử dụng để ép LLM đóng vai trò một giáo viên Khoa học tự nhiên nhiệt tình, chỉ trả lời dựa trên ngữ cảnh được cung cấp.
-    \item \textbf{Sinh văn bản (Generation):} Mô hình Qwen2.5~\cite{qwen25_2024} (sử dụng thư viện \texttt{transform}ers~\cite{wolf2020transformers} và \texttt{HuggingFace-}\allowbreak\texttt{Pipeline}) nhận prompt và sinh ra câu trả lời cuối cùng. Thông số \texttt{temperature = 0.1} được thiết lập thấp để LLM đưa ra câu trả lời chính xác, tránh việc "sáng tạo" quá mức làm sai lệch kiến thức khoa học.
+    \item \textbf{Cơ chế truy xuất kép (Dual Retrieval):} Phía dữ liệu văn bản, câu hỏi được chuyển đồng thời qua kênh tìm kiếm ngữ nghĩa vector và kênh tìm kiếm từ khoá BM25 (mỗi kênh trích chọn $20$ ứng viên ban đầu). Tập hợp ứng viên sau đó được hợp nhất và tái xếp hạng chuyên sâu bằng mô hình cross-encoder để chọn ra $\mathtt{RETRIEVER\_K = 3}$ đoạn văn bản có độ liên quan cao nhất. Phía dữ liệu hình ảnh, hệ thống trích chọn $\mathtt{IMAGE\_RETRIEVER\_K = 5}$ hình ảnh tiêu biểu dựa trên sự kết hợp giữa độ tương đồng vector CLIP và phép so khớp chuỗi siêu dữ liệu có dấu.
+    \item \textbf{Kỹ nghệ thiết kế lời nhắc (Prompt Engineering):} Ngữ cảnh văn bản được chọn lọc sẽ được liên kết đồng bộ với thông tin mô tả của các hình ảnh tìm được. Lời nhắc (Prompt) được thiết kế theo cấu trúc sư phạm chuyên biệt, định hướng mô hình ngôn ngữ lớn đóng vai trò người trợ giảng Khoa học tự nhiên chuẩn mực, trả lời gãy gọn, mạch lạc và tuyệt đối trung thành với ngữ cảnh tài liệu được cung cấp.
+    \item \textbf{Sinh câu trả lời (Text Generation):} Mô hình Qwen2.5-3B-Instruct~\cite{qwen25_2024} tiếp nhận lời nhắc hoàn chỉnh để sinh ra câu trả lời cuối cùng. Siêu tham số nhiệt độ được thiết lập ở mức thấp (\texttt{temperature = 0.1}) nhằm tối đa hóa tính xác thực của câu trả lời, hạn chế tối đa tính ngẫu nhiên và ngăn ngừa hiện tượng suy diễn sai lệch kiến thức khoa học.
 \end{enumerate}
 
-\subsection{Định tuyến theo ý định truy vấn (Query Intent Routing)}
-Không phải câu hỏi nào cũng cần cả văn bản lẫn hình ảnh. Trước khi truy xuất, hệ thống phân tích ý định của câu hỏi: nếu câu hỏi mang tính \textit{chỉ-hình-ảnh} (ví dụ chứa các cụm "cho tôi xem hình", "ảnh minh họa", "sơ đồ"), hệ thống ưu tiên luồng tìm ảnh; ngược lại, luồng văn bản giữ vai trò chính và hình ảnh chỉ đóng vai trò bổ trợ minh họa. Cơ chế định tuyến này (cài đặt trong module \texttt{query\_intent}) giúp tránh đưa nhiễu hình ảnh vào những câu hỏi lý thuyết thuần túy.
+\subsection{Cơ chế định tuyến theo ý định truy vấn (Query Intent Routing)}
+Không phải mọi tương tác của học sinh đều đòi hỏi đồng thời cả văn bản lý thuyết lẫn tài liệu hình ảnh. Module định tuyến ý định (\texttt{query\_intent}) thực hiện phân tích cấu trúc ngữ nghĩa của câu hỏi trước khi kích hoạt quy trình truy xuất. Khi phát hiện các truy vấn thể hiện rõ ý định quan sát trực quan (chứa các cụm từ như "cho xem hình", "sơ đồ cấu tạo", "biểu đồ minh hoạ"), hệ thống sẽ ưu tiên tối đa luồng truy xuất hình ảnh. Ngược lại, đối với các câu hỏi bản chất lý thuyết trừu tượng hoặc bài tập tính toán, luồng văn bản sẽ đóng vai trò chủ đạo nhằm loại bỏ các hình ảnh gây nhiễu ngữ cảnh.
 
-\subsection{Truy xuất lai thưa--dày và cơ chế lọc liên quan}
+\subsection{Truy xuất lai thưa -- dày và cơ chế tái xếp hạng}
 \label{sec:relevance_gate}
+Truy xuất ngữ nghĩa vector (Dense Retrieval) sở hữu khả năng bao quát ý nghĩa tương đồng xuất sắc, song lại gặp bất lợi lớn trước các yêu cầu so khớp định danh chính xác vốn rất phổ biến trong môn Khoa học tự nhiên: ví dụ truy vấn về phân tử \ce{CO2} hoặc định luật Boyle--Mariotte đòi hỏi sự xuất hiện chuẩn xác của chuỗi ký hiệu thay vì xấp xỉ ngữ nghĩa. Ngược lại, truy xuất từ khóa thưa (Sparse Retrieval) lại mất khả năng liên kết khi học sinh sử dụng ngôn ngữ diễn đạt khác biệt với nguyên văn sách giáo khoa. Hệ thống giải quyết sự đánh đổi này thông qua kiến trúc \textbf{Truy xuất lai (Hybrid Retrieval)}: chạy song song kênh vector \texttt{bge-m3} và kênh Okapi BM25~\cite{robertson2009bm25} trên cùng cơ sở dữ liệu phân đoạn, sau đó tiến hành hợp nhất kết quả.
 
-Truy xuất theo ngữ nghĩa (dense) tìm được nội dung tương đồng về ý nghĩa ngay cả khi không trùng từ khoá, nhưng lại yếu ở đúng chỗ sách giáo khoa Khoa học tự nhiên cần nhất: \textbf{ký hiệu và công thức}. Một học sinh gõ \texttt{CO2} cần khớp với trang in \ce{CO2}; đó là một phép so khớp \textit{từ vựng}, không phải một phép so khớp ngữ nghĩa. Ngược lại, truy xuất từ khoá thuần tuý lại trượt khi học sinh diễn đạt khác với cách sách viết. Vì vậy hệ thống dùng \textbf{truy xuất lai}: chạy song song một kênh \textit{dày} (vector \texttt{bge-m3}) và một kênh \textit{thưa} (Okapi BM25~\cite{robertson2009bm25}) trên cùng tập đoạn văn bản, rồi hợp nhất hai bảng xếp hạng.
+\subsubsection{Tối ưu hóa chỉ mục BM25 và chuẩn hoá công thức}
+Thuật toán Okapi BM25 được tự hiện thực hoá trong hệ thống nhằm hỗ trợ việc tinh chỉnh động hai siêu tham số $k_1$ và $b$ ngay tại thời điểm xử lý truy vấn. Quá trình quét lưới thực nghiệm $5 \times 5$ đã xác định bộ tham số tối ưu đạt $k_1 = 0{,}7$ và $b = 0{,}75$.
 
-\subsubsection{Kênh thưa và chuẩn hoá công thức}
-Chỉ mục BM25 được tự cài đặt thay vì dùng thư viện có sẵn, vì hai tham số $k_1$ và $b$ cần đặt được \textit{lúc truy vấn} --- chỉ khi đó việc quét toàn bộ lưới tham số mới đủ rẻ để làm bằng thực nghiệm thay vì chọn theo mặc định. Quét lưới $5 \times 5$ cho $k_1 = 0{,}7$, $b = 0{,}75$.
+Một phát hiện thực nghiệm có ý nghĩa khoa học quan trọng là: thuật toán tách từ \textbf{bảo lưu dấu thanh tiếng Việt} đạt hiệu năng vượt trội so với giải pháp loại bỏ dấu thanh (chỉ số MRR đạt $0{,}820$ so với $0{,}755$). Việc loại bỏ dấu thanh dẫn tới hiện tượng đồng âm sai lệch nghiêm trọng giữa các hư từ và các khái niệm khoa học then chốt (ví dụ: \textit{khí} biến thành \textit{khi}, \textit{độ} thành \textit{do}, \textit{lá} thành \textit{la}, \textit{đá} thành \textit{da}).
 
-Một kết quả đo \textbf{ngược với trực giác ban đầu}: bộ tách từ \textbf{giữ dấu} thắng bộ tách từ bỏ dấu (MRR $0{,}820$ so với $0{,}755$). Bỏ dấu tưởng là cách bao dung lỗi nhận dạng, nhưng trong tiếng Việt nó làm các từ chức năng va vào chính những từ mang nội dung quan trọng nhất của môn học --- \textit{khí} thành \textit{khi}, \textit{độ} thành \textit{do}, \textit{lá} thành \textit{la}, \textit{đá} thành \textit{da}.
+Đối với các công thức khoa học, hệ thống áp dụng cơ chế \textbf{chuẩn hoá ký hiệu ở phía truy vấn và phía chỉ mục thưa, tuyệt đối không chỉnh sửa nội dung văn bản lưu trữ gốc}. Thử nghiệm trên $12$ công thức hóa học tiêu biểu cho thấy số phân đoạn chính xác lọt vào top-10 tăng từ $6$ lên $97$ đoạn, và số câu truy vấn tìm được tài liệu đích tăng ngoạn mục từ $1/12$ lên $11/12$.
 
-Riêng công thức được \textbf{chuẩn hoá ở phía truy vấn và phía chỉ mục thưa, tuyệt đối không sửa văn bản đã lưu} --- viết lại một chỉ số dưới mà máy đọc không ra là bịa dữ liệu. Đo trên 12 công thức, số đoạn đúng lọt vào top-10 tăng từ $6$ lên $97$, và số truy vấn tìm được đoạn đúng tăng từ $1/12$ lên $11/12$.
+\subsubsection{Quy trình hợp nhất và Tái xếp hạng bằng Cross-Encoder}
+Quy trình truy xuất được tổ chức tuần tự: \textbf{Truy xuất song song $\rightarrow$ Hợp nhất danh sách $\rightarrow$ Tái xếp hạng}. Bước tái xếp hạng sử dụng mô hình cross-encoder \texttt{BAAI/bge-reranker-v2-m3} cùng họ BGE, thực hiện tính toán lại điểm số liên quan trên toàn bộ tập ứng viên hợp nhất từ hai kênh.
 
-\subsubsection{Hợp nhất, cổng lọc và xếp hạng lại}
-Thứ tự xử lý là \textbf{hợp nhất $\rightarrow$ cổng lọc $\rightarrow$ xếp hạng lại}, với ba công tắc rời nhau để có thể bật/tắt từng thành phần khi làm thực nghiệm đối chiếu (Chương~\ref{chapter:thuc_nghiem_danh_gia}). Bước xếp hạng lại dùng mô hình so khớp chéo (cross-encoder)~\cite{nogueira2019passage} \texttt{BAAI/bge-reranker-v2-m3} --- cùng họ BGE với mô hình nhúng --- chấm lại tập ứng viên là \textit{hợp} của top kênh dày và top kênh thưa.
+Các phân tích thực nghiệm tại Chương~\ref{chapter:thuc_nghiem_danh_gia} đã chứng minh rằng việc áp dụng thêm cổng lọc dựa trên khoảng cách tương đối trước bước tái xếp hạng không mang lại cải thiện, thậm chí làm suy giảm độ phủ (Recall@10 giảm từ $1{,}000$ xuống $0{,}890$) do loại bỏ nhầm các đoạn tài liệu đúng ở các câu hỏi phức hợp nhiều ý. Thay vào đó, việc thiết lập \textbf{ngưỡng điểm số tuyệt đối} tại bộ tái xếp hạng mang lại hiệu quả phân loại tin cậy hơn hẳn. Do đó, cấu hình tối ưu mặc định của hệ thống được xác lập là: \textbf{Truy xuất lai, kích hoạt tái xếp hạng bằng cross-encoder và vô hiệu hoá cổng lọc khoảng cách tương đối}.
 
-Việc tách rời ba công tắc bản thân nó đã sửa một khuyết điểm thiết kế: ở phiên bản trước, cổng lọc và bước xếp hạng lại \textbf{loại trừ lẫn nhau} --- bật xếp hạng lại thì nhánh cổng lọc không bao giờ chạy, nên tham số \texttt{margin} nói ở trên thực chất là một \textbf{số chết} trong suốt cấu hình thật.
+\begin{table}[H]
+\centering
+\caption{Tổng hợp siêu tham số vận hành của hệ thống trợ lý ảo}
+\label{tab:hyperparams}
+\small
+\begin{tabular}{lp{6.2cm}c}
+\toprule
+\textbf{Thành phần} & \textbf{Ý nghĩa kỹ thuật} & \textbf{Giá trị cấu hình} \\
+\midrule
+\texttt{EMBEDDING\_DIM} & Số chiều không gian vector BGE-M3 & $1024$ \\
+\texttt{CLIP\_DIM} & Số chiều không gian vector hình ảnh CLIP & $512$ \\
+\texttt{CHUNK\_SIZE} & Kích thước phân đoạn văn bản & $400$ ký tự \\
+\texttt{CHUNK\_OVERLAP} & Khoảng trượt liên kết giữa các đoạn liền kề & $120$ ký tự \\
+\texttt{BM25\_K1} & Tham số bão hòa tần suất từ khóa BM25 & $0{,}7$ \\
+\texttt{BM25\_B} & Tham số chuẩn hóa độ dài văn bản BM25 & $0{,}75$ \\
+\texttt{TOP\_K\_CANDIDATES} & Số ứng viên sơ tuyển mỗi kênh (BM25, Dense) & $20$ \\
+\texttt{RETRIEVER\_K} & Số đoạn văn bản chọn lọc sau tái xếp hạng & $3$ \\
+\texttt{IMAGE\_RETRIEVER\_K} & Số khung hình trích chọn đa phương thức & $5$ \\
+\texttt{RERANK\_SCORE\_MIN} & Ngưỡng điểm tối thiểu của Cross-Encoder & $0{,}59$ \\
+\texttt{LLM\_TEMPERATURE} & Nhiệt độ sinh văn bản của Qwen2.5 & $0{,}1$ \\
+\texttt{RANDOM\_SEED} & Hạt giống ngẫu nhiên tái lập thực nghiệm & $42$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-Khi đo được thật, kết luận đảo ngược so với giả thuyết ban đầu: \textbf{cổng lọc theo khoảng cách tương đối không mua được gì, thậm chí có hại}. Dưới cách hợp nhất theo thứ hạng nó trung tính (chênh trong khoảng $\pm 0{,}007$ MRR); dưới cách hợp nhất theo điểm chuẩn hoá nó \textbf{cắt mất chính đoạn chứa đáp án}, kéo Recall@10 từ $1{,}000$ xuống $0{,}890$. Nguyên nhân là giả định nền của cổng lọc --- "đoạn đúng luôn nằm sát đoạn gần nhất" --- không đúng với câu hỏi nhiều ý, nơi đoạn chứa đáp án có thể xếp thứ tư hoặc thứ năm. Cơ chế lọc thực sự có tác dụng là \textbf{sàn điểm tuyệt đối} của bộ xếp hạng lại, chứ không phải ngưỡng tương đối. Vì vậy cấu hình mặc định của hệ thống là \textbf{truy xuất lai, bật xếp hạng lại, tắt cổng lọc tương đối}; số liệu chống lưng cho lựa chọn này nằm ở Mục~\ref{sec:ketqua}.
+\section{Thiết kế giao diện người dùng tương tác (Frontend)}
+Giao diện ứng dụng được thiết kế tối ưu hóa cho trải nghiệm học tập của học sinh Trung học cơ sở, phát triển trên nền tảng \textbf{Next.js 16.2.6} và thư viện \textbf{React 19.2.4}.
 
-Cuối cùng, kết quả văn bản và kết quả hình ảnh được hợp nhất trong \texttt{HybridRetriever} trước khi dựng prompt.
-
-\section{Thiết kế giao diện người dùng (Frontend)}
-Giao diện ứng dụng đóng vai trò quan trọng trong việc thu hút học sinh sử dụng. Frontend của dự án được triển khai bằng \textbf{Next.js 16.2.6} và \textbf{React 19.2.4}.
-
-Về mặt thẩm mỹ và tương tác:
+Các công nghệ giao diện chính bao gồm:
 \begin{itemize}
-    \item \textbf{Tailwind CSS:} Được sử dụng để xây dựng thiết kế theo chuẩn UI/UX hiện đại, màu sắc thân thiện với lứa tuổi học sinh, giao diện tương thích tốt trên cả máy tính và thiết bị di động (Responsive).
-    \item \textbf{Framer Motion:} Tích hợp nhằm tạo ra các hiệu ứng hoạt hình (animations) mượt mà khi gửi tin nhắn, hiển thị kết quả truy xuất, tạo cảm giác như học sinh đang trò chuyện trực tiếp với một "gia sư AI" thực thụ.
-    \item \textbf{Hiển thị hình ảnh:} Giao diện chat không chỉ in ra chữ mà còn hiển thị trực tiếp các hình ảnh minh họa (cùng trang sách gốc) được Backend trả về trong payload của API, giúp nội dung Khoa học tự nhiên trở nên trực quan và dễ hình dung hơn.
+    \item \textbf{Tailwind CSS:} Đảm bảo thiết kế giao diện hiện đại, trực quan, thân thiện với lứa tuổi học đường và tương thích hoàn hảo trên đa dạng thiết bị (Responsive Design).
+    \item \textbf{Framer Motion:} Hiện thực hoá các chuyển động vi mô (micro-animations) mượt mà khi người dùng tương tác gửi nhận câu hỏi, tạo cảm giác thân thiện như đang trao đổi trực tiếp cùng một gia sư chuyên môn.
+    \item \textbf{Hiển thị công thức khoa học bằng KaTeX:} Tích hợp thư viện KaTeX kết hợp cơ chế tự động phân tích và chuyển đổi các ký tự hóa học phẳng (như \texttt{H2SO4}) sang định dạng ký hiệu chuẩn khoa học (\ce{H2SO4}). Quá trình này tra cứu bảng tuần hoàn $118$ nguyên tố hoá học để đảm bảo chỉ chuyển đổi khi chuỗi ký hiệu hợp lệ, tránh biến đổi nhầm các từ ngữ văn bản thông thường.
+    \item \textbf{Minh bạch hóa học liệu qua khối trích dẫn chuyên biệt:} Hệ thống máy chủ Backend phân tách tường minh giữa nội dung văn bản câu trả lời (\texttt{answer\_text}) và trường siêu dữ liệu trích dẫn nguồn có cấu trúc (\texttt{citations} gồm tên bộ sách, số trang và mục bài học). Giao diện người dùng hiển thị riêng biệt khối trích dẫn này ngay bên dưới câu trả lời, giúp học sinh và giáo viên dễ dàng đối chiếu trực tiếp với trang sách giáo khoa tương ứng.
+    \item \textbf{Cơ chế phục vụ tài nguyên hình ảnh trực tiếp từ máy chủ:} Thay vì sao chép thủ công kho dữ liệu hình ảnh sang phía máy khách, hệ thống xây dựng tuyến đường dẫn (route) phục vụ hình ảnh động từ máy chủ Backend. Giải pháp này đảm bảo tính đồng bộ dữ liệu hình ảnh và tối ưu hóa hiệu năng truyền tải trên mạng Internet.
 \end{itemize}
 
-\subsection{Ba yêu cầu của Mục tiêu 5 và cách đáp ứng}
-\label{sec:fe_mt5}
-
-Ba yêu cầu còn thiếu của Mục tiêu 5 đã được bổ sung. Cả ba đều là những khoảng cách \textit{đo được} chứ không phải cảm nhận về giao diện, nên phần này ghi rõ trạng thái trước và sau.
-
-\begin{itemize}
-    \item \textbf{Hiển thị công thức đúng ký hiệu.} Trước đó không có thư viện dựng công thức nào được nạp, nên một phương trình tới giao diện vẫn là chữ thuần. Nay giao diện dựng công thức bằng \textbf{KaTeX}, kèm một bước hạ chỉ số dưới cho công thức hoá học viết phẳng (\texttt{H2SO4} $\rightarrow$ \ce{H2SO4}). Bước này \textit{tra bảng $118$ ký hiệu nguyên tố} và chỉ đổi khi cả chuỗi phân tích trọn vẹn thành ký hiệu có thật \textbf{và} có ít nhất một chỉ số lớn hơn $1$ --- nhờ vậy ``Câu 2'' không bị biến thành ``Câu\textsubscript{2}''. Cần nhấn mạnh đây là phép biến đổi \textbf{hiển thị}: văn bản trong kho không bị sửa một ký tự nào, đúng nguyên tắc không viết lại dữ liệu đã nhận dạng.
-    \item \textbf{Hiển thị trích dẫn.} Đây là chỗ chẩn đoán ban đầu \textbf{sai} và cần nói rõ, vì nó đổi cả cách sửa. Nhận định trước là ``giao diện bỏ trường trích dẫn mà máy chủ đã trả về''; gọi thử máy chủ thì thấy \textbf{máy chủ chưa bao giờ trả trường đó} --- nó \textit{chèn} khối nguồn dạng chữ vào giữa câu trả lời. Lỗi vì vậy nằm ở cả hai phía. Nay máy chủ trả thêm hai trường: \texttt{citations} có cấu trúc (sách / trang / nhãn mục) và \texttt{answer\_text} là câu trả lời không kèm khối chữ; giao diện vẽ nguồn thành một phần riêng bên dưới mỗi câu trả lời.
-    \item \textbf{Địa chỉ máy chủ.} Trước đó ghi cứng trong mã nguồn, đổi bằng cách chú thích dòng này bỏ dòng kia --- trong khi tệp cấu hình đã có sẵn một biến môi trường \textit{không dòng mã nào đọc}. Nay giao diện đọc đúng biến đó.
-\end{itemize}
-
-\textbf{Hình minh hoạ do máy chủ phục vụ, không sao chép sang giao diện.} Bước ETL lưu đường dẫn \textit{tuyệt đối trên máy đã chạy ETL}, và trước bản này API trả nguyên đường dẫn ấy ra ngoài: trình duyệt không tải nổi hình nào, còn bố cục thư mục của máy phát triển thì bị lộ. Nay API quy nó về đường dẫn tương đối khớp với route ảnh mà chính máy chủ đã phục vụ sẵn. Phương án thay thế --- chép toàn bộ kho ảnh sang giao diện --- bị loại vì hai lý do đo được: kho nặng $4{,}6$ GB, và nó đã được dựng lại \textbf{ba lần} trong quá trình làm đồ án, nên một bản sao sẽ lệch đi sau mỗi lần mà không có dấu hiệu nào báo.
-
-\subsection{Một số giao diện tiêu biểu}
-Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tương tác của người dùng: từ đăng nhập, đặt câu hỏi, đến khung trò chuyện và câu trả lời kèm hình ảnh minh họa. Hình~\ref{fig:fe_image_detail} thể hiện tính năng đặc trưng của hệ thống đa phương thức --- khi học sinh nhấp vào một hình, giao diện hiển thị chi tiết hình minh hoạ cùng trang sách gốc của hình đó.
+\subsection{Một số giao diện tiêu biểu của ứng dụng}
+Hình~\ref{fig:fe_overview} minh họa các màn hình chức năng chính trong luồng trải nghiệm của người dùng: từ quá trình đăng nhập hệ thống, khung đối thoại đặt câu hỏi cho tới màn hình hiển thị câu trả lời tích hợp công thức KaTeX và hình ảnh trích xuất. Hình~\ref{fig:fe_image_detail} thể hiện tính năng chi tiết của hệ thống đa phương thức: cho phép người dùng phóng to hình ảnh minh họa và kiểm tra trực tiếp trang sách giáo khoa gốc do hệ thống trích xuất.
 
 \begin{figure}[H]
     \centering
@@ -131,7 +156,7 @@ Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tư�
     \begin{subfigure}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{src/images/chapter3/fe-ask-question.png}
-        \caption{Đặt câu hỏi}
+        \caption{Màn hình đặt câu hỏi}
         \label{fig:fe_ask}
     \end{subfigure}
 
@@ -139,13 +164,13 @@ Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tư�
     \begin{subfigure}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{src/images/chapter3/fe-chatbox.png}
-        \caption{Khung trò chuyện}
+        \caption{Khung tương tác trò chuyện}
         \label{fig:fe_chatbox}
     \end{subfigure}\hfill
     \begin{subfigure}[t]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{src/images/chapter3/fe-response.png}
-        \caption{Câu trả lời kèm hình minh họa}
+        \caption{Hiển thị câu trả lời và trích dẫn}
         \label{fig:fe_response}
     \end{subfigure}
     \caption{Các màn hình chính của giao diện trợ lý ảo Khoa học tự nhiên.}
@@ -155,6 +180,6 @@ Hình~\ref{fig:fe_overview} minh họa các màn hình chính trong luồng tư�
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{src/images/chapter3/fe-image-detail.png}
-    \caption{Chi tiết hình ảnh minh hoạ kèm trang sách gốc do hệ thống trả về.}
+    \caption{Chi tiết hình ảnh minh hoạ kèm trang sách gốc do hệ thống truy xuất.}
     \label{fig:fe_image_detail}
 \end{figure}

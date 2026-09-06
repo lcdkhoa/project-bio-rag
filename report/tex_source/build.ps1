@@ -52,13 +52,20 @@ $hasPdflatex = [bool](Get-Command pdflatex -ErrorAction SilentlyContinue)
 # neu may khong cai Perl thi no thoat voi loi "could not find the script engine 'perl'".
 # Vi vay phai THU CHAY that su, khong duoc chi kiem tra su ton tai.
 $hasLatexmk = $false
-if (Get-Command latexmk -ErrorAction SilentlyContinue) {
-    & latexmk -v *> $null
-    $hasLatexmk = ($LASTEXITCODE -eq 0)
-    if (-not $hasLatexmk) {
-        Write-Host "[!] Tim thay 'latexmk' nhung KHONG chay duoc (thuong do thieu Perl)." -ForegroundColor Yellow
-        Write-Host "    Chuyen sang duong pdflatex + biber. Muon dung latexmk thi cai Strawberry Perl." -ForegroundColor Yellow
+try {
+    if (Get-Command latexmk -ErrorAction SilentlyContinue) {
+        $oldEAP = $ErrorActionPreference
+        $ErrorActionPreference = "SilentlyContinue"
+        $null = & latexmk -v 2>&1
+        $hasLatexmk = ($LASTEXITCODE -eq 0)
+        $ErrorActionPreference = $oldEAP
+        if (-not $hasLatexmk) {
+            Write-Host "[!] Tim thay 'latexmk' nhung KHONG chay duoc (thuong do thieu Perl)." -ForegroundColor Yellow
+            Write-Host "    Chuyen sang duong pdflatex + biber. Muon dung latexmk thi cai Strawberry Perl." -ForegroundColor Yellow
+        }
     }
+} catch {
+    $hasLatexmk = $false
 }
 
 if ($hasLatexmk) {

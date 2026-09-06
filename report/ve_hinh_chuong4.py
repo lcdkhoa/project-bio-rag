@@ -185,6 +185,57 @@ def ve_judge_scores(d: pd.DataFrame) -> Path:
     return _luu(fig, "judge_scores_theo_loai.png")
 
 
+# --- Hình 3: so sánh hiệu năng 4 phương pháp truy xuất --------------------------
+def ve_so_sanh_truy_xuat() -> Path:
+    phuong_phap = [
+        "BM25 thuần",
+        "Dense thuần",
+        "Lai (tắt rerank)",
+        "Đề xuất (Lai + Rerank)",
+    ]
+    mau_pp = ["#9a988f", "#eb6834", "#2a78d6", "#1baf7a"]
+    gach_pp = ["..", "//", "", "\\\\"]
+    chi_so = ["MRR", "R@1", "R@3", "R@5", "R@10"]
+
+    du_lieu = {
+        "BM25 thuần": [0.6636, 0.0905, 0.1475, 0.1796, 0.2303],
+        "Dense thuần": [0.5664, 0.0647, 0.1338, 0.1778, 0.2302],
+        "Lai (tắt rerank)": [0.6947, 0.0914, 0.1609, 0.2031, 0.2643],
+        "Đề xuất (Lai + Rerank)": [0.7789, 0.1041, 0.1804, 0.2085, 0.2458],
+    }
+
+    n_pp = len(phuong_phap)
+    n_cs = len(chi_so)
+    x = range(n_cs)
+    be_rong = 0.19
+
+    fig, ax = plt.subplots(figsize=(8.8, 4.2))
+    for i, pp in enumerate(phuong_phap):
+        toa_do = [xi + (i - (n_pp - 1) / 2) * be_rong for xi in x]
+        gia_tri = du_lieu[pp]
+        cot = ax.bar(
+            toa_do, gia_tri, width=be_rong * 0.92,
+            label=pp, color=mau_pp[i], hatch=gach_pp[i],
+            edgecolor=NEN, linewidth=0.6
+        )
+        for thanh, v in zip(cot, gia_tri):
+            ax.text(
+                thanh.get_x() + thanh.get_width() / 2, v + 0.015,
+                _so(v, 2), ha="center", va="bottom",
+                fontsize=8, color=MUC_PHU
+            )
+
+    ax.set_xticks(list(x))
+    ax.set_xticklabels(chi_so, fontsize=10, fontweight="bold")
+    ax.set_ylabel("Giá trị chỉ số", fontsize=10)
+    ax.set_ylim(0, 0.92)
+    ax.set_title("So sánh định lượng hiệu năng truy xuất giữa bốn phương pháp (210 câu hỏi có nhãn)",
+                 loc="left", color=MUC_CHINH, pad=26)
+    _don_khung(ax, "y")
+    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=n_pp, fontsize=8.5)
+    return _luu(fig, "so_sanh_truy_xuat.png")
+
+
 def _luu(fig, ten: str) -> Path:
     THU_MUC_HINH.mkdir(parents=True, exist_ok=True)
     duong = THU_MUC_HINH / ten
@@ -200,7 +251,9 @@ def main() -> int:
     for ham in (ve_phan_bo_loai, ve_judge_scores):
         duong = ham(d)
         print("  đã ghi", duong.relative_to(GOC))
-    print(f"\n2 hình sinh từ {CSV_EVAL.name} — {tong_cau} câu / {len(d)} loại.")
+    duong_ss = ve_so_sanh_truy_xuat()
+    print("  đã ghi", duong_ss.relative_to(GOC))
+    print(f"\n3 hình sinh cho Chương 4 — {tong_cau} câu / {len(d)} loại.")
     print("Số gộp có trọng số theo loại (dùng trong Chương 4):")
     for cot, ten in [("judge_correctness", "Tính đúng /5"),
                      ("judge_faithfulness", "Độ trung thực /5"),

@@ -6,6 +6,7 @@ sub-folder is a self-contained skill with its own `SKILL.md` + helpers.
 | Skill | Purpose |
 |---|---|
 | [`etl-textbook-images/`](etl-textbook-images/SKILL.md) | Image ETL for scanned Vietnamese SGK PDFs (v7 anchor-first detector) |
+| [`writing-scientific-theses/`](writing-scientific-theses/SKILL.md) | Quy chuẩn viết, biên tập, đối chiếu số liệu và thẩm định đồ án tốt nghiệp/luận văn khoa học tiếng Việt |
 
 When adding a new skill:
 1. Create `skills/<skill-name>/SKILL.md` with the standard frontmatter.

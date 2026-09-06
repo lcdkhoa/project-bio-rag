@@ -1,36 +1,36 @@
 \chapter{CƠ SỞ LÝ THUYẾT}
 \label{chapter:co_so_ly_thuyet}
 
-Chương này trình bày các khái niệm nền tảng tạo nên hệ thống trợ lý ảo thông minh. Nội dung bao gồm tổng quan về Xử lý ngôn ngữ tự nhiên, Mô hình ngôn ngữ lớn, kiến trúc Sinh văn bản tăng cường truy xuất (RAG) và các công nghệ lõi như Vector Database và Multi-modal Embedding.
+Chương này hệ thống hóa các khái niệm và nền tảng lý thuyết cốt lõi được ứng dụng trong nghiên cứu và xây dựng hệ thống trợ lý ảo thông minh. Nội dung bao gồm tổng quan về Xử lý ngôn ngữ tự nhiên, Mô hình ngôn ngữ lớn (LLM), kiến trúc Sinh văn bản tăng cường truy xuất (RAG), hệ quản trị cơ sở dữ liệu Vector, kỹ thuật biểu diễn đa phương thức (Multi-modal Embedding), cùng các phương pháp truy xuất lai và mô hình tái xếp hạng (Cross-encoder).
 
 \section{Tổng quan về Xử lý ngôn ngữ tự nhiên và Trí tuệ nhân tạo tạo sinh}
-Xử lý ngôn ngữ tự nhiên (Natural Language Processing - NLP) là một nhánh của Trí tuệ nhân tạo (AI) tập trung vào việc cho phép máy tính hiểu, diễn giải và thao tác với ngôn ngữ con người. Trong những năm gần đây, NLP đã chứng kiến sự chuyển mình mạnh mẽ từ các phương pháp dựa trên luật (rule-based) và học máy thống kê (statistical machine learning) sang các phương pháp dựa trên học sâu (Deep Learning)~\cite{bengio2003neural, lecun2015deeplearning}. Bước ngoặt đầu tiên đến từ việc biểu diễn từ dưới dạng véc-tơ phân tán (word embedding) như \textit{word2vec}~\cite{mikolov2013word2vec}, theo sau là các kiến trúc mạng nơ-ron hồi quy và mô hình chuỗi-sang-chuỗi (sequence-to-sequence) kèm cơ chế chú ý (attention) cho dịch máy~\cite{sutskever2014seq2seq, bahdanau2015attention}.
+Xử lý ngôn ngữ tự nhiên (Natural Language Processing --- NLP) là một nhánh quan trọng của Trí tuệ nhân tạo (AI), tập trung nghiên cứu các phương pháp giúp máy tính có thể tiếp nhận, giải mã, thấu hiểu và sinh ngôn ngữ của con người một cách tự nhiên. Trong tiến trình phát triển, lĩnh vực NLP đã trải qua sự chuyển dịch căn bản từ các hệ thống dựa trên luật hình thức (rule-based) và mô hình học máy thống kê (statistical machine learning) sang các mô hình dựa trên học sâu (Deep Learning)~\cite{bengio2003neural, lecun2015deeplearning}. Cột mốc khởi đầu cho sự đột phá này là việc chuyển đổi biểu diễn từ dạng rời rạc sang không gian vector liên tục (word embedding) thông qua các mô hình phân tán tiêu biểu như \textit{word2vec}~\cite{mikolov2013word2vec}, mở đường cho sự phát triển của các mạng nơ-ron hồi quy và kiến trúc chuỗi-sang-chuỗi (sequence-to-sequence) tích hợp cơ chế tập trung chú ý (attention mechanism) trong dịch máy tự động~\cite{sutskever2014seq2seq, bahdanau2015attention}.
 
-Đặc biệt, sự ra đời của Trí tuệ nhân tạo tạo sinh (Generative AI) đã đánh dấu một bước ngoặt lớn. Thay vì chỉ phân loại hoặc nhận dạng mẫu trong dữ liệu (Discriminative AI), Generative AI có khả năng tạo ra nội dung mới, chưa từng tồn tại trước đó, như văn bản, hình ảnh, âm thanh hoặc mã nguồn, dựa trên sự phân phối xác suất học được từ tập dữ liệu khổng lồ~\cite{bommasani2021foundation}. Trong lĩnh vực văn bản, hạt nhân của Generative AI chính là các Mô hình ngôn ngữ lớn~\cite{zhao2023llmsurvey}.
+Đặc biệt, sự trỗi dậy của Trí tuệ nhân tạo tạo sinh (Generative AI) đã tạo nên một bước nhảy vọt về khả năng ứng dụng. Khác với các mô hình phân biệt truyền thống (Discriminative AI) vốn chỉ tập trung vào việc ước lượng xác suất có điều kiện để phân loại hoặc nhận dạng mẫu dữ liệu có sẵn, Generative AI học phân phối xác suất chung của dữ liệu huấn luyện để tổng hợp và khởi tạo những nội dung hoàn toàn mới --- bao gồm văn bản, hình ảnh, âm thanh hoặc mã nguồn mã hoá~\cite{bommasani2021foundation}. Trong miền dữ liệu văn bản, hạt nhân trung tâm thúc đẩy cuộc cách mạng này chính là các Mô hình ngôn ngữ lớn~\cite{zhao2023llmsurvey}.
 
-\section{Mô hình ngôn ngữ lớn (Large Language Models - LLMs)}
-\subsection{Kiến trúc Transformer}
-Được giới thiệu bởi Vaswani và cộng sự vào năm 2017 \cite{vaswani2017attention}, kiến trúc Transformer đã trở thành nền tảng tiêu chuẩn cho hầu hết các LLM hiện đại. Điểm cốt lõi của Transformer là cơ chế tự chú ý (Self-Attention), cho phép mô hình đánh giá tầm quan trọng của các từ khác nhau trong cùng một câu khi xử lý từng từ một, bất kể khoảng cách giữa chúng.
+\section{Mô hình ngôn ngữ lớn (Large Language Models --- LLMs)}
+\subsection{Kiến trúc Transformer và cơ chế tự chú ý}
+Được công bố bởi Vaswani và các cộng sự vào năm 2017~\cite{vaswani2017attention}, kiến trúc Transformer đã nhanh chóng thay thế các mô hình hồi quy để trở thành nền tảng tiêu chuẩn cho toàn bộ các hệ thống LLM hiện đại. Cốt lõi của Transformer nằm ở cơ chế tự chú ý đa điểm (Multi-Head Self-Attention), cho phép mô hình tính toán trọng số tương tác giữa từng từ với toàn bộ các từ còn lại trong chuỗi ngữ cảnh tại cùng một thời điểm, bất kể khoảng cách vị trí giữa chúng.
 
-Cơ chế này khắc phục được nhược điểm của mạng nơ-ron hồi quy (RNN) trong việc xử lý các chuỗi dài, đồng thời hỗ trợ tính toán song song, giúp quá trình huấn luyện trên phần cứng GPU trở nên cực kỳ hiệu quả. Trên nền tảng Transformer, hai dòng mô hình tiền huấn luyện tiêu biểu đã hình thành: dòng mã hóa hai chiều như BERT~\cite{devlin2019bert} chuyên cho các bài toán hiểu ngôn ngữ, và dòng giải mã tự hồi quy như GPT-3~\cite{brown2020gpt3} chuyên cho sinh văn bản. Nghiên cứu cũng chỉ ra rằng khi tăng quy mô tham số và dữ liệu, hiệu năng của mô hình tuân theo các quy luật tỷ lệ (scaling laws)~\cite{kaplan2020scaling} và làm xuất hiện những khả năng mới (emergent abilities) mà các mô hình nhỏ không có~\cite{wei2022emergent}.
+Cơ chế này khắc phục triệt để nhược điểm suy giảm độ dốc và suy thoái ngữ cảnh xa của các mạng hồi quy (RNN/LSTM), đồng thời giải phóng khả năng tính toán song song hoá trên phần cứng tăng tốc GPU, tạo điều kiện mở rộng quy mô dữ liệu và tham số huấn luyện lên hàng trăm tỷ trọng số. Trên nền tảng Transformer, hai nhánh mô hình tiền huấn luyện chủ đạo đã hình thành: nhánh giải mã hai chiều (encoder-only) tiêu biểu như BERT~\cite{devlin2019bert} tối ưu cho các bài toán phân loại và thấu hiểu ngữ nghĩa, và nhánh giải mã tự hồi quy (decoder-only) như dòng GPT~\cite{brown2020gpt3} chuyên biệt cho việc sinh văn bản nối tiếp. Nhiều nghiên cứu thực nghiệm đã chứng minh rằng khi gia tăng quy mô tham số, tập dữ liệu huấn luyện và năng lực tính toán, hiệu năng mô hình tuân theo các quy luật tỷ lệ (scaling laws) chặt chẽ~\cite{kaplan2020scaling} và làm bộc lộ các năng lực suy luận emergent abilities mà những mô hình quy mô nhỏ không sở hữu~\cite{wei2022emergent}.
 
-\subsection{Họ mô hình Qwen}
-Qwen (Qwen2.5) là một trong những họ mô hình ngôn ngữ lớn mã nguồn mở tiên tiến hiện nay, được phát triển bởi Alibaba Cloud~\cite{qwen25_2024}. Xu hướng phát triển các LLM mã nguồn mở (như họ LLaMA~\cite{touvron2023llama}) cho phép cộng đồng nghiên cứu và triển khai mô hình mạnh mà không phụ thuộc hoàn toàn vào các API thương mại đóng. Phiên bản Qwen2.5-3B-Instruct được thiết kế tối ưu hóa cho khả năng tuân thủ chỉ thị (instruction following) -- một năng lực đạt được nhờ tinh chỉnh theo chỉ thị và học tăng cường từ phản hồi của con người (RLHF)~\cite{ouyang2022instructgpt} -- đồng thời giữ được kích thước tương đối nhỏ (khoảng 3 tỷ tham số), phù hợp để chạy trên các hệ thống có tài nguyên phần cứng hạn chế mà vẫn đảm bảo chất lượng sinh văn bản tốt. Cấu hình thực tế dùng cho toàn bộ phép đo của đồ án được liệt kê ở Bảng~\ref{tab:env}: một máy trạm \textbf{chỉ có CPU}.
+\subsection{Họ mô hình ngôn ngữ lớn Qwen}
+Qwen (tiêu biểu là thế hệ Qwen2.5) là một trong những họ mô hình ngôn ngữ lớn mã nguồn mở có hiệu năng hàng đầu hiện nay, được phát triển và tối ưu bởi Alibaba Cloud~\cite{qwen25_2024}. Xu hướng phát triển của các họ LLM mã nguồn mở (như LLaMA~\cite{touvron2023llama} hay Qwen) mang lại cho cộng đồng nghiên cứu khả năng tự chủ công nghệ cao, cho phép triển khai cục bộ và tùy biến sâu mà không phải phụ thuộc vào các dịch vụ API thương mại đóng. 
 
-Mô hình này hỗ trợ đa ngôn ngữ, đặc biệt có khả năng xử lý tiếng Việt rất tốt, đáp ứng yêu cầu giao tiếp và giải thích ngữ nghĩa trong bài toán trợ lý ảo môn Khoa học tự nhiên. Việc xử lý hiệu quả tiếng Việt là một thách thức riêng đã được cộng đồng quan tâm thông qua các mô hình tiền huấn luyện chuyên biệt như PhoBERT~\cite{nguyen2020phobert}.
+Trong khuôn khổ đề tài, phiên bản \textbf{Qwen2.5-3B-Instruct} được lựa chọn làm mô hình sinh ngôn ngữ chủ đạo. Mô hình được tinh chỉnh chuyên sâu theo chỉ thị (instruction tuning) kết hợp phương pháp học tăng cường từ phản hồi của con người (RLHF)~\cite{ouyang2022instructgpt}, đem lại năng lực tuân thủ chỉ thị và lập luận vượt trội trong phân khúc mô hình nhỏ gọn (khoảng 3 tỷ tham số). Kích thước này cho phép hệ thống đáp ứng tốt các bài toán thực tế trên cơ sở hạ tầng có tài nguyên tính toán giới hạn mà vẫn đảm bảo tốc độ suy luận nhanh và chất lượng văn bản sinh ra mạch lạc. Đáng chú ý, toàn bộ quy trình thực nghiệm và kiểm thử của đồ án được triển khai trên máy trạm chỉ sử dụng \textbf{CPU} (Bảng~\ref{tab:env}). Mô hình Qwen2.5 thể hiện năng lực đa ngữ xuất sắc, đặc biệt là khả năng xử lý ngữ nghĩa tiếng Việt trôi chảy và chuẩn xác, đáp ứng tốt yêu cầu giải thích kiến thức khoa học sư phạm trong môi trường giáo dục Việt Nam~\cite{nguyen2020phobert}.
 
 \section{Sinh văn bản tăng cường truy xuất (RAG)}
-\subsection{Hạn chế của LLM truyền thống}
-Mặc dù LLM có khả năng sinh văn bản lưu loát, chúng gặp phải 3 vấn đề chính khi áp dụng vào thực tế~\cite{gao2023ragsurvey}:
+\subsection{Những hạn chế cố hữu của LLM truyền thống}
+Mặc dù thể hiện khả năng biểu đạt ngôn ngữ rất tự nhiên, các mô hình ngôn ngữ lớn khi triển khai độc lập đều bộc lộ ba điểm nghẽn kỹ thuật căn bản~\cite{gao2023ragsurvey}:
 \begin{enumerate}
-    \item \textbf{Ảo giác (Hallucination):} Mô hình có thể sinh ra thông tin sai lệch một cách rất tự tin, không bám sát sự thật hoặc nguồn dẫn~\cite{ji2023hallucination, huang2023hallucination}.
-    \item \textbf{Kiến thức tĩnh:} LLM bị giới hạn kiến thức tại thời điểm huấn luyện, không thể cập nhật các thông tin mới nếu không được fine-tune (với chi phí cực cao)~\cite{lewis2020retrieval}.
-    \item \textbf{Thiếu kiến thức miền (Domain-specific knowledge):} Mô hình không có quyền truy cập vào dữ liệu riêng của tổ chức, cá nhân, hoặc sách giáo khoa cụ thể~\cite{guu2020realm}.
+    \item \textbf{Ảo giác tri thức (Hallucination):} Mô hình có thể tạo ra các khẳng định hoàn toàn sai lệch hoặc suy đoán phi thực tế với giọng điệu rất tự tin, thiếu sự đối sánh với dữ liệu xác thực~\cite{ji2023hallucination, huang2023hallucination}.
+    \item \textbf{Tính chất tri thức tĩnh:} Toàn bộ tri thức của LLM bị giới hạn tại thời điểm đóng tập dữ liệu huấn luyện, không có khả năng tự cập nhật thông tin mới trừ khi phải trải qua quá trình tái huấn luyện (fine-tuning) đòi hỏi tài nguyên tính toán vô cùng đắt đỏ~\cite{lewis2020retrieval}.
+    \item \textbf{Sự thiếu hụt tri thức chuyên biệt (Domain-specific knowledge):} LLM không có sẵn quyền truy cập vào các kho học liệu cục bộ, tài liệu đặc thù của tổ chức hay nội dung chi tiết của các bộ sách giáo khoa chuẩn mực trong nước~\cite{guu2020realm}.
 \end{enumerate}
 
-\subsection{Nguyên lý hoạt động của RAG}
+\subsection{Nguyên lý hoạt động của kiến trúc RAG}
 \label{sec:rag_nguyenly}
-Retrieval-Augmented Generation (RAG)~\cite{lewis2020retrieval} là kiến trúc giải quyết các vấn đề trên bằng cách kết hợp cơ chế Truy xuất thông tin (Information Retrieval) với Sinh văn bản (Text Generation). Ý tưởng tăng cường mô hình ngôn ngữ bằng tri thức truy xuất từ kho dữ liệu ngoài đã được khẳng định qua nhiều công trình nền tảng như REALM~\cite{guu2020realm} và Fusion-in-Decoder~\cite{izacard2021fid}, và tiếp tục được hệ thống hóa, mở rộng trong các khảo sát gần đây~\cite{gao2023ragsurvey} cũng như các biến thể có khả năng tự phản tỉnh như Self-RAG~\cite{asai2023selfrag}.
+Kiến trúc Sinh văn bản tăng cường truy xuất (Retrieval-Augmented Generation --- RAG)~\cite{lewis2020retrieval} ra đời nhằm giải quyết triệt để các hạn chế trên thông qua sự kết hợp cộng sinh giữa hai thành phần: hệ thống Truy xuất thông tin (Information Retrieval --- IR) và Mô hình sinh văn bản (Text Generation). Thay vì xem LLM như một kho lưu trữ tri thức tham số khép kín, RAG tách biệt thành phần ghi nhớ tri thức sang một cơ sở dữ liệu ngoài, xem LLM như một bộ xử lý suy luận hoạt động trên ngữ cảnh được cung cấp tức thời~\cite{guu2020realm, izacard2021fid, gao2023ragsurvey, asai2023selfrag, yan2024crag}.
 
 \begin{figure}[H]
     \centering
@@ -39,61 +39,100 @@ Retrieval-Augmented Generation (RAG)~\cite{lewis2020retrieval} là kiến trúc 
     \label{fig:rag_concept}
 \end{figure}
 
-Quy trình hoạt động của RAG bao gồm 2 pha chính:
+Quy trình vận hành chuẩn của một hệ thống RAG bao gồm hai pha chính (Hình~\ref{fig:rag_concept}):
 \begin{itemize}
-    \item \textbf{Pha Indexing (Lập chỉ mục):} Dữ liệu gốc (PDF, Doc) được cắt nhỏ thành các đoạn (chunks). Các đoạn này được đưa qua mô hình Embedding để chuyển thành các vector số học và lưu trữ vào Vector Database.
-    \item \textbf{Pha Query (Truy vấn):} Câu hỏi của người dùng được chuyển thành vector. Hệ thống tìm kiếm các vector trong Database có khoảng cách gần nhất (độ tương đồng cao nhất) với vector câu hỏi để lấy ra các đoạn văn bản chứa tri thức liên quan (Context). Cơ chế truy xuất theo ngữ nghĩa này -- thường gọi là truy xuất đoạn văn dày đặc (dense passage retrieval)~\cite{karpukhin2020dpr} -- giúp tìm được nội dung tương đồng về ý nghĩa ngay cả khi không trùng khớp từ khóa, khác với các phương pháp dựa trên thống kê từ khóa như BM25~\cite{robertson2009bm25}. Cuối cùng, LLM nhận đầu vào là Câu hỏi gốc + Context để sinh ra câu trả lời cuối cùng.
+    \item \textbf{Pha Lập chỉ mục (Indexing Phase):} Dữ liệu tài liệu thô (tệp PDF, ảnh chụp trang sách) được trích xuất và phân chia thành các đoạn văn bản độc lập (chunks). Tiếp đó, một mô hình nhúng (Embedding Model) sẽ chuyển đổi các đoạn này thành các vector số học đa chiều để lưu trữ và lập chỉ mục trong Cơ sở dữ liệu Vector (Vector Database).
+    \item \textbf{Pha Truy vấn và Sinh kết quả (Query \& Generation Phase):} Khi người dùng gửi câu hỏi, hệ thống sẽ thực hiện nhúng câu hỏi thành vector truy vấn tương ứng. Cơ chế tìm kiếm độ tương đồng trong cơ sở dữ liệu vector sẽ xác định các đoạn văn bản có độ tương đồng ngữ nghĩa cao nhất để trích xuất thành tập ngữ cảnh liên quan (Context). Phương pháp này --- còn được gọi là truy xuất văn bản theo vector đặc (Dense Passage Retrieval --- DPR)~\cite{karpukhin2020dpr} --- cho phép tìm kiếm chính xác nội dung đồng nghĩa ngay cả khi không có sự trùng khớp hoàn toàn về mặt từ khóa, khắc phục nhược điểm của các thuật toán so khớp từ khóa thuần túy như BM25~\cite{robertson2009bm25}. Cuối cùng, lời nhắc (Prompt) được cấu trúc hóa kết hợp giữa ngữ cảnh tài liệu và câu hỏi gốc sẽ được đưa vào LLM để sinh ra câu trả lời cuối cùng có căn cứ học liệu rõ ràng.
 \end{itemize}
 
-\section{Nhúng (Embedding) và Cơ sở dữ liệu Vector}
-\subsection{Khái niệm Embedding}
-Embedding là kỹ thuật chuyển đổi các thực thể (như từ, câu, đoạn văn, hoặc hình ảnh) thành các véc-tơ số học (vector n-chiều) liên tục~\cite{mikolov2013word2vec}. Đặc tính quan trọng nhất của Embedding là khả năng bảo toàn ngữ nghĩa: các thực thể có ý nghĩa tương đồng sẽ nằm gần nhau trong không gian vector đa chiều. Đối với cấp độ câu và đoạn văn, kiến trúc Sentence-BERT~\cite{reimers2019sbert} cho phép sinh ra các véc-tơ câu có thể so sánh trực tiếp bằng độ tương đồng cosine một cách hiệu quả. Ví dụ, câu "Tế bào là đơn vị cơ bản của sự sống" và "Mọi cơ thể sinh vật đều cấu tạo từ tế bào" sẽ có khoảng cách cosine rất nhỏ.
+\section{Mô hình nhúng và Cơ sở dữ liệu Vector}
+\subsection{Kỹ thuật biểu diễn nhúng ngữ nghĩa (Embedding)}
+Kỹ thuật nhúng (Embedding) là quá trình ánh xạ các thực thể ngôn ngữ (từ, câu, đoạn văn bản) hoặc phi ngôn ngữ (hình ảnh) vào một không gian vector thực liên tục đa chiều $\mathbb{R}^d$~\cite{mikolov2013word2vec}. Đặc tính quan trọng nhất của không gian nhúng là bảo toàn quan hệ ngữ nghĩa: các thực thể có nội dung hoặc ý nghĩa tương đồng sẽ nằm gần nhau trong không gian vector đa chiều, được định lượng thông qua các phép đo như độ tương đồng cosine (Cosine Similarity). Đối với cấp độ câu và đoạn văn bản, các kiến trúc dựa trên Sentence-BERT~\cite{reimers2019sbert} cho phép trích xuất các vector biểu diễn ngữ nghĩa cô đọng và có khả năng so khớp trực tiếp với hiệu quả tính toán vượt trội.
 
-Hệ thống sử dụng mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3}, sinh véc-tơ $1024$ chiều. Đây là mô hình đa ngữ được huấn luyện để phục vụ đồng thời ba kiểu truy xuất (dày đặc, thưa và đa véc-tơ), và hỗ trợ ngữ cảnh dài --- phù hợp với các đoạn văn bản sách giáo khoa có kèm ký hiệu và công thức.
+Trong hệ thống nghiên cứu, mô hình \texttt{BAAI/bge-m3}~\cite{chen2024bgem3} được sử dụng để sinh các vector biểu diễn ngữ nghĩa với kích thước $1024$ chiều. Đây là mô hình đa ngữ tiên tiến được thiết kế hỗ trợ đồng thời ba cơ chế biểu diễn (vector đặc dense, vector thưa sparse và đa biểu diễn multi-vector), đồng thời có khả năng tiếp nhận độ dài ngữ cảnh lớn lên tới $8192$ token --- rất phù hợp với đặc thù của các đoạn văn bản sách giáo khoa thường đi kèm công thức, ký hiệu khoa học và thuật ngữ định nghĩa.
 
-Ở giai đoạn trước, hệ thống dùng \texttt{paraphrase-multilingual-MiniLM-L12-v2}~\cite{reimers2019sbert} dựa trên kiến trúc MiniLM~\cite{wang2020minilm} ($384$ chiều). Cần lưu ý một ràng buộc kỹ thuật quan trọng khi thay mô hình nhúng: hai mô hình có \textbf{số chiều khác nhau không thể dùng chung một collection}, nên mọi lần đổi mô hình đều bắt buộc dựng lại toàn bộ chỉ mục chứ không thể chuyển đổi tại chỗ.
+So với các kiến trúc nhúng nông ($384$ chiều) như \texttt{MiniLM}~\cite{wang2020minilm}, \texttt{BAAI/bge-m3} thể hiện năng lực biểu diễn ngữ nghĩa vượt trội trên bảng xếp hạng chuẩn MTEB (Massive Text Embedding Benchmark)~\cite{muennighoff2022mteb} và BEIR~\cite{thakur2021beir}, đặc biệt đối với các tác vụ truy xuất học liệu đa ngữ phức tạp. Về mặt nguyên lý toán học của không gian vector, các mô hình nhúng có số chiều khác nhau sẽ định hình các không gian mêtric hoàn toàn tách biệt, không thể chiếu trực tiếp hay tính toán độ tương đồng qua lại. Do đó, việc thiết lập một không gian vector $1024$ chiều đồng nhất xuyên suốt toàn bộ kho dữ liệu là yêu cầu tiên quyết nhằm đảm bảo tính chuẩn xác cho các hàm khoảng cách hình học.
 
-\subsection{Cơ sở dữ liệu Vector (ChromaDB)}
-Vector Database là hệ quản trị cơ sở dữ liệu chuyên biệt được thiết kế để lưu trữ và truy vấn các vector đa chiều một cách nhanh chóng thông qua cơ chế tìm kiếm tương đồng (Similarity Search) dựa trên các phép đo như Cosine Similarity, L2 Distance hay Inner Product. Để đạt tốc độ truy vấn cao trên hàng triệu véc-tơ, các hệ thống này áp dụng kỹ thuật tìm kiếm lân cận gần đúng (Approximate Nearest Neighbor -- ANN), tiêu biểu là chỉ mục đồ thị HNSW~\cite{malkov2018hnsw} và các thư viện tìm kiếm tương đồng quy mô lớn như FAISS~\cite{johnson2019faiss}.
+\subsection{Hệ quản trị cơ sở dữ liệu Vector (ChromaDB)}
+Cơ sở dữ liệu Vector (Vector Database) là hệ quản trị dữ liệu chuyên dụng được tối ưu hóa cho bài toán lưu trữ và tìm kiếm vector lân cận gần đúng (Approximate Nearest Neighbor --- ANN) trên quy mô dữ liệu lớn. Khác với các cơ sở dữ liệu quan hệ truyền thống chỉ hỗ trợ so khớp chính xác, Vector Database cho phép thực hiện truy vấn tương đồng tốc độ cao dựa trên các chỉ mục đồ thị như HNSW (Hierarchical Navigable Small World)~\cite{malkov2018hnsw} hoặc các thư viện tính toán tối ưu như FAISS~\cite{johnson2019faiss}.
 
-Trong hệ thống này, ChromaDB~\cite{chromadb2023} được lựa chọn làm Vector Database nhờ đặc tính mã nguồn mở, hỗ trợ chạy trực tiếp trên máy cục bộ (local) mà không cần cài đặt server phức tạp, đồng thời tích hợp chặt chẽ với framework LangChain~\cite{langchain2022}, giúp dễ dàng thao tác lưu trữ và truy xuất các đoạn kiến thức (chunks) từ sách giáo khoa Khoa học tự nhiên.
+Trong đề tài này, ChromaDB~\cite{chromadb2023} được lựa chọn làm cơ sở dữ liệu vector trung tâm. ChromaDB là một giải pháp mã nguồn mở linh hoạt, hỗ trợ vận hành cục bộ ở chế độ nhúng (embedded mode) với hiệu năng cao mà không yêu cầu thiết lập máy chủ dịch vụ phức tạp, đồng thời tích hợp liền mạch với hệ sinh thái LangChain~\cite{langchain2022}, tạo điều kiện thuận lợi cho việc tổ chức, cập nhật và truy xuất các phân mảnh tri thức từ sách giáo khoa.
 
-\section{Xử lý Đa phương thức (Multi-modal) trong RAG}
-Sách giáo khoa môn Khoa học tự nhiên chứa rất nhiều hình ảnh và sơ đồ (hình vẽ giải phẫu, sơ đồ quang hợp, sơ đồ mạch điện, đồ thị chuyển động, v.v.). Một hệ thống RAG văn bản thuần túy sẽ bỏ sót những lượng thông tin khổng lồ này. Do đó, kỹ thuật Multi-modal RAG được áp dụng, dựa trên những tiến bộ của thị giác máy tính khi đưa kiến trúc Transformer vào xử lý ảnh (Vision Transformer)~\cite{dosovitskiy2021vit} và các mô hình tiền huấn luyện liên kết ngôn ngữ -- thị giác~\cite{radford2021clip, li2022blip}. Bản thân bài toán hỏi đáp dựa trên hình ảnh (Visual Question Answering)~\cite{antol2015vqa} cũng là một hướng nghiên cứu nền tảng cho việc kết hợp văn bản và hình ảnh.
+\section{Kỹ thuật xử lý Đa phương thức (Multi-modal) trong RAG}
+Nội dung sách giáo khoa môn Khoa học tự nhiên chứa mật độ cao các đối tượng trực quan: sơ đồ cấu tạo cơ quan sinh học, chu trình chuyển hóa, sơ đồ mạch điện, đồ thị dao động, thiết bị thí nghiệm... Một hệ thống RAG thuần văn bản sẽ bỏ lỡ hoàn toàn các tri thức trực quan này. Do đó, việc mở rộng sang kiến trúc Multi-modal RAG là một đòi hỏi tất yếu, dựa trên nền tảng của các mô hình Vision Transformer (ViT)~\cite{dosovitskiy2021vit} và các kiến trúc liên kết ngôn ngữ -- thị giác hiện đại~\cite{radford2021clip, li2022blip, liu2024llava, li2023blip2, alayrac2022flamingo}, kế thừa các thành tựu từ bài toán Hỏi đáp trực quan (Visual Question Answering --- VQA)~\cite{antol2015vqa} và xử lý tài liệu đa phương thức (Document AI)~\cite{cui2021documentai, huang2022layoutlmv3}.
 
-\subsection{Mô hình trích xuất và gán nhãn ảnh}
-Hệ thống sử dụng các mô hình thị giác máy tính (Computer Vision) kết hợp:
+\subsection{Các mô hình trích xuất và biểu diễn thị giác}
+Hệ thống tích hợp có chọn lọc các mô hình thị giác máy tính chuyên dụng:
 \begin{itemize}
-    \item \textbf{OwlViT (\texttt{google/owlvit-base-patch32})~\cite{minderer2022owlvit}:} Mô hình phát hiện vật thể (Object Detection) zero-shot có điều kiện văn bản, dùng để xác định hộp bao của hình ảnh và biểu đồ trên trang sách. Trong hệ thống này nó giữ vai trò \textit{phát hiện phụ}: bước phát hiện chính đi từ nhãn chú thích có thật trên trang (xem Chương~\ref{chapter:phuong_phap_thuc_hien}).
-    \item \textbf{CLIP (\texttt{openai/clip-vit-base-patch16})~\cite{radford2021clip}:} Sinh vector embedding cho hình ảnh, cho phép so sánh độ tương đồng giữa câu hỏi (text) và hình ảnh (image) trong cùng một không gian vector.
-    \item \textbf{Mô hình sinh chú thích ảnh (image captioning), ví dụ Vintern-1B (\texttt{5CD-AI/Vintern-1B-v2}):} Một mô hình VQA~\cite{antol2015vqa} hỗ trợ tiếng Việt, về lý thuyết có thể tự sinh mô tả cho từng hình cắt ra. Hướng này đã được cài đặt và \textbf{đo trên dữ liệu thật} của đề tài; kết quả đo cùng lý do hệ thống cuối cùng \textbf{không} dùng nó được trình bày ở Chương~\ref{chapter:phuong_phap_thuc_hien}.
+    \item \textbf{OwlViT (\texttt{google/owlvit-base-patch32})~\cite{minderer2022owlvit}:} Mô hình phát hiện vật thể zero-shot dựa trên câu lệnh điều kiện văn bản, được ứng dụng nhằm hỗ trợ xác định toạ độ hộp bao (bounding box) của các biểu đồ và hình ảnh trên trang sách trong các trường hợp không có nhãn văn bản cố định.
+    \item \textbf{CLIP (\texttt{openai/clip-vit-base-patch16})~\cite{radford2021clip}:} Mô hình liên kết ngôn ngữ -- thị giác được tiền huấn luyện trên hàng trăm triệu cặp ảnh--văn bản. CLIP mã hoá hình ảnh thành vector $512$ chiều chung một không gian biểu diễn với câu hỏi văn bản, cho phép thực hiện tìm kiếm chéo phương thức (Cross-modal Retrieval) trực tiếp thông qua độ tương đồng cosine.
+    \item \textbf{Mô hình sinh chú thích hình ảnh (Image Captioning) Vintern-1B (\texttt{5CD-AI/Vintern-1B-v2}):} Mô hình thị giác--ngôn ngữ hỗ trợ tiếng Việt có khả năng tự động sinh chuỗi miêu tả văn bản từ hình ảnh cắt ra. Trong đề tài, mô hình này đã được đưa vào thử nghiệm thực tế; tuy nhiên, do vấn đề phát sinh ảo giác và chi phí tính toán cao trên CPU, hệ thống đã lựa chọn giải pháp trích xuất siêu dữ liệu trực tiếp từ văn bản gốc thay vì dựa vào chú thích tự sinh (trình bày chi tiết tại Chương~\ref{chapter:phuong_phap_thuc_hien}).
 \end{itemize}
 
-Kết hợp các công nghệ này, kiến trúc Multi-modal RAG của hệ thống đảm bảo cả luồng tri thức văn bản và hình ảnh được lưu trữ và truy xuất đồng bộ, cung cấp ngữ cảnh đầy đủ nhất cho mô hình LLM sinh câu trả lời.
+Thông qua sự kết hợp của các công nghệ trên, kiến trúc RAG đa phương thức của hệ thống đảm bảo khả năng đồng bộ hóa luồng tri thức giữa văn bản lý thuyết và dữ liệu hình ảnh, tạo tiền đề cung cấp ngữ cảnh học liệu toàn diện nhất cho mô hình sinh câu trả lời.
 
-\section{Truy xuất lai và xếp hạng lại}
+\section{Truy xuất lai và Kỹ thuật tái xếp hạng}
 \label{sec:cosolythuyet_hybrid}
+Truy xuất ngữ nghĩa dựa trên vector đặc (Dense Retrieval) tuy có năng lực nắm bắt ngữ cảnh tốt nhưng không phải là phương pháp tối ưu tuyệt đối trong mọi tình huống, đặc biệt là khi phải xử lý các truy vấn chứa ký hiệu chuyên ngành hoặc thuật ngữ cụ thể. Nhằm đạt được hiệu năng truy xuất tối ưu, hệ thống kết hợp ba kỹ thuật nền tảng sau:
 
-Truy xuất ngữ nghĩa (Mục~\ref{sec:rag_nguyenly}) không phải là kỹ thuật truy xuất duy nhất, và trong nhiều bài toán nó cũng không phải kỹ thuật tốt nhất khi đứng một mình. Phần này trình bày ba kỹ thuật tạo nên đóng góp phương pháp của đề tài.
-
-\subsection{Truy xuất thưa: BM25}
-BM25~\cite{robertson2009bm25} là hàm xếp hạng dựa trên thống kê từ khoá, phát triển từ mô hình xác suất truy hồi thông tin. Với truy vấn $Q$ gồm các từ $q_1,\dots,q_n$ và tài liệu $D$, điểm số được tính:
+\subsection{Truy xuất thưa dựa trên từ khóa: Thuật toán BM25}
+Okapi BM25~\cite{robertson2009bm25} là thuật toán xếp hạng tài liệu dựa trên mô hình xác suất thống kê tần suất từ khóa, là chuẩn mực trong lĩnh vực truy xuất thông tin cổ điển. Với một câu truy vấn $Q$ bao gồm các từ tố $\{q_1, q_2, \dots, q_n\}$ và một tài liệu $D$, hàm điểm số BM25 được xác định theo công thức:
 \begin{equation}
 \mathrm{BM25}(D, Q) = \sum_{i=1}^{n} \mathrm{IDF}(q_i) \cdot
 \frac{f(q_i, D)\,(k_1 + 1)}{f(q_i, D) + k_1\left(1 - b + b\,\dfrac{|D|}{\mathrm{avgdl}}\right)}
 \end{equation}
-trong đó $f(q_i, D)$ là tần suất của từ $q_i$ trong $D$, $|D|$ là độ dài tài liệu, $\mathrm{avgdl}$ là độ dài trung bình của tài liệu trong kho, còn $k_1$ và $b$ là hai siêu tham số điều chỉnh mức bão hoà tần suất và mức chuẩn hoá theo độ dài.
+trong đó $f(q_i, D)$ biểu thị tần suất xuất hiện của từ $q_i$ trong tài liệu $D$; $|D|$ là độ dài tài liệu; $\mathrm{avgdl}$ là độ dài trung bình của toàn bộ các tài liệu trong tập dữ liệu; $\mathrm{IDF}(q_i)$ là nghịch số tần suất tài liệu của từ $q_i$; $k_1$ và $b$ là hai siêu tham số thực nghiệm kiểm soát mức độ bão hòa tần suất và mức độ chuẩn hóa theo độ dài tài liệu.
 
-Điểm mạnh của BM25 là nó \textbf{khớp đúng ký tự}. Với một môn học đầy ký hiệu như Khoa học tự nhiên, đó không phải là hạn chế mà là ưu thế: truy vấn chứa \ce{H2SO4} hay tên một định luật cần khớp chính xác chuỗi ký tự đó, chứ không cần một mô hình hiểu ngữ nghĩa. Điểm yếu tương ứng là nó không bắc cầu được giữa hai cách diễn đạt khác nhau của cùng một ý.
+Điểm mạnh cốt lõi của BM25 là khả năng so khớp chính xác từng ký tự (exact string matching). Đối với môn Khoa học tự nhiên vốn chứa mật độ cao các công thức hóa học (như \ce{H2SO4}, \ce{Fe2O3}), ký hiệu vật lí hoặc tên riêng của các định luật, đây là một lợi thế quyết định: câu hỏi của người học đòi hỏi tài liệu trích xuất phải chứa chính xác chuỗi ký hiệu đó mà không bị pha loãng bởi phép xấp xỉ ngữ nghĩa. Ngược lại, hạn chế của BM25 là không thể nhận diện được các từ đồng nghĩa hoặc các cách diễn đạt khác nhau cho cùng một khái niệm khoa học.
 
-\subsection{Truy xuất lai (hybrid retrieval)}
-Hai kênh thưa và dày có điểm mạnh bù trừ nhau, nên cách tự nhiên là chạy cả hai rồi hợp nhất hai bảng xếp hạng. Một kỹ thuật hợp nhất phổ biến là \textbf{hợp nhất theo thứ hạng nghịch đảo} (Reciprocal Rank Fusion), trong đó mỗi tài liệu $d$ nhận điểm
+\subsection{Truy xuất lai (Hybrid Retrieval)}
+Do kênh truy xuất thưa (BM25) và kênh truy xuất đặc (vector embedding) sở hữu các đặc tính bổ trợ hoàn hảo cho nhau, hướng tiếp cận tự nhiên là kết hợp song song cả hai kênh rồi hợp nhất các danh sách kết quả xếp hạng. Một phương pháp hợp nhất hiệu quả và phổ biến là \textbf{Hợp nhất theo thứ hạng nghịch đảo} (Reciprocal Rank Fusion --- RRF)~\cite{cormack2009reciprocal}. Trong phương pháp RRF, điểm số hợp nhất của mỗi tài liệu $d$ được tính toán độc lập dựa trên vị trí thứ hạng của nó trong các bảng xếp hạng thành phần:
 \begin{equation}
 \mathrm{RRF}(d) = \sum_{r \in R} \frac{1}{k + \mathrm{rank}_r(d)}
 \end{equation}
-với $R$ là tập các bảng xếp hạng thành phần và $k$ là hằng số làm mượt. Ưu điểm của cách hợp nhất theo \textit{thứ hạng} thay vì theo \textit{điểm số} là nó không đòi hai kênh phải có thang điểm so sánh được --- điều vốn không đúng giữa khoảng cách cosine và điểm BM25.
+với $R$ là tập hợp các bảng xếp hạng từ các kênh truy xuất thành phần, $\mathrm{rank}_r(d)$ là vị trí thứ hạng của tài liệu $d$ trong kênh $r$, và $k$ là một hằng số làm mượt thực nghiệm (thường chọn $k = 60$). Ưu thế vượt trội của RRF là chỉ dựa vào \textit{thứ hạng tương đối} thay vì \textit{điểm số tuyệt đối}, do đó loại bỏ hoàn toàn yêu cầu phải chuẩn hoá thang đo điểm số vốn rất khác biệt giữa khoảng cách cosine (trong không gian dense) và điểm số xác suất mở của BM25.
 
-\subsection{Xếp hạng lại bằng cross-encoder}
-Bộ nhúng hai tháp (bi-encoder) mã hoá truy vấn và tài liệu \textit{độc lập} nên tìm kiếm rất nhanh, nhưng cũng vì độc lập mà nó không nhìn được tương tác chi tiết giữa hai bên. Mô hình \textbf{cross-encoder}~\cite{nogueira2019passage} đưa cặp (truy vấn, tài liệu) qua cùng một Transformer nên nắm được tương tác đó và cho thứ hạng chính xác hơn, đổi lại chi phí tính toán cao hơn nhiều.
+Bảng~\ref{tab:so_sanh_fusion} so sánh các phương pháp hợp nhất kết quả truy xuất lai phổ biến trong các hệ thống IR hiện đại.
 
-Vì vậy hai loại mô hình được dùng theo kiểu \textbf{phễu}: bi-encoder và BM25 lấy rộng một tập ứng viên, rồi cross-encoder chấm lại chỉ tập ứng viên đó. Đây cũng là lý do khoảng cách giữa \textit{recall khi chạy thực tế} và \textit{trần recall} lại quan trọng đến vậy: nếu đoạn đúng không lọt vào tập ứng viên ở bước lấy rộng thì không bước xếp hạng lại nào cứu được nó.
+\begin{table}[H]
+\centering
+\caption{So sánh các phương pháp hợp nhất kết quả trong truy xuất lai}
+\label{tab:so_sanh_fusion}
+\small
+\begin{tabular}{lp{4.2cm}p{4.2cm}p{3cm}}
+\toprule
+\textbf{Phương pháp} & \textbf{Nguyên lý tính toán} & \textbf{Ưu điểm} & \textbf{Hạn chế} \\
+\midrule
+\textbf{Hợp nhất thứ hạng nghịch đảo (RRF)} & Dựa trên thứ bậc tương đối $\sum \frac{1}{k + \mathrm{rank}}$ & Không phụ thuộc phân phối điểm số; không cần tham số học & Bỏ qua khoảng cách điểm tuyệt đối giữa các vị trí \\
+\textbf{Chuẩn hóa Min-Max kết hợp trọng số} & Đưa điểm hai kênh về $[0, 1]$ rồi cộng trọng số & Giữ lại độ lớn điểm tương đồng ban đầu & Nhạy cảm với giá trị ngoại lai (outliers) trong từng lô \\
+\textbf{Kết hợp lồi (Convex Combination)} & $S = \alpha S_{\text{dense}} + (1-\alpha) S_{\text{sparse}}$ & Dễ tinh chỉnh tham số $\alpha$ theo từng miền dữ liệu & Đòi hỏi chuẩn hóa phức tạp; hiệu năng phụ thuộc tập dữ liệu \\
+\textbf{Tương tác muộn (ColBERT)~\cite{khattab2020colbert}} & Tính MaxSim giữa các ma trận token vector & Nắm bắt tương tác token chi tiết mà vẫn tìm kiếm nhanh & Chi phí lưu trữ index vector tăng gấp $N$ lần \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tái xếp hạng chuyên sâu bằng Cross-Encoder}
+Các mô hình nhúng ngữ nghĩa phổ biến (như Sentence-BERT hay BGE) hoạt động theo kiến trúc hai nhánh mã hóa độc lập (Bi-encoder / Two-tower): truy vấn và tài liệu được mã hóa thành các vector hoàn toàn độc lập, cho phép tính toán độ tương đồng cực kỳ nhanh chóng. Tuy nhiên, do tính chất mã hóa độc lập, mô hình hai nhánh không thể mô hình hóa được sự tương tác tương hỗ chi tiết giữa các từ tố của câu truy vấn và các từ tố trong tài liệu.
+
+Ngược lại, mô hình \textbf{cross-encoder}~\cite{nogueira2019passage} tiếp nhận đồng thời cả cặp (truy vấn, tài liệu) đi qua toàn bộ các lớp chú ý của Transformer. Nhờ đó, cross-encoder có thể nắm bắt trọn vẹn sự tương tác ngữ nghĩa đa chiều giữa hai văn bản, mang lại độ chính xác phân loại và xếp hạng vượt trội so với bi-encoder, đổi lại chi phí tính toán suy luận cao hơn đáng kể. Bảng~\ref{tab:bi_vs_cross} phân tích chi tiết sự đối sánh giữa hai kiến trúc mô hình này.
+
+\begin{table}[H]
+\centering
+\caption{So sánh đặc tính kỹ thuật giữa kiến trúc Bi-Encoder và Cross-Encoder}
+\label{tab:bi_vs_cross}
+\small
+\begin{tabular}{lp{6.2cm}p{6.2cm}}
+\toprule
+\textbf{Tiêu chí so sánh} & \textbf{Kiến trúc Bi-Encoder (Two-Tower)} & \textbf{Kiến trúc Cross-Encoder} \\
+\midrule
+\textbf{Cơ chế mã hóa} & Mã hóa độc lập truy vấn $q$ và văn bản $d$ thành hai vector tách biệt & Nối chuỗi $(q, d)$ và đưa qua toàn bộ mạng Transformer đồng thời \\
+\textbf{Tương tác chú ý (Attention)} & Tự chú ý nội bộ bên trong từng chuỗi ($q$ và $d$ riêng rẽ) & Toàn bộ token của $q$ chú ý chéo đến toàn bộ token của $d$ \\
+\textbf{Lập chỉ mục trước (Offline Indexing)} & Có thể tính trước và lưu trữ toàn bộ vector tài liệu trong Vector DB & Bắt buộc tính toán trực tuyến (online inference) theo thời gian thực \\
+\textbf{Độ phức tạp tính toán} & $O(L_q^2 + L_d^2)$ cho mã hóa; $O(d)$ cho phép nhân vô hướng & $O((L_q + L_d)^2)$ cho mỗi cặp ứng viên $(q, d)$ \\
+\textbf{Tốc độ truy vấn} & Cực nhanh (mili-giây), hỗ trợ thuật toán ANN quy mô triệu vector & Chậm hơn đáng kể, không thể quét toàn bộ cơ sở dữ liệu lớn \\
+\textbf{Vai trò trong hệ thống} & \textbf{Pha 1: Lọc ứng viên sơ tuyển} (Candidate Retrieval) trên diện rộng & \textbf{Pha 2: Tái xếp hạng chính xác} (Re-ranking) trên top ứng viên nhỏ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Chính vì vậy, trong kiến trúc truy xuất thông tin hiện đại, hai mô hình này được kết hợp theo mô hình \textbf{phễu truy xuất đa tầng}: ở tầng thứ nhất, bi-encoder và BM25 đảm nhiệm vai trò truy xuất nhanh để lọc ra một tập ứng viên tương đối rộng (khoảng vài chục đến hàng trăm đoạn); ở tầng thứ hai, mô hình cross-encoder sẽ đóng vai trò tái xếp hạng (re-ranking) để đánh giá lại điểm số và sắp xếp lại thứ tự ưu tiên của riêng tập ứng viên đó. Đây cũng là lý do vì sao khoảng cách giữa \textit{độ phủ thực tế} và \textit{trần độ phủ} của tập ứng viên ban đầu có ý nghĩa sống còn: nếu đoạn tài liệu chứa đáp án chính xác không lọt vào tập ứng viên sơ tuyển ở bước truy xuất diện rộng, thì không có cơ chế tái xếp hạng nào có thể khôi phục lại được tài liệu đó ở các bước tiếp theo.

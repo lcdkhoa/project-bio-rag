@@ -9,19 +9,20 @@
 \input{src/covers/second_title_page}
 % \input{src/hoi_dong}
 \input{src/loi_cam_on}
+\include{src/chapters/0.tom_tat}
 
-\renewcommand{\contentsname}{NỘI DUNG}
+\renewcommand{\contentsname}{MỤC LỤC}
 \tableofcontents
 
 \renewcommand{\figurename}{Hình}
 \renewcommand{\listfigurename}{DANH SÁCH HÌNH ẢNH}
-\addcontentsline{toc}{section}{\textbf{\listfigurename}}
+\addcontentsline{toc}{chapter}{\textbf{\listfigurename}}
 \listoffigures
 \newpage
 
 \renewcommand{\tablename}{Bảng}
 \renewcommand{\listtablename}{DANH SÁCH BẢNG BIỂU}
-\addcontentsline{toc}{section}{\textbf{\listtablename}}
+\addcontentsline{toc}{chapter}{\textbf{\listtablename}}
 \listoftables
 \newpage
 
@@ -29,7 +30,6 @@
 \include{src/danh_muc_dich}
 
 \mainmatter
-\include{src/chapters/0.tom_tat}
 
 \pagestyle{fancy}
 \fancyhf{}
