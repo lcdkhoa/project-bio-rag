@@ -16,7 +16,7 @@ Quá trình tiền xử lý học liệu (nhận dạng ký tự quang học, ph
 \midrule
 Nền tảng tính toán & Máy trạm cục bộ, hệ điều hành Windows 11 \\
 CPU / RAM & 16 lõi xử lý / 63,9 GB RAM \\
-GPU & \textbf{Không trang bị} --- \texttt{torch 2.11.0+cpu}, CUDA không khả dụng \\
+GPU & \textbf{Không trang bị} (\texttt{torch 2.11.0+cpu}, CUDA không khả dụng) \\
 Ngôn ngữ lập trình & Python 3.12.8 \\
 Nền tảng phần mềm cốt lõi & LangChain 1.2, Transformers 4.46.3, PyTorch 2.11 (CPU) \\
 Cơ sở dữ liệu vector & ChromaDB 1.5.9 \\
@@ -148,7 +148,7 @@ Chân trời sáng tạo (4 cuốn)   & $52$ & $20$ & $72$ \\
 Kết nối tri thức (4 cuốn)     & $54$ & $16$ & $70$ \\
 \midrule
 \textbf{Tổng số câu có nhãn nguồn} & \textbf{158} & \textbf{52} & \textbf{210} \\
-Nhóm câu hỏi ngoài phạm vi (không nhãn nguồn) & \multicolumn{2}{c}{---} & $30$ \\
+Nhóm câu hỏi ngoài phạm vi (không nhãn nguồn) & \multicolumn{2}{c}{--} & $30$ \\
 \midrule
 \textbf{Tổng quy mô bộ kiểm thử} & & & \textbf{240} \\
 \bottomrule
@@ -181,7 +181,7 @@ Theo đoạn văn, để ánh sáng truyền trong sợi quang gặp lớp vỏ 
 \addlinespace
 Dựa vào Hình 24.3, hãy liệt kê ba vai trò của đa dạng sinh học đối với con người được minh họa trong hình. & Làm nơi tham quan, học tập; Cung cấp nguồn lương thực thực phẩm; Làm dược liệu. & 6 CD, tr.132 (Hình 24.3) \\
 \addlinespace
-Trong lập trình Python, cú pháp nào được sử dụng để in ra màn hình chuỗi ``Hello World''? & \textit{(Ngoài phạm vi môn KHTN)} Hệ thống cần thông báo không tìm thấy thông tin trong sách giáo khoa, không tự ý trả lời bằng kiến thức ngoài học liệu chuẩn. & --- (Ngoại vi) \\
+Trong lập trình Python, cú pháp nào được sử dụng để in ra màn hình chuỗi ``Hello World''? & \textit{(Ngoài phạm vi môn KHTN)} Hệ thống cần thông báo không tìm thấy thông tin trong sách giáo khoa, không tự ý trả lời bằng kiến thức ngoài học liệu chuẩn. & Không áp dụng (Ngoại vi) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -189,8 +189,8 @@ Trong lập trình Python, cú pháp nào được sử dụng để in ra màn 
 \section{Phương pháp luận và hệ thống độ đo đánh giá}
 Do đầu ra của hệ thống trợ lý ảo là ngôn ngữ tự nhiên mở, việc chỉ áp dụng các thang đo so khớp từ khóa hình thức truyền thống như BLEU~\cite{papineni2002bleu} hay ROUGE~\cite{lin2004rouge} là không đầy đủ, bởi một diễn đạt khoa học chính xác có thể được trình bày bằng nhiều cấu trúc ngữ pháp tương đương. Đề tài xây dựng khung đánh giá hai pha toàn diện:
 \begin{enumerate}
-    \item \textbf{Pha 1 --- Đánh giá năng lực truy xuất:} Đo lường khách quan bằng các chỉ số truy xuất thông tin chuẩn mực dựa trên sự đối sánh chính xác với nhãn nguồn;
-    \item \textbf{Pha 2 --- Đánh giá chất lượng sinh ngôn ngữ:} Ứng dụng phương pháp mô hình ngôn ngữ làm giám khảo độc lập LLM-as-a-judge~\cite{zheng2023llmjudge, liu2023geval, es2024ragas, min2023factscore, saadfalcon2023ares} với mô hình ngôn ngữ độc lập chấm điểm định lượng theo ba tiêu chí cốt lõi.
+    \item \textbf{Pha 1: Đánh giá năng lực truy xuất.} Đo lường khách quan bằng các chỉ số truy xuất thông tin chuẩn mực dựa trên sự đối sánh chính xác với nhãn nguồn;
+    \item \textbf{Pha 2: Đánh giá chất lượng sinh ngôn ngữ.} Ứng dụng phương pháp mô hình ngôn ngữ làm giám khảo độc lập LLM-as-a-judge~\cite{zheng2023llmjudge, liu2023geval, es2024ragas, min2023factscore, saadfalcon2023ares} với mô hình ngôn ngữ độc lập chấm điểm định lượng theo ba tiêu chí cốt lõi.
 \end{enumerate}
 
 Toàn bộ quy trình đánh giá tự động hai pha được khái quát trong Thuật toán~\ref{alg:eval} và minh họa tại Hình~\ref{fig:eval_pipeline_concept}.
@@ -316,7 +316,7 @@ Bảng~\ref{tab:ablation_rerank} phân tích chi tiết đóng góp độc lập
 \end{tabular}
 \end{table}
 
-Bước tái xếp hạng giúp nâng cao chỉ số MRR trên cả ba kênh truy xuất. Đáng chú ý, kênh truy xuất ngữ nghĩa theo vector đặc --- vốn có hiệu năng cơ sở thấp nhất khi đứng độc lập --- lại ghi nhận mức tăng trưởng tương đối mạnh mẽ nhất ở chỉ số R@1 (tăng từ $0{,}0647$ lên $0{,}0994$, tương ứng mức cải thiện $\mathbf{+53{,}6\%}$, so với $+13{,}4\%$ của BM25 và $+13{,}9\%$ của kênh lai). Kết quả này khẳng định: đối với tập học liệu khoa học chứa mật độ thuật ngữ và ký hiệu cao, mô hình nhúng hai nhánh bắt buộc phải được kết hợp cùng bước tái xếp hạng bằng mô hình tương tác chéo Cross-Encoder có khả năng phân tích tương tác từ ngữ sâu sắc.
+Bước tái xếp hạng giúp nâng cao chỉ số MRR trên cả ba kênh truy xuất. Đáng chú ý, kênh truy xuất ngữ nghĩa theo vector đặc, vốn có hiệu năng cơ sở thấp nhất khi đứng độc lập, lại ghi nhận mức tăng trưởng tương đối mạnh mẽ nhất ở chỉ số R@1 (tăng từ $0{,}0647$ lên $0{,}0994$, tương ứng mức cải thiện $\mathbf{+53{,}6\%}$, so với $+13{,}4\%$ của BM25 và $+13{,}9\%$ của kênh lai). Kết quả này khẳng định: đối với tập học liệu khoa học chứa mật độ thuật ngữ và ký hiệu cao, mô hình nhúng hai nhánh bắt buộc phải được kết hợp cùng bước tái xếp hạng bằng mô hình tương tác chéo có khả năng phân tích tương tác từ ngữ sâu sắc.
 
 \subsection{Tổng hợp các chỉ số hiệu năng hệ thống}
 Bảng~\ref{tab:summary} tổng hợp toàn diện các chỉ số thực nghiệm của cấu hình đề xuất tối ưu (truy xuất lai kết hợp tái xếp hạng bằng mô hình tương tác chéo, tắt cổng lọc khoảng cách tương đối) ở quy mô vận hành thực tế.
