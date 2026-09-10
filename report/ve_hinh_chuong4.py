@@ -189,9 +189,9 @@ def ve_judge_scores(d: pd.DataFrame) -> Path:
 def ve_so_sanh_truy_xuat() -> Path:
     phuong_phap = [
         "BM25 thuần",
-        "Dense thuần",
-        "Lai (tắt rerank)",
-        "Đề xuất (Lai + Rerank)",
+        "Ngữ nghĩa véc-tơ đặc",
+        "Truy xuất lai (tắt rerank)",
+        "Đề xuất (Lai + Tái xếp hạng)",
     ]
     mau_pp = ["#9a988f", "#eb6834", "#2a78d6", "#1baf7a"]
     gach_pp = ["..", "//", "", "\\\\"]
@@ -199,9 +199,9 @@ def ve_so_sanh_truy_xuat() -> Path:
 
     du_lieu = {
         "BM25 thuần": [0.6636, 0.0905, 0.1475, 0.1796, 0.2303],
-        "Dense thuần": [0.5664, 0.0647, 0.1338, 0.1778, 0.2302],
-        "Lai (tắt rerank)": [0.6947, 0.0914, 0.1609, 0.2031, 0.2643],
-        "Đề xuất (Lai + Rerank)": [0.7789, 0.1041, 0.1804, 0.2085, 0.2458],
+        "Ngữ nghĩa véc-tơ đặc": [0.5664, 0.0647, 0.1338, 0.1778, 0.2302],
+        "Truy xuất lai (tắt rerank)": [0.6947, 0.0914, 0.1609, 0.2031, 0.2643],
+        "Đề xuất (Lai + Tái xếp hạng)": [0.7789, 0.1041, 0.1804, 0.2085, 0.2458],
     }
 
     n_pp = len(phuong_phap)
@@ -209,7 +209,7 @@ def ve_so_sanh_truy_xuat() -> Path:
     x = range(n_cs)
     be_rong = 0.19
 
-    fig, ax = plt.subplots(figsize=(8.8, 4.2))
+    fig, ax = plt.subplots(figsize=(9.2, 4.3))
     for i, pp in enumerate(phuong_phap):
         toa_do = [xi + (i - (n_pp - 1) / 2) * be_rong for xi in x]
         gia_tri = du_lieu[pp]
@@ -232,8 +232,230 @@ def ve_so_sanh_truy_xuat() -> Path:
     ax.set_title("So sánh định lượng hiệu năng truy xuất giữa bốn phương pháp (210 câu hỏi có nhãn)",
                  loc="left", color=MUC_CHINH, pad=26)
     _don_khung(ax, "y")
-    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=n_pp, fontsize=8.5)
+    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=n_pp, fontsize=8.2)
     return _luu(fig, "so_sanh_truy_xuat.png")
+
+
+# --- Hình 4: đối chiếu chất lượng câu trả lời đa phương thức (Bảng 4.9) -------
+def ve_so_sanh_da_phuong_thuc() -> Path:
+    import numpy as np
+    tieu_chi = ["Tính đúng", "Độ trung thực", "Độ liên quan"]
+    thuan_vb = [3.077, 3.654, 3.904]
+    da_pt = [3.000, 3.615, 3.865]
+    chenh_lech = [-0.077, -0.038, -0.038]
+
+    x = np.arange(len(tieu_chi))
+    width = 0.28
+
+    fig, ax = plt.subplots(figsize=(7.5, 3.8))
+    rects1 = ax.bar(x - width/2, thuan_vb, width, label="Cấu hình thuần văn bản",
+                    color=XANH, edgecolor=NEN, linewidth=0.8)
+    rects2 = ax.bar(x + width/2, da_pt, width, label="Cấu hình đa phương thức",
+                    color=CAM, hatch="//", edgecolor=NEN, linewidth=0.8)
+
+    for rect in rects1:
+        h = rect.get_height()
+        ax.annotate(f"{h:.3f}".replace(".", ","),
+                    xy=(rect.get_x() + rect.get_width() / 2, h),
+                    xytext=(0, 3), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=8.5, color=MUC_CHINH)
+
+    for rect, delta in zip(rects2, chenh_lech):
+        h = rect.get_height()
+        delta_str = f"{delta:.3f}".replace(".", ",")
+        ax.annotate(f"{h:.3f}".replace(".", ",") + f"\n({delta_str})",
+                    xy=(rect.get_x() + rect.get_width() / 2, h),
+                    xytext=(0, 3), textcoords="offset points",
+                    ha="center", va="bottom", fontsize=8.5, color="#c2410c")
+
+    ax.set_ylabel("Điểm giám khảo (thang 1–5)", fontsize=9.5, color=MUC_PHU)
+    ax.set_title("Đối chiếu chất lượng câu trả lời trên 52 câu hỏi hình ảnh (Cấu hình M2C)",
+                 loc="left", pad=22, fontsize=10.5, color=MUC_CHINH)
+    ax.set_xticks(x)
+    ax.set_xticklabels(tieu_chi, fontsize=9.5, fontweight="bold")
+    ax.set_ylim(0, 4.6)
+    ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, frameon=False, fontsize=9)
+    _don_khung(ax, "y")
+    return _luu(fig, "so_sanh_da_phuong_thuc.png")
+
+
+# --- Hình 5: sơ đồ quy trình thực nghiệm đánh giá tự động hai pha ------------
+def ve_quy_trinh_danh_gia_hai_pha() -> Path:
+    import matplotlib.patches as patches
+
+    fig, ax = plt.subplots(figsize=(17.5, 9.6), dpi=220)
+    ax.set_xlim(0, 17.5)
+    ax.set_ylim(0, 9.6)
+    ax.axis("off")
+    fig.patch.set_facecolor("#ffffff")
+    ax.set_facecolor("#ffffff")
+
+    def draw_node(x, y, w, h, title, subtitle, items, is_rounded=False):
+        boxstyle = "round,pad=0.25,rounding_size=0.25" if is_rounded else "square,pad=0.2"
+        card = patches.FancyBboxPatch((x, y), w, h, boxstyle=boxstyle,
+                                      facecolor="#ffffff", edgecolor="#000000", linewidth=1.3, zorder=3)
+        ax.add_patch(card)
+
+        ax.text(x + w / 2, y + h - 0.35, title, ha="center", va="center",
+                fontsize=10.5, fontweight="bold", color="#000000", zorder=4, family="DejaVu Sans")
+
+        if subtitle:
+            ax.text(x + w / 2, y + h - 0.70, subtitle, ha="center", va="center",
+                    fontsize=8.5, fontstyle="normal", color="#475569", zorder=4, family="DejaVu Sans")
+            start_y = y + h - 1.02
+        else:
+            start_y = y + h - 0.75
+
+        ax.plot([x + 0.2, x + w - 0.2], [start_y + 0.15, start_y + 0.15],
+                color="#cbd5e1", linewidth=0.8, zorder=4)
+
+        n = len(items)
+        spacing = (start_y - y - 0.25) / max(n, 1)
+        for i, it in enumerate(items):
+            cur_y = start_y - 0.15 - i * spacing
+            bold = it.startswith("•") or it.startswith("★")
+            indent = 0.32 if it.startswith("  -") else 0.15
+            color = "#000000" if bold else "#334155"
+            weight = "bold" if bold else "normal"
+            ax.text(x + indent, cur_y, it, ha="left", va="center", fontsize=8.2,
+                    color=color, fontweight=weight, zorder=4, family="DejaVu Sans")
+
+    def draw_badge(cx, cy, text):
+        ax.text(cx, cy, text, ha="center", va="center", fontsize=8.2, fontweight="bold",
+                color="#000000", zorder=6, family="DejaVu Sans",
+                bbox=dict(boxstyle="square,pad=0.25", facecolor="#ffffff", edgecolor="#000000", lw=0.9))
+
+    # Khung PHA 1 (Dashed rectangle)
+    p1_group = patches.FancyBboxPatch((4.4, 4.8), 12.5, 4.4, boxstyle="square,pad=0.1",
+                                      facecolor="#ffffff", edgecolor="#475569", linewidth=1.1, linestyle="--", zorder=1)
+    ax.add_patch(p1_group)
+    ax.text(4.7, 8.85, "PHA 1: ĐÁNH GIÁ NĂNG LỰC TRUY XUẤT TRI THỨC (RETRIEVAL BENCHMARK)",
+            fontsize=10.5, fontweight="bold", color="#000000", family="DejaVu Sans", zorder=2)
+
+    # Khung PHA 2 (Dashed rectangle)
+    p2_group = patches.FancyBboxPatch((4.4, 0.4), 12.5, 4.4, boxstyle="square,pad=0.1",
+                                      facecolor="#ffffff", edgecolor="#475569", linewidth=1.1, linestyle="--", zorder=1)
+    ax.add_patch(p2_group)
+    ax.text(8.5, 4.45, "PHA 2: ĐÁNH GIÁ CHẤT LƯỢNG SINH NGÔN NGỮ (GENERATION BENCHMARK)",
+            fontsize=10.5, fontweight="bold", color="#000000", family="DejaVu Sans", zorder=2)
+
+    # Node đầu vào: Bộ dữ liệu kiểm thử
+    draw_node(0.4, 1.2, 2.6, 7.2, "Bộ dữ liệu kiểm thử", "Quy mô 240 câu hỏi KHTN",
+              ["• 158 câu văn bản (65,8%)",
+               "• 52 câu hình ảnh (21,7%)",
+               "• 30 câu ngoài phạm vi (12,5%)",
+               "• Nhãn nguồn (B*, p*):",
+               "  - Sách và số trang in gốc",
+               "• Đáp án chuẩn đối sánh:",
+               "  - Ground Truth chuyên gia",
+               "  - human-reviewed: true",
+               "• Lấy mẫu phân tầng:",
+               "  - Cố định seed = 42"],
+              is_rounded=True)
+
+    # Các Node Pha 1
+    draw_node(4.7, 5.1, 3.3, 3.3, "Truy xuất lai & Tái xếp hạng", "Hybrid Retrieval & Cross-Encoder",
+              ["• Kênh từ khóa Okapi BM25",
+               "  - Tham số: k1 = 0,7, b = 0,75",
+               "• Kênh ngữ nghĩa BAAI/bge-m3",
+               "  - Véc-tơ không gian 1024 chiều",
+               "• Hợp nhất ứng viên Top-40 (RRF)",
+               "• Tái xếp hạng bge-reranker-v2-m3",
+               "  - Phân tích tương tác chéo câu hỏi",
+               "• Lọc tin cậy: score >= 0,59"],
+              is_rounded=False)
+
+    draw_node(9.3, 5.1, 3.3, 3.3, "Đối sánh nhãn nguồn chuẩn", "Ground Truth Verification",
+              ["• Tập ứng viên sau rerank: R_k",
+               "  - k = 1, 3, 5, 10 đoạn văn bản",
+               "• Tập phân đoạn chuẩn: G",
+               "  - Toàn bộ đoạn thuộc (B*, p*)",
+               "• Tiêu chí so khớp nghiêm ngặt:",
+               "  - Khớp tuyệt đối số trang in gốc",
+               "• Giới hạn trần tranP@k lý thuyết",
+               "• F1@k Macro tuân thủ Jensen"],
+              is_rounded=False)
+
+    draw_node(13.9, 5.1, 2.7, 3.3, "Chỉ số IR đạt được", "Retrieval Performance",
+              ["★ MRR = 0,7789 (Hạng 1)",
+               "• Recall@1 = 0,1041",
+               "• Recall@3 = 0,1804",
+               "• Recall@5 = 0,2085",
+               "• Recall@10 = 0,2458",
+               "• Precision@5 = 0,2810",
+               "  - Trần lý thuyết: 0,9867",
+               "• Macro F1@k trung thực"],
+              is_rounded=True)
+
+    # Các Node Pha 2
+    draw_node(4.7, 0.7, 3.3, 3.3, "Ghép Prompt & Sinh lời giải", "Prompt Augmentation & Local LLM",
+              ["• Ghép Top-3 đoạn làm ngữ cảnh",
+               "• Chỉ thị sư phạm chống ảo giác:",
+               "  - Ràng buộc tuyệt đối vào SGK",
+               "  - Không tự suy diễn ngoài sách",
+               "• Mô hình: Qwen2.5-3B-Instruct",
+               "  - Nhiệt độ thấp: temp = 0.1",
+               "• Xuất câu trả lời hoàn chỉnh",
+               "  - Kèm trích dẫn số trang SGK"],
+              is_rounded=False)
+
+    draw_node(9.3, 0.7, 3.3, 3.3, "Hội đồng Giám khảo độc lập", "Independent LLM Judge (Groq)",
+              ["• 4 mô hình luân phiên:",
+               "  - qwen/qwen3.8-27b",
+               "  - qwen/qwen3.6-27b",
+               "  - openai/gpt-oss-120b",
+               "  - openai/gpt-oss-20b",
+               "• Phương pháp thử lại (Retry):",
+               "  - Tối đa 3 lần cho lỗi 429",
+               "  - Thời gian chờ lũy tiến",
+               "  - Luân chuyển mô hình dự phòng"],
+              is_rounded=False)
+
+    draw_node(13.9, 0.7, 2.7, 3.3, "Điểm chất lượng sinh", "Generation Scores (1 - 5)",
+              ["★ Tính đúng: 4,033 / 5",
+               "  - Chuẩn xác kiến thức KHTN",
+               "★ Độ trung thực: 4,417 / 5",
+               "  - Bám sát ngữ cảnh SGK",
+               "★ Độ liên quan: 4,492 / 5",
+               "  - Trực diện vào trọng tâm",
+               "• Từ chối ngoài phạm vi:",
+               "  - 96,67% (29/30 câu chuẩn xác)"],
+              is_rounded=True)
+
+    # Mũi tên liên kết Flowchart
+    arrow_kw = dict(arrowstyle="-|>", color="#000000", lw=1.3, mutation_scale=12)
+
+    # Bộ dữ liệu -> Pha 1
+    ax.annotate("", xy=(4.7, 6.75), xytext=(3.0, 6.75), arrowprops=arrow_kw, zorder=5)
+    draw_badge(3.85, 6.75, "210 câu có nhãn")
+
+    # Bộ dữ liệu -> Pha 2
+    ax.annotate("", xy=(4.7, 2.35), xytext=(3.0, 2.35), arrowprops=arrow_kw, zorder=5)
+    draw_badge(3.85, 2.35, "240 câu kiểm thử")
+
+    # Pha 1: 1.1 -> 1.2
+    ax.annotate("", xy=(9.3, 6.75), xytext=(8.0, 6.75), arrowprops=arrow_kw, zorder=5)
+    draw_badge(8.65, 6.75, "Top-k đoạn")
+
+    # Pha 1: 1.2 -> 1.3
+    ax.annotate("", xy=(13.9, 6.75), xytext=(12.6, 6.75), arrowprops=arrow_kw, zorder=5)
+    draw_badge(13.25, 6.75, "Đối sánh IR")
+
+    # Liên kết giữa hai pha: Top-3 ngữ cảnh từ Truy xuất xuống Ghép Prompt
+    ax.annotate("", xy=(6.35, 4.0), xytext=(6.35, 5.1),
+                arrowprops=dict(arrowstyle="-|>", color="#000000", lw=1.3, linestyle="-", mutation_scale=12),
+                zorder=5)
+    draw_badge(6.35, 4.55, "Top-3 ngữ cảnh")
+
+    # Pha 2: 2.1 -> 2.2
+    ax.annotate("", xy=(9.3, 2.35), xytext=(8.0, 2.35), arrowprops=arrow_kw, zorder=5)
+    draw_badge(8.65, 2.35, "(q, gt, ctx, ans)")
+
+    # Pha 2: 2.2 -> 2.3
+    ax.annotate("", xy=(13.9, 2.35), xytext=(12.6, 2.35), arrowprops=arrow_kw, zorder=5)
+    draw_badge(13.25, 2.35, "Chấm điểm")
+
+    return _luu(fig, "quy_trinh_danh_gia_hai_pha.png")
 
 
 def _luu(fig, ten: str) -> Path:
@@ -253,7 +475,11 @@ def main() -> int:
         print("  đã ghi", duong.relative_to(GOC))
     duong_ss = ve_so_sanh_truy_xuat()
     print("  đã ghi", duong_ss.relative_to(GOC))
-    print(f"\n3 hình sinh cho Chương 4 — {tong_cau} câu / {len(d)} loại.")
+    duong_m2c = ve_so_sanh_da_phuong_thuc()
+    print("  đã ghi", duong_m2c.relative_to(GOC))
+    duong_pipe = ve_quy_trinh_danh_gia_hai_pha()
+    print("  đã ghi", duong_pipe.relative_to(GOC))
+    print(f"\n5 hình sinh cho Chương 4 — {tong_cau} câu / {len(d)} loại.")
     print("Số gộp có trọng số theo loại (dùng trong Chương 4):")
     for cot, ten in [("judge_correctness", "Tính đúng /5"),
                      ("judge_faithfulness", "Độ trung thực /5"),
@@ -264,3 +490,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
