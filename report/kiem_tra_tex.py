@@ -40,6 +40,7 @@ LENH_CAN_GOI = {
     # `\dfrac` KHÔNG phải LaTeX lõi, khác với `\frac` — dễ tưởng nhầm.
     r"\dfrac": "amsmath",
     r"\begin{align}": "amsmath",
+    r"\begin{tabularx}": "tabularx",
 }
 
 

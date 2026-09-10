@@ -33,6 +33,7 @@
 \RequirePackage{multirow}
 \RequirePackage{longtable}
 \RequirePackage{booktabs}
+\RequirePackage{tabularx}
 
 
 %============================ Drawing ============================%

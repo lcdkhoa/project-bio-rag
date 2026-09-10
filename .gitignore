@@ -167,3 +167,6 @@ src/test/testset/
 # compare_m2c.py — cùng lý do với `src/test/testset/` ở trên: chỉ CODE tạo ra
 # nó được commit, không phải một lượt chạy cụ thể.
 src/test/testset_m2c/
+
+# Thư mục nháp tạm thời khi render/test hình ảnh và bảng biểu LaTeX
+report/scratch/
