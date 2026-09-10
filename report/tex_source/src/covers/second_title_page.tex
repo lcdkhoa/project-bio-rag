@@ -1,65 +1,60 @@
+\newgeometry{a4paper, top=2.3cm, bottom=2.3cm, left=3.5cm, right=2.0cm}
 \begin{titlepage}
-    \begin{figure}[t]
-        \hspace*{10pt}
-        \begin{subfigure}
-            [p]{.3\textwidth}
-            \includegraphics[height=45pt]{src/covers/logo_vnuhcm.jpg}
-        \end{subfigure}
-        \hfill
-        \begin{subfigure}
-            [p]{.3\textwidth} \hfill
-            \includegraphics[height=50pt]{src/covers/logo_uit.jpg}
-        \end{subfigure}
-        \hspace*{10pt}
-    
-        \vspace{10pt}
-        \textcolor{blue}{\rule{\textwidth}{2pt}}
-    \end{figure}
-    
+    % Khung viền chuẩn đồ án tốt nghiệp UIT (khổ giấy A4)
+    \begin{tikzpicture}[remember picture, overlay]
+        % Khung ngoài (nét mảnh 0.75pt)
+        \draw[line width=0.75pt] 
+            ($(current page.north west) + (2.55cm, -1.75cm)$) 
+            rectangle 
+            ($(current page.south east) + (-1.05cm, 1.75cm)$);
+    \end{tikzpicture}
+
+    % Khối tiêu đề trường và khoa sát phía trên khung viền
     \begin{center}
-        {\small\textbf{ ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH \\ TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN \\ KHOA KHOA HỌC VÀ KỶ THUẬT THÔNG TIN }\par}
+        {\fontsize{15pt}{16pt}\selectfont \textbf{ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH \\ TRƯỜNG ĐẠI HỌC CÔNG NGHỆ THÔNG TIN \\ KHOA KHOA HỌC VÀ KỸ THUẬT THÔNG TIN}\par}
     \end{center}
-    
-    \vspace*{40pt}
+
+    % Khoảng cách 1: đến tên sinh viên và MSSV
+    \vfill
     \begin{center}
-        \textbf{ {\color{blue}{\LARGE ĐỒ ÁN TỐT NGHIỆP}}\\
-        {\small NGÀNH CÔNG NGHỆ THÔNG TIN} }
+        {\fontsize{14pt}{18pt}\selectfont \textbf{LÊ CHÂU ĐĂNG KHOA -- 24210219}\par}
+        % Trường hợp 2 sinh viên thực hiện (bỏ chú thích nếu cần):
+        % {\fontsize{14pt}{18pt}\selectfont \textbf{LÊ CHÂU ĐĂNG KHOA -- 24210219 \\ NGÔ ĐỨC HOÀNG SƠN -- 19522137}\par}
     \end{center}
-    
-    \vspace*{40pt}
+
+    % Khoảng cách 2: đến tên đề tài
+    \vfill
     \begin{center}
-        \textbf{NGHIÊN CỨU PHƯƠNG PHÁP RAG ĐA PHƯƠNG THỨC CHO TRỢ LÝ ẢO THÔNG MINH HỖ TRỢ DẠY VÀ HỌC MÔN KHOA HỌC TỰ NHIÊN CẤP TRUNG HỌC CƠ SỞ}\\
-        \vspace*{5pt}
-        \textbf{RESEARCH ON A MULTIMODAL RETRIEVAL-AUGMENTED GENERATION METHOD FOR AN INTELLIGENT VIRTUAL ASSISTANT SUPPORTING NATURAL SCIENCE TEACHING AND LEARNING IN SECONDARY SCHOOL.}
+        {\fontsize{15pt}{20pt}\selectfont \textbf{ĐỒ ÁN TỐT NGHIỆP}\par}
+        
+        \vspace{5pt}
+        \begin{minipage}{0.9\linewidth}
+            \centering
+            {\fontsize{16pt}{22pt}\selectfont \textbf{NGHIÊN CỨU PHƯƠNG PHÁP RAG ĐA~PHƯƠNG~THỨC CHO TRỢ~LÝ~ẢO THÔNG~MINH HỖ~TRỢ DẠY~VÀ~HỌC MÔN~KHOA~HỌC~TỰ~NHIÊN CẤP~TRUNG~HỌC~CƠ~SỞ}\par}
+            
+            \vspace{8pt}
+            {\fontsize{13pt}{18pt}\selectfont \textbf{RESEARCH ON A MULTIMODAL RETRIEVAL-AUGMENTED~GENERATION METHOD FOR AN INTELLIGENT~VIRTUAL~ASSISTANT SUPPORTING NATURAL~SCIENCE TEACHING~AND~LEARNING IN~SECONDARY~SCHOOL.}\par}
+        \end{minipage}
     \end{center}
-    
-    \vspace*{5pt}
-    
-    % With 1 member
+
+    % Khoảng cách 3: đến bậc đào tạo/ngành
+    \vfill
     \begin{center}
-            \begin{tabular}{c}
-                \textbf{LÊ CHÂU ĐĂNG KHOA} \\
-                24210219@ms.uit.edu.vn
-            \end{tabular}
+        {\fontsize{15pt}{18pt}\selectfont \textbf{CỬ NHÂN NGÀNH CÔNG NGHỆ THÔNG TIN}\par}
     \end{center}
-    
-    % With 1 member, uncomment the text below :P
-    % \begin{center}
-    %         \begin{tabular}{c}
-    %             \textbf{NGÔ ĐỨC HOÀNG SƠN - 19522137} \\
-    %             19522137@gm.uit.edu.vn
-    %         \end{tabular}
-    % \end{center}
-    
-    \vspace*{55pt}
+
+    % Khoảng cách 4: đến Giảng viên hướng dẫn
+    \vfill
     \begin{center}
-        \begin{tabular}{cl}
-            Giảng viên hướng dẫn: & \textbf{ThS. Nguyễn Hữu Quyền}
-        \end{tabular}
+        {\fontsize{14pt}{18pt}\selectfont \textbf{GIẢNG VIÊN HƯỚNG DẪN}\par}
+        \vspace{4pt}
+        {\fontsize{14pt}{18pt}\selectfont \textbf{ThS. NGUYỄN HỮU QUYỀN}\par}
     \end{center}
-    
-    \vspace*{55pt}
+
+    % Khoảng cách 5: đến địa điểm và năm (sát phía dưới khung viền)
+    \vfill
     \begin{center}
-        {\footnotesize TP. Hồ Chí Minh, 2026}
+        {\fontsize{13pt}{17pt}\selectfont \textbf{TP. HỒ CHÍ MINH, 2026}\par}
     \end{center}
 \end{titlepage}
+\restoregeometry

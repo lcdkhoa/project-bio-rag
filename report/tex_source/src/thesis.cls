@@ -6,7 +6,7 @@
 
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{\baseclass}}
 \ProcessOptions\relax
-\PassOptionsToClass{openany}{\baseclass}
+\PassOptionsToClass{a4paper,openany}{\baseclass}
 \LoadClass{\baseclass}
 
 
