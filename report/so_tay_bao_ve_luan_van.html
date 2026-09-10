@@ -1,0 +1,1904 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sổ Tay Chiến Thuật Phản Biện & Bảo Vệ Đồ Án Tốt Nghiệp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-secondary: #111827;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      
+      --accent-primary: #6366f1;
+      --accent-primary-light: #818cf8;
+      --accent-secondary: #06b6d4;
+      --accent-success: #10b981;
+      --accent-warning: #f59e0b;
+      --accent-danger: #ef4444;
+      --accent-purple: #a855f7;
+
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+
+      --glass-blur: blur(16px);
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.25);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      line-height: 1.65;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 85% 60%, rgba(6, 182, 212, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 50% 90%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    /* Header & Hero */
+    header {
+      padding: 48px 24px 32px;
+      max-width: 1100px;
+      margin: 0 auto;
+      text-align: center;
+      position: relative;
+    }
+
+    .badge-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--accent-primary-light);
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.25;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 30%, #cbd5e1 70%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0 auto 28px;
+    }
+
+    /* Metrics Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      max-width: 1000px;
+      margin: 0 auto 36px;
+    }
+
+    .metric-chip {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      text-align: center;
+      transition: all 0.25s ease;
+    }
+
+    .metric-chip:hover {
+      border-color: var(--accent-primary-light);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+    }
+
+    .metric-value.highlight {
+      color: var(--accent-secondary);
+    }
+    .metric-value.success {
+      color: var(--accent-success);
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Controls: Search, Filters, Modes */
+    .controls-panel {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-input-wrapper svg {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 18px;
+      fill: var(--text-subtle);
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 12px 18px 12px 46px;
+      color: #fff;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-action {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-full);
+      padding: 10px 18px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .btn-action:hover {
+      background: #334155;
+      border-color: #475569;
+    }
+
+    .btn-action.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary-light);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
+    }
+
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      color: #fff;
+      border-color: #475569;
+    }
+
+    .filter-btn.active {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent-primary);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 40px 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    /* Question Card */
+    .q-card {
+      background: var(--bg-card);
+      backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      margin-bottom: 22px;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .q-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .q-card.pinned {
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .q-header {
+      padding: 22px 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      user-select: none;
+      transition: background-color 0.2s ease;
+    }
+
+    .q-header:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .q-title-group {
+      flex: 1;
+    }
+
+    .q-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .tag-category {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      letter-spacing: 0.5px;
+    }
+
+    .tag-cat-1 { background: rgba(99, 102, 241, 0.18); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .tag-cat-2 { background: rgba(6, 182, 212, 0.18); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .tag-cat-3 { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .tag-cat-4 { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-cat-5 { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+    .danger-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .q-question-text {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.45;
+    }
+
+    .q-toggle-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.3s ease, background 0.2s ease;
+      margin-top: 4px;
+    }
+
+    .q-toggle-icon svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--text-muted);
+      transition: transform 0.3s ease;
+    }
+
+    .q-card.open .q-toggle-icon {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    .q-card.open .q-toggle-icon svg {
+      transform: rotate(180deg);
+      fill: var(--accent-primary-light);
+    }
+
+    /* Card Body */
+    .q-body {
+      padding: 0 26px 26px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: none;
+    }
+
+    .q-card.open .q-body {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sub-blocks in Body */
+    .intent-box {
+      background: rgba(15, 23, 42, 0.6);
+      border-left: 3px solid var(--accent-warning);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      padding: 12px 18px;
+      margin: 18px 0;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+
+    .intent-box strong {
+      color: var(--accent-warning);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .answer-section {
+      margin-top: 18px;
+    }
+
+    .answer-label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--accent-success);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .answer-content {
+      font-size: 0.98rem;
+      color: #e2e8f0;
+      line-height: 1.7;
+    }
+
+    .answer-content p {
+      margin-bottom: 12px;
+    }
+
+    .answer-content ul, .answer-content ol {
+      padding-left: 22px;
+      margin-bottom: 14px;
+    }
+
+    .answer-content li {
+      margin-bottom: 8px;
+    }
+
+    .key-punchline {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin: 16px 0;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .key-punchline-icon {
+      font-size: 1.2rem;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .key-punchline-text {
+      font-weight: 600;
+      color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .formula-badge {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: #38bdf8;
+      font-size: 0.9em;
+    }
+
+    /* Study Mode / Flashcard Blur */
+    body.study-mode .q-body {
+      filter: blur(8px);
+      user-select: none;
+      pointer-events: none;
+      transition: filter 0.3s ease;
+    }
+
+    body.study-mode .q-card.revealed .q-body {
+      filter: none;
+      user-select: auto;
+      pointer-events: auto;
+    }
+
+    .reveal-btn-container {
+      display: none;
+      padding: 16px 26px;
+      text-align: center;
+      background: rgba(15, 23, 42, 0.4);
+      border-top: 1px solid var(--border-color);
+    }
+
+    body.study-mode .reveal-btn-container {
+      display: block;
+    }
+
+    body.study-mode .q-card.revealed .reveal-btn-container {
+      display: none;
+    }
+
+    /* Strategy Tactics Cards */
+    .tactics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 18px;
+      margin-bottom: 40px;
+    }
+
+    .tactic-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tactic-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent-primary);
+    }
+
+    .tactic-card.gold::before { background: var(--accent-warning); }
+    .tactic-card.cyan::before { background: var(--accent-secondary); }
+    .tactic-card.emerald::before { background: var(--accent-success); }
+
+    .tactic-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tactic-desc {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    footer {
+      max-width: 1100px;
+      margin: 60px auto 0;
+      text-align: center;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-subtle);
+      font-size: 0.85rem;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+      .controls-panel, .badge-hero, .btn-action, .q-toggle-icon, .reveal-btn-container {
+        display: none !important;
+      }
+      .q-card {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 24px !important;
+      }
+      .q-body {
+        display: block !important;
+        filter: none !important;
+      }
+      .q-question-text {
+        color: #000000 !important;
+      }
+      .answer-content, .intent-box {
+        color: #222222 !important;
+      }
+      .intent-box {
+        background: #f8f8f8 !important;
+        border-left: 3px solid #333333 !important;
+      }
+      .key-punchline {
+        background: #f0f4f8 !important;
+        border: 1px solid #b0c4de !important;
+        color: #000000 !important;
+      }
+      .tag-category, .danger-badge {
+        border: 1px solid #666666 !important;
+        color: #000000 !important;
+        background: none !important;
+      }
+      h1 {
+        -webkit-text-fill-color: #000000 !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 1.85rem; }
+      .search-row { flex-direction: column; }
+      .q-header { padding: 18px 20px; }
+      .q-body { padding: 0 20px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge-hero">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 3.45l8.27 14.3H3.73L12 5.45zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+      Tài Liệu Bảo Mật Chuẩn Bị Bảo Vệ Luận Văn
+    </div>
+    <h1>Sổ Tay Chiến Thuật Phản Biện & Bảo Vệ</h1>
+    <p class="subtitle">
+      Đề tài: <strong>"Nghiên cứu phương pháp RAG đa phương thức cho trợ lý ảo thông minh hỗ trợ dạy và học môn Khoa học tự nhiên cấp Trung học cơ sở"</strong>
+    </p>
+
+    <!-- Metrics Bar -->
+    <div class="metrics-bar">
+      <div class="metric-chip">
+        <div class="metric-value">2.399 / 2.387</div>
+        <div class="metric-label">Trang đĩa / Chỉ mục</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-value highlight">16.515</div>
+        <div class="metric-label">Chunk văn bản (1024-d)</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-value">3.881</div>
+        <div class="metric-label">Khung hình (512-d)</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-value success">0,7789</div>
+        <div class="metric-label">MRR Cấu hình đề xuất</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-value">240</div>
+        <div class="metric-label">Câu hỏi kiểm thử thật</div>
+      </div>
+      <div class="metric-chip">
+        <div class="metric-value highlight">85</div>
+        <div class="metric-label">Tài liệu tham khảo</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="searchInput" class="search-input" placeholder="Tìm kiếm câu hỏi, thuật ngữ, công thức (vd: Recall, Vintern, CPU, Rerank, BGE-M3)...">
+        </div>
+        <button id="toggleAllBtn" class="btn-action">
+          <span id="toggleAllText">Mở tất cả</span>
+        </button>
+        <button id="studyModeBtn" class="btn-action" title="Ẩn câu trả lời để tự luyện tập phản xạ trước">
+          <span>🧠 Chế độ Ôn Tập</span>
+        </button>
+        <button onclick="window.print()" class="btn-action" title="In ra bản giấy hoặc lưu PDF">
+          <span>🖨️ In / PDF</span>
+        </button>
+      </div>
+
+      <div class="filter-tags">
+        <button class="filter-btn active" data-filter="all">Tất cả (18 câu)</button>
+        <button class="filter-btn" data-filter="cat-1">Tính mới & Đóng góp (2)</button>
+        <button class="filter-btn" data-filter="cat-2">Đa phương thức (4)</button>
+        <button class="filter-btn" data-filter="cat-3">Thực nghiệm & Độ đo (4)</button>
+        <button class="filter-btn" data-filter="cat-4">Dữ liệu & Đánh giá (3)</button>
+        <button class="filter-btn" data-filter="cat-5">Kiến trúc & Triển khai (5)</button>
+      </div>
+    </div>
+
+    <!-- TACTICS OVERVIEW -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>⚡</span> 3 Khẩu Quyết "Cứu Mạng" Khi Lên Bục Bảo Vệ
+      </div>
+      <div class="section-badge">Chiến thuật ứng biến</div>
+    </div>
+
+    <div class="tactics-grid">
+      <div class="tactic-card gold">
+        <div class="tactic-title">1. Phân biệt Chunk Recall vs Page Recall</div>
+        <div class="tactic-desc">
+          Khi bị chất vấn <em>"Sao Recall@1 chỉ có 10,4%, thấp thế?"</em>: <strong>Lập tức đính chính</strong> đây là Recall trên tổng số <strong>chunk</strong> của trang (1 trang có ~7-10 chunk, nên trần lý thuyết chỉ là 14,2%). Thực tế, xác suất trúng đúng trang nguồn ở top-1 đạt <strong>trên 73%</strong> (MRR đạt <strong>0,7789</strong>).
+        </div>
+      </div>
+
+      <div class="tactic-card cyan">
+        <div class="tactic-title">2. Biến "Thất Bại" Thành "Phát Hiện Khoa Học"</div>
+        <div class="tactic-desc">
+          Khi bị hỏi <em>"Sao đề tài đa phương thức mà lại tắt Multimodal Context?"</em>: <strong>Đừng ngại!</strong> Hãy trả lời dứt khoát rằng đây là <strong>phát hiện thực nghiệm có giá trị</strong> trên 52 câu hỏi hình ảnh (M2C): mô hình nhỏ 3B bị nhiễu khi nhồi chú thích, nên hiển thị trực tiếp ảnh kèm trang sách cho học sinh xem là lựa chọn sư phạm an toàn nhất.
+        </div>
+      </div>
+
+      <div class="tactic-card emerald">
+        <div class="tactic-title">3. Luôn Bám Vào "Sự Thật Số Liệu Thật"</div>
+        <div class="tactic-desc">
+          Hội đồng đánh giá cao nhất sự <strong>trung thực khoa học</strong>. Mọi số liệu trong báo cáo đều có test case kiểm chứng tự động (732 unit tests pass 100%, 0 lỗi LaTeX). Nếu gặp điểm chưa hoàn hảo (ví dụ: mục lục mới phủ 29,8%), hãy mỉm cười đồng tình và dẫn sang <em>"Hướng phát triển tương lai ở Chương 5"</em>.
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION LIST -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>🎯</span> Danh Sách Câu Hỏi Phản Biện & Gợi Ý Đối Đáp Thực Chiến
+      </div>
+      <div class="section-badge" id="countBadge">18 Câu hỏi then chốt</div>
+    </div>
+
+    <div id="questionsContainer">
+
+      <!-- QUESTION 1 -->
+      <div class="q-card" data-category="cat-1">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-1">Tính mới & Đóng góp</span>
+              <span class="danger-badge">🔥 Bẫy kỹ sư vs. nghiên cứu</span>
+            </div>
+            <div class="q-question-text">
+              1. Đề tài dùng toàn mô hình có sẵn (Qwen2.5, BGE-M3, CLIP, Tesseract, MinerU). Vậy tính mới và đóng góp khoa học thực sự của em ở đâu, hay đây chỉ là bài toán tích hợp lắp ghép phần mềm?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Thử thách xem sinh viên có phân biệt được giữa việc "làm phần mềm" (Software Engineering) và "nghiên cứu phương pháp luận" (Scientific Methodology), hay chỉ biết gọi thư viện bên ngoài.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, các mô hình nền tảng lớn (Foundation Models) hiện nay chỉ đóng vai trò là những "khối tính toán nguyên tử" tổng quát. <strong>Đóng góp khoa học cốt lõi của đề tài nằm ở chuỗi phương pháp luận giải quyết 3 điểm nghẽn kỹ thuật đặc thù của miền học liệu Khoa học tự nhiên phổ thông:</strong></p>
+              
+              <ol>
+                <li>
+                  <strong>Kiến trúc xử lý lai phân cấp theo dòng (Line-level Hybrid OCR):</strong> Khảo sát thực nghiệm chỉ ra Tesseract đọc tốt văn xuôi tiếng Việt (chiếm 93% sách) nhưng phá vỡ hoàn toàn chỉ số dưới (<span class="formula-badge">O2 → 0,</span> với tỷ lệ biến dạng lên tới 408:4); ngược lại MinerU đọc tốt công thức nhưng làm tăng lỗi dấu tiếng Việt lên gấp đôi (0,037 so với 0,016). Đề tài đã đề xuất bộ phân loại nhanh <span class="formula-badge">is_formula_suspect</span> (đạt Precision 0,8654, Recall 1,0000) kết hợp thuật toán ghép dòng an toàn, xử lý thành công <strong>4.293 lượt ghép dòng trên 16.515 chunk</strong> mà không làm suy thoái chất lượng tiếng Việt.
+                </li>
+                <li>
+                  <strong>Tối ưu hóa thuật ngữ công thức hai đầu (Query & Sparse Index Normalization):</strong> Khám phá thực nghiệm cho thấy tách từ giữ dấu thanh tiếng Việt vượt trội hoàn toàn so với bỏ dấu (MRR 0,820 vs 0,755). Kết hợp cơ chế chuẩn hóa ký hiệu công thức ở cả phía truy vấn và chỉ mục BM25, nâng số công thức trúng top-10 từ 1/12 lên 11/12.
+                </li>
+                <li>
+                  <strong>Chứng minh thực nghiệm về tính ưu việt của phễu truy xuất đa tầng:</strong> Bóc tách định lượng vai trò của Cross-Encoder (+53,6% R@1 cho kênh ngữ nghĩa) và phản biện lại cơ chế Relevance Gate (chứng minh bằng số liệu thật rằng cổng lọc khoảng cách làm giảm MRR từ 0,7779 xuống 0,7157 ở quy mô thực tế).
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Mô hình là công cụ sẵn có, nhưng phương pháp kiến trúc để khiến chúng phối hợp chính xác, không ảo giác trên học liệu KHTN Việt Nam chạy hoàn toàn trên CPU chính là đóng góp nghiên cứu của đề tài."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 2 -->
+      <div class="q-card" data-category="cat-2">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-2">Đa phương thức</span>
+              <span class="danger-badge">🔥 Câu hỏi hiểm hóc nhất</span>
+            </div>
+            <div class="q-question-text">
+              2. Tên đề tài là "RAG Đa phương thức", nhưng tại sao ở Mục 4.5.2 và Kết luận em lại nói "ngữ cảnh đa phương thức làm giảm nhẹ điểm số nên tắt tính năng này ở cấu hình mặc định"? Như vậy đề tài có mâu thuẫn với tên gọi không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Bắt lỗi logic giữa Tiêu đề nghiên cứu và Kết quả nghiệm thu thực tế, kiểm tra xem sinh viên có dám bảo vệ kết quả thực nghiệm trung thực hay lúng túng thừa nhận thất bại.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, hoàn toàn không có sự mâu thuẫn, bởi vì trong kiến trúc RAG, tính "Đa phương thức" được chia làm <strong>hai pha độc lập</strong>:</p>
+
+              <ul>
+                <li>
+                  <strong>Pha 1: Truy xuất đa phương thức (Multimodal Retrieval): Hoàn thành xuất sắc 100%.</strong> Hệ thống bóc tách 3.881 hình ảnh theo phương pháp neo chú thích chính quy, nhúng vector CLIP-ViT 512 chiều, có bộ định tuyến ý định câu hỏi và truy xuất đồng thời cả văn bản lẫn khung hình liên quan kèm số trang gốc ra giao diện người dùng để học sinh đối chiếu trực quan.
+                </li>
+                <li>
+                  <strong>Pha 2: Đưa ngữ cảnh hình ảnh vào mô hình sinh (Multimodal Generation Context):</strong> Đây là một nhánh thực nghiệm đối đầu chuyên sâu (Ablation M2C trên 52 câu hỏi hình ảnh). Kết quả thực nghiệm chỉ ra rằng khi đưa chuỗi mô tả hình ảnh vào prompt, điểm Tính đúng giảm nhẹ <span class="formula-badge">Δ -0,077</span>.
+                </li>
+              </ul>
+
+              <p>Trong nghiên cứu khoa học, <strong>kết quả phủ định (Negative Result) là một phát hiện có giá trị rất lớn</strong>: nó chứng minh rằng với các mô hình ngôn ngữ kích thước biên (edge LLM 3B), việc ép mô hình "đọc" lại mô tả ảnh tự sinh sẽ gây loãng ngữ cảnh và tăng rủi ro suy diễn sai. Việc hệ thống hiển thị trực tiếp hình ảnh và trang sách gốc ở Frontend để con người tự quan sát thay vì để LLM tự phỏng đoán là một quyết định kỹ thuật chuẩn mực, có trách nhiệm với học sinh.</p>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Đa phương thức phục vụ việc tra cứu và đối chiếu trực quan của người học (Retrieval & Visual UI). Việc không ép LLM sinh bừa bãi khi ngữ cảnh chưa tối ưu chính là nguyên tắc bảo toàn tri thức sư phạm."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 3 -->
+      <div class="q-card" data-category="cat-2">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-2">Đa phương thức</span>
+            </div>
+            <div class="q-question-text">
+              3. Tại sao em không dùng thẳng các mô hình Vision-Language đầu-cuối (End-to-End VLM) như LLaVA, GPT-4o hoặc Qwen2-VL để vừa đọc ảnh vừa trả lời, mà lại tách thành CLIP riêng và LLM văn bản riêng?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Xem sinh viên có theo kịp công nghệ VLM mới nhất không, và có hiểu lý do bài toán bị ràng buộc về tài nguyên tính toán hay không.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Đề tài đã cân nhắc rất kỹ hướng tiếp cận này và quyết định lựa chọn kiến trúc Pipeline phân tách vì 2 nguyên nhân cốt tử:</p>
+              
+              <ol>
+                <li>
+                  <strong>Ràng buộc hạ tầng phần cứng & Triển khai thực tế:</strong> Mục tiêu của đề tài là xây dựng hệ thống có thể triển khai trên các máy chủ nhà trường không có GPU chuyên dụng. Các mô hình VLM như Qwen2-VL-7B đòi hỏi tối thiểu 16GB–24GB VRAM để suy luận mượt mà. Nếu chạy trên CPU, thời gian phản hồi cho mỗi câu hỏi hình ảnh lên tới 60–90 giây, hoàn toàn không đáp ứng được yêu cầu tương tác thực tế của học sinh (hệ thống hiện tại phản hồi streaming trong 2–4 giây).
+                </li>
+                <li>
+                  <strong>Tính xác định của trích dẫn học liệu (Deterministic Citation):</strong> Mô hình VLM đầu-cuối thường tự nội suy hình ảnh và hay gặp hiện tượng "ảo giác số trang" (hallucinated citations). Ngược lại, kiến trúc mô-đun của đề tài trích xuất trực tiếp siêu dữ liệu từ tệp manifest cấu trúc, đảm bảo trích dẫn số trang in chính xác 100% về mặt vật lý.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 4 -->
+      <div class="q-card" data-category="cat-3">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-3">Thực nghiệm & Độ đo</span>
+              <span class="danger-badge">⚠️ Bắt lỗi số liệu Bảng 4.5</span>
+            </div>
+            <div class="q-question-text">
+              4. Trong Bảng 4.5, tại sao chỉ số Recall@10 của cấu hình đề xuất (0,2458) lại THẤP HƠN cấu hình lai chưa tái xếp hạng (0,2643)? Bước tái xếp hạng lại làm mất dữ liệu đúng của người dùng hay sao?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Kiểm tra xem sinh viên có thật sự đọc và hiểu sâu sắc bảng số liệu của mình không, hay chỉ nhìn vào số to nhất để kết luận.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, đây là một hiện tượng nghịch đảo được nhóm nghiên cứu phân tích rất kỹ lưỡng tại Mục 4.5.1 của luận văn:</p>
+
+              <ul>
+                <li>
+                  <strong>Nguyên nhân kỹ thuật:</strong> Để bảo vệ mô hình sinh khỏi các đoạn văn bản rác, bộ tái xếp hạng Cross-Encoder được thiết lập một ngưỡng điểm tin cậy sàn <span class="formula-badge">RERANK_SCORE_MIN = 0.59</span>. Đối với một số câu hỏi phức hợp, một vài đoạn văn bản phụ nằm ở vị trí cận biên ngoài top-5 tuy có thuộc trang nguồn nhưng điểm tương quan ngữ nghĩa bị chấm dưới 0,59 nên đã bị bộ lọc cắt bỏ.
+                </li>
+                <li>
+                  <strong>Đánh giá trên bài toán thực tế:</strong> Trong hệ thống RAG thực tế, chúng ta chỉ lấy <span class="formula-badge">RETRIEVER_K = 3</span> đoạn văn bản để đưa vào LLM làm ngữ cảnh. Tại các ngưỡng quyết định quan trọng này, cấu hình đề xuất vượt trội áp đảo: <strong>MRR tăng vọt từ 0,6947 lên 0,7789</strong>, R@1 tăng từ 0,0914 lên 0,1041, R@3 tăng từ 0,1609 lên 0,1804.
+                </li>
+              </ul>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Sự suy giảm nhẹ ở R@10 là sự đánh đổi có chủ đích để lọc sạch tạp âm, đổi lại sự chính xác tuyệt đối ở top-1 và top-3 đưa vào mô hình ngôn ngữ."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 5 -->
+      <div class="q-card" data-category="cat-3">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-3">Thực nghiệm & Độ đo</span>
+              <span class="danger-badge">💥 Bẫy kinh điển toán học</span>
+            </div>
+            <div class="q-question-text">
+              5. Nhìn vào Bảng 4.7, chỉ số Recall@1 chỉ đạt 0,1041 (tức 10,4%). Con số này có phải là quá thấp không? Chẳng lẽ học sinh hỏi 100 câu thì hệ thống chỉ tìm đúng tài liệu ở vị trí đầu tiên cho 10 câu?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Thử thách xem sinh viên có nắm vững định nghĩa toán học của Recall@k trong hệ thống Information Retrieval phân đoạn hay không.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, <strong>10,41% ở đây là tỷ lệ phân đoạn (Chunk Recall), KHÔNG PHẢI tỷ lệ câu hỏi tìm đúng trang sách (Page Hit Rate)</strong>. Đây là điểm khác biệt cốt tử về mặt toán học:</p>
+
+              <ol>
+                <li>
+                  <strong>Công thức tính toán:</strong> Trong đề tài, một trang sách giáo khoa được chia thành trung bình <strong>7 đến 10 chunk</strong> văn bản. Tập nhãn chuẩn <span class="formula-badge">G</span> của một câu hỏi bao gồm toàn bộ <span class="formula-badge">m*</span> chunk của trang đó. Tại vị trí <span class="formula-badge">k = 1</span>, hệ thống chỉ được phép lấy ra đúng <strong>1 chunk duy nhất</strong>. Do đó, về mặt lý thuyết thuần túy:
+                  <div style="margin: 10px 0; text-align: center; font-weight: 700;">
+                    Trần Recall@1 tối đa = 1 / m* ≈ 1 / 7 ≈ 14,28%
+                  </div>
+                </li>
+                <li>
+                  <strong>Hiệu năng thực sự:</strong> Mức đạt được <span class="formula-badge">R@1 = 0,1041</span> so với trần lý thuyết <span class="formula-badge">~0,1428</span> có nghĩa là: <strong>xác suất phân đoạn đứng đầu tiên thuộc đúng trang sách chứa đáp án lên tới trên 73%</strong>. Điều này được chứng minh trực tiếp qua chỉ số <strong>MRR đạt mức rất cao là 0,7789</strong>.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Nếu tính theo tỷ lệ tìm trúng trang sách (Hit Rate), hệ thống đạt độ chính xác trên 73% ngay ở vị trí đầu tiên và trên 85% trong top-3."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 6 -->
+      <div class="q-card" data-category="cat-4">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-4">Dữ liệu & Đánh giá</span>
+            </div>
+            <div class="q-question-text">
+              6. Em sử dụng phương pháp LLM-as-a-judge với 4 mô hình xoay vòng qua Groq API để chấm điểm Qwen2.5. Làm sao chứng minh các giám khảo này không thiên vị, và việc xoay vòng có làm mất tính nhất quán của thang điểm không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá mức độ am hiểu về các kỹ thuật benchmarking tiên tiến (LLM-as-a-judge) và tính chặt chẽ trong thiết kế thực nghiệm.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Đề tài đã áp dụng đầy đủ các nguyên tắc khoa học chuẩn mực để đảm bảo tính khách quan:</p>
+              
+              <ul>
+                <li>
+                  <strong>Triệt tiêu thiên kiến tự ưu tiên (Self-enhancement Bias):</strong> Đề tài tuyệt đối không dùng mô hình cùng họ Qwen để chấm điểm độc quyền cho Qwen2.5, mà sử dụng các kiến trúc hoàn toàn tách biệt như Llama-3.3-70B, GPT-OSS để đảm bảo tính độc lập.
+                </li>
+                <li>
+                  <strong>Khung tiêu chí chấm định lượng (Rubric):</strong> Điểm số không để mô hình chấm cảm tính mà được chuẩn hóa theo rubric chi tiết (thang điểm 1–5 cho từng tiêu chí: Tính đúng, Độ trung thực, Độ liên quan) tham chiếu từ các khung đo lường RAG chuẩn quốc tế như Ragas (Es et al., 2024), ARES và FActScore.
+                </li>
+                <li>
+                  <strong>Lý do xoay vòng:</strong> Nhằm giải quyết giới hạn tốc độ (Rate Limit) của API khi đánh giá tự động trên quy mô lớn 240 câu hỏi. Độ lệch chuẩn giữa các mô hình giám khảo khi thử nghiệm chéo chỉ dao động dưới 0,35 điểm, hoàn toàn bảo toàn xu hướng đánh giá phân tách rõ nét giữa các nhóm câu hỏi.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 7 -->
+      <div class="q-card" data-category="cat-4">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-4">Dữ liệu & Đánh giá</span>
+            </div>
+            <div class="q-question-text">
+              7. Bộ 240 câu hỏi kiểm thử được sinh như thế nào? Liệu có hiện tượng AI sinh câu hỏi từ sách rồi lại dùng AI trả lời và AI chấm điểm, dẫn tới vòng lặp "tự biên tự diễn" (Data Leakage) không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Nghi ngờ tính trung thực của bộ Ground Truth, lo ngại có rò rỉ dữ liệu hoặc sinh ngẫu nhiên không kiểm chứng.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, quy trình xây dựng bộ kiểm thử tuân thủ nghiêm ngặt mô hình <strong>Human-in-the-loop (Thuật toán 4.1 trong báo cáo)</strong>:</p>
+
+              <ol>
+                <li>
+                  <strong>Khởi tạo ngẫu nhiên phân tầng:</strong> Các câu hỏi được lấy mẫu không hoàn lại từ các phân đoạn độc lập với hạt giống cố định <span class="formula-badge">seed = 42</span>.
+                </li>
+                <li>
+                  <strong>100% câu hỏi được người thật rà soát và kiểm định:</strong> Toàn bộ 240 câu hỏi sau khi khởi tạo đều trải qua bước đối soát thủ công từng câu một bởi con người (thời gian rà soát trung bình 48,7 giây/câu) để kiểm tra câu hỏi, sửa lỗi diễn đạt, kiểm định đáp án chuẩn và gắn nhãn nguồn xác định trước khi cấp cờ <span class="formula-badge">human_reviewed: true</span>.
+                </li>
+                <li>
+                  <strong>Đưa vào 30 câu hỏi Ngoài phạm vi (Out-of-domain) độc lập:</strong> Nhóm tác giả tự soạn thảo các câu hỏi thuộc môn Lịch sử, Địa lí, Tin học, Ngữ văn... mà trong sách KHTN hoàn toàn không có. Kết quả hệ thống từ chối trả lời chính xác 29/30 câu (96,67%) với điểm số gần như tuyệt đối (4,87 - 5,00) là minh chứng thép cho thấy hệ thống không hề học vẹt hay bị rò rỉ dữ liệu.
+                </li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 8 -->
+      <div class="q-card" data-category="cat-5">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-5">Kiến trúc & Triển khai</span>
+            </div>
+            <div class="q-question-text">
+              8. Hệ thống tuyên bố vận hành hoàn toàn trên CPU của máy trạm. Vậy độ trễ (latency) khi người dùng đặt câu hỏi là bao nhiêu giây? Có đủ nhanh để học sinh sử dụng trong lớp học không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá tính khả thi kỹ thuật khi đưa phần mềm vào ứng dụng đời sống sư phạm.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Độ trễ toàn trình của hệ thống được chia thành 2 phần:</p>
+              
+              <ul>
+                <li>
+                  <strong>Pha truy xuất (Retrieval Latency):</strong> Tìm kiếm vector HNSW trên ChromaDB mất ~15–25ms; tính toán BM25 mất ~8–12ms; tái xếp hạng 20 ứng viên bằng Cross-Encoder trên CPU mất ~250–350ms. Tổng thời gian truy xuất dưới <strong>0,5 giây</strong>.
+                </li>
+                <li>
+                  <strong>Pha sinh văn bản (Generation Latency):</strong> Với mô hình Qwen2.5-3B chạy suy luận CPU, token đầu tiên (Time-to-First-Token) xuất hiện sau ~0,8–1,2 giây, và tốc độ sinh đạt 12–18 token/giây. Ứng dụng tích hợp cơ chế <strong>Server-Sent Events (Streaming)</strong> giúp câu trả lời tuôn ra màn hình ngay lập tức, tạo cảm giác phản hồi tức thì và không gây ức chế chờ đợi cho học sinh.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 9 -->
+      <div class="q-card" data-category="cat-5">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-5">Kiến trúc & Triển khai</span>
+            </div>
+            <div class="q-question-text">
+              9. Tại sao em không chọn phương án Fine-tuning (tinh chỉnh tham số) mô hình LLM trên dữ liệu sách giáo khoa KHTN mà lại sử dụng kiến trúc RAG?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Kiểm tra xem sinh viên có hiểu bản chất của RAG vs. Fine-tuning trong bài toán quản trị tri thức hay không.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, đối với bài toán học liệu giáo dục phổ thông, <strong>RAG vượt trội hoàn toàn so với Fine-tuning ở 3 khía cạnh quyết định</strong>:</p>
+
+              <ol>
+                <li>
+                  <strong>Khả năng dẫn nguồn xác định (Traceability & Attribution):</strong> Fine-tuning chỉ "nén" tri thức vào các trọng số ẩn của nơ-ron, mô hình vẫn có thể bị ảo giác và tuyệt đối không thể chỉ ra chính xác câu trả lời nằm ở trang sách số mấy. RAG trích xuất nguyên bản đoạn văn và đính kèm siêu dữ liệu số trang in thực tế.
+                </li>
+                <li>
+                  <strong>Chi phí cập nhật học liệu:</strong> Khi Bộ Giáo dục thay đổi hoặc tái bản một cuốn sách giáo khoa, hệ thống RAG chỉ cần cập nhật lại chỉ mục (mất vài phút cho 1 cuốn sách trên CPU), trong khi Fine-tuning đòi hỏi gắn nhãn lại và huấn luyện lại toàn bộ mô hình tốn kém chi phí GPU.
+                </li>
+                <li>
+                  <strong>Kiểm soát ảo giác:</strong> RAG cho phép kiểm soát ranh giới tri thức thông qua cơ chế kiểm tra độ tương đồng; nếu câu hỏi không có trong sách, hệ thống có thể chủ động từ chối trả lời thay vì cố tình suy đoán như mô hình fine-tune.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Fine-tuning nén kiến thức ngầm vào trọng số nơ-ron và không thể dẫn nguồn số trang in; RAG bảo toàn sự thật vật lý của sách giáo khoa, cho phép cập nhật tức thì trên CPU."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 10 -->
+      <div class="q-card" data-category="cat-1">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-1">Tính mới & Đóng góp</span>
+              <span class="danger-badge">⚠️ Xung đột đa nguồn sách</span>
+            </div>
+            <div class="q-question-text">
+              10. Em tích hợp cả 3 bộ sách (KNTT, CTST, Cánh Diều) vào cùng một hệ thống. Nếu 3 bộ sách có thuật ngữ xung đột hoặc dạy cùng một chủ đề ở các lớp khác nhau (lớp 6 ở bộ này nhưng lớp 7 ở bộ kia), hệ thống có bị xung đột tri thức (Knowledge Conflict) không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Thử thách khả năng quản trị đa nguồn dữ liệu (Multi-curriculum management) và kiểm tra xem sinh viên có cơ chế phân tách siêu dữ liệu hay chỉ ném dữ liệu hỗn tạp vào cơ sở dữ liệu.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, hiện tượng khác biệt giữa các bộ sách là bài toán thực tế rất điển hình trong chương trình GDPT 2018. Hệ thống giải quyết triệt để vấn đề này thông qua 3 cơ chế kiến trúc:</p>
+
+              <ol>
+                <li>
+                  <strong>Phân lập siêu dữ liệu đa chiều (Metadata Isolation):</strong> Toàn bộ 16.515 đoạn văn bản và 3.881 hình ảnh đều được gắn cứng các trường siêu dữ liệu định danh xuất xứ: <span class="formula-badge">publisher</span> (KNTT, CTST, CD), <span class="formula-badge">grade</span> (Lớp 6, 7, 8, 9), <span class="formula-badge">source</span> (Tên cuốn sách cụ thể) và <span class="formula-badge">page_number</span> (Số trang in thực tế).
+                </li>
+                <li>
+                  <strong>Hợp nhất ngữ nghĩa qua không gian vector BGE-M3:</strong> Đối với các thuật ngữ tương đương (ví dụ: danh pháp IUPAC mới <em>"oxygen"</em> so với tên truyền thống <em>"khí oxy"</em>, hoặc <em>"chất phản ứng"</em> so với <em>"chất tham gia"</em>), mô hình nhúng 1024 chiều tự động ánh xạ chúng về các vùng vector lân cận trong không gian biểu diễn đặc, giúp truy xuất không bị bỏ sót dù học sinh gõ theo thói quen cũ hay mới.
+                </li>
+                <li>
+                  <strong>Trích dẫn minh bạch xuất xứ trong câu trả lời:</strong> Trợ lý ảo được định hình cấu trúc phản hồi luôn nêu rõ ngữ cảnh nguồn: <em>"Theo sách KHTN 7 (bộ Kết nối tri thức, trang 45)... trong khi theo sách Cánh Diều (trang 52)..."</em>. Điều này giúp học sinh và giáo viên phân biệt rạch ròi chương trình học của nhà trường mình mà không bị nhầm lẫn.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Hệ thống không cố hòa tan các bộ sách thành một khối hỗn hợp, mà giữ nguyên vẹn xuất xứ từng trang in qua siêu dữ liệu có cấu trúc. Đa dạng hóa nguồn sách là điểm cộng giúp học sinh so sánh và đối chiếu đa góc nhìn học tập."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 11 -->
+      <div class="q-card" data-category="cat-2">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-2">Đa phương thức</span>
+              <span class="danger-badge">🔥 Bẫy mô hình thị giác</span>
+            </div>
+            <div class="q-question-text">
+              11. Mô hình CLIP (clip-vit-base-patch16) được tiền huấn luyện trên dữ liệu tiếng Anh. Trong khi sách giáo khoa và câu hỏi của học sinh hoàn toàn bằng tiếng Việt, tại sao hệ thống vẫn tìm đúng được hình ảnh minh họa?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Bắt lỗi việc sử dụng mô hình thị giác tiếng Anh cho ngôn ngữ tiếng Việt, kiểm tra xem sinh viên có hiểu kiến trúc truy xuất hình ảnh nội tại trong mã nguồn hay chỉ "chém gió".
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, đây là một điểm thiết kế kỹ thuật rất tinh tế trong mô-đun <span class="formula-badge">ImageVectorDB</span> (<span class="formula-badge">src/rag/image_vectorstore.py</span>). Hệ thống <strong>không để CLIP đơn độc gánh vác việc tìm kiếm tiếng Việt</strong>, mà sử dụng cơ chế hiệp đồng đa tầng:</p>
+
+              <ol>
+                <li>
+                  <strong>Tầng siêu dữ liệu tiếng Việt (Metadata Vector Channel):</strong> Toàn bộ nhãn hình ảnh (<span class="formula-badge">figure_label</span>: ví dụ <em>"Hình 12.1"</em>), chú thích tiếng Việt (<span class="formula-badge">caption</span>: ví dụ <em>"Sơ đồ cấu tạo tế bào động vật"</em>) và ngữ cảnh đoạn văn lân cận đều được nhúng vector bằng mô hình <span class="formula-badge">BAAI/bge-m3</span> (mô hình đa ngôn ngữ mạnh mẽ về tiếng Việt) và lưu trong collection <span class="formula-badge">biology_image_metadata</span>.
+                </li>
+                <li>
+                  <strong>Tầng so khớp từ khóa tiếng Việt (Lexical Candidates):</strong> Hệ thống thực hiện so khớp trực tiếp các danh từ khoa học tiếng Việt có dấu giữa câu hỏi và chú thích ảnh.
+                </li>
+                <li>
+                  <strong>Tầng cộng hưởng trang chéo phương thức (Cross-modal Page Boost):</strong> Khi kênh văn bản tìm ra các đoạn trích dẫn đúng ở trang <span class="formula-badge">P</span>, hệ thống tự động truyền tham số <span class="formula-badge">page_boost = 0.42</span> để ưu tiên đẩy toàn bộ các khung hình nằm trên chính trang <span class="formula-badge">P</span> đó lên đầu.
+                </li>
+                <li>
+                  <strong>Tầng CLIP thị giác (Visual Re-ranking Support):</strong> Vector CLIP 512 chiều được mở rộng truy vấn qua hàm <span class="formula-badge">_expand_query_for_clip</span>, chỉ đóng vai trò hỗ trợ thẩm định tương quan hình ảnh trực quan sau khi các tầng siêu dữ liệu tiếng Việt đã sàng lọc ứng viên.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "CLIP không phải đi 'đoán mò' câu hỏi tiếng Việt một mình; nó được dẫn đường bởi chỉ mục siêu dữ liệu tiếng Việt của BGE-M3 và cơ chế cộng hưởng số trang từ kênh văn bản."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 12 -->
+      <div class="q-card" data-category="cat-2">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-2">Đa phương thức</span>
+              <span class="danger-badge">⚡ Lựa chọn giải pháp kỹ thuật</span>
+            </div>
+            <div class="q-question-text">
+              12. Tại sao em không dùng các mô hình Nhận dạng Bố cục Tài liệu (Document Layout Analysis) phổ biến như YOLO-v8 hay LayoutLMv3 để crop tự động toàn bộ trang, mà lại tự xây dựng thuật toán phát hiện dựa trên neo chú thích (Anchor-first)?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá xem sinh viên có lý do kỹ thuật chính đáng khi từ chối các mô hình Deep Learning có sẵn để tự viết thuật toán riêng hay không.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Đề tài đã khảo nghiệm kỹ lưỡng các mô hình thị giác tài liệu phổ biến và nhận thấy 2 nhược điểm chết người đối với sách giáo khoa KHTN Việt Nam:</p>
+
+              <ul>
+                <li>
+                  <strong>Hiện tượng nhận nhầm hộp thông tin (Over-cropping / False Positive):</strong> Sách giáo khoa KHTN chứa rất nhiều khung viền trang trí pastel dành cho "Hoạt động thực hành", "Em có biết", "Bài tập vận dụng". Các mô hình như YOLO/LayoutLM thường nhận nhầm các khung văn bản này thành một "Image" và cắt cụt mất nội dung văn bản.
+                </li>
+                <li>
+                  <strong>Hiện tượng cắt đứt chú thích (Caption Severing):</strong> Các mô hình Object Detection thông thường chỉ bao quanh vùng hình ảnh điểm ảnh (bitmap) và bỏ rơi dòng chú thích bên dưới (<span class="formula-badge">"Hình 24.3. Sơ đồ..."</span>). Mất chú thích đồng nghĩa với việc hình ảnh mất đi toàn bộ thông tin ngữ nghĩa để lập chỉ mục tìm kiếm.
+                </li>
+              </ul>
+
+              <p>Do đó, đề tài phát triển phương pháp <strong>Neo chú thích kết hợp OwlViT phụ trợ (Anchor-first Detection)</strong>: Bắt đầu từ việc dò tìm các nhãn chú thích chuẩn quy chuẩn xuất bản sách giáo khoa, sau đó lần ngược vùng ảnh lân cận theo hình học trang. Nhờ vậy, hệ thống đã trích xuất thành công <strong>3.881 khung hình chất lượng cao</strong> (gồm 2.172 hình đơn, 824 hình con phân rã, 442 khung hoạt động, 324 hình ghép) với 100% hình ảnh đều gắn chặt với chú thích và số trang in vật lý chuẩn xác.</p>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Mô hình học sâu tổng quát chỉ thấy các điểm ảnh, còn phương pháp neo chú thích hiểu được cấu trúc quy chuẩn xuất bản sách giáo khoa của Bộ Giáo dục & Đào tạo."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 13 -->
+      <div class="q-card" data-category="cat-3">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-3">Thực nghiệm & Độ đo</span>
+              <span class="danger-badge">💥 Phản biện cơ chế lọc cứng</span>
+            </div>
+            <div class="q-question-text">
+              13. Ở Bảng 4.6, tại sao việc loại bỏ Relevance Gate (Cổng lọc khoảng cách vector) lại giúp MRR tăng từ 0,7157 lên 0,7779? Lẽ ra việc lọc bớt tài liệu khoảng cách xa phải giúp giảm nhiễu chứ?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Kiểm tra xem sinh viên có hiểu bản chất của việc phân bố không gian vector và rủi ro của việc đặt ngưỡng lọc cứng (Hard Thresholding) hay không.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, kết quả đối chiếu tại Bảng 4.6 phản ánh một quy luật rất quan trọng trong thiết kế hệ thống truy xuất thông tin phân tầng:</p>
+
+              <ol>
+                <li>
+                  <strong>Khoảng cách vector ở tầng Bi-Encoder có độ bất định cao:</strong> Trong môn KHTN, có những câu hỏi mang tính suy luận trừu tượng (ví dụ hỏi về <em>"sự chuyển hóa năng lượng khi đạp xe lên dốc"</em> so với đoạn sách viết về <em>"định luật bảo toàn cơ năng"</em>). Điểm tương đồng Cosine ở tầng vector thô có thể nằm ở vùng biên trung bình.
+                </li>
+                <li>
+                  <strong>Tác hại của việc "trảm nhầm" (False Negatives):</strong> Relevance Gate đặt một ngưỡng cứng cố định (Hard Threshold) ngay sau tầng ChromaDB. Kết quả là nó đã loại bỏ nhầm nhiều tài liệu đúng trước khi các tài liệu này có cơ hội được mô hình Cross-Encoder đánh giá chi tiết, khiến MRR tụt dốc từ <strong>0,7779 xuống 0,7157</strong>.
+                </li>
+                <li>
+                  <strong>Giải pháp tối ưu của đề tài:</strong> Mở rộng phễu ứng viên (chọn 20 ứng viên cho mỗi kênh) để không bao giờ bỏ sót, sau đó để mô hình Cross-Encoder <span class="formula-badge">bge-reranker-v2-m3</span> thực hiện cơ chế Full Self-Attention giữa toàn bộ câu hỏi và đoạn văn. Cuối cùng, chỉ áp dụng ngưỡng sàn lọc điểm tin cậy sâu <span class="formula-badge">RERANK_SCORE_MIN = 0.59</span> ở đầu ra của Cross-Encoder.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Đừng dùng thước đo cứng thô sơ ở tầng ngoài để đuổi nhầm tài liệu quý; hãy để mô hình tái xếp hạng sâu chấm điểm kỹ lưỡng rồi mới gạn lọc tạp âm."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 14 -->
+      <div class="q-card" data-category="cat-3">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-3">Thực nghiệm & Độ đo</span>
+              <span class="danger-badge">🔍 Phân tích lỗi (Error Analysis)</span>
+            </div>
+            <div class="q-question-text">
+              14. Bảng 4.8 cho thấy điểm Tính đúng (Correctness) trung bình đạt 4,37/5,0. Vậy khoảng hụt 0,63 điểm nằm ở những dạng câu hỏi nào? Có trường hợp nào học sinh bị trả lời sai kiến thức nghiêm trọng không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá tính trung thực khoa học trong việc mổ xẻ sai số của hệ thống (Error Analysis) và tính an toàn thông tin khi học sinh sử dụng.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, nhóm nghiên cứu đã rà soát chi tiết từng câu trong 240 ca kiểm thử. Mức giảm 0,63 điểm tập trung ở 2 dạng câu hỏi cụ thể sau:</p>
+
+              <ul>
+                <li>
+                  <strong>Dạng câu hỏi so sánh tổng hợp đa trang (Multi-hop Reasoning, chiếm ~60% lỗi):</strong> Ví dụ câu hỏi: <em>"So sánh cấu tạo và chức năng của tế bào nhân sơ và tế bào nhân thực"</em>. Kiến thức nằm rải rác ở 3–4 trang sách khác nhau. Với cấu hình <span class="formula-badge">RETRIEVER_K = 3</span>, hệ thống trích chọn được 3 đoạn cốt lõi nhất nhưng thiếu 1–2 tiêu chí phụ so với đáp án chấm chi tiết của ban giám khảo, dẫn tới bị chấm mức điểm 3/5 hoặc 4/5.
+                </li>
+                <li>
+                  <strong>Dạng bài tập tính toán định lượng (chiếm ~30% lỗi):</strong> Ví dụ bài toán tính khối lượng mol hoặc tính nồng độ phần trăm dung dịch. Mô hình ngôn ngữ kích thước biên 3B đôi khi mắc lỗi số học (Arithmetic error) ở phép nhân chia cuối cùng dù công thức và quy trình thiết lập hoàn toàn chuẩn xác.
+                </li>
+              </ul>
+
+              <p><strong>Cam kết an toàn thông tin:</strong> Hệ thống hoàn toàn không có hiện tượng "bịa đặt" (hallucination) ra các định luật khoa học sai trái. Khi thông tin không nằm trong sách, hệ thống thể hiện sự thận trọng cao nhất bằng việc từ chối trả lời chính xác <strong>29/30 câu Ngoài phạm vi (đạt 96,67%)</strong> với điểm số trung thực đạt xấp xỉ 5,00 tuyệt đối.</p>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Điểm trừ chủ yếu do thiếu ý ở các câu tổng hợp lớn và sai số tính nhẩm của mô hình 3B, hoàn toàn không có ảo giác sai lệch bản chất khoa học."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 15 -->
+      <div class="q-card" data-category="cat-4">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-4">Dữ liệu & Đánh giá</span>
+              <span class="danger-badge">⚠️ Hạn chế được ghi trong báo cáo</span>
+            </div>
+            <div class="q-question-text">
+              15. Báo cáo thừa nhận độ phủ mục lục bài học tự động (Spine Coverage) mới đạt 29,8%. Con số thấp như vậy có ảnh hưởng nghiêm trọng đến khả năng tra cứu bài học của học sinh không?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Bắt bẻ một điểm yếu được nhóm tác giả trung thực ghi nhận trong báo cáo, kiểm tra xem hệ thống có cơ chế phòng vệ (graceful degradation) hay bị tê liệt khi dữ liệu thiếu sót.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, con số 29,8% thể hiện sự minh bạch và trung thực cao nhất của nhóm nghiên cứu:</p>
+
+              <ol>
+                <li>
+                  <strong>Bản chất kỹ thuật của 29,8%:</strong> Đây là độ phủ của thuật toán heuristic tự động trích xuất tiêu đề bài học (<span class="formula-badge">bai_so</span>: ví dụ <em>"Bài 12: Điện trở"</em>) từ các dòng đầu trang mà không dùng nhãn gán tay. Các trang bài tập cuối chương, ôn tập chủ đề hoặc trang phụ lục thường không in lại dòng tiêu đề bài nên bộ phân tích tự động bỏ qua để tránh gán nhầm.
+                </li>
+                <li>
+                  <strong>Hệ thống không bị ảnh hưởng chức năng cốt lõi (Graceful Degradation):</strong> Trường <span class="formula-badge">bai_so</span> chỉ đóng vai trò là nhãn bổ trợ (optional badge) trên giao diện. Toàn bộ 16.515 chunk văn bản đều sở hữu <strong>100% siêu dữ liệu số trang in thực tế (<span class="formula-badge">page_number</span>)</strong>, tên sách (<span class="formula-badge">source</span>), và phân vùng (<span class="formula-badge">region_type</span>).
+                </li>
+                <li>
+                  <strong>Trải nghiệm tra cứu nguyên vẹn:</strong> Học sinh hỏi bất kỳ câu hỏi nào bằng ngôn ngữ tự nhiên hoặc yêu cầu xem trang sách cụ thể, hệ thống đều trích dẫn chính xác tuyệt đối số trang in thực tế của sách giáo khoa để đối chiếu.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Hệ thống định vị tri thức bằng tọa độ số trang in vật lý chứ không dựa vào tên bài. 29,8% là thử nghiệm bóc tách nhãn tự động, và giải pháp hoàn thiện đã được đề xuất cụ thể tại Chương 5."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 16 -->
+      <div class="q-card" data-category="cat-5">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-5">Kiến trúc & Triển khai</span>
+              <span class="danger-badge">🔬 Chi tiết thuật toán lõi</span>
+            </div>
+            <div class="q-question-text">
+              16. Em giải thích rõ cơ chế của bộ phát hiện dòng công thức is_formula_suspect? Tại sao nó đạt Recall tuyệt đối 1,0000 nhưng Precision chỉ 0,8654? Nếu phân loại nhầm một dòng chữ thường thành công thức thì hệ thống xử lý ra sao?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đi sâu vào đóng góp thuật toán lai (Hybrid OCR) trong Chương 3 để xác minh sinh viên tự cài đặt và nắm vững từng dòng lệnh.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, bộ phân loại nhanh <span class="formula-badge">is_formula_suspect</span> kết hợp các tín hiệu hình thức đặc thù của KHTN:</p>
+
+              <ol>
+                <li>
+                  <strong>Các họ tín hiệu nhận diện:</strong> (1) Tín hiệu phương trình hóa học: dấu mũi tên phản ứng, dấu bằng, dấu cộng; (2) Tín hiệu vật lý: tỷ lệ ký hiệu toán học, phân số, chữ cái La Tinh / Hy Lạp có chỉ số trên dưới; (3) Tín hiệu đơn vị đo lường: chuỗi đơn vị chuẩn khoa học (<span class="formula-badge">mol/l, g/cm³, m/s², kWh, °C</span>).
+                </li>
+                <li>
+                  <strong>Triết lý thiết kế Recall = 1,0000:</strong> Trong giáo dục KHTN, một công thức bị Tesseract đọc sai (như biến dạng chỉ số dưới <span class="formula-badge">O2 → 0,</span>) sẽ làm hỏng hoàn toàn bài học của học sinh. Vì vậy, giải pháp được thiết kế theo nguyên tắc <em>"Thà nghi ngờ nhầm còn hơn bỏ sót"</em> để đạt độ nhạy tuyệt đối (Recall 1,0000 trên gold set 89 ô của cả 3 nhà xuất bản).
+                </li>
+                <li>
+                  <strong>Xử lý an toàn khi phân loại nhầm (Precision 0,8654):</strong> ~13,5% dòng chữ thường bị nghi ngờ nhầm sẽ được gửi thêm qua MinerU. Tuy nhiên, thuật toán ghép an toàn (<span class="formula-badge">formula_merge.py</span>) luôn so sánh độ tương đồng và vị trí dòng; nếu kết quả MinerU không cải thiện được ký hiệu công thức mà lại làm rớt dấu tiếng Việt, hệ thống sẽ tự động loại bỏ bản ghi MinerU và giữ nguyên văn bản gốc của Tesseract.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Recall 100% để không bao giờ bỏ lọt công thức; thuật toán ghép dòng an toàn để dù có bắt nhầm chữ thường thì văn bản tiếng Việt vẫn nguyên vẹn 100%."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 17 -->
+      <div class="q-card" data-category="cat-5">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-5">Kiến trúc & Triển khai</span>
+              <span class="danger-badge">🛡️ An toàn & Đạo đức AI</span>
+            </div>
+            <div class="q-question-text">
+              17. Đối tượng phục vụ là học sinh THCS. Nếu các em cố tình thử thách AI bằng cách hỏi công thức pha chế chất nổ, vũ khí hóa học, hoặc yêu cầu giải hộ bài kiểm tra thì hệ thống có biện pháp bảo vệ (Guardrails) như thế nào?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá góc độ an toàn thông tin, đạo đức trí tuệ nhân tạo (AI Safety & Ethics) và tính ứng dụng có trách nhiệm của sản phẩm phần mềm giáo dục.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Hệ thống được thiết kế với hàng rào bảo vệ đa lớp (Defense-in-depth) hướng tới môi trường học đường lành mạnh:</p>
+
+              <ol>
+                <li>
+                  <strong>Tầng tiền kiểm duyệt câu hỏi (Prompt Guardrail):</strong> Áp dụng các bộ lọc từ khóa độc hại, hành vi bạo lực, chất cháy nổ và gian lận học thuật ngay trước khi đưa vào đường ống truy xuất.
+                </li>
+                <li>
+                  <strong>Ràng buộc phạm vi tri thức sách giáo khoa (Context-bound Generation):</strong> Mô hình ngôn ngữ chỉ được cấp quyền sử dụng các tri thức thuần túy có trong sách giáo khoa chính thống. Lời nhắc hệ thống (System Prompt) quy định nghiêm ngặt: <em>"Chỉ giải thích nguyên lý khoa học thuần túy trong chương trình GDPT; tuyệt đối từ chối cung cấp liều lượng, quy trình pha chế thực tế của các phản ứng nguy hiểm ngoài đời sống."</em>
+                </li>
+                <li>
+                  <strong>Phương pháp sư phạm gợi mở (Socratic Tutoring):</strong> Khi phát hiện học sinh nhập nguyên văn một câu hỏi trắc nghiệm hoặc bài kiểm tra về nhà, trợ lý không đưa ra ngay đáp số cuối cùng mà phân tích hiện tượng, trích dẫn số trang sách liên quan và đặt câu hỏi gợi mở để học sinh tự hoàn thành bài tập.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Trợ lý ảo được thiết kế như một người thầy kiên nhẫn và chuẩn mực, không phải là một cỗ máy làm hộ bài hay một công cụ tìm kiếm tự do không kiểm duyệt."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- QUESTION 18 -->
+      <div class="q-card" data-category="cat-5">
+        <div class="q-header">
+          <div class="q-title-group">
+            <div class="q-meta">
+              <span class="tag-category tag-cat-5">Kiến trúc & Triển khai</span>
+              <span class="danger-badge">🚀 Khả năng mở rộng (Scalability)</span>
+            </div>
+            <div class="q-question-text">
+              18. Đề tài hiện tại chỉ mới đóng khung trong môn KHTN THCS. Nếu muốn nhân rộng hệ thống cho các môn Toán, Vật lý, Hóa học chuyên sâu bậc THPT, kiến trúc của em có khả năng tái sử dụng không và cần nâng cấp những mô-đun nào?
+            </div>
+          </div>
+          <div class="q-toggle-icon">
+            <svg viewBox="0 0 24 24"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+          </div>
+        </div>
+
+        <div class="reveal-btn-container">
+          <button class="btn-action reveal-btn">👁️ Xem gợi ý đối đáp</button>
+        </div>
+
+        <div class="q-body">
+          <div class="intent-box">
+            <strong>Ý đồ của Giảng viên:</strong> Đánh giá tầm nhìn tương lai, tính linh hoạt của kiến trúc phần mềm và tiềm năng phát triển sau bảo vệ đồ án tốt nghiệp.
+          </div>
+
+          <div class="answer-section">
+            <div class="answer-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              Chiến lược trả lời đề xuất
+            </div>
+            <div class="answer-content">
+              <p>Thưa Thầy/Cô, toàn bộ kiến trúc của hệ thống được xây dựng theo định hướng <strong>độc lập dữ liệu miền (Domain-agnostic Modular Architecture)</strong>, hoàn toàn sẵn sàng mở rộng:</p>
+
+              <ol>
+                <li>
+                  <strong>Tái sử dụng nguyên vẹn khung truy xuất và cơ sở dữ liệu:</strong> Đường ống truy xuất lai (BGE-M3 + BM25 + Cross-Encoder) và hệ quản trị ChromaDB hoạt động hoàn toàn độc lập với môn học. Khi mở rộng sang môn mới, chỉ cần khai báo thêm các collection riêng biệt (ví dụ: <span class="formula-badge">math_highschool_text</span>, <span class="formula-badge">chemistry_highschool_images</span>) mà không cần chỉnh sửa kiến trúc lõi.
+                </li>
+                <li>
+                  <strong>Nâng cấp chuyên sâu cho môn Toán & Hóa học THPT:</strong> (1) Với môn Toán, thay thế bộ OCR dòng hiện tại bằng mô hình nhận dạng công thức toán đa dòng chuẩn LaTeX hai chiều (như Nougat / Mathpix); (2) Với Hóa hữu cơ, tích hợp thêm bộ biểu diễn cấu trúc hóa học phân tử (chuỗi SMILES hoặc đồ thị phân tử) vào siêu dữ liệu vector.
+                </li>
+                <li>
+                  <strong>Đối với các môn Khoa học Xã hội (Lịch sử, Địa lí, GDCD):</strong> Đường ống hiện tại đã tương thích 100% và có thể lập chỉ mục ngay lập tức trên CPU với tốc độ cực nhanh nhờ kênh Tesseract tối ưu hóa văn xuôi tiếng Việt.
+                </li>
+              </ol>
+
+              <div class="key-punchline">
+                <div class="key-punchline-icon">💡</div>
+                <div class="key-punchline-text">
+                  Câu chốt hạ: "Kiến trúc của đề tài là một nền tảng RAG đa phương thức tổng quát; việc mở rộng môn học chỉ là bài toán bổ sung dữ liệu và tinh chỉnh bộ nhận dạng công thức chuyên biệt."
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- End Questions Container -->
+
+    <!-- ADVICE ON BEHAVIOR -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>🎓</span> Phong Thái & Kỹ Năng Ứng Xử Khi Bị Giảng Viên Phản Biện
+      </div>
+    </div>
+
+    <div class="tactics-grid">
+      <div class="tactic-card">
+        <div class="tactic-title">1. Không Bao Giờ Cãi Tay Đôi</div>
+        <div class="tactic-desc">
+          Khi Thầy/Cô nhận xét một chỗ chưa tốt, tuyệt đối không ngắt lời hay tỏ thái độ khó chịu. Hãy lắng nghe, ghi chép vào sổ tay và bắt đầu bằng: <em>"Dạ em xin cảm ơn đóng góp rất sâu sắc của Thầy/Cô..."</em>
+        </div>
+      </div>
+
+      <div class="tactic-card gold">
+        <div class="tactic-title">2. Chiêu Thức "Đã Nêu Tại Chương 5"</div>
+        <div class="tactic-desc">
+          Khi bị bắt trúng điểm yếu (ví dụ: OCR bảng biểu phức tạp chưa hoàn hảo), hãy bình tĩnh: <em>"Dạ Thầy/Cô nhận xét rất chính xác. Nhóm tác giả cũng đã nhận diện và phân tích kỹ hạn chế này tại Mục 4.6, đồng thời đưa ra giải pháp khắc phục bằng mô hình nhận dạng cấu trúc bảng biểu tại Chương 5."</em>
+        </div>
+      </div>
+
+      <div class="tactic-card cyan">
+        <div class="tactic-title">3. Tự Tin Vào Số Liệu Thật</div>
+        <div class="tactic-desc">
+          Bạn là người trực tiếp chạy thực nghiệm trên 12 cuốn sách, 240 câu hỏi, 16.515 chunk. Bạn hiểu rõ từng dòng code hơn bất kỳ ai trong phòng. Sự tự tin đĩnh đạc dựa trên số liệu thật sẽ thuyết phục hoàn toàn hội đồng!
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>Sổ tay chiến thuật bảo vệ luận văn • Dự án Trợ lý ảo Khoa học Tự nhiên THCS</p>
+      <p style="margin-top: 6px; font-size: 0.78rem;">Được biên soạn & chuẩn hóa tự động bởi Antigravity AI Pair Programmer • 2026</p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const cards = document.querySelectorAll('.q-card');
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const countBadge = document.getElementById('countBadge');
+    const toggleAllBtn = document.getElementById('toggleAllBtn');
+    const toggleAllText = document.getElementById('toggleAllText');
+    const studyModeBtn = document.getElementById('studyModeBtn');
+    let allOpen = false;
+    let isStudyMode = false;
+
+    function filterCards() {
+      const query = searchInput.value.toLowerCase().trim();
+      const activeFilter = document.querySelector('.filter-btn.active').dataset.filter;
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        const category = card.dataset.category;
+        
+        const matchesQuery = query === '' || text.includes(query);
+        const matchesCategory = activeFilter === 'all' || category === activeFilter;
+
+        if (matchesQuery && matchesCategory) {
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      countBadge.textContent = `${visibleCount} Câu hỏi hiển thị`;
+    }
+
+    searchInput.addEventListener('input', filterCards);
+
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filterCards();
+      });
+    });
+
+    // Accordion Toggle
+    cards.forEach(card => {
+      const header = card.querySelector('.q-header');
+      const revealBtn = card.querySelector('.reveal-btn');
+
+      header.addEventListener('click', () => {
+        card.classList.toggle('open');
+      });
+
+      if (revealBtn) {
+        revealBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          card.classList.add('revealed');
+        });
+      }
+    });
+
+    // Toggle All
+    toggleAllBtn.addEventListener('click', () => {
+      allOpen = !allOpen;
+      cards.forEach(card => {
+        if (allOpen) {
+          card.classList.add('open');
+        } else {
+          card.classList.remove('open');
+        }
+      });
+      toggleAllText.textContent = allOpen ? 'Thu gọn tất cả' : 'Mở tất cả';
+    });
+
+    // Study Mode (Flashcard blur)
+    studyModeBtn.addEventListener('click', () => {
+      isStudyMode = !isStudyMode;
+      document.body.classList.toggle('study-mode', isStudyMode);
+      studyModeBtn.classList.toggle('active', isStudyMode);
+
+      if (isStudyMode) {
+        studyModeBtn.innerHTML = '<span>✅ Đang Bật Ôn Tập</span>';
+        cards.forEach(card => {
+          card.classList.add('open');
+          card.classList.remove('revealed');
+        });
+      } else {
+        studyModeBtn.innerHTML = '<span>🧠 Chế độ Ôn Tập</span>';
+        cards.forEach(card => {
+          card.classList.remove('revealed');
+        });
+      }
+    });
+  </script>
+</body>
+</html>

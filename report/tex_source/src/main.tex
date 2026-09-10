@@ -1,41 +1,60 @@
-\documentclass[12pt, oneside]{src/thesis}
+\documentclass[12pt, oneside, openany]{src/thesis}
 
 \begin{document}
 
-\frontmatter\pagestyle{plain}
-
+% ==================== TRANG ĐẦU (KHÔNG ĐÁNH SỐ TRANG) ==================== %
+% Không đánh số trang: Thông tin hội đồng, Lời cảm ơn, Mục lục, Danh mục hình, bảng, viết tắt
+\pagestyle{empty}
+\assignpagestyle{\chapter}{empty}
 
 \input{src/covers/title_page}
 \input{src/covers/second_title_page}
-% \input{src/hoi_dong}
+\input{src/hoi_dong}
 \input{src/loi_cam_on}
-\include{src/chapters/0.tom_tat}
 
 \renewcommand{\contentsname}{MỤC LỤC}
 \tableofcontents
+\newpage
 
 \renewcommand{\figurename}{Hình}
 \renewcommand{\listfigurename}{DANH SÁCH HÌNH ẢNH}
-\addcontentsline{toc}{chapter}{\textbf{\listfigurename}}
+\phantomsection
+\addchapternopage{\listfigurename}
 \listoffigures
 \newpage
 
 \renewcommand{\tablename}{Bảng}
 \renewcommand{\listtablename}{DANH SÁCH BẢNG BIỂU}
-\addcontentsline{toc}{chapter}{\textbf{\listtablename}}
+\phantomsection
+\addchapternopage{\listtablename}
 \listoftables
 \newpage
 
-\include{src/danh_muc_viet_tat}
-\include{src/danh_muc_dich}
+\input{src/danh_muc_viet_tat}
+\input{src/danh_muc_dich}
 
+% =================== BẮT ĐẦU ĐÁNH SỐ TRANG Ả-RẬP TỪ TÓM TẮT =================== %
+% Đánh số trang ở giữa bên dưới, theo hệ thống số Ả-rập
 \mainmatter
+\pagenumbering{arabic}
+\setcounter{page}{1}
 
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{}
 \lhead{\itshape\small\leftmark}
 \cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Kiểu trang plain (trang đầu của mỗi chapter) cũng đánh số ở giữa bên dưới
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \cfoot{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+\assignpagestyle{\chapter}{plain}
+
+\input{src/chapters/0.tom_tat}
 
 \input{src/chapters/1.tong_quan_de_tai}
 \input{src/chapters/2.co_so_ly_thuyet}
@@ -43,7 +62,9 @@
 \input{src/chapters/4.hien_thuc_danh_gia_thao_luan}
 \input{src/chapters/5.ket_luan}
 
-\printbibliography[title={TÀI LIỆU THAM KHẢO}]
+\newpage
+\phantomsection
 \addcontentsline{toc}{chapter}{\textbf{TÀI LIỆU THAM KHẢO}}
+\printbibliography[title={TÀI LIỆU THAM KHẢO}]
 
 \end{document}
