@@ -16,22 +16,22 @@
 \tableofcontents
 \newpage
 
-% \renewcommand{\figurename}{Hình}
-% \renewcommand{\listfigurename}{DANH SÁCH HÌNH ẢNH}
-% \phantomsection
-% \addchapternopage{\listfigurename}
-% \listoffigures
-% \newpage
+\renewcommand{\figurename}{Hình}
+\renewcommand{\listfigurename}{DANH SÁCH HÌNH ẢNH}
+\phantomsection
+\addchapternopage{\listfigurename}
+\listoffigures
+\newpage
 
-% \renewcommand{\tablename}{Bảng}
-% \renewcommand{\listtablename}{DANH SÁCH BẢNG BIỂU}
-% \phantomsection
-% \addchapternopage{\listtablename}
-% \listoftables
-% \newpage
+\renewcommand{\tablename}{Bảng}
+\renewcommand{\listtablename}{DANH SÁCH BẢNG BIỂU}
+\phantomsection
+\addchapternopage{\listtablename}
+\listoftables
+\newpage
 
-% \input{src/danh_muc_viet_tat}
-% \input{src/danh_muc_dich}
+\input{src/danh_muc_viet_tat}
+\input{src/danh_muc_dich}
 
 % =================== BẮT ĐẦU ĐÁNH SỐ TRANG Ả-RẬP TỪ TÓM TẮT =================== %
 % Đánh số trang ở giữa bên dưới, theo hệ thống số Ả-rập
@@ -65,6 +65,17 @@
 \newpage
 \phantomsection
 \addcontentsline{toc}{chapter}{\textbf{TÀI LIỆU THAM KHẢO}}
-\printbibliography[title={TÀI LIỆU THAM KHẢO}]
+\chapter*{TÀI LIỆU THAM KHẢO}
+\markboth{TÀI LIỆU THAM KHẢO}{TÀI LIỆU THAM KHẢO}
+
+\vspace{-0.5em}
+\noindent{\fontsize{13pt}{17pt}\selectfont\bfseries Tiếng Việt}
+\vspace{0.4em}
+\printbibliography[heading=none, keyword=tiengviet]
+
+\vspace{1.2em}
+\noindent{\fontsize{13pt}{17pt}\selectfont\bfseries Tiếng Anh}
+\vspace{0.4em}
+\printbibliography[heading=none, notkeyword=tiengviet]
 
 \end{document}

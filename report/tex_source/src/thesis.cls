@@ -83,8 +83,66 @@
 \SetKwProg{Fn}{Function}{:}{end}
 
 %==================== Cites, Links & References ===================%
-\RequirePackage[backend=biber,style=numeric]{biblatex}
+\RequirePackage[
+    backend=biber,
+    style=ieee,
+    sorting=author_title_venue_year
+]{biblatex}
 \addbibresource{src/references.bib}
+\BiblatexSplitbibDefernumbersWarningOff
+
+% Định nghĩa sơ đồ sắp xếp theo chuẩn trường:
+% 1. presort (phân tách Tiếng Việt / Tiếng Anh)
+% 2. sortkey (xếp theo Tên tác giả Việt Nam hoặc khoá tuỳ chỉnh)
+% 3. Tên tác giả (Author/Editor)
+% 4. Tựa đề tài liệu (Title)
+% 5. Nơi công bố / Tạp chí / Nhà xuất bản (Venue/Journal/Publisher/Location)
+% 6. Năm phát hành (Year)
+\DeclareSortingTemplate{author_title_venue_year}{
+  \sort{
+    \field{presort}
+  }
+  \sort[final]{
+    \field{sortkey}
+  }
+  \sort{
+    \field{sortname}
+    \field{author}
+    \field{editor}
+    \field{translator}
+    \field{sorttitle}
+    \field{title}
+  }
+  \sort{
+    \field{sorttitle}
+    \field{title}
+  }
+  \sort{
+    \field{journaltitle}
+    \field{booktitle}
+    \field{series}
+    \field{publisher}
+    \field{location}
+  }
+  \sort{
+    \field{sortyear}
+    \field{year}
+  }
+}
+
+% Tách danh mục: Tiếng Việt (presort = a) xếp trước, Tiếng Anh (presort = z) xếp sau
+\DeclareSourcemap{
+  \maps[datatype=bibtex]{
+    \map{
+      \step[fieldsource=keywords, match=tiengviet, final]
+      \step[fieldset=presort, fieldvalue={a}]
+    }
+    \map{
+      \step[fieldsource=keywords, notmatch=tiengviet, final]
+      \step[fieldset=presort, fieldvalue={z}]
+    }
+  }
+}
 
 \RequirePackage[hidelinks, unicode]{hyperref}
 
